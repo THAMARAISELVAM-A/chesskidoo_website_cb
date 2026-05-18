@@ -96,8 +96,13 @@ CK.coach = {
     const grid = document.getElementById('coachStudentsGrid');
     if (!grid) return;
     const students = (await CK.db.getProfiles('student')) || [];
-    const myStudents = students.filter(s => s.coach === (this.coachProfile ? this.coachProfile.full_name : ''));
-    if (!myStudents.length) return;
+    const coachName = (this.coachProfile?.full_name || '').toLowerCase();
+    const myStudents = students.filter(s => s.coach && s.coach.toLowerCase() === coachName);
+    if (!myStudents.length) {
+      grid.innerHTML = '<div class="cls-empty" style="grid-column:1/-1;">No students assigned yet. Ask admin to assign students to your profile.</div>';
+      return;
+    }
+    const _e = CK.esc || (s => s);
     const presence = JSON.parse(localStorage.getItem('ck_live_presence') || '{}');
     const now = Date.now();
     const colors = ['var(--p-teal)', 'var(--p-gold)', 'var(--p-blue)', 'var(--p-rose)'];
@@ -115,8 +120,8 @@ CK.coach = {
             ${isRecent ? `<span style="position:absolute;bottom:0;right:0;width:9px;height:9px;background:var(--p-teal);border-radius:50%;border:2px solid var(--p-surface2);"></span>` : ''}
           </div>
           <div class="p-live-info">
-            <div class="p-live-name">${s.full_name}</div>
-            <div class="p-live-sub">${s.level || 'Beginner'} · ${s.rating || 800} ELO · ${s.puzzle || 0} puzzles</div>
+            <div class="p-live-name">${_e(s.full_name)}</div>
+            <div class="p-live-sub">${_e(s.level || 'Beginner')} · ${_e(String(s.rating || 800))} ELO · ${_e(String(s.puzzle || 0))} puzzles</div>
             <div class="p-live-status"><span class="p-status-dot ${statusDot}"></span> ${statusLabel}</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;">
@@ -184,7 +189,9 @@ CK.coach = {
       puzzles: 'Assign Puzzles',
       resources: 'Homework & Notes',
       lab: 'PGN Teaching Studio',
-      classroom: 'Classroom Manager'
+      classroom: 'Classroom Manager',
+      classes: 'My Classes',
+      reports: 'Student Reports'
     };
     const titleEl = document.getElementById('coachPanelTitle');
     if (titleEl) titleEl.innerText = titles[panelId] || 'Dashboard';
@@ -201,44 +208,46 @@ CK.coach = {
   },
 
   /* ── Class Management Panel ── */
-  renderClassesPanel() {
+  async renderClassesPanel() {
     const cp = this.coachProfile || {};
-    if (CK.classSystem) CK.classSystem.renderCoachClasses('coachClassesList', cp.id);
+    if (CK.classSystem) await CK.classSystem.renderCoachClasses('coachClassesList', cp.id);
   },
 
   createClass() {
     this.openCreateClassModal();
   },
 
-  openCreateClassModal() {
+  async openCreateClassModal() {
     const cp = this.coachProfile || {};
-    CK.classSystem.openClassModal(null, (data) => {
-      CK.classSystem.createClass(data, cp.id, cp.full_name);
-      this.renderClassesPanel();
-    });
+    if (CK.classSystem) {
+      CK.classSystem.openClassModal(null, async (data) => {
+        await CK.classSystem.createClass(data, cp.id, cp.full_name);
+        await this.renderClassesPanel();
+      });
+    }
   },
 
   /* ── Schedule Pro Panel ── */
-  renderSchedulePro() {
+  async renderSchedulePro() {
     const cp = this.coachProfile || {};
-    if (CK.schedulePro) CK.schedulePro.renderCoachSchedule('coachSchedList', cp.id);
+    if (CK.schedulePro) await CK.schedulePro.renderCoachSchedule('coachSchedList', cp.id);
   },
 
-  createMeeting() {
+  async createMeeting() {
     const cp = this.coachProfile || {};
-    if (CK.schedulePro) CK.schedulePro.createMeeting(cp.id, cp.full_name, 'coachSchedList');
+    if (CK.schedulePro) await CK.schedulePro.createMeeting(cp.id, cp.full_name, 'coachSchedList');
   },
 
   /* ── Monthly Reports Panel ── */
-  renderReportsPanel() {
+  async renderReportsPanel() {
     const cp = this.coachProfile || {};
-    if (CK.reportSystem) CK.reportSystem.renderCoachReports('coachReportsList', cp.id, cp.full_name);
+    if (CK.reportSystem) await CK.reportSystem.renderCoachReports('coachReportsList', cp.id, cp.full_name);
   },
 
   /* ── Attendance Panel (advanced) ── */
-  loadAttendanceAdvanced() {
+  async loadAttendanceAdvanced() {
     const cp = this.coachProfile || {};
-    if (CK.classSystem) CK.classSystem.renderAttendanceMarker('coachAttendanceMarker', cp.id);
+    if (CK.classSystem) await CK.classSystem.renderAttendanceMarker('coachAttendanceMarker', cp.id);
   },
 
   async renderSchedule() {
@@ -248,7 +257,7 @@ CK.coach = {
       tbody.innerHTML = `
         <tr><td>Monday</td><td>4:00 PM - 5:00 PM</td><td>Intermediate Strategy</td><td><span class="p-badge p-badge-blue">Intermediate</span></td><td><div style="font-family:monospace; margin-bottom:4px; color:var(--p-teal);">${links['Intermediate'] || 'https://meet.google.com/int-strategy-abc'}</div><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.coach.editBatchLink('Intermediate')">✏️ Edit Room Link</button></td></tr>
         <tr><td>Tuesday</td><td>5:00 PM - 6:00 PM</td><td>Advanced Endgames</td><td><span class="p-badge p-badge-gold">Advanced</span></td><td><div style="font-family:monospace; margin-bottom:4px; color:var(--p-gold);">${links['Advanced'] || 'https://meet.google.com/adv-endgames-xyz'}</div><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.coach.editBatchLink('Advanced')">✏️ Edit Room Link</button></td></tr>
-        <tr><td>Friday</td><td>6:30 PM - 8:00 PM</td><td>Beginner Fundamentals</td><td><span class="p-badge p-badge-green">Beginner</span></td><td><div style="font-family:monospace; margin-bottom:4px; color:var(--p-green);">${links['Beginner'] || 'https://meet.google.com/beg-inner-room'}</div><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.coach.editBatchLink('Beginner')">✏️ Edit Room Link</button></td></tr>
+        <tr><td>Friday</td><td>6:30 PM - 8:00 PM</td><td>Beginner Fundamentals</td><td><span class="p-badge p-badge-green">Beginner</span></td><td><div style="font-family:monospace; margin-bottom:4px; color:var(--p-online);">${links['Beginner'] || 'https://meet.google.com/beg-inner-room'}</div><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.coach.editBatchLink('Beginner')">✏️ Edit Room Link</button></td></tr>
       `;
     }
   },
@@ -282,7 +291,7 @@ CK.coach = {
 
     // Stats counters
     const students = (await CK.db.getProfiles('student')) || [];
-    const myStudents = students.filter(s => s.coach === cp.full_name);
+    const myStudents = students.filter(s => s.coach && s.coach.toLowerCase() === (cp.full_name || '').toLowerCase());
 
     const stStud = document.getElementById('coachStatStudents');
     const stAtt = document.getElementById('coachStatAttend');
@@ -308,7 +317,7 @@ CK.coach = {
   async markAllPresentToday() {
     const cp = this.coachProfile || {};
     const students = (await CK.db.getProfiles('student')) || [];
-    const myStudents = students.filter(s => s.coach === cp.full_name || !s.coach);
+    const myStudents = students.filter(s => s.coach && s.coach.toLowerCase() === (cp.full_name || '').toLowerCase());
     const todayStr = new Date().toISOString().split('T')[0];
     for (const s of myStudents) {
       await CK.db.saveAttendance({ userid: s.id, date: todayStr, status: 'present', coachId: cp.id, coachName: cp.full_name });
@@ -324,7 +333,7 @@ CK.coach = {
     const resources = await CK.db.getResources();
 
     if (resources.length === 0) {
-      container.innerHTML = '<div class="cls-empty">?? No resources uploaded yet. Use the Admin panel to upload learning materials.</div>';
+      container.innerHTML = '<div class="cls-empty">📚 No resources uploaded yet. Use the Admin panel to upload learning materials.</div>';
       return;
     }
 
@@ -355,9 +364,9 @@ CK.coach = {
                 <div style="font-weight:600; color:var(--p-text); display:flex; align-items:center; gap:8px;">
                   📄 ${f.name} <span class="p-badge ${typeBadge}" style="font-size:0.7rem; padding: 2px 6px;">${f.type || 'Material'}</span>
                 </div>
-                <div style="font-size:0.85rem; color:var(--p-text-muted); margin-top:4px;">📝 Note: ${f.notes}</div>
+                <div style="font-size:0.85rem; color:var(--p-text-muted); margin-top:4px;">📝 Note: ${(CK.esc||((s)=>s))(f.notes)}</div>
               </div>
-              <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.showToast('Downloading ${f.name}...', 'success')">Download</button>
+              <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.showToast('Downloading...', 'success')">Download</button>
             </div>
         `;
       });
@@ -423,16 +432,16 @@ CK.coach = {
     }
     const selectedDate = dateInput ? dateInput.value : new Date().toISOString().split('T')[0];
 
-    const coachName = this.coachProfile ? this.coachProfile.full_name : 'Sarah Chess';
+    const coachName = (this.coachProfile?.full_name || '').toLowerCase();
     const students = (await CK.db.getProfiles('student')) || [];
-    const myStudents = students.filter(s => s.coach === coachName || !s.coach);
+    const myStudents = students.filter(s => s.coach && s.coach.toLowerCase() === coachName);
     const attendanceLogs = (await CK.db.getAttendance(null, selectedDate)) || [];
 
     const attendanceMap = {};
     attendanceLogs.forEach(l => { attendanceMap[l.userid] = l.status; });
 
     if (myStudents.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6"><div class="cls-empty">?? No students assigned to you yet.</div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6"><div class="cls-empty">📅 No students assigned to you yet.</div></td></tr>';
       return;
     }
 
@@ -443,14 +452,15 @@ CK.coach = {
       summaryEl.innerHTML = `${selectedDate} · <span style="color:var(--p-teal);font-weight:700;">${presentCount} present</span> of <span style="font-weight:700;">${myStudents.length}</span> students`;
     }
 
+    const _e = CK.esc || (s => s);
     tbody.innerHTML = myStudents.map(s => {
       const currentStatus = attendanceMap[s.id] || 'pending';
       const levelBatch = s.level === 'Beginner' ? 'Beginner Fundamentals' : s.level === 'Advanced' ? 'Advanced Endgames' : 'Intermediate Strategy';
       const badgeCls = currentStatus === 'present' ? 'p-badge-green' : currentStatus === 'absent' ? 'p-badge-red' : 'p-badge-ghost';
       return `
-        <tr id="coach_att_row_${s.id}">
-          <td style="font-weight:700;">${s.full_name}</td>
-          <td><span class="p-badge p-badge-blue" style="font-size:0.75rem;">${s.level || 'Beginner'}</span></td>
+        <tr id="coach_att_row_${_e(s.id)}">
+          <td style="font-weight:700;">${_e(s.full_name)}</td>
+          <td><span class="p-badge p-badge-blue" style="font-size:0.75rem;">${_e(s.level || 'Beginner')}</span></td>
           <td style="font-size:0.85rem; color:var(--p-text-muted);">${levelBatch}</td>
           <td style="font-size:0.85rem; color:var(--p-text-muted);">${selectedDate}</td>
           <td><span class="p-badge ${badgeCls}" id="coach_att_badge_${s.id}">${currentStatus === 'present' ? '✅ Present' : currentStatus === 'absent' ? '❌ Absent' : '⏳ Pending'}</span></td>
@@ -589,9 +599,10 @@ CK.coach = {
     const select = document.getElementById('coach_note_student');
     if (select) {
       const students = (await CK.db.getProfiles('student')) || [];
-      const coachName = this.coachProfile ? this.coachProfile.full_name : 'Sarah Chess';
-      const myStudents = students.filter(s => s.coach === coachName || !s.coach);
-      select.innerHTML = myStudents.map(s => `<option value="${s.full_name}">${s.full_name}</option>`).join('');
+      const coachName = (this.coachProfile?.full_name || '').toLowerCase();
+      const myStudents = students.filter(s => s.coach && s.coach.toLowerCase() === coachName);
+      const _e = CK.esc || (s => s);
+      select.innerHTML = myStudents.map(s => `<option value="${_e(s.full_name)}">${_e(s.full_name)}</option>`).join('');
     }
     CK.openModal('coachNoteModal');
   },
@@ -606,7 +617,7 @@ CK.coach = {
     await CK.tracker.addReview({
       student: name,
       text: text,
-      coach: this.coachProfile ? this.coachProfile.full_name : 'Sarah Chess'
+      coach: this.coachProfile?.full_name || ''
     });
 
     CK.showToast('Game assessment note saved successfully! ELO accuracy updated.', 'success');
@@ -618,9 +629,10 @@ CK.coach = {
     const select = document.getElementById('coachReportStudentSelect');
     if (!select) return;
     const students = (await CK.db.getProfiles('student')) || [];
-    const coachName = this.coachProfile ? this.coachProfile.full_name : 'Sarah Chess';
-    const myStudents = students.filter(s => s.coach === coachName || !s.coach);
-    select.innerHTML = myStudents.map(s => `<option value="${s.full_name}">${s.full_name}</option>`).join('');
+    const coachName = (this.coachProfile?.full_name || '').toLowerCase();
+    const myStudents = students.filter(s => s.coach && s.coach.toLowerCase() === coachName);
+    const _e = CK.esc || (s => s);
+    select.innerHTML = myStudents.map(s => `<option value="${_e(s.full_name)}">${_e(s.full_name)}</option>`).join('');
     if (myStudents.length > 0) {
       this.loadStudentReport(myStudents[0].full_name);
     }

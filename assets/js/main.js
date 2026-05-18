@@ -23,25 +23,57 @@
         header.classList.add('header-hidden');
       }
     }
+
+    // Close portal drawer and restore body scroll on every page transition
+    if (typeof CK.togglePortalNav === 'function') CK.togglePortalNav(false);
   };
 
   // Mobile Menu Logic
   const mobileBtn = document.getElementById('mobileMenuBtn');
   const navLinks = document.getElementById('navLinks');
   if (mobileBtn && navLinks) {
+    const closeNav = () => {
+      navLinks.classList.remove('open');
+      mobileBtn.classList.remove('active');
+      document.body.classList.remove('nav-open');
+    };
     mobileBtn.addEventListener('click', () => {
-      navLinks.classList.toggle('open');
+      const isOpen = navLinks.classList.toggle('open');
       mobileBtn.classList.toggle('active');
+      document.body.classList.toggle('nav-open', isOpen);
     });
     navLinks.querySelectorAll('.nav-link').forEach(btn => {
       btn.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
-          navLinks.classList.remove('open');
-          mobileBtn.classList.remove('active');
-        }
+        if (window.innerWidth <= 768) closeNav();
       });
     });
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) closeNav();
+    });
   }
+
+  // ── Portal Hamburger Drawer (mobile ≤600px) ──────────────────────────
+  CK.togglePortalNav = (forceOpen) => {
+    const activePage = document.querySelector('.page.active');
+    if (!activePage) return;
+    const sidebar = activePage.querySelector('.p-sidebar');
+    const overlay = activePage.querySelector('.p-drawer-overlay');
+    const btn     = activePage.querySelector('.p-hamburger-btn');
+    if (!sidebar) return;
+    const isOpen = forceOpen !== undefined ? forceOpen : !sidebar.classList.contains('p-drawer-open');
+    sidebar.classList.toggle('p-drawer-open', isOpen);
+    if (overlay) overlay.classList.toggle('open', isOpen);
+    if (btn)     btn.classList.toggle('active', isOpen);
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+  };
+
+  // Close portal drawer whenever any p-nav-item is clicked on mobile
+  document.addEventListener('click', (e) => {
+    const item = e.target.closest('.p-nav-item');
+    if (item && window.innerWidth <= 600) {
+      setTimeout(() => CK.togglePortalNav(false), 80);
+    }
+  });
 
   // Alias navigate to handle both section scrolling (landing) and page routing
   CK.navigate = (section) => {
@@ -98,13 +130,13 @@
 
     // Route to a specific page (like login-page)
     if (section === 'login' && CK.currentUser) {
-      const role = CK.currentUser.role.toLowerCase();
+      const role = (CK.currentUser.role || '').toLowerCase();
       CK.showPage(`${role}-page`);
-      // Re-init portal logic if needed
       setTimeout(() => {
-        if (role === 'admin' && CK.admin) CK.admin.init();
+        if (role === 'admin'   && CK.admin)   CK.admin.init();
         if (role === 'student' && CK.student) CK.student.init();
-        if (role === 'coach' && CK.coach) CK.coach.init();
+        if (role === 'coach'   && CK.coach)   CK.coach.init();
+        if (role === 'parent'  && CK.parents) CK.parents.init();
       }, 50);
       return;
     }
@@ -162,7 +194,8 @@
     
     // Status icons
     const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
-    toast.innerHTML = `<span>${icons[type] || '♟'}</span> <span>${msg}</span>`;
+    const _e = CK.esc || (s => s);
+    toast.innerHTML = `<span>${icons[type] || '♟'}</span> <span>${_e(String(msg))}</span>`;
     
     // Apply status class
     toast.className = `p-toast show ${type}`;

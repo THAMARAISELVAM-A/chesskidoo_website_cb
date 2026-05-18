@@ -36,6 +36,7 @@
   let evalChart = null;
   let achievements = [];
   let puzzleMode = false;
+  let awaitingAIMove = false;
 
   const DIFFICULTY_DEPTH = { Beginner: 1, Intermediate: 2, Advanced: 3, Expert: 4 };
   const PIECE_VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
@@ -117,6 +118,7 @@
     activeClock = 'w';
     aiStartTime = null;
     lastTickTime = Date.now();
+    awaitingAIMove = false;
     achievements = JSON.parse(localStorage.getItem('ck_achievements') || '[]');
 
     console.log('Arena: Rendering board...');
@@ -234,6 +236,8 @@
       return;
     }
     if (line && line.startsWith('bestmove')) {
+      if (!awaitingAIMove) return;
+      awaitingAIMove = false;
       const parts = line.split(' ');
       const bestMove = parts[1];
       if (bestMove && bestMove !== '(none)') {
@@ -467,14 +471,13 @@ function executePlayerMove(move) {
   }
   
   if (quickMoveState && !quickMoveState.solved) {
-    const moveStr = move.from + move.to;
-    if (moveStr !== quickMoveState.goal) {
+    if (move.san !== quickMoveState.goal) {
       CK.showToast('Wrong move! Try again.', 'error');
-      game.undo();
-      renderBoard();
       return;
     }
     quickMoveState.solved = true;
+    game.move(move);
+    renderBoard();
     CK.showToast('Correct!', 'success');
     if (gameTimer) clearInterval(gameTimer);
     setTimeout(() => A.startQuickMove(), 2000);
@@ -512,7 +515,12 @@ function executePlayerMove(move) {
     aiStartTime = Date.now();
     lastTickTime = Date.now();
 
-    if (game.game_over()) {
+    if (game.in_checkmate() || game.in_stalemate() || game.insufficient_material()) {
+      handleGameOver();
+      return;
+    }
+    if (game.in_threefold_repetition()) {
+      CK.showToast('Draw by threefold repetition — position repeated 3 times', 'warning');
       handleGameOver();
       return;
     }
@@ -540,6 +548,7 @@ function executePlayerMove(move) {
 
     console.log('Arena: AI thinking...');
     if (useWasm && engineReady && stockfish) {
+      awaitingAIMove = true;
       stockfish.postMessage(`position fen ${fen}`);
       stockfish.postMessage(`go depth ${DIFFICULTY_DEPTH[currentDifficulty] || 2}`);
     } else {
@@ -619,7 +628,12 @@ function executePlayerMove(move) {
     activeClock = 'w';
     lastTickTime = Date.now();
 
-    if (game.game_over()) {
+    if (game.in_checkmate() || game.in_stalemate() || game.insufficient_material()) {
+      handleGameOver();
+      return;
+    }
+    if (game.in_threefold_repetition()) {
+      CK.showToast('Draw by threefold repetition — position repeated 3 times', 'warning');
       handleGameOver();
       return;
     }
@@ -726,16 +740,17 @@ function executePlayerMove(move) {
       }, 300);
     } else {
       const depth = DIFFICULTY_DEPTH[currentDifficulty] || 2;
-      const tempGame = new Chess(fenBefore);
-      const moves = tempGame.moves({ verbose: true });
-      let bestEval = tempGame.turn() === 'w' ? -Infinity : Infinity;
+      const savedGame = game;
+      game = new Chess(fenBefore);
+      const moves = game.moves({ verbose: true });
+      let bestEval = game.turn() === 'w' ? -Infinity : Infinity;
       let bestMove = null;
-      const isMax = tempGame.turn() === 'w';
+      const isMax = game.turn() === 'w';
 
       for (const m of moves) {
-        tempGame.move(m);
+        game.move(m);
         const ev = minimax(depth - 1, -Infinity, Infinity, !isMax);
-        tempGame.undo();
+        game.undo();
         if (isMax && ev > bestEval) { bestEval = ev; bestMove = m; }
         if (!isMax && ev < bestEval) { bestEval = ev; bestMove = m; }
       }
@@ -743,10 +758,11 @@ function executePlayerMove(move) {
       const playerMove = moves.find(m => m.san === playerSan);
       let playerEval = 0;
       if (playerMove) {
-        tempGame.move(playerMove);
+        game.move(playerMove);
         playerEval = minimax(depth - 1, -Infinity, Infinity, !isMax);
-        tempGame.undo();
+        game.undo();
       }
+      game = savedGame;
 
       const diff = isMax ? (bestEval - playerEval) : (playerEval - bestEval);
       const classification = classifyFromDiff(diff, playerMove, bestMove);
@@ -1260,20 +1276,24 @@ function executePlayerMove(move) {
 
   function getBestMoveForTurn(moveIndex) {
     const depth = DIFFICULTY_DEPTH[currentDifficulty] || 2;
-    const tempGame = new Chess();
-    tempGame.fen(moveHistory[Math.floor(moveIndex/2)]?.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-    const moves = tempGame.moves({ verbose: true });
-    if (moves.length === 0) return null;
+    const fenBefore = moveIndex === 0
+      ? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+      : (moveHistory[moveIndex - 1]?.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+    const savedGame = game;
+    game = new Chess(fenBefore);
+    const moves = game.moves({ verbose: true });
+    if (moves.length === 0) { game = savedGame; return null; }
     let bestMove = null;
-    let bestEval = tempGame.turn() === 'w' ? -Infinity : Infinity;
-    const isMax = tempGame.turn() === 'w';
+    let bestEval = game.turn() === 'w' ? -Infinity : Infinity;
+    const isMax = game.turn() === 'w';
     for (const m of moves) {
-      tempGame.move(m);
+      game.move(m);
       const ev = minimax(depth - 1, -Infinity, Infinity, !isMax);
-      tempGame.undo();
+      game.undo();
       if (isMax && ev > bestEval) { bestEval = ev; bestMove = m; }
       if (!isMax && ev < bestEval) { bestEval = ev; bestMove = m; }
     }
+    game = savedGame;
     return bestMove ? bestMove.san : null;
   }
 
@@ -1753,7 +1773,7 @@ let gameTimer = null;
 
 A.startMemoryGame = () => {
   if (!game) game = new Chess();
-  const moves = game.moves().slice(0, 6);
+  const moves = game.moves({ verbose: true }).slice(0, 6);
   memoryGameState = {
     sequence: moves,
     index: 0,

@@ -7,22 +7,24 @@ window.CK = window.CK || {};
 
 CK.schedulePro = (() => {
   const KEY = 'ck_meetings';
-  const get  = () => JSON.parse(localStorage.getItem(KEY) || '[]');
-  const save = d  => localStorage.setItem(KEY, JSON.stringify(d));
+  const get  = async () => await CK.db.getMeetings();
+  const save = async d  => { /* no-op, handled individually in CK.db */ };
   const uid  = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
   const today = () => new Date().toISOString().split('T')[0];
 
   /* seed demo meetings */
-  function _seed() {
-    if (get().length) return;
+  async function _seed() {
+    const existing = await get();
+    if (existing.length) return;
     const now = new Date();
     const addDays = (d) => { const dt = new Date(now); dt.setDate(dt.getDate() + d); return dt.toISOString().split('T')[0]; };
-    save([
+    const seedData = [
       { id:'m1', coachId:'c1', coachName:'ARIVUSELVAM', title:'Beginner Opening Principles', batch:'Group', date: addDays(1), time:'17:00', duration:60, link:'https://meet.google.com/beg-ari-abc', notes:'Study Ruy Lopez lines before class.', type:'class', studentIds:['s1','s8','s27'] },
       { id:'m2', coachId:'c3', coachName:'VISHNU', title:'Intermediate Tactics Workshop', batch:'FRI&SAT', date: addDays(3), time:'16:00', duration:75, link:'https://meet.google.com/vis-int-str', notes:'Bring your puzzle notebooks.', type:'class', studentIds:['s3','s14','s19'] },
       { id:'m3', coachId:'c7', coachName:'RANJITH', title:'Advanced Opening Review — 1-on-1', batch:'Weekend', date: addDays(2), time:'09:00', duration:45, link:'https://meet.google.com/raj-adv-opn', notes:'Individual session — rating target: 1400', type:'oneOnOne', studentIds:['s26'] },
       { id:'m4', coachId:'c2', coachName:'GYANASURYA', title:'Weekend Tournament Prep', batch:'WEEKEND', date: addDays(5), time:'10:00', duration:90, link:'https://meet.google.com/gya-wk-xyz', notes:'We will analyze the last tournament games.', type:'class', studentIds:['s2','s9','s21'] }
-    ]);
+    ];
+    for (const m of seedData) await CK.db.saveMeeting(m);
   }
   _seed();
 
@@ -30,10 +32,11 @@ CK.schedulePro = (() => {
      COACH — RENDER OWN SCHEDULE
   ═════════════════════════════════════════════════════════ */
 
-  function renderCoachSchedule(containerId, coachId) {
+  async function renderCoachSchedule(containerId, coachId) {
     const el = document.getElementById(containerId);
     if (!el) return;
-    const meetings = get().filter(m => m.coachId === coachId).sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+    const all = await get();
+    const meetings = all.filter(m => m.coachId === coachId).sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
     const upcoming = meetings.filter(m => m.date >= today());
     const past     = meetings.filter(m => m.date < today());
 
@@ -41,6 +44,7 @@ CK.schedulePro = (() => {
       el.innerHTML = `<div class="cls-empty">📅 No meetings scheduled yet. Create one above.</div>`; return;
     }
 
+    const _e = CK.esc || (s => s);
     const renderMeeting = (m, isPast) => {
       const typeIcon = { class:'🎓', oneOnOne:'👤', tournament:'🏆', review:'📋' }[m.type] || '📅';
       const dt = new Date(`${m.date}T${m.time}`);
@@ -50,19 +54,19 @@ CK.schedulePro = (() => {
         <div class="sched-card ${isPast ? 'sched-card-past' : ''}">
           <div class="sched-card-left">
             <div class="sched-date-badge">
-              <div class="sched-date-day">${dt.getDate()}</div>
+              <div class="sched-date-num">${dt.getDate()}</div>
               <div class="sched-date-mon">${dt.toLocaleString('en-US',{month:'short'})}</div>
             </div>
           </div>
           <div class="sched-card-body">
-            <div class="sched-title">${typeIcon} ${m.title}</div>
-            <div class="sched-meta">${dateStr} · ${timeStr} · ${m.duration}min · ${m.batch}</div>
-            ${m.notes ? `<div class="sched-notes">${m.notes}</div>` : ''}
+            <div class="sched-title">${typeIcon} ${_e(m.title)}</div>
+            <div class="sched-meta">${dateStr} · ${timeStr} · ${_e(String(m.duration))}min · ${_e(m.batch)}</div>
+            ${m.notes ? `<div class="sched-notes">${_e(m.notes)}</div>` : ''}
             ${m.link ? `<a href="${m.link}" target="_blank" class="sched-join-btn" onclick="event.stopPropagation()">▶ Join Class</a>` : ''}
           </div>
           <div class="sched-card-actions">
-            ${!isPast ? `<button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.schedulePro.editMeeting('${m.id}')">✏️</button>` : ''}
-            <button class="p-btn p-btn-ghost p-btn-sm" style="color:var(--p-danger)" onclick="CK.schedulePro.deleteMeeting('${m.id}','${coachId}')">🗑️</button>
+            ${!isPast ? `<button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.schedulePro.editMeeting('${m.id}','${containerId}')">✏️</button>` : ''}
+            <button class="p-btn p-btn-ghost p-btn-sm" style="color:var(--p-danger)" onclick="CK.schedulePro.deleteMeeting('${m.id}','${coachId}','${containerId}')">🗑️</button>
           </div>
         </div>`;
     };
@@ -81,34 +85,31 @@ CK.schedulePro = (() => {
   ═════════════════════════════════════════════════════════ */
 
   function createMeeting(coachId, coachName, containerId) {
-    openMeetingModal(null, coachId, (data) => {
+    openMeetingModal(null, coachId, async (data) => {
       const m = { id: uid(), coachId, coachName, ...data, studentIds: [] };
-      const all = get();
-      all.push(m);
-      save(all);
+      await CK.db.saveMeeting(m);
       CK.showToast(`Meeting "${m.title}" scheduled!`, 'success');
       renderCoachSchedule(containerId, coachId);
     });
   }
 
-  function editMeeting(meetingId) {
-    const all = get();
+  async function editMeeting(meetingId, containerId = 'coachSchedList') {
+    const all = await get();
     const m = all.find(x => x.id === meetingId);
     if (!m) return;
-    const containerId = 'coachSchedList';
-    openMeetingModal(m, m.coachId, (data) => {
+    openMeetingModal(m, m.coachId, async (data) => {
       Object.assign(m, data);
-      save(all);
+      await CK.db.saveMeeting(m);
       CK.showToast('Meeting updated!', 'success');
       renderCoachSchedule(containerId, m.coachId);
     });
   }
 
-  function deleteMeeting(meetingId, coachId) {
+  async function deleteMeeting(meetingId, coachId, containerId = 'coachSchedList') {
     if (!confirm('Delete this meeting?')) return;
-    save(get().filter(m => m.id !== meetingId));
+    await CK.db.deleteMeeting(meetingId);
     CK.showToast('Meeting deleted.', 'success');
-    renderCoachSchedule('coachSchedList', coachId);
+    renderCoachSchedule(containerId, coachId);
   }
 
   function openMeetingModal(existing, coachId, onSave) {
@@ -162,12 +163,12 @@ CK.schedulePro = (() => {
      STUDENT — SEE UPCOMING SCHEDULE
   ═════════════════════════════════════════════════════════ */
 
-  function renderStudentSchedule(containerId, studentProfile) {
+  async function renderStudentSchedule(containerId, studentProfile) {
     const el = document.getElementById(containerId);
     if (!el) return;
     const coachName = studentProfile?.coach || '';
     const batch     = studentProfile?.batch || '';
-    const all = get();
+    const all = await get();
 
     // Match by coach name or batch
     const relevant = all.filter(m =>
@@ -183,6 +184,7 @@ CK.schedulePro = (() => {
       return;
     }
 
+    const _e2 = CK.esc || (s => s);
     el.innerHTML = upcoming.map(m => {
       const dt = new Date(`${m.date}T${m.time}`);
       const isToday = m.date === today();
@@ -193,15 +195,15 @@ CK.schedulePro = (() => {
         <div class="sched-card ${isToday ? 'sched-card-today' : ''}">
           <div class="sched-card-left">
             <div class="sched-date-badge ${isToday ? 'sched-date-today' : ''}">
-              <div class="sched-date-day">${dt.getDate()}</div>
+              <div class="sched-date-num">${dt.getDate()}</div>
               <div class="sched-date-mon">${dt.toLocaleString('en-US',{month:'short'})}</div>
             </div>
           </div>
           <div class="sched-card-body">
             <div class="sched-when">${dayLabel} · ${dt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</div>
-            <div class="sched-title">${typeIcon} ${m.title}</div>
-            <div class="sched-meta">Coach: ${m.coachName} · ${m.duration}min</div>
-            ${m.notes ? `<div class="sched-notes">📝 ${m.notes}</div>` : ''}
+            <div class="sched-title">${typeIcon} ${_e2(m.title)}</div>
+            <div class="sched-meta">Coach: ${_e2(m.coachName)} · ${_e2(String(m.duration))}min</div>
+            ${m.notes ? `<div class="sched-notes">📝 ${_e2(m.notes)}</div>` : ''}
             ${m.link && isToday ? `<a href="${m.link}" target="_blank" class="sched-join-btn">▶ Join Now</a>` : ''}
           </div>
         </div>`;
@@ -212,31 +214,32 @@ CK.schedulePro = (() => {
      ADMIN — ALL MEETINGS VIEW
   ═════════════════════════════════════════════════════════ */
 
-  function renderAdminSchedule(containerId) {
+  async function renderAdminSchedule(containerId) {
     const el = document.getElementById(containerId);
     if (!el) return;
-    const meetings = get().sort((a,b) => a.date.localeCompare(b.date));
+    const meetings = (await get()).sort((a,b) => a.date.localeCompare(b.date));
     el.innerHTML = `
       <table class="p-table" style="width:100%">
         <thead><tr><th>Title</th><th>Coach</th><th>Batch</th><th>Date</th><th>Time</th><th>Type</th></tr></thead>
         <tbody>
-          ${meetings.map(m => `<tr>
-            <td style="font-weight:600">${m.title}</td>
-            <td>${m.coachName}</td>
-            <td>${m.batch}</td>
-            <td>${m.date}</td>
-            <td>${m.time}</td>
-            <td><span class="p-badge p-badge-blue">${m.type}</span></td>
-          </tr>`).join('')}
+          ${meetings.map(m => { const _e = CK.esc || (s => s); return `<tr>
+            <td style="font-weight:600">${_e(m.title)}</td>
+            <td>${_e(m.coachName)}</td>
+            <td>${_e(m.batch)}</td>
+            <td>${_e(m.date)}</td>
+            <td>${_e(m.time)}</td>
+            <td><span class="p-badge p-badge-blue">${_e(m.type)}</span></td>
+          </tr>`; }).join('')}
         </tbody>
       </table>`;
   }
 
   /* upcoming count for a student */
-  function upcomingCount(studentProfile) {
+  async function upcomingCount(studentProfile) {
     const coachName = studentProfile?.coach || '';
     const batch = studentProfile?.batch || '';
-    return get().filter(m =>
+    const all = await get();
+    return all.filter(m =>
       m.date >= today() &&
       (m.coachName === coachName || (batch && m.batch?.toLowerCase().includes(batch.toLowerCase())))
     ).length;

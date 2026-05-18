@@ -387,7 +387,7 @@ CK.student = {
     const tbody = document.getElementById('studentTournamentTable');
     if (!tbody) return;
 
-    const tournaments = await CK.db.getTourRatings(this.userProfile.userid);
+    const tournaments = await CK.db.getTourRatings(this.userProfile.userid || this.userProfile.id);
     if (!tournaments || tournaments.length === 0) {
       tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; opacity:0.5;">No tournament history recorded yet.</td></tr>';
       return;
@@ -397,7 +397,7 @@ CK.student = {
       <tr>
         <td style="font-weight:600">${t.name}</td>
         <td>${t.result}</td>
-        <td style="font-weight:700; color:${t.change.startsWith('+') ? 'var(--p-teal)' : 'var(--p-danger)'}">${t.change} ELO</td>
+        <td style="font-weight:700; color:${t.change?.startsWith('+') ? 'var(--p-teal)' : 'var(--p-danger)'}">${t.change ?? '—'} ELO</td>
       </tr>
     `).join('');
   },
@@ -729,13 +729,14 @@ CK.student = {
       return;
     }
 
+    const _e = CK.esc || (s => s);
     container.innerHTML = myReviews.map(r => `
       <div class="p-review-note">
         <div class="p-review-note-header">
-          <span class="p-review-note-coach">🎓 ${r.coach}</span>
-          <span class="p-review-note-date">${r.date}</span>
+          <span class="p-review-note-coach">🎓 ${_e(r.coach)}</span>
+          <span class="p-review-note-date">${_e(r.date)}</span>
         </div>
-        <p class="p-review-note-text">"${r.text}"</p>
+        <p class="p-review-note-text">"${_e(r.text)}"</p>
       </div>
     `).join('');
   },
@@ -784,8 +785,8 @@ CK.student = {
     // Certificate section — use real jsPDF system
     const certEl = document.getElementById('studentCertSection');
     if (certEl && CK.certs) {
-      const attnSummary = CK.classSystem?.getStudentAttendanceSummary(this.userProfile.id) || { pct: attendancePercentage };
-      const puzzlesSolved = (CK.puzzlesPro?.getLeaderboard() || []).find(u => u.userId === this.userProfile.id)?.solved || (this.userProfile.puzzle || 0);
+      const attnSummary = (await CK.classSystem?.getStudentAttendanceSummary(this.userProfile.id)) || { pct: attendancePercentage };
+      const puzzlesSolved = ((await CK.puzzlesPro?.getLeaderboard()) || []).find(u => u.userId === this.userProfile.id)?.solved || (this.userProfile.puzzle || 0);
       CK.certs.renderStudentCerts(certEl.id, this.userProfile, attnSummary.pct || attendancePercentage, puzzlesSolved);
     } else {
       // Fallback — old static cert logic
@@ -1022,7 +1023,7 @@ CK.student = {
     if (!p) return;
 
     // 1. Attendance (30%) — from advanced attendance records
-    const attnSummary = CK.classSystem?.getStudentAttendanceSummary(p.id) || null;
+    const attnSummary = (await CK.classSystem?.getStudentAttendanceSummary(p.id)) || null;
     const logs = (await CK.db.getAttendance(p.id)) || [];
     const presentCount = logs.filter(l => l.status === 'present').length;
     const totalSessions = attnSummary ? attnSummary.total : logs.length;
@@ -1030,7 +1031,7 @@ CK.student = {
     const attendancePct = totalSessions > 0 ? Math.round(presentSessions / totalSessions * 100) : 100;
 
     // 2. Puzzles (25%) — real solved count from puzzles-pro
-    const lbEntry = (CK.puzzlesPro?.getLeaderboard() || []).find(u => u.userId === p.id);
+    const lbEntry = ((await CK.puzzlesPro?.getLeaderboard()) || []).find(u => u.userId === p.id);
     const puzzlesSolved = lbEntry?.solved || (p.puzzle || 0);
     const puzzleScore = Math.min(100, Math.round(puzzlesSolved / 60 * 100)); // 60 = total in DB
 
@@ -1043,7 +1044,7 @@ CK.student = {
     const gamesScore = Math.min(100, Math.round((p.game || 0) * 5)); // 20 games = 100%
 
     // 5. Homework (10%) — from classroom submissions
-    const submissions = JSON.parse(localStorage.getItem('ck_hw_submissions') || '[]').filter(s => s.studentId === p.id);
+    const submissions = JSON.parse(localStorage.getItem('ck_hw_submissions') || '[]').filter(s => s.student_id === p.id || s.studentId === p.id);
     const assignments  = JSON.parse(localStorage.getItem('ck_assignments') || '[]');
     const hwDone  = submissions.filter(s => s.completed).length;
     const hwTotal = assignments.length;
@@ -1097,7 +1098,7 @@ CK.student = {
 
     // Render puzzle leaderboard using puzzles-pro
     if (CK.puzzlesPro) {
-      CK.puzzlesPro.renderLeaderboard('progLeaderboard');
+      await CK.puzzlesPro.renderLeaderboard('progLeaderboard');
     }
 
     // Render certificates section
@@ -1107,7 +1108,7 @@ CK.student = {
 
     // Render monthly reports
     if (CK.reportSystem) {
-      CK.reportSystem.renderStudentReports('progReportsList', p.id);
+      await CK.reportSystem.renderStudentReports('progReportsList', p.id);
     }
 
     return overall;
@@ -1118,7 +1119,7 @@ CK.student = {
     if (!ctx) return;
 
     // Fetch historical ratings from DB
-    const history = await CK.db.getRatings(this.userProfile.userid);
+    const history = await CK.db.getRatings(this.userProfile.userid || this.userProfile.id);
     
     let labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Now'];
     let onlineData = [800, 850, 920, 1050, 1100, 1120];
@@ -1316,14 +1317,21 @@ CK.student = {
     joinBtn.innerText = "Connecting...";
     joinBtn.disabled = true;
 
-    setTimeout(() => {
+    setTimeout(async () => {
       CK.showToast("Successfully connected! Opening Google Meet class room.", "success");
       joinBtn.innerText = "Connected";
-      
-      const links = window.CK && CK.batchManager ? CK.batchManager.getLinks() : {};
-      const meetUrl = links[this.userProfile ? this.userProfile.level : 'Intermediate'] || "https://meet.google.com/abc-defg-hij";
+
+      const links = (window.CK && CK.batchManager) ? await CK.batchManager.getLinks() : {};
+      const meetUrl = links[this.userProfile ? this.userProfile.level : ''] ||
+                      links[this.userProfile?.batch || ''] || '';
+      if (!meetUrl) {
+        CK.showToast('Class link not yet set. Ask your coach or admin for the meeting URL.', 'warning');
+        joinBtn.innerText = '▶ Join Class Room';
+        joinBtn.disabled = false;
+        return;
+      }
       window.open(meetUrl, '_blank');
-      
+
       setTimeout(() => {
         joinBtn.innerText = "▶ Rejoin Class Room";
         joinBtn.disabled = false;

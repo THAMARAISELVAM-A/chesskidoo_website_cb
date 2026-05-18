@@ -109,7 +109,7 @@
       { id: 2, created_at: "2026-05-03T10:00:00Z", file_name: "intermediate/tactics_pins.pdf", name: "Tactical Patterns - Pins & Forks", level: "Intermediate", coach: "Sarah Chess", batch: "1" },
       { id: 3, created_at: "2026-05-05T15:00:00Z", file_name: "advanced/endgames_rook.pdf", name: "Advanced Endgames: Rook vs Pawn", level: "Advanced", coach: "Sarah Chess", batch: "1" }
     ],
-    
+
     resources: [
       { id: 'R1', name: 'Mating_Puzzles.pdf', batch: 1, type: 'Homework', notes: 'Review before Friday' },
       { id: 'R2', name: 'Endgame_Basics.pdf', batch: 2, type: 'Homework', notes: 'Read chapter 1' },
@@ -154,7 +154,7 @@
 
   // Helper: Get local storage item
   const getLocal = (key) => JSON.parse(localStorage.getItem(`ck_db_${key}`));
-  
+
   // Helper: Set local storage item
   const setLocal = (key, data) => localStorage.setItem(`ck_db_${key}`, JSON.stringify(data));
 
@@ -174,7 +174,7 @@
   /* ─── CK.db Main Object ─── */
   CK.db = {
     // --- USER PROFILE OPERATIONS ---
-    
+
     // Fetch all profiles of a certain role
     async getProfiles(role = null) {
       if (canUseSupabase()) {
@@ -195,7 +195,7 @@
           markSupabaseFailed();
         }
       }
-      
+
       const localUsers = getLocal('users');
       return role ? localUsers.filter(u => u.role === role) : localUsers;
     },
@@ -287,7 +287,7 @@
           const { data, error } = await window.supabaseClient.from('expenses').select('*').order('created_at', { ascending: false });
           if (!error && data) { setLocal('expenses', data); return data; }
           markSupabaseFailed();
-        } catch(e) { markSupabaseFailed(); }
+        } catch (e) { markSupabaseFailed(); }
       }
       return getLocal('expenses') || [];
     },
@@ -297,7 +297,7 @@
         try {
           const { error } = await window.supabaseClient.from('expenses').upsert(expense);
           if (error) console.warn('[ChessKidoo DB] Expense save error:', error);
-        } catch(e) { console.warn('[ChessKidoo DB] Expense save error:', e); }
+        } catch (e) { console.warn('[ChessKidoo DB] Expense save error:', e); }
       }
       const list = getLocal('expenses') || [];
       const idx = list.findIndex(e => e.id === expense.id);
@@ -310,7 +310,7 @@
       if (canUseSupabase()) {
         try {
           await window.supabaseClient.from('expenses').delete().eq('id', id);
-        } catch(e) { console.warn('[ChessKidoo DB] Expense delete error:', e); }
+        } catch (e) { console.warn('[ChessKidoo DB] Expense delete error:', e); }
       }
       const list = getLocal('expenses') || [];
       setLocal('expenses', list.filter(e => e.id !== id));
@@ -516,7 +516,7 @@
           const { data, error } = await q;
           if (!error && data) { setLocal('resources', data); return data; }
           markSupabaseFailed();
-        } catch(e) { markSupabaseFailed(); }
+        } catch (e) { markSupabaseFailed(); }
       }
       const local = getLocal('resources') || [];
       return batch ? local.filter(r => String(r.batch) === String(batch)) : local;
@@ -527,7 +527,7 @@
         try {
           const { error } = await window.supabaseClient.from('resources').upsert(resource);
           if (error) console.warn('[ChessKidoo DB] Resource save error:', error);
-        } catch(e) { console.warn('[ChessKidoo DB] Resource save error:', e); }
+        } catch (e) { console.warn('[ChessKidoo DB] Resource save error:', e); }
       }
       const list = getLocal('resources') || [];
       const idx = list.findIndex(r => r.id === resource.id);
@@ -538,7 +538,7 @@
     },
     async deleteResource(id) {
       if (canUseSupabase()) {
-        try { await window.supabaseClient.from('resources').delete().eq('id', id); } catch(e) {}
+        try { await window.supabaseClient.from('resources').delete().eq('id', id); } catch (e) { }
       }
       const list = getLocal('resources') || [];
       setLocal('resources', list.filter(r => r.id !== id));
@@ -555,7 +555,7 @@
           const { data, error } = await q;
           if (!error && data) { localStorage.setItem('ck_meetings', JSON.stringify(data)); return data; }
           markSupabaseFailed();
-        } catch(e) { markSupabaseFailed(); }
+        } catch (e) { markSupabaseFailed(); }
       }
       return JSON.parse(localStorage.getItem('ck_meetings') || '[]');
     },
@@ -565,7 +565,7 @@
         try {
           const { error } = await window.supabaseClient.from('meetings').upsert(meeting);
           if (error) console.warn('[ChessKidoo DB] Meeting save error:', error);
-        } catch(e) { console.warn('[ChessKidoo DB] Meeting save error:', e); }
+        } catch (e) { console.warn('[ChessKidoo DB] Meeting save error:', e); }
       }
       const list = JSON.parse(localStorage.getItem('ck_meetings') || '[]');
       const idx = list.findIndex(m => m.id === meeting.id);
@@ -576,7 +576,7 @@
     },
     async deleteMeeting(id) {
       if (canUseSupabase()) {
-        try { await window.supabaseClient.from('meetings').delete().eq('id', id); } catch(e) {}
+        try { await window.supabaseClient.from('meetings').delete().eq('id', id); } catch (e) { }
       }
       const list = JSON.parse(localStorage.getItem('ck_meetings') || '[]');
       localStorage.setItem('ck_meetings', JSON.stringify(list.filter(m => m.id !== id)));
@@ -588,19 +588,180 @@
         try {
           const { data, error } = await window.supabaseClient.from('classes').select('*');
           if (!error && data) { localStorage.setItem('ck_admin_classes', JSON.stringify(data)); return data; }
-        } catch(e) {}
+        } catch (e) { }
       }
       return JSON.parse(localStorage.getItem('ck_admin_classes') || '[]');
     },
     async saveClass(cls) {
       if (canUseSupabase()) {
-        try { await window.supabaseClient.from('classes').upsert(cls); } catch(e) {}
+        try { await window.supabaseClient.from('classes').upsert(cls); } catch (e) { }
       }
       const list = JSON.parse(localStorage.getItem('ck_admin_classes') || '[]');
       const idx = list.findIndex(c => c.id === cls.id);
       if (idx !== -1) list[idx] = cls; else list.push(cls);
       localStorage.setItem('ck_admin_classes', JSON.stringify(list));
       return cls;
+    },
+    async deleteClass(classId) {
+      if (canUseSupabase()) {
+        try { await window.supabaseClient.from('classes').delete().eq('id', classId); } catch (e) { }
+      }
+      const list = JSON.parse(localStorage.getItem('ck_admin_classes') || '[]');
+      localStorage.setItem('ck_admin_classes', JSON.stringify(list.filter(c => c.id !== classId)));
+    },
+
+    // --- NEW: MONTHLY REPORTS ---
+    async getMonthlyReports(studentId = null) {
+      if (canUseSupabase()) {
+        try {
+          let query = window.supabaseClient.from('monthly_reports').select('*');
+          if (studentId) query = query.eq('studentId', studentId);
+          const { data, error } = await query.order('created_at', { ascending: false });
+          if (!error && data) { localStorage.setItem('ck_monthly_reports', JSON.stringify(data)); return data; }
+        } catch (e) { }
+      }
+      const all = JSON.parse(localStorage.getItem('ck_monthly_reports') || '[]');
+      if (studentId) return all.filter(r => r.studentId === studentId);
+      return all;
+    },
+    async saveMonthlyReport(report) {
+      if (canUseSupabase()) {
+        try { await window.supabaseClient.from('monthly_reports').upsert(report); } catch (e) { }
+      }
+      const all = JSON.parse(localStorage.getItem('ck_monthly_reports') || '[]');
+      const idx = all.findIndex(r => r.id === report.id);
+      if (idx !== -1) all[idx] = report; else all.push(report);
+      localStorage.setItem('ck_monthly_reports', JSON.stringify(all));
+    },
+
+    // --- NEW: PUZZLE SCORES ---
+    async getPuzzleScores(userId = null) {
+      if (canUseSupabase()) {
+        try {
+          let query = window.supabaseClient.from('puzzle_scores').select('*');
+          if (userId) query = query.eq('userId', userId);
+          const { data, error } = await query;
+          if (!error && data) { localStorage.setItem('ck_puzzle_scores', JSON.stringify(data)); return data; }
+        } catch (e) { }
+      }
+      const all = JSON.parse(localStorage.getItem('ck_puzzle_scores') || '[]');
+      if (userId) return all.filter(s => s.userId === userId);
+      return all;
+    },
+    async savePuzzleScore(score) {
+      if (canUseSupabase()) {
+        try { await window.supabaseClient.from('puzzle_scores').upsert(score); } catch (e) { }
+      }
+      const all = JSON.parse(localStorage.getItem('ck_puzzle_scores') || '[]');
+      all.push(score);
+      localStorage.setItem('ck_puzzle_scores', JSON.stringify(all));
+    },
+
+    // --- NEW: COACH ATTENDANCE ---
+    async getCoachAttendance(coachId = null) {
+      if (canUseSupabase()) {
+        try {
+          let query = window.supabaseClient.from('coach_attendance').select('*');
+          if (coachId) query = query.eq('coachId', coachId);
+          const { data, error } = await query;
+          if (!error && data) { localStorage.setItem('ck_coach_attendance', JSON.stringify(data)); return data; }
+        } catch(e) {}
+      }
+      const all = JSON.parse(localStorage.getItem('ck_coach_attendance') || '[]');
+      if (coachId) return all.filter(a => a.coachId === coachId);
+      return all;
+    },
+    async saveCoachAttendance(record) {
+      if (!record.id) record.id = 'ca-' + Date.now();
+      if (canUseSupabase()) {
+        try { await window.supabaseClient.from('coach_attendance').upsert(record); } catch(e) {}
+      }
+      const all = JSON.parse(localStorage.getItem('ck_coach_attendance') || '[]');
+      const idx = all.findIndex(a => a.id === record.id);
+      if (idx !== -1) all[idx] = record; else all.push(record);
+      localStorage.setItem('ck_coach_attendance', JSON.stringify(all));
+      return record;
+    },
+
+    /* ── Assignments ── */
+    async getAssignments() {
+      if (canUseSupabase()) {
+        try {
+          const { data, error } = await window.supabaseClient.from('assignments').select('*').order('created_at', { ascending: false });
+          if (!error && data) { localStorage.setItem('ck_assignments', JSON.stringify(data)); return data; }
+        } catch(e) {}
+      }
+      return JSON.parse(localStorage.getItem('ck_assignments') || '[]');
+    },
+    async saveAssignment(a) {
+      if (!a.id) a.id = 'as-' + Date.now();
+      if (canUseSupabase()) {
+        try { await window.supabaseClient.from('assignments').upsert(a); } catch(e) {}
+      }
+      const all = JSON.parse(localStorage.getItem('ck_assignments') || '[]');
+      const idx = all.findIndex(x => x.id === a.id);
+      if (idx !== -1) all[idx] = a; else all.unshift(a);
+      localStorage.setItem('ck_assignments', JSON.stringify(all));
+      return a;
+    },
+    async deleteAssignment(id) {
+      if (canUseSupabase()) {
+        try { await window.supabaseClient.from('assignments').delete().eq('id', id); } catch(e) {}
+      }
+      const all = JSON.parse(localStorage.getItem('ck_assignments') || '[]');
+      const filtered = all.filter(x => x.id !== id);
+      localStorage.setItem('ck_assignments', JSON.stringify(filtered));
+    },
+
+    /* ── Submissions ── */
+    async getSubmissions(assignmentId = null, studentId = null) {
+      if (canUseSupabase()) {
+        try {
+          let query = window.supabaseClient.from('hw_submissions').select('*');
+          if (assignmentId) query = query.eq('assignment_id', assignmentId);
+          if (studentId)    query = query.eq('student_id', studentId);
+          const { data, error } = await query;
+          if (!error && data) { localStorage.setItem('ck_hw_submissions', JSON.stringify(data)); return data; }
+        } catch(e) {}
+      }
+      const all = JSON.parse(localStorage.getItem('ck_hw_submissions') || '[]');
+      if (assignmentId && studentId) return all.filter(s => s.assignment_id === assignmentId && s.student_id === studentId);
+      if (assignmentId) return all.filter(s => s.assignment_id === assignmentId);
+      if (studentId)    return all.filter(s => s.student_id === studentId);
+      return all;
+    },
+    async saveSubmission(s) {
+      if (!s.id) s.id = 'sub-' + Date.now();
+      if (canUseSupabase()) {
+        try { await window.supabaseClient.from('hw_submissions').upsert(s); } catch(e) {}
+      }
+      const all = JSON.parse(localStorage.getItem('ck_hw_submissions') || '[]');
+      const idx = all.findIndex(x => x.id === s.id || (x.assignment_id === s.assignment_id && x.student_id === s.student_id));
+      if (idx !== -1) all[idx] = s; else all.push(s);
+      localStorage.setItem('ck_hw_submissions', JSON.stringify(all));
+      return s;
+    },
+
+    /* ── Feedback ── */
+    async getFeedback() {
+      if (canUseSupabase()) {
+        try {
+          const { data, error } = await window.supabaseClient.from('feedback').select('*').order('created_at', { ascending: false });
+          if (!error && data) { localStorage.setItem('ck_feedback', JSON.stringify(data)); return data; }
+        } catch(e) {}
+      }
+      return JSON.parse(localStorage.getItem('ck_feedback') || '[]');
+    },
+    async saveFeedback(f) {
+      if (!f.id) f.id = 'fb-' + Date.now();
+      if (canUseSupabase()) {
+        try { await window.supabaseClient.from('feedback').upsert(f); } catch(e) {}
+      }
+      const all = JSON.parse(localStorage.getItem('ck_feedback') || '[]');
+      const idx = all.findIndex(x => x.id === f.id);
+      if (idx !== -1) all[idx] = f; else all.unshift(f);
+      localStorage.setItem('ck_feedback', JSON.stringify(all));
+      return f;
     }
   };
 
@@ -642,7 +803,7 @@
       }
       const notes = JSON.parse(localStorage.getItem('ck_coach_notes') || '[]');
       if (!studentName) return notes;
-      return notes.filter(n => n.student.toLowerCase() === studentName.toLowerCase()).reverse();
+      return notes.filter(n => (n.student || '').toLowerCase() === studentName.toLowerCase()).reverse();
     }
   };
 
@@ -737,15 +898,16 @@
     },
 
     _rows(users, creds) {
+      const _e = CK.esc || (s => s);
       return users.map(u => `
-        <tr data-name="${(u.full_name||'').toLowerCase()}" data-email="${(u.email||'').toLowerCase()}" data-role="${u.role}">
-          <td style="font-weight:600">${u.full_name || '—'}</td>
-          <td style="font-family:monospace;font-size:0.82rem">${u.email || '—'}</td>
-          <td><span class="p-badge p-badge-${u.role==='coach'?'blue':u.role==='parent'?'teal':'green'}">${u.role}</span></td>
+        <tr data-name="${_e((u.full_name||'').toLowerCase())}" data-email="${_e((u.email||'').toLowerCase())}" data-role="${_e(u.role)}">
+          <td style="font-weight:600">${_e(u.full_name || '—')}</td>
+          <td style="font-family:monospace;font-size:0.82rem">${_e(u.email || '—')}</td>
+          <td><span class="p-badge p-badge-${u.role==='coach'?'blue':u.role==='parent'?'teal':'green'}">${_e(u.role)}</span></td>
           <td>${u.email && creds[u.email.toLowerCase()] ? '<span class="p-badge p-badge-green">✓ Active</span>' : '<span class="p-badge p-badge-red">No Access</span>'}</td>
           <td>
-            ${u.email ? `<button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.accessManager.setDialog('${u.email}','${u.full_name}')">🔑 Set Password</button>` : ''}
-            ${u.email && creds[u.email.toLowerCase()] ? `<button class="p-btn p-btn-ghost p-btn-sm" style="color:var(--p-danger)" onclick="CK.accessManager.revokeAccess('${u.email}')">✕ Revoke</button>` : ''}
+            ${u.email ? `<button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.accessManager.setDialog('${_e(u.email?.replace(/'/g,'&apos;'))}','${_e((u.full_name||'').replace(/'/g,'&apos;'))}')">🔑 Set Password</button>` : ''}
+            ${u.email && creds[u.email.toLowerCase()] ? `<button class="p-btn p-btn-ghost p-btn-sm" style="color:var(--p-danger)" onclick="CK.accessManager.revokeAccess('${_e(u.email?.replace(/'/g,'&apos;'))}')">✕ Revoke</button>` : ''}
           </td>
         </tr>`).join('');
     },

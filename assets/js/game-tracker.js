@@ -276,18 +276,19 @@ CK.gameTracker = (() => {
   }
 
   function _gameCard(g) {
+    const _e = CK.esc || (s => s);
     const date = new Date(g.date).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
     return `
       <div class="gt-game-card">
         <div class="gt-game-color-strip" style="background:${g.color === 'white' ? '#f0d9b5' : '#b58863'}"></div>
         <div class="gt-game-info">
-          <div class="gt-game-title">${g.title || 'Untitled Game'}</div>
+          <div class="gt-game-title">${_e(g.title || 'Untitled Game')}</div>
           <div class="gt-game-meta">
-            ${g.opening ? `<span class="p-badge p-badge-blue" style="font-size:.68rem;">${g.opening}</span>` : ''}
+            ${g.opening ? `<span class="p-badge p-badge-blue" style="font-size:.68rem;">${_e(g.opening)}</span>` : ''}
             <span style="font-size:.75rem;color:rgba(255,255,255,.4);">${date}</span>
-            ${g.moves ? `<span style="font-size:.75rem;color:rgba(255,255,255,.4);">${g.moves} moves</span>` : ''}
+            ${g.moves ? `<span style="font-size:.75rem;color:rgba(255,255,255,.4);">${_e(String(g.moves))} moves</span>` : ''}
           </div>
-          ${g.notes ? `<div class="gt-game-notes">💡 ${g.notes}</div>` : ''}
+          ${g.notes ? `<div class="gt-game-notes">💡 ${_e(g.notes)}</div>` : ''}
         </div>
         <div class="gt-game-result">
           ${_resultLabel(g)}

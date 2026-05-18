@@ -78,12 +78,13 @@ CK.admin = {
   },
 
   async populateCoachSelects() {
+    const _e = CK.esc || (s => s);
     const coaches = (await CK.db.getProfiles('coach')) || [];
     const coachSelects = ['admin_s_coach', 'admin_cl_coach'];
     coachSelects.forEach(id => {
       const el = document.getElementById(id);
       if (el) {
-        el.innerHTML = coaches.map(c => `<option value="${c.full_name}">${c.full_name}</option>`).join('');
+        el.innerHTML = coaches.map(c => `<option value="${_e(c.full_name)}">${_e(c.full_name)}</option>`).join('');
       }
     });
   },
@@ -92,7 +93,9 @@ CK.admin = {
     const students = (await CK.db.getProfiles('student')) || [];
     const coaches  = (await CK.db.getProfiles('coach'))   || [];
 
-    const totalRevenue = students.reduce((sum, s) => sum + (parseInt(s.fee) || 0), 0);
+    const totalRevenue = students
+      .filter(s => s.status === 'Paid')
+      .reduce((sum, s) => sum + (parseInt((s.fee || '0').toString().replace(/[^0-9]/g, '')) || 0), 0);
     const s = {
       students: students.length,
       coaches: coaches.length,
@@ -161,7 +164,7 @@ CK.admin = {
         ? { time: _ago(latestTournament.date || latestTournament.created_at), event: `Tournament on record: ${latestTournament.name} — ${latestTournament.status}`, user: 'Admin', icon: '🏆', status: 'p-badge-gold', label: 'Event' }
         : { time: 'recently', event: 'Tournament management ready — no events scheduled yet', user: 'Admin', icon: '🏆', status: 'p-badge-gold', label: 'Event' },
       latestExpense
-        ? { time: _ago(latestExpense.date || latestExpense.created_at), event: `Expenditure recorded: ${latestExpense.description} — ₹${latestExpense.amount}`, user: 'Admin', icon: '📋', status: 'p-badge-yellow', label: 'Expense' }
+        ? { time: _ago(latestExpense.date || latestExpense.created_at), event: `Expenditure recorded: ${latestExpense.description} — ${latestExpense.amount}`, user: 'Admin', icon: '📋', status: 'p-badge-yellow', label: 'Expense' }
         : { time: 'recently', event: 'Expense ledger clear — no outstanding records', user: 'Admin', icon: '📋', status: 'p-badge-yellow', label: 'Expense' },
       { time: 'Yesterday', event: 'Attendance records updated for all active batches', user: 'Admin', icon: '✅', status: 'p-badge-teal', label: 'Attendance' }
     ].filter(Boolean);
@@ -181,7 +184,7 @@ CK.admin = {
     `).join('');
   },
 
-  showPanel(panelId) {
+  async showPanel(panelId) {
     document.querySelectorAll('#admin-page .p-panel').forEach(p => p.classList.remove('active'));
     
     const target = document.getElementById(`p-panel-${panelId}`);
@@ -233,13 +236,13 @@ CK.admin = {
     if (panelId === 'reports')        this.renderReports();
     if (panelId === 'students')       this.loadStudents();
     if (panelId === 'coaches')        this.loadCoaches();
-    if (panelId === 'classes')        { this.loadClasses(); CK.classSystem?.renderAdminClasses('adminAllClasses'); }
+    if (panelId === 'classes')        { this.loadClasses(); if (CK.classSystem) await CK.classSystem.renderAdminClasses('adminAllClasses'); }
     if (panelId === 'attendance')     this.loadAttendance();
     if (panelId === 'files')          this.loadFiles();
+    if (panelId === 'feedback')       await CK.parents?.renderAllFeedback('adminFeedbackList');
     if (panelId === 'access')         CK.accessManager?.renderAccessTable('adminAccessTable');
-    if (panelId === 'feedback')       CK.parents?.renderAllFeedback('adminFeedbackList');
-    if (panelId === 'schedule')       CK.schedulePro?.renderAdminSchedule('adminAllSchedule');
-    if (panelId === 'coachattendance') CK.classSystem?.renderCoachAttendanceReport('adminCoachAttnReport');
+    if (panelId === 'schedule')       if (CK.schedulePro) await CK.schedulePro.renderAdminSchedule('adminAllSchedule');
+    if (panelId === 'coachattendance') if (CK.classSystem) await CK.classSystem.renderCoachAttendanceReport('adminCoachAttnReport');
     if (panelId === 'tournaments') this.loadTournaments();
     if (panelId === 'settings') this.loadSettings();
   },
@@ -368,14 +371,14 @@ CK.admin = {
 
     const coaches  = (await CK.db.getProfiles('coach'))   || [];
     const students = (await CK.db.getProfiles('student')) || [];
-    const allNotes  = (await CK.db.getReviews()) || [];
+    const allNotes  = (await CK.tracker.getReviews()) || [];
     const attnLogs = (await CK.db.getAttendance()) || [];
     const thisMonth = new Date().getMonth() + 1;
     const thisYear  = new Date().getFullYear();
     const thisMonthPrefix = `${thisYear}-${String(thisMonth).padStart(2, '0')}`;
 
     if (!coaches.length) {
-      el.innerHTML = '<div class="cls-empty">?? No coaches registered yet.</div>';
+      el.innerHTML = '<div class="cls-empty">📊 No coaches registered yet.</div>';
       return;
     }
 
@@ -428,12 +431,13 @@ CK.admin = {
 
     const list = data || (await CK.db.getProfiles('student')) || [];
     if (list.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="11"><div class="cls-empty">?? No students found matching your criteria.</div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="11"><div class="cls-empty">🎓 No students found matching your criteria.</div></td></tr>';
       return;
     }
 
+    const _e = CK.esc || (s => s);
     tbody.innerHTML = list.map((s, i) => {
-      const levelStr = `${s.level || 'Beginner'} - ${s.rating || 800} ELO`;
+      const levelStr = `${_e(s.level || 'Beginner')} - ${_e(String(s.rating || 800))} ELO`;
       const coach = s.coach || 'ARIVUSELVAM';
       const joinDate = s.join_date || '2026-04-20';
       const session = s.session || 'Group';
@@ -477,17 +481,17 @@ CK.admin = {
         <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
           <td style="color:var(--p-text-muted)">${i + 1}</td>
           <td style="font-weight:600; color:#fff;">
-            <div>${s.full_name}</div>
+            <div>${_e(s.full_name)}</div>
             <div style="font-size:0.75rem; color:var(--p-text-muted);">${status === 'Waiting List' ? 'Waiting List' : 'Enrolled & Attending'}</div>
           </td>
           <td>${levelStr}</td>
-          <td>${coach}</td>
-          <td>${joinDate}</td>
-          <td>${session}</td>
-          <td>${schedule}</td>
-          <td style="font-weight:700; color:var(--p-gold)">₹${fee}</td>
-          <td><span class="p-badge ${statusBadge}">${status}</span></td>
-          <td>${dueDate}</td>
+          <td>${_e(coach)}</td>
+          <td>${_e(joinDate)}</td>
+          <td>${_e(session)}</td>
+          <td>${_e(schedule)}</td>
+          <td style="font-weight:700; color:var(--p-gold)">₹${_e(String(fee))}</td>
+          <td><span class="p-badge ${statusBadge}">${_e(status)}</span></td>
+          <td>${_e(dueDate)}</td>
           <td style="white-space:nowrap;">
             <div style="display:flex; gap:6px; flex-wrap:nowrap; align-items:center; white-space:nowrap;">
               ${actionBtns}
@@ -530,6 +534,7 @@ CK.admin = {
   async viewStudentInfo(id) {
     const s = await CK.db.getProfile(id);
     if (!s) return;
+    const _e = CK.esc || (s => s);
     const note = s.last_note || 'No assessment notes logged yet.';
     const logs = (await CK.db.getAttendance(id)) || [];
     const present = logs.filter(l => l.status === 'present').length;
@@ -541,23 +546,23 @@ CK.admin = {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">
           <div style="background:var(--p-surface3);padding:14px;border-radius:10px;">
             <div style="font-size:.72rem;color:var(--p-text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Student</div>
-            <div style="font-weight:700;font-size:1rem;color:#fff;">${s.full_name}</div>
-            <div style="font-size:.82rem;color:var(--p-text-muted);margin-top:2px;">${s.email || '—'}</div>
+            <div style="font-weight:700;font-size:1rem;color:#fff;">${_e(s.full_name)}</div>
+            <div style="font-size:.82rem;color:var(--p-text-muted);margin-top:2px;">${_e(s.email || '—')}</div>
           </div>
           <div style="background:var(--p-surface3);padding:14px;border-radius:10px;">
             <div style="font-size:.72rem;color:var(--p-text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Rating & Level</div>
-            <div style="font-weight:700;font-size:1rem;color:var(--p-gold);">${s.rating || 800} ELO</div>
-            <div style="font-size:.82rem;color:var(--p-text-muted);margin-top:2px;">${s.level || 'Beginner'}</div>
+            <div style="font-weight:700;font-size:1rem;color:var(--p-gold);">${_e(String(s.rating || 800))} ELO</div>
+            <div style="font-size:.82rem;color:var(--p-text-muted);margin-top:2px;">${_e(s.level || 'Beginner')}</div>
           </div>
           <div style="background:var(--p-surface3);padding:14px;border-radius:10px;">
             <div style="font-size:.72rem;color:var(--p-text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Coach & Batch</div>
-            <div style="font-weight:700;font-size:1rem;color:#fff;">${s.coach || '—'}</div>
-            <div style="font-size:.82rem;color:var(--p-text-muted);margin-top:2px;">${s.batch || 'Evening'} · ${s.schedule || '17:00'}</div>
+            <div style="font-weight:700;font-size:1rem;color:#fff;">${_e(s.coach || '—')}</div>
+            <div style="font-size:.82rem;color:var(--p-text-muted);margin-top:2px;">${_e(s.batch || 'Evening')} · ${_e(s.schedule || '17:00')}</div>
           </div>
           <div style="background:var(--p-surface3);padding:14px;border-radius:10px;">
             <div style="font-size:.72rem;color:var(--p-text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Fee Status</div>
-            <div style="font-weight:700;font-size:1rem;color:${statusBadgeColor};">₹${s.fee || '—'} · ${s.status || 'Pending'}</div>
-            <div style="font-size:.82rem;color:var(--p-text-muted);margin-top:2px;">Due: ${s.due_date || '—'}</div>
+            <div style="font-weight:700;font-size:1rem;color:${statusBadgeColor};">₹${_e(String(s.fee || '—'))} · ${_e(s.status || 'Pending')}</div>
+            <div style="font-size:.82rem;color:var(--p-text-muted);margin-top:2px;">Due: ${_e(s.due_date || '—')}</div>
           </div>
           <div style="background:var(--p-surface3);padding:14px;border-radius:10px;">
             <div style="font-size:.72rem;color:var(--p-text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Attendance</div>
@@ -566,13 +571,13 @@ CK.admin = {
           </div>
           <div style="background:var(--p-surface3);padding:14px;border-radius:10px;">
             <div style="font-size:.72rem;color:var(--p-text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Puzzles Solved</div>
-            <div style="font-weight:700;font-size:1rem;color:var(--p-blue);">${s.puzzle || 0}</div>
-            <div style="font-size:.82rem;color:var(--p-text-muted);margin-top:2px;">Joined: ${s.join_date || '—'}</div>
+            <div style="font-weight:700;font-size:1rem;color:var(--p-blue);">${_e(String(s.puzzle || 0))}</div>
+            <div style="font-size:.82rem;color:var(--p-text-muted);margin-top:2px;">Joined: ${_e(s.join_date || '—')}</div>
           </div>
         </div>
         <div style="background:var(--p-surface3);padding:14px;border-radius:10px;border-left:3px solid var(--p-gold-dim);">
           <div style="font-size:.72rem;color:var(--p-text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">Latest Coach Note</div>
-          <div style="font-size:.88rem;color:rgba(255,255,255,.75);font-style:italic;line-height:1.55;">"${note}"</div>
+          <div style="font-size:.88rem;color:rgba(255,255,255,.75);font-style:italic;line-height:1.55;">"${_e(note)}"</div>
         </div>
       `;
       CK.openModal('adminStudentInfoModal');
@@ -650,22 +655,32 @@ CK.admin = {
     if (!tbody) return;
 
     const coaches = (await CK.db.getProfiles('coach')) || [];
-    tbody.innerHTML = coaches.map(c => {
-      const spec = c.puzzle || 'Opening & Endgames';
-      const fide = c.level === 'Advanced' ? '2100' : '1850';
-      const batches = c.batches || 'Group 17:00, Weekend';
-      const timetable = c.timetable || 'Mon-Fri 4PM-7PM';
-      const revenue = c.revenue || '₹18,400';
-      const classesCount = c.classes || 18;
+    const allStudents = (await CK.db.getProfiles('student')) || [];
 
+    tbody.innerHTML = coaches.map(c => {
+      const spec = c.puzzle || c.specialty || 'Chess Strategy';
+      const fide = c.rating ? c.rating + ' ELO' : (c.fide_rating || '—');
+      const batches = c.batches || c.schedule || '—';
+      const timetable = c.timetable || c.availability || '—';
+      const myStudents = allStudents.filter(s =>
+        s.coach && s.coach.toLowerCase() === (c.full_name || '').toLowerCase()
+      );
+      const paidRevenue = myStudents.reduce((sum, s) => {
+        if (s.status !== 'Paid') return sum;
+        return sum + (parseInt((s.fee || '0').toString().replace(/[^0-9]/g, '')) || 0);
+      }, 0);
+      const revenue = paidRevenue > 0 ? '₹' + paidRevenue.toLocaleString('en-IN') : '—';
+      const classesCount = myStudents.length;
+
+      const _e = CK.esc || (s => s);
       return `
         <tr style="cursor:pointer;" onclick="CK.admin.viewCoachDetails('${c.id}')">
-          <td>#${c.userid || 'C01'}</td>
-          <td style="font-weight:600; color:#fff;">${c.full_name}</td>
-          <td style="font-weight:700; color:var(--p-teal)">${fide}</td>
-          <td>${spec}</td>
-          <td><span class="p-badge p-badge-blue">${batches}</span></td>
-          <td style="color:var(--p-text-muted)">${timetable}</td>
+          <td>#${_e(c.userid || 'C01')}</td>
+          <td style="font-weight:600; color:#fff;">${_e(c.full_name)}</td>
+          <td style="font-weight:700; color:var(--p-teal)">${_e(fide)}</td>
+          <td>${_e(spec)}</td>
+          <td><span class="p-badge p-badge-blue">${_e(batches)}</span></td>
+          <td style="color:var(--p-text-muted)">${_e(timetable)}</td>
           <td style="font-weight:700; color:var(--p-gold)">${revenue}</td>
           <td>${classesCount}</td>
           <td>
@@ -728,7 +743,7 @@ CK.admin = {
     setExp('adminExpNetProfit', '₹' + Math.max(0, totalIncome - totalExp).toLocaleString());
 
     if (expList.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7"><div class="cls-empty">?? No expenditures recorded yet.</div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7"><div class="cls-empty">💸 No expenditures recorded yet.</div></td></tr>';
       return;
     }
 
@@ -813,7 +828,7 @@ CK.admin = {
         <td>${cl.schedule}</td>
         <td>${cl.students} / ${cl.max}</td>
         <td><div class="p-progress-bar"><div class="p-progress-fill" style="width:${(cl.students/cl.max)*100}%"></div></div></td>
-        <td><button class="p-btn p-btn-ghost p-btn-sm">Manage</button></td>
+        <td><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.openClassModal('${cl.id}')">Manage</button></td>
       </tr>
     `).join('');
   },
@@ -833,20 +848,21 @@ CK.admin = {
       attendanceMap[l.userid] = l.status;
     });
 
+    const _e = CK.esc || (s => s);
     tbody.innerHTML = students.map((s, idx) => {
       const currentStatus = attendanceMap[s.id] || 'pending';
       const levelMap = { Beginner: 'Beginner Basics', Intermediate: 'Intermediate Strategy', Advanced: 'Advanced Tournament Prep', 'Tournament Ready': 'Elite Preparation' };
       const classTitle = levelMap[s.level] || s.level || 'Beginner Basics';
-      const coachName = s.coach || 'Sarah Chess';
+      const coachName = s.coach || '—';
       const scheduleTime = s.schedule || '17:00';
       const batchLabel = s.batch || 'Evening';
 
       return `
         <tr>
-          <td style="font-weight:600">${s.full_name}</td>
-          <td>${classTitle}</td>
-          <td>${coachName}</td>
-          <td>${scheduleTime} (${batchLabel})</td>
+          <td style="font-weight:600">${_e(s.full_name)}</td>
+          <td>${_e(classTitle)}</td>
+          <td>${_e(coachName)}</td>
+          <td>${_e(scheduleTime)} (${_e(batchLabel)})</td>
           <td>60 mins</td>
           <td>
             <select class="p-form-control" style="width:auto; padding:4px 8px; font-size:0.8rem; height:auto;" 
@@ -935,6 +951,7 @@ CK.admin = {
       <div class="live-section-title">👨‍🏫 Coach Status (${coaches.length})</div>
       <div class="live-coach-grid">
         ${coaches.map(c => {
+          const _e = CK.esc || (s => s);
           const attendedToday = coachAttn.some(a => a.coachId === c.id && a.date === todayStr);
           const presAge = _presAge(c.id);
           const isOnline = presAge === 'Active now' || presAge?.includes('m ago') && parseInt(presAge) < 10;
@@ -947,14 +964,14 @@ CK.admin = {
                 ${isOnline ? '<span style="position:absolute;bottom:0;right:0;width:9px;height:9px;background:var(--p-teal);border-radius:50%;border:2px solid var(--p-surface2);"></span>' : ''}
               </div>
               <div class="p-live-info">
-                <div class="p-live-name">${c.full_name}</div>
-                <div class="p-live-sub">${myStudents} students · ${c.puzzle || 'Coach'}${presAge ? ' · ' + presAge : ''}</div>
+                <div class="p-live-name">${_e(c.full_name)}</div>
+                <div class="p-live-sub">${myStudents} students · ${_e(String(c.puzzle || 'Coach'))}${presAge ? ' · ' + _e(presAge) : ''}</div>
                 <div class="p-live-status">
                   <span class="p-status-dot ${attendedToday ? 'online' : 'offline'}"></span>
                   ${attendedToday ? 'Active Today' : 'No Class Today'}
                 </div>
               </div>
-              <button class="p-icon-btn" title="View Coach Details" onclick="CK.admin.viewCoachInfo && CK.admin.viewCoachInfo('${c.id}')">📊</button>
+              <button class="p-icon-btn" title="View Coach Details" onclick="CK.admin.viewCoachDetails && CK.admin.viewCoachDetails('${c.id}')">📊</button>
             </div>`;
         }).join('')}
       </div>` : '';
@@ -964,20 +981,19 @@ CK.admin = {
     const pendingStudents = students.filter(s => s.status !== 'Paid');
 
     const makeStudentCard = (s) => {
+      const _e = CK.esc || (s => s);
       const feeStatus = s.status || 'Pending';
       const dotClass  = feeStatus === 'Paid' ? 'online' : feeStatus === 'Due' ? 'away' : 'offline';
       const dotLabel  = feeStatus === 'Paid' ? 'Paid & Active' : feeStatus === 'Due' ? 'Fee Overdue' : feeStatus === 'Waiting List' ? 'Waitlisted' : 'Pending';
       const initial   = s.full_name?.[0]?.toUpperCase() || '♛';
-      const attnSum   = CK.classSystem?.getStudentAttendanceSummary(s.id);
-      const attnPct   = attnSum ? attnSum.pct + '%' : '—';
       const presAge   = _presAge(s.id) || dotLabel;
       return `
         <div class="p-live-card ${dotClass}" style="transition:all .2s;">
           <div class="p-live-avatar" style="background:var(--p-surface3);color:var(--p-gold)">${initial}</div>
           <div class="p-live-info">
-            <div class="p-live-name">${s.full_name}</div>
-            <div class="p-live-sub">${s.level || 'Beginner'} · ${s.rating || 800} ELO · Att: ${attnPct}</div>
-            <div class="p-live-status"><span class="p-status-dot ${dotClass}"></span> ${presAge}</div>
+            <div class="p-live-name">${_e(s.full_name)}</div>
+            <div class="p-live-sub">${_e(s.level || 'Beginner')} · ${_e(String(s.rating || 800))} ELO</div>
+            <div class="p-live-status"><span class="p-status-dot ${dotClass}"></span> ${_e(presAge)}</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
             <button class="p-icon-btn" title="View Profile" onclick="CK.admin.viewStudentInfo('${s.id}')">👁️</button>
@@ -1066,7 +1082,7 @@ CK.admin = {
     if (!tbody) return;
     const students = (await CK.db.getProfiles('student')) || [];
     if (!students.length) {
-      tbody.innerHTML = '<tr><td colspan="7"><div class="cls-empty">?? No students assigned to you yet.</div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7"><div class="cls-empty">📋 No students enrolled yet.</div></td></tr>';
       return;
     }
     const allLogs = (await CK.db.getAttendance()) || [];
@@ -1087,8 +1103,9 @@ CK.admin = {
     const totalPuzzles = students.reduce((s, u) => s + (parseInt(u.puzzle) || 0), 0);
     const paidCount = students.filter(s => s.status === 'Paid').length;
 
+    const _e = CK.esc || (s => s);
     tbody.innerHTML = students.map(s => {
-      const note = s.last_note ? `"${s.last_note.slice(0, 60)}..."` : '—';
+      const note = s.last_note ? `"${_e(s.last_note.slice(0, 60))}..."` : '—';
       const statusBadge = s.status === 'Paid' ? 'p-badge-green' : s.status === 'Pending' ? 'p-badge-yellow' : s.status === 'Due' ? 'p-badge-red' : 'p-badge-ghost';
       const rating = s.rating || 800;
       const ratingColor = rating >= 1200 ? 'var(--p-gold)' : rating >= 900 ? 'var(--p-teal)' : 'var(--p-text-muted)';
@@ -1097,12 +1114,12 @@ CK.admin = {
       const attColor = attPct >= 90 ? 'var(--p-teal)' : attPct >= 70 ? 'var(--p-warn)' : 'var(--p-danger)';
       return `
         <tr>
-          <td style="font-weight:700;">${s.full_name}</td>
-          <td><span class="p-badge p-badge-blue" style="font-size:0.75rem;">${s.level || 'Beginner'}</span></td>
+          <td style="font-weight:700;">${_e(s.full_name)}</td>
+          <td><span class="p-badge p-badge-blue" style="font-size:0.75rem;">${_e(s.level || 'Beginner')}</span></td>
           <td style="font-weight:700; color:${ratingColor};">${rating} ELO</td>
           <td style="font-weight:700; color:${attColor};">${attPct}%</td>
           <td style="color:var(--p-text-muted);">${s.puzzle || 0}</td>
-          <td><span class="p-badge ${statusBadge}">${s.status || 'Paid'}</span></td>
+          <td><span class="p-badge ${statusBadge}">${_e(s.status || 'Paid')}</span></td>
           <td style="font-size:0.82rem; color:var(--p-text-muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${note}</td>
         </tr>
       `;
@@ -1122,7 +1139,7 @@ CK.admin = {
   closeModal(id) { CK.closeModal(id); },
 
   topAction() {
-    const panels = ['dashboard', 'live', 'students', 'coaches', 'classes', 'attendance', 'files', 'expenses'];
+    const panels = ['dashboard', 'live', 'students', 'coaches', 'classes', 'attendance', 'files', 'expenses', 'access', 'settings', 'reports', 'schedule', 'feedback', 'tournaments'];
     const activePanel = panels.find(p => {
       const el = document.getElementById(`p-panel-${p}`);
       return el && el.classList.contains('active');
@@ -1407,8 +1424,26 @@ CK.admin = {
 
   editCoach(id) { this.openCoachModal(id); },
 
-  async openClassModal() {
+  async openClassModal(classId = null) {
     await this.populateCoachSelects();
+    const setF = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
+    if (classId) {
+      const cls = this.classesDb.find(c => c.id === classId);
+      if (cls) {
+        setF('admin_cl_title', cls.title);
+        setF('admin_cl_level', cls.level);
+        setF('admin_cl_coach', cls.coach);
+        const parts = (cls.schedule || '').split(' ');
+        setF('admin_cl_day', parts[0] || '');
+        setF('admin_cl_time', parts[1] || '');
+        const saveBtn = document.getElementById('adminClassSaveBtn');
+        if (saveBtn) saveBtn.dataset.editId = classId;
+      }
+    } else {
+      ['admin_cl_title','admin_cl_level','admin_cl_coach','admin_cl_day','admin_cl_time'].forEach(id => setF(id, ''));
+      const saveBtn = document.getElementById('adminClassSaveBtn');
+      if (saveBtn) delete saveBtn.dataset.editId;
+    }
     this.openModal('adminClassModal');
   },
 
@@ -1417,16 +1452,25 @@ CK.admin = {
     const title = getV('admin_cl_title');
     if (!title) return CK.showToast('Class title is required', 'error');
 
+    const saveBtn = document.getElementById('adminClassSaveBtn');
+    const editId = saveBtn?.dataset.editId;
+    const existing = editId ? this.classesDb.find(c => c.id === editId) : null;
+
     const newClass = {
-      id: 'CL' + (this.classesDb.length + 1),
+      id: existing ? existing.id : 'CL' + (this.classesDb.length + 1),
       title: title,
       level:    getV('admin_cl_level') || 'Beginner',
       coach:    getV('admin_cl_coach'),
       schedule: getV('admin_cl_day') + ' ' + getV('admin_cl_time'),
-      students: 0,
-      max: 10
+      students: existing ? existing.students : 0,
+      max: existing ? existing.max : 10
     };
-    this.classesDb.push(newClass);
+    if (existing) {
+      const idx = this.classesDb.findIndex(c => c.id === editId);
+      if (idx !== -1) this.classesDb[idx] = newClass;
+    } else {
+      this.classesDb.push(newClass);
+    }
     await CK.db.saveClass(newClass);
     
     await this.loadClasses();

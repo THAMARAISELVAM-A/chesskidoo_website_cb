@@ -11,24 +11,26 @@ CK.classSystem = (() => {
   const SATTN_KEY    = 'ck_student_attendance'; // student attendance per class
 
   /* ─── Storage helpers ─── */
-  const getClasses     = () => JSON.parse(localStorage.getItem(CLASSES_KEY) || '[]');
-  const saveClasses    = d  => localStorage.setItem(CLASSES_KEY, JSON.stringify(d));
-  const getCoachAttn   = () => JSON.parse(localStorage.getItem(CATTN_KEY) || '[]');
-  const saveCoachAttn  = d  => localStorage.setItem(CATTN_KEY, JSON.stringify(d));
-  const getStudentAttn = () => JSON.parse(localStorage.getItem(SATTN_KEY) || '[]');
-  const saveStudentAttn= d  => localStorage.setItem(SATTN_KEY, JSON.stringify(d));
+  const getClasses     = async () => await CK.db.getClasses();
+  const saveClasses    = async d  => { /* handled in CK.db */ };
+  const getCoachAttn   = async () => await CK.db.getCoachAttendance();
+  const saveCoachAttn  = async d  => { /* handled in CK.db */ };
+  const getStudentAttn = async () => await CK.db.getAttendance(); // use main attendance table
+  const saveStudentAttn= async d  => { /* handled in CK.db */ };
   const uid            = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
   const today          = () => new Date().toISOString().split('T')[0];
 
   /* ─── seed default classes so coaches see something on first load ─── */
-  function _seed() {
-    if (getClasses().length) return;
-    saveClasses([
+  async function _seed() {
+    const existing = await getClasses();
+    if (existing.length) return;
+    const seedData = [
       { id:'cls1', coachId:'c1', coachName:'ARIVUSELVAM', title:'Beginner Fundamentals', level:'Beginner', batch:'Group', days:['Mon','Thu'], time:'17:00', duration:60, zoomLink:'https://meet.google.com/beg-ari-abc', studentIds:['s1','s8','s27'], maxStudents:10, active:true, createdAt: today() },
       { id:'cls2', coachId:'c2', coachName:'GYANASURYA',  title:'Weekend Tactics',        level:'Beginner', batch:'WEEKEND', days:['Sat','Sun'], time:'10:00', duration:90, zoomLink:'https://meet.google.com/gya-wk-xyz', studentIds:['s2','s9','s21'], maxStudents:10, active:true, createdAt: today() },
       { id:'cls3', coachId:'c3', coachName:'VISHNU',      title:'Intermediate Strategy',  level:'Intermediate', batch:'FRI&SAT', days:['Fri','Sat'], time:'16:00', duration:75, zoomLink:'https://meet.google.com/vis-int-str', studentIds:['s3','s14','s19'], maxStudents:8, active:true, createdAt: today() },
       { id:'cls4', coachId:'c7', coachName:'RANJITH',     title:'Advanced Openings',      level:'Advanced', batch:'Weekend', days:['Sat'], time:'09:00', duration:90, zoomLink:'https://meet.google.com/raj-adv-opn', studentIds:['s26','s35','s36'], maxStudents:6, active:true, createdAt: today() }
-    ]);
+    ];
+    for (const c of seedData) await CK.db.saveClass(c);
   }
   _seed();
 
@@ -36,19 +38,21 @@ CK.classSystem = (() => {
      COACH — CLASS MANAGEMENT
   ══════════════════════════════════════════════════════════════ */
 
-  function getCoachClasses(coachId) {
-    return getClasses().filter(c => c.coachId === coachId);
+  async function getCoachClasses(coachId) {
+    const all = await getClasses();
+    return all.filter(c => c.coachId === coachId);
   }
 
-  function renderCoachClasses(containerId, coachId) {
+  async function renderCoachClasses(containerId, coachId) {
     const el = document.getElementById(containerId);
     if (!el) return;
-    const classes = getCoachClasses(coachId);
+    const classes = await getCoachClasses(coachId);
     if (!classes.length) {
       el.innerHTML = `<div class="cls-empty">📭 No classes yet. Create your first class above.</div>`;
       return;
     }
-    const attnToday = getCoachAttn().filter(a => a.date === today());
+    const allAttn = await getCoachAttn();
+    const attnToday = allAttn.filter(a => a.date === today());
     el.innerHTML = classes.map(c => {
       const attended = attnToday.find(a => a.classId === c.id);
       const days = (c.days || []).join(', ');
@@ -81,7 +85,7 @@ CK.classSystem = (() => {
     }).join('');
   }
 
-  function createClass(data, coachId, coachName) {
+  async function createClass(data, coachId, coachName) {
     const cls = {
       id: uid(),
       coachId, coachName,
@@ -97,32 +101,26 @@ CK.classSystem = (() => {
       active: true,
       createdAt: today()
     };
-    const all = getClasses();
-    all.push(cls);
-    saveClasses(all);
+    await CK.db.saveClass(cls);
     CK.showToast(`Class "${cls.title}" created!`, 'success');
     return cls;
   }
 
-  function editClass(classId) {
-    const all = getClasses();
+  async function editClass(classId) {
+    const all = await getClasses();
     const cls = all.find(c => c.id === classId);
     if (!cls) return;
-    openClassModal(cls, (updated) => {
+    openClassModal(cls, async (updated) => {
       Object.assign(cls, updated);
-      saveClasses(all);
+      await CK.db.saveClass(cls);
       CK.showToast('Class updated!', 'success');
       if (window.CK && CK.coach) CK.coach.renderClassesPanel();
     });
   }
 
-  function deleteClass(classId) {
+  async function deleteClass(classId) {
     if (!confirm('Delete this class? This will also remove its attendance records.')) return;
-    saveClasses(getClasses().filter(c => c.id !== classId));
-    const cattn = getCoachAttn().filter(a => a.classId !== classId);
-    saveCoachAttn(cattn);
-    const sattn = getStudentAttn().filter(a => a.classId !== classId);
-    saveStudentAttn(sattn);
+    await CK.db.deleteClass(classId);
     CK.showToast('Class deleted.', 'success');
     if (window.CK && CK.coach) CK.coach.renderClassesPanel();
   }
@@ -201,14 +199,14 @@ CK.classSystem = (() => {
   }
 
   /* ─── Coach marks own attendance when joining a class ─── */
-  function markCoachAttendance(classId, coachId) {
-    const records = getCoachAttn();
+  async function markCoachAttendance(classId, coachId) {
+    const records = await getCoachAttn();
     const existing = records.find(r => r.classId === classId && r.date === today());
     if (existing) {
       CK.showToast('Attendance already marked for today!', 'info'); return;
     }
-    records.push({ id: uid(), coachId, classId, date: today(), joinedAt: new Date().toISOString() });
-    saveCoachAttn(records);
+    const record = { id: uid(), coachId, classId, date: today(), joinedAt: new Date().toISOString() };
+    await CK.db.saveCoachAttendance(record);
     CK.showToast('✅ Your attendance has been marked for today!', 'success');
     if (window.CK && CK.coach) CK.coach.renderClassesPanel();
   }
@@ -217,16 +215,17 @@ CK.classSystem = (() => {
      COACH — MARK STUDENT ATTENDANCE
   ══════════════════════════════════════════════════════════════ */
 
-  function renderAttendanceMarker(containerId, coachId, dateStr) {
+  async function renderAttendanceMarker(containerId, coachId, dateStr) {
     const el = document.getElementById(containerId);
     if (!el) return;
     const date = dateStr || today();
-    const classes = getCoachClasses(coachId);
+    const classes = await getCoachClasses(coachId);
     if (!classes.length) {
       el.innerHTML = `<div class="cls-empty">No classes to take attendance for.</div>`; return;
     }
-    const allStudents = JSON.parse(localStorage.getItem('ck_db_users') || '[]').filter(u => u.role === 'student');
-    const attnRecords = getStudentAttn().filter(a => a.date === date && a.coachId === coachId);
+    const allStudents = (await CK.db.getProfiles('student')) || [];
+    const allSAttn = await getStudentAttn();
+    const attnRecords = allSAttn.filter(a => a.date === date && a.coachId === coachId);
 
     el.innerHTML = `
       <div class="cls-attn-date-row">
@@ -240,15 +239,16 @@ CK.classSystem = (() => {
             <div class="cls-attn-class-title">📋 ${cls.title} <span class="p-badge p-badge-blue">${cls.days?.join(', ')} ${cls.time}</span></div>
             <div class="cls-attn-grid">
               ${classStudents.length ? classStudents.map(s => {
+                const _e = CK.esc || (s => s);
                 const rec = attnRecords.find(a => a.studentId === s.id && a.classId === cls.id);
                 const status = rec?.status || '';
                 return `
                   <div class="cls-attn-row">
-                    <div class="cls-attn-name">${s.full_name}</div>
+                    <div class="cls-attn-name">${_e(s.full_name)}</div>
                     <div class="cls-attn-btns">
-                      <button class="cls-attn-btn ${status==='present'?'active-present':''}" onclick="CK.classSystem.markStudentAttn('${s.id}','${s.full_name}','${cls.id}','${cls.title}','${coachId}','${date}','present','${containerId}')">✅ Present</button>
-                      <button class="cls-attn-btn ${status==='absent'?'active-absent':''}" onclick="CK.classSystem.markStudentAttn('${s.id}','${s.full_name}','${cls.id}','${cls.title}','${coachId}','${date}','absent','${containerId}')">❌ Absent</button>
-                      <button class="cls-attn-btn ${status==='late'?'active-late':''}" onclick="CK.classSystem.markStudentAttn('${s.id}','${s.full_name}','${cls.id}','${cls.title}','${coachId}','${date}','late','${containerId}')">⏰ Late</button>
+                      <button class="cls-attn-btn ${status==='present'?'active-present':''}" onclick="CK.classSystem.markStudentAttn('${_e(s.id)}','${_e(s.full_name?.replace(/'/g,"&apos;"))}','${_e(cls.id)}','${_e(cls.title?.replace(/'/g,"&apos;"))}','${_e(coachId)}','${_e(date)}','present','${_e(containerId)}')">✅ Present</button>
+                      <button class="cls-attn-btn ${status==='absent'?'active-absent':''}" onclick="CK.classSystem.markStudentAttn('${_e(s.id)}','${_e(s.full_name?.replace(/'/g,"&apos;"))}','${_e(cls.id)}','${_e(cls.title?.replace(/'/g,"&apos;"))}','${_e(coachId)}','${_e(date)}','absent','${_e(containerId)}')">❌ Absent</button>
+                      <button class="cls-attn-btn ${status==='late'?'active-late':''}" onclick="CK.classSystem.markStudentAttn('${_e(s.id)}','${_e(s.full_name?.replace(/'/g,"&apos;"))}','${_e(cls.id)}','${_e(cls.title?.replace(/'/g,"&apos;"))}','${_e(coachId)}','${_e(date)}','late','${_e(containerId)}')">⏰ Late</button>
                     </div>
                   </div>`;
               }).join('') : `<div class="cls-empty" style="padding:12px;">No students assigned to this class yet.</div>`}
@@ -257,19 +257,9 @@ CK.classSystem = (() => {
       }).join('')}`;
   }
 
-  function markStudentAttn(studentId, studentName, classId, className, coachId, date, status, containerId) {
-    const records = getStudentAttn();
-    const idx = records.findIndex(r => r.studentId === studentId && r.classId === classId && r.date === date);
-    const entry = { id: uid(), studentId, studentName, classId, className, coachId, date, status, markedAt: new Date().toISOString() };
-    if (idx !== -1) records[idx] = entry; else records.push(entry);
-    saveStudentAttn(records);
-
-    // Also sync into the main ck_db_attendance for student portal
-    const main = JSON.parse(localStorage.getItem('ck_db_attendance') || '[]');
-    const mi = main.findIndex(r => r.userid === studentId && r.date === date);
-    const mEntry = { id: uid(), userid: studentId, date, status };
-    if (mi !== -1) main[mi] = mEntry; else main.push(mEntry);
-    localStorage.setItem('ck_db_attendance', JSON.stringify(main));
+  async function markStudentAttn(studentId, studentName, classId, className, coachId, date, status, containerId) {
+    const entry = { id: uid(), userid: studentId, studentId, studentName, classId, className, coachId, date, status, markedAt: new Date().toISOString() };
+    await CK.db.saveAttendance(entry);
 
     CK.showToast(`${studentName}: ${status}`, status === 'present' ? 'success' : status === 'late' ? 'warning' : 'error');
     renderAttendanceMarker(containerId, coachId, date);
@@ -279,23 +269,23 @@ CK.classSystem = (() => {
      COACH — ASSIGN STUDENTS TO CLASSES
   ══════════════════════════════════════════════════════════════ */
 
-  function openAssignStudentsModal(classId) {
-    const all = getClasses();
+  async function openAssignStudentsModal(classId) {
+    const all = await getClasses();
     const cls = all.find(c => c.id === classId);
     if (!cls) return;
-    const allStudents = JSON.parse(localStorage.getItem('ck_db_users') || '[]').filter(u => u.role === 'student');
+    const allStudents = (await CK.db.getProfiles('student')) || [];
     const modal = document.createElement('div');
     modal.className = 'cls-modal-overlay';
     modal.innerHTML = `
       <div class="cls-modal">
         <div class="cls-modal-header"><h3>👥 Assign Students — ${cls.title}</h3><button class="cls-modal-close" onclick="this.closest('.cls-modal-overlay').remove()">✕</button></div>
         <div class="cls-modal-body" style="max-height:400px;overflow-y:auto;">
-          ${allStudents.map(s => `
+          ${allStudents.map(s => { const _e = CK.esc || (s => s); return `
             <label class="cls-assign-student-row">
-              <input type="checkbox" value="${s.id}" ${(cls.studentIds||[]).includes(s.id)?'checked':''}>
-              <span>${s.full_name}</span>
-              <span class="p-badge p-badge-${s.level==='Beginner'?'green':s.level==='Intermediate'?'blue':'gold'}">${s.level||'Beginner'}</span>
-            </label>`).join('')}
+              <input type="checkbox" value="${_e(s.id)}" ${(cls.studentIds||[]).includes(s.id)?'checked':''}>
+              <span>${_e(s.full_name)}</span>
+              <span class="p-badge p-badge-${s.level==='Beginner'?'green':s.level==='Intermediate'?'blue':'gold'}">${_e(s.level||'Beginner')}</span>
+            </label>`;}).join('')}
         </div>
         <div class="cls-modal-footer">
           <button class="p-btn p-btn-ghost" onclick="this.closest('.cls-modal-overlay').remove()">Cancel</button>
@@ -303,9 +293,9 @@ CK.classSystem = (() => {
         </div>
       </div>`;
     document.body.appendChild(modal);
-    modal.querySelector('#assignSaveBtn').addEventListener('click', () => {
+    modal.querySelector('#assignSaveBtn').addEventListener('click', async () => {
       cls.studentIds = [...modal.querySelectorAll('input[type=checkbox]:checked')].map(cb => cb.value);
-      saveClasses(all);
+      await CK.db.saveClass(cls);
       CK.showToast('Students assigned!', 'success');
       modal.remove();
       if (window.CK && CK.coach) CK.coach.renderClassesPanel();
@@ -316,24 +306,25 @@ CK.classSystem = (() => {
      ADMIN — ALL CLASSES VIEW
   ══════════════════════════════════════════════════════════════ */
 
-  function renderAdminClasses(containerId) {
+  async function renderAdminClasses(containerId) {
     const el = document.getElementById(containerId);
     if (!el) return;
-    const classes = getClasses();
-    const coachAttn = getCoachAttn();
+    const classes = await getClasses();
+    const coachAttn = await getCoachAttn();
     el.innerHTML = `
       <table class="p-table" style="width:100%">
         <thead><tr><th>Class</th><th>Coach</th><th>Level</th><th>Days/Time</th><th>Students</th><th>Coach Attendance (This Month)</th></tr></thead>
         <tbody>
           ${classes.map(c => {
+            const _e = CK.esc || (s => s);
             const thisMonth = new Date().toISOString().slice(0,7);
             const attended = coachAttn.filter(a => a.classId === c.id && a.date.startsWith(thisMonth)).length;
             return `<tr>
-              <td style="font-weight:600">${c.title}</td>
-              <td>${c.coachName}</td>
-              <td><span class="p-badge p-badge-${c.level==='Beginner'?'green':c.level==='Intermediate'?'blue':'gold'}">${c.level}</span></td>
-              <td>${(c.days||[]).join(', ')} ${c.time}</td>
-              <td>${(c.studentIds||[]).length} / ${c.maxStudents}</td>
+              <td style="font-weight:600">${_e(c.title)}</td>
+              <td>${_e(c.coachName)}</td>
+              <td><span class="p-badge p-badge-${c.level==='Beginner'?'green':c.level==='Intermediate'?'blue':'gold'}">${_e(c.level)}</span></td>
+              <td>${_e((c.days||[]).join(', '))} ${_e(c.time)}</td>
+              <td>${(c.studentIds||[]).length} / ${_e(String(c.maxStudents))}</td>
               <td><span class="p-badge p-badge-${attended>=4?'green':'yellow'}">${attended} sessions</span></td>
             </tr>`;
           }).join('')}
@@ -342,12 +333,12 @@ CK.classSystem = (() => {
   }
 
   /* ─── Coach Attendance Report (admin) ─── */
-  function renderCoachAttendanceReport(containerId) {
+  async function renderCoachAttendanceReport(containerId) {
     const el = document.getElementById(containerId);
     if (!el) return;
-    const coachAttn = getCoachAttn();
-    const classes   = getClasses();
-    const coaches   = JSON.parse(localStorage.getItem('ck_db_users') || '[]').filter(u => u.role === 'coach');
+    const coachAttn = await getCoachAttn();
+    const classes   = await getClasses();
+    const coaches   = (await CK.db.getProfiles('coach')) || [];
     const thisMonth = new Date().toISOString().slice(0,7);
 
     el.innerHTML = `
@@ -356,11 +347,12 @@ CK.classSystem = (() => {
         <thead><tr><th>Coach</th><th>Sessions Taken</th><th>Unique Days</th><th>Last Session</th><th>Status</th></tr></thead>
         <tbody>
           ${coaches.map(coach => {
+            const _e = CK.esc || (s => s);
             const records = coachAttn.filter(a => a.date.startsWith(thisMonth) && classes.find(c => c.id === a.classId && c.coachId === coach.id));
             const uniqueDays = [...new Set(records.map(r => r.date))].length;
             const last = records.sort((a,b) => b.date.localeCompare(a.date))[0];
             return `<tr>
-              <td style="font-weight:600">${coach.full_name}</td>
+              <td style="font-weight:600">${_e(coach.full_name)}</td>
               <td>${records.length}</td>
               <td>${uniqueDays}</td>
               <td>${last ? last.date : '—'}</td>
@@ -375,12 +367,14 @@ CK.classSystem = (() => {
      STUDENT — GET MY CLASSES
   ══════════════════════════════════════════════════════════════ */
 
-  function getStudentClasses(studentId) {
-    return getClasses().filter(c => (c.studentIds || []).includes(studentId));
+  async function getStudentClasses(studentId) {
+    const all = await getClasses();
+    return all.filter(c => (c.studentIds || []).includes(studentId));
   }
 
-  function getStudentAttendanceSummary(studentId) {
-    const records = getStudentAttn().filter(r => r.studentId === studentId);
+  async function getStudentAttendanceSummary(studentId) {
+    const allAttn = await getStudentAttn();
+    const records = allAttn.filter(r => r.studentId === studentId || r.userid === studentId);
     const present = records.filter(r => r.status === 'present').length;
     const total   = records.length;
     return { present, absent: records.filter(r => r.status === 'absent').length, late: records.filter(r => r.status === 'late').length, total, pct: total ? Math.round(present / total * 100) : 100 };

@@ -46,6 +46,19 @@ window.APP_CONFIG = {
 // Expose Razorpay key via global for student.js payment gateway
 window.CK_RAZORPAY_KEY = window.APP_CONFIG.RAZORPAY_KEY;
 
+// HTML-escape helper — use CK.esc(str) inside any innerHTML template
+// to prevent XSS from user-supplied names, notes, and descriptions.
+window.CK = window.CK || {};
+window.CK.esc = function(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
 // Initialize Supabase Client
 (function initSupabase() {
   const maxRetries = 10;

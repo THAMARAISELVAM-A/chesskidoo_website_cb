@@ -18,20 +18,18 @@ CK.parents = (() => {
   /* ─── Resolve child from parent profile ─── */
   async function _resolveChild(parentProfile) {
     if (!parentProfile) return null;
+    const students = await CK.db.getProfiles('student');
     // Method 1: childEmail stored on parent
     if (parentProfile.childEmail || parentProfile.child_email) {
-      const users = JSON.parse(localStorage.getItem('ck_db_users') || '[]');
-      return users.find(u => u.email === (parentProfile.childEmail || parentProfile.child_email)) || null;
+      return students.find(s => s.email === (parentProfile.childEmail || parentProfile.child_email)) || null;
     }
     // Method 2: parentEmail stored on student
     if (parentProfile.email) {
-      const users = JSON.parse(localStorage.getItem('ck_db_users') || '[]');
-      return users.find(u => u.parentEmail === parentProfile.email || u.parent_email === parentProfile.email) || null;
+      return students.find(s => s.parentEmail === parentProfile.email || s.parent_email === parentProfile.email) || null;
     }
     // Method 3: childId stored on parent
     if (parentProfile.childId || parentProfile.child_id) {
-      const users = JSON.parse(localStorage.getItem('ck_db_users') || '[]');
-      return users.find(u => u.id === (parentProfile.childId || parentProfile.child_id)) || null;
+      return students.find(s => s.id === (parentProfile.childId || parentProfile.child_id)) || null;
     }
     return null;
   }
@@ -56,7 +54,7 @@ CK.parents = (() => {
       renderProgress();
       renderSchedule();
       renderReports();
-      renderFeedbackForm();
+      renderFeedbackList();
     } else {
       const content = document.getElementById('parentMainContent');
       if (content) content.innerHTML = `
@@ -88,30 +86,31 @@ CK.parents = (() => {
     if (panelId === 'progress')   renderProgress();
     if (panelId === 'schedule')   renderSchedule();
     if (panelId === 'reports')    renderReports();
-    if (panelId === 'feedback')   renderFeedbackForm();
+    if (panelId === 'feedback')   renderFeedbackList();
   }
 
   /* ═══════════════════════════════════════════════════════
      CHILD PROFILE CARD
   ═════════════════════════════════════════════════════════ */
 
-  function renderChildProfile() {
+  async function renderChildProfile() {
     const el = document.getElementById('parChildCard');
     if (!el || !_childProfile) return;
     const c = _childProfile;
     const initial = c.full_name?.[0]?.toUpperCase() || '♟';
-    const puzzlesSolved = (CK.puzzlesPro?.getLeaderboard() || []).find(u => u.userId === c.id)?.solved || 0;
-    const attnSummary = CK.classSystem?.getStudentAttendanceSummary(c.id) || { pct: 100, present: 0, total: 0 };
+    const puzzlesSolved = ((await CK.puzzlesPro?.getLeaderboard()) || []).find(u => u.userId === c.id)?.solved || 0;
+    const attnSummary = (await CK.classSystem?.getStudentAttendanceSummary(c.id)) || { pct: 100, present: 0, total: 0 };
+    const _e = CK.esc || (s => s);
     el.innerHTML = `
       <div class="par-child-avatar">${initial}</div>
       <div class="par-child-info">
-        <div class="par-child-name">${c.full_name}</div>
-        <div class="par-child-meta">${c.level || 'Beginner'} · Coach: ${c.coach || '—'} · ${c.batch || 'Group'}</div>
+        <div class="par-child-name">${_e(c.full_name)}</div>
+        <div class="par-child-meta">${_e(c.level || 'Beginner')} · Coach: ${_e(c.coach || '—')} · ${_e(c.batch || 'Group')}</div>
         <div class="par-child-stats">
-          <div class="par-stat"><span class="par-stat-val">${c.rating || 800}</span><span class="par-stat-lbl">ELO Rating</span></div>
+          <div class="par-stat"><span class="par-stat-val">${_e(String(c.rating || 800))}</span><span class="par-stat-lbl">ELO Rating</span></div>
           <div class="par-stat"><span class="par-stat-val">${attnSummary.pct}%</span><span class="par-stat-lbl">Attendance</span></div>
-          <div class="par-stat"><span class="par-stat-val">${puzzlesSolved}</span><span class="par-stat-lbl">Puzzles Solved</span></div>
-          <div class="par-stat"><span class="par-stat-val">${c.game || 0}</span><span class="par-stat-lbl">Games Played</span></div>
+          <div class="par-stat"><span class="par-stat-val">${_e(String(puzzlesSolved))}</span><span class="par-stat-lbl">Puzzles Solved</span></div>
+          <div class="par-stat"><span class="par-stat-val">${_e(String(c.game || 0))}</span><span class="par-stat-lbl">Games Played</span></div>
         </div>
       </div>`;
   }
@@ -163,13 +162,13 @@ CK.parents = (() => {
      PROGRESS VIEW
   ═════════════════════════════════════════════════════════ */
 
-  function renderProgress() {
+  async function renderProgress() {
     const el = document.getElementById('parProgressContent');
     if (!el || !_childProfile) return;
     const c = _childProfile;
-    const ratings = JSON.parse(localStorage.getItem('ck_db_ratings') || '[]').filter(r => r.user_id === c.userid);
-    const puzzlesSolved = (CK.puzzlesPro?.getLeaderboard() || []).find(u => u.userId === c.id)?.solved || 0;
-    const attnSummary = CK.classSystem?.getStudentAttendanceSummary(c.id) || { pct: 100 };
+    const ratings = JSON.parse(localStorage.getItem('ck_db_ratings') || '[]').filter(r => r.user_id === (c.userid || c.id));
+    const puzzlesSolved = ((await CK.puzzlesPro?.getLeaderboard()) || []).find(u => u.userId === c.id)?.solved || 0;
+    const attnSummary = (await CK.classSystem?.getStudentAttendanceSummary(c.id)) || { pct: 100 };
     const hw = JSON.parse(localStorage.getItem('ck_hw_submissions') || '[]').filter(s => s.studentId === c.id);
     const hwDone = hw.filter(s => s.completed).length;
     const hwTotal = (JSON.parse(localStorage.getItem('ck_assignments') || '[]')).length;
@@ -195,7 +194,7 @@ CK.parents = (() => {
             { label: 'Attendance', val: Math.round(attnSummary.pct), color: 'var(--p-teal)' },
             { label: 'Puzzles', val: Math.min(100, puzzlesSolved * 2.5), color: 'var(--p-blue)' },
             { label: 'Rating Gain', val: Math.min(100, (c.rating - 800) / 4), color: 'var(--p-gold)' },
-            { label: 'Games Played', val: Math.min(100, (c.game||0)*5), color: 'var(--p-green)' },
+            { label: 'Games Played', val: Math.min(100, (c.game||0)*5), color: 'var(--p-online)' },
             { label: 'Homework', val: hwTotal > 0 ? Math.round(hwDone/hwTotal*100) : 100, color: '#a78bfa' }
           ].map(item => `
             <div class="par-breakdown-row">
@@ -242,21 +241,22 @@ CK.parents = (() => {
       el.innerHTML = '<div class="cls-empty">📋 No reports available yet. Reports will appear here when your coach submits them.</div>'; return;
     }
     const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const _e = CK.esc || (s => s);
     el.innerHTML = reports.map(r => `
       <div class="par-report-card">
         <div class="par-report-header">
-          <span class="par-report-month">${monthNames[r.month - 1]} ${r.year}</span>
+          <span class="par-report-month">${_e(monthNames[r.month - 1])} ${_e(String(r.year))}</span>
           <span class="p-badge p-badge-${r.rating >= 4 ? 'green' : r.rating >= 3 ? 'yellow' : 'red'}">
             ${'⭐'.repeat(r.rating || 3)} (${r.rating || 3}/5)
           </span>
         </div>
         <div class="par-report-body">
           <div class="par-report-stats">
-            <span>📅 Attendance: <b>${r.attendance}%</b></span>
-            <span>🧩 Puzzles: <b>${r.puzzles}</b></span>
+            <span>📅 Attendance: <b>${_e(String(r.attendance))}%</b></span>
+            <span>🧩 Puzzles: <b>${_e(String(r.puzzles))}</b></span>
           </div>
-          ${r.notes ? `<div class="par-report-notes"><strong>Coach Notes:</strong> ${r.notes}</div>` : ''}
-          ${r.recommendation ? `<div class="par-report-rec">💡 <strong>Recommendation:</strong> ${r.recommendation}</div>` : ''}
+          ${r.notes ? `<div class="par-report-notes"><b>Coach Notes:</b> ${_e(r.notes)}</div>` : ''}
+          ${r.recommendation ? `<div class="par-report-rec">💡 <b>Recommendation:</b> ${_e(r.recommendation)}</div>` : ''}
         </div>
       </div>`).join('');
   }
@@ -265,133 +265,102 @@ CK.parents = (() => {
      FEEDBACK FORM
   ═════════════════════════════════════════════════════════ */
 
-  function renderFeedbackForm() {
+  async function renderFeedbackList() {
     const el = document.getElementById('parFeedbackContent');
     if (!el) return;
-    const existing = getFeedback().filter(f => f.fromId === _parentProfile?.id)
-      .sort((a,b) => b.date.localeCompare(a.date));
+    const all = await CK.db.getFeedback();
+    const mine = all.filter(f => f.parent_email === _parentProfile?.email || f.parent_name === _parentProfile?.full_name);
     el.innerHTML = `
       <div class="par-feedback-form">
         <div class="par-section-title">✍️ Submit Feedback</div>
         <div class="cls-form-row">
-          <label>Category</label>
-          <select class="p-input" id="fbCategory">
-            <option value="coach">Coach Performance</option>
-            <option value="curriculum">Curriculum & Content</option>
-            <option value="platform">Platform & App</option>
-            <option value="progress">Child's Progress</option>
-            <option value="general">General Feedback</option>
-          </select>
-        </div>
-        <div class="cls-form-row">
-          <label>Rating</label>
-          <div class="fb-star-row" id="fbStarRow">
-            ${[1,2,3,4,5].map(n => `<span class="fb-star" data-val="${n}" onclick="CK.parents._setRating(${n})">☆</span>`).join('')}
-          </div>
-        </div>
-        <div class="cls-form-row">
           <label>Your Message</label>
-          <textarea class="p-input" id="fbMessage" rows="4" placeholder="Share your thoughts about the academy, coach, or your child's progress..."></textarea>
+          <textarea class="p-input" id="pFeedbackText" rows="4" placeholder="Share your thoughts..."></textarea>
         </div>
         <button class="p-btn p-btn-blue" onclick="CK.parents.submitFeedback()">📤 Submit Feedback</button>
       </div>
-      ${existing.length ? `
-        <div style="margin-top:24px;">
-          <div class="par-section-title">📬 My Previous Feedback</div>
-          ${existing.slice(0,5).map(f => `
+      <div style="margin-top:24px;">
+        <div class="par-section-title">📬 My Previous Feedback</div>
+        ${mine.length ? mine.map(f => {
+            const _e = CK.esc || (s => s);
+            return `
             <div class="par-fb-card">
               <div class="par-fb-header">
-                <span class="par-fb-cat">${f.category}</span>
-                <span class="par-fb-date">${new Date(f.date).toLocaleDateString('en-IN')}</span>
-                <span>${'⭐'.repeat(f.rating)}</span>
+                <span class="par-fb-date">${new Date(f.created_at).toLocaleDateString('en-IN')}</span>
               </div>
-              <div class="par-fb-msg">${f.message}</div>
-              ${f.reply ? `<div class="par-fb-reply">💬 Academy reply: ${f.reply}</div>` : ''}
-            </div>`).join('')}
-        </div>` : ''}`;
-    _feedbackRating = 0;
+              <div class="par-fb-msg">${_e(f.text)}</div>
+              ${f.reply ? `<div class="par-fb-reply">💬 Academy reply: ${_e(f.reply)}</div>` : ''}
+            </div>`;
+          }).join('') : '<div class="cls-empty">No previous feedback.</div>'}
+      </div>`;
   }
 
-  let _feedbackRating = 0;
-  function _setRating(val) {
-    _feedbackRating = val;
-    document.querySelectorAll('#fbStarRow .fb-star').forEach((s, i) => {
-      s.textContent = i < val ? '⭐' : '☆';
-    });
-  }
-
-  function submitFeedback() {
-    const msg = document.getElementById('fbMessage')?.value.trim();
-    const cat = document.getElementById('fbCategory')?.value || 'general';
-    if (!msg) { CK.showToast('Please write a message', 'warning'); return; }
-    if (!_feedbackRating) { CK.showToast('Please select a star rating', 'warning'); return; }
+  async function submitFeedback() {
+    const text = document.getElementById('pFeedbackText')?.value.trim();
+    if (!text) { CK.showToast('Please enter your feedback', 'warning'); return; }
     const feedback = {
-      id: uid(),
-      fromId: _parentProfile?.id,
-      fromName: _parentProfile?.full_name || 'Parent',
-      fromRole: 'parent',
-      childId: _childProfile?.id,
-      childName: _childProfile?.full_name || '',
-      toId: 'academy',
-      toName: 'ChessKidoo Academy',
-      message: msg,
-      rating: _feedbackRating,
-      category: cat,
-      date: new Date().toISOString(),
-      replied: false,
-      reply: ''
+      id: 'fb-' + Date.now(),
+      parent_name: _parentProfile?.full_name || 'Parent',
+      parent_email: _parentProfile?.email || '',
+      student_email: _childProfile?.email || '',
+      text,
+      status: 'new',
+      created_at: new Date().toISOString()
     };
-    const all = getFeedback();
-    all.push(feedback);
-    saveFeedback(all);
-    CK.showToast('Thank you for your feedback! 🙏', 'success');
-    renderFeedbackForm();
+    await CK.db.saveFeedback(feedback);
+    CK.showToast('Feedback submitted successfully!', 'success');
+    document.getElementById('pFeedbackText').value = '';
+    await renderFeedbackList();
   }
 
   /* ─── Admin/Coach: view all feedback ─── */
-  function renderAllFeedback(containerId, filterRole = null) {
+  async function renderAllFeedback(containerId, filterRole = null) {
     const el = document.getElementById(containerId);
     if (!el) return;
-    let all = getFeedback().sort((a,b) => b.date.localeCompare(a.date));
+    const allData = await CK.db.getFeedback();
+    let all = allData.sort((a,b) => (b.created_at || '').localeCompare(a.created_at || ''));
     if (filterRole) all = all.filter(f => f.fromRole === filterRole);
     if (!all.length) {
       el.innerHTML = '<div class="cls-empty">No feedback received yet.</div>'; return;
     }
+    const _e = CK.esc || (s => s);
     el.innerHTML = all.map(f => `
       <div class="par-fb-card" style="margin-bottom:12px;">
         <div class="par-fb-header">
-          <span style="font-weight:700">${f.fromName}</span>
-          <span class="p-badge p-badge-blue">${f.fromRole}</span>
-          <span class="par-fb-cat">${f.category}</span>
-          <span>${'⭐'.repeat(f.rating)}</span>
-          <span class="par-fb-date">${new Date(f.date).toLocaleDateString('en-IN')}</span>
+          <span style="font-weight:700">${_e(f.parent_name || 'Parent')}</span>
+          <span class="par-fb-date">${new Date(f.created_at).toLocaleDateString('en-IN')}</span>
         </div>
-        ${f.childName ? `<div style="font-size:0.8rem;color:var(--p-text-muted)">About: ${f.childName}</div>` : ''}
-        <div class="par-fb-msg">${f.message}</div>
+        ${f.student_email ? `<div style="font-size:0.8rem;color:var(--p-text-muted)">Child: ${_e(f.student_email)}</div>` : ''}
+        <div class="par-fb-msg">${_e(f.text)}</div>
         ${f.reply
-          ? `<div class="par-fb-reply">💬 Replied: ${f.reply}</div>`
+          ? `<div class="par-fb-reply">💬 Replied: ${_e(f.reply)}</div>`
           : `<div style="display:flex;gap:8px;margin-top:8px;">
-               <input class="p-input" id="reply_${f.id}" placeholder="Type a reply..." style="flex:1;font-size:0.85rem;">
-               <button class="p-btn p-btn-blue p-btn-sm" onclick="CK.parents.replyFeedback('${f.id}')">Reply</button>
+               <input class="p-input" id="reply_${_e(f.id)}" placeholder="Type a reply..." style="flex:1;font-size:0.85rem;">
+               <button class="p-btn p-btn-blue p-btn-sm" onclick="CK.parents.replyFeedback('${_e(f.id)}')">Reply</button>
              </div>`}
       </div>`).join('');
   }
 
-  function replyFeedback(id) {
+  async function replyFeedback(id) {
     const replyEl = document.getElementById(`reply_${id}`);
     const reply = replyEl?.value.trim();
     if (!reply) return;
-    const all = getFeedback();
+    const all = await CK.db.getFeedback();
     const f = all.find(x => x.id === id);
-    if (f) { f.reply = reply; f.replied = true; saveFeedback(all); }
+    if (f) { 
+      f.reply = reply; 
+      f.replied = true; 
+      await CK.db.saveFeedback(f); 
+    }
     CK.showToast('Reply sent!', 'success');
-    renderAllFeedback('adminFeedbackList');
+    const isAdmin = !!document.getElementById('adminFeedbackList');
+    if (isAdmin) await renderAllFeedback('adminFeedbackList');
+    else await renderFeedbackList();
   }
 
   return {
     init, nav, renderChildProfile, renderAttendance, renderProgress,
-    renderSchedule, renderReports, renderFeedbackForm, submitFeedback,
-    renderAllFeedback, replyFeedback, _setRating,
-    getFeedback
+    renderSchedule, renderReports, renderFeedbackList, submitFeedback,
+    renderAllFeedback, replyFeedback
   };
 })();

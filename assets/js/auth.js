@@ -81,12 +81,12 @@
           // Check per-user credential first (admin-set individual passwords)
           const role = (found.role || 'student').toLowerCase();
           const perUserMatch = await _checkPerUserCred(email, password);
-          // Then fall back to role-based demo passwords
+          // Demo-mode passwords (only the ones shown in the UI login hints)
           const roleMatch =
-            (role === 'admin'  && (password === 'admin' || password === 'admin123' || password === 'Admin123$')) ||
-            (role === 'coach'  && (password === 'coach' || password === 'Coach123')) ||
-            (role === 'parent' && (password === 'parent' || password === 'Parent123')) ||
-            (role === 'student'&& (password === 'student' || password === 'Student123' || password === '123456'));
+            (role === 'admin'  && password === 'Admin123$') ||
+            (role === 'coach'  && password === 'Coach123')  ||
+            (role === 'parent' && password === 'Parent123') ||
+            (role === 'student'&& password === 'Student123');
           const isValidPass = perUserMatch || roleMatch;
 
           if (isValidPass) {
@@ -99,20 +99,7 @@
             throw new Error('Incorrect password for ' + found.full_name + '.');
           }
         } else {
-          // General Demo Mode fallback for default emails
-          if (email === 'admin@gmail.com' || email === 'admin@ck') {
-            profile = profiles.find(p => p.role === 'admin');
-          } else if (email === 'coach@gmail.com' || email === 'coach@ck') {
-            profile = profiles.find(p => p.role === 'coach');
-          } else if (email === 'student@gmail.com' || email === 'student@ck') {
-            profile = profiles.find(p => p.role === 'student');
-          }
-          
-          if (profile) {
-            session = { access_token: "mock-jwt-token", user: { id: profile.id, email: profile.email } };
-          } else {
-            throw new Error('User account not found. Please register or contact support.');
-          }
+          throw new Error('Account not found. Please contact the academy admin.');
         }
       }
 
@@ -144,7 +131,7 @@
 
   CK.logout = async () => {
     try {
-      await window.supabaseClient.auth.signOut();
+      if (window.supabaseClient) await window.supabaseClient.auth.signOut();
     } catch(e) {}
     localStorage.removeItem('ck_user');
     localStorage.removeItem('ck_session');
