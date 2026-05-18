@@ -53,10 +53,16 @@ CK.gameTracker = (() => {
     games.unshift(newGame);
     save(games);
 
-    // Update student's game count in user profile
-    const users = JSON.parse(localStorage.getItem('ck_db_users') || '[]');
-    const idx = users.findIndex(u => u.id === studentId);
-    if (idx !== -1) { users[idx].game = (users[idx].game || 0) + 1; localStorage.setItem('ck_db_users', JSON.stringify(users)); }
+    // Update student's game count via CK.db (falls back to localStorage)
+    if (CK.db && CK.db.getProfile) {
+      CK.db.getProfile(studentId).then(profile => {
+        if (profile) { profile.game = (profile.game || 0) + 1; CK.db.saveProfile(profile); }
+      }).catch(() => {
+        const users = JSON.parse(localStorage.getItem('ck_db_users') || '[]');
+        const idx = users.findIndex(u => u.id === studentId);
+        if (idx !== -1) { users[idx].game = (users[idx].game || 0) + 1; localStorage.setItem('ck_db_users', JSON.stringify(users)); }
+      });
+    }
 
     // Push achievement notification at milestones
     const total = games.filter(g => g.studentId === studentId).length;

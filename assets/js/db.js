@@ -30,7 +30,7 @@
         level: "Intermediate",
         rating: 800,
         userid: "101",
-        coach: "Sarah Chess",
+        coach: "ARIVUSELVAM",
         batch: "Evening",
         session: "Group",
         schedule: "17:00",
@@ -88,7 +88,6 @@
       { id: "s39", full_name: "VELAVA", role: "student", status: "Pending", level: "Intermediate", rating: 800, coach: "VISHNU", join_date: "2026-04-24", session: "Group", schedule: "FRI& SAT", fee: "1800", due_date: "20-May-2026" },
 
       // Coaches
-      { id: "coach-uuid-1", email: "coach@gmail.com", full_name: "Sarah Chess", role: "coach", userid: "C0", phone_number: "+91 90258 46663", level: "Advanced", batches: "Evening, Weekend", timetable: "Mon-Fri 4PM-7PM", revenue: "₹32,000", classes: 24, star: 5, puzzle: "Opening Specialist" },
       { id: "c1", full_name: "ARIVUSELVAM", email: "arivuselvam@gmail.com", role: "coach", phone_number: "+91 98400 11223", level: "Advanced", batches: "Group 17:00, WEEKEND", timetable: "Mon-Thu 5PM, Sat 10AM", revenue: "₹18,400", classes: 18, star: 5, puzzle: "Endgames Specialist" },
       { id: "c2", full_name: "GYANASURYA", email: "gyanasurya@gmail.com", role: "coach", phone_number: "+91 98400 22334", level: "Intermediate", batches: "WEEKDAY, WEEKEND", timetable: "Tue-Fri 6PM, Sun 4PM", revenue: "₹15,000", classes: 22, star: 4, puzzle: "Tactics Specialist" },
       { id: "c3", full_name: "VISHNU", email: "vishnu@gmail.com", role: "coach", phone_number: "+91 98400 33445", level: "Advanced", batches: "FRI& SAT, Fri & Sat", timetable: "Fri-Sat 4PM-8PM", revenue: "₹24,500", classes: 20, star: 5, puzzle: "Calculation Expert" },
@@ -105,9 +104,9 @@
     ],
 
     document: [
-      { id: 1, created_at: "2026-05-01T12:00:00Z", file_name: "beginner/chess_basics.pdf", name: "Chess Fundamentals & Piece Movements", level: "Beginner", coach: "Michael Knight", batch: "2" },
-      { id: 2, created_at: "2026-05-03T10:00:00Z", file_name: "intermediate/tactics_pins.pdf", name: "Tactical Patterns - Pins & Forks", level: "Intermediate", coach: "Sarah Chess", batch: "1" },
-      { id: 3, created_at: "2026-05-05T15:00:00Z", file_name: "advanced/endgames_rook.pdf", name: "Advanced Endgames: Rook vs Pawn", level: "Advanced", coach: "Sarah Chess", batch: "1" }
+      { id: 1, created_at: "2026-05-01T12:00:00Z", file_name: "beginner/chess_basics.pdf", name: "Chess Fundamentals & Piece Movements", level: "Beginner", coach: "ARIVUSELVAM", batch: "2" },
+      { id: 2, created_at: "2026-05-03T10:00:00Z", file_name: "intermediate/tactics_pins.pdf", name: "Tactical Patterns - Pins & Forks", level: "Intermediate", coach: "VISHNU", batch: "1" },
+      { id: 3, created_at: "2026-05-05T15:00:00Z", file_name: "advanced/endgames_rook.pdf", name: "Advanced Endgames: Rook vs Pawn", level: "Advanced", coach: "ARIVUSELVAM", batch: "1" }
     ],
 
     resources: [
@@ -443,7 +442,7 @@
 
       const ratings = getLocal('ratings');
       return ratings
-        .filter(r => r.user_id === userid)
+        .filter(r => r.user_id === userid || r.user_id === userid?.toString())
         .sort((a, b) => new Date(a.date) - new Date(b.date));
     },
 
@@ -649,11 +648,13 @@
       return all;
     },
     async savePuzzleScore(score) {
+      if (!score.id) score.id = 'ps-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
       if (canUseSupabase()) {
         try { await window.supabaseClient.from('puzzle_scores').upsert(score); } catch (e) { }
       }
       const all = JSON.parse(localStorage.getItem('ck_puzzle_scores') || '[]');
-      all.push(score);
+      const idx = all.findIndex(s => s.id === score.id);
+      if (idx !== -1) all[idx] = score; else all.push(score);
       localStorage.setItem('ck_puzzle_scores', JSON.stringify(all));
     },
 
@@ -681,6 +682,13 @@
       if (idx !== -1) all[idx] = record; else all.push(record);
       localStorage.setItem('ck_coach_attendance', JSON.stringify(all));
       return record;
+    },
+    async deleteCoachAttendance(id) {
+      if (canUseSupabase()) {
+        try { await window.supabaseClient.from('coach_attendance').delete().eq('id', id); } catch(e) {}
+      }
+      const all = JSON.parse(localStorage.getItem('ck_coach_attendance') || '[]').filter(a => a.id !== id);
+      localStorage.setItem('ck_coach_attendance', JSON.stringify(all));
     },
 
     /* ── Assignments ── */
@@ -762,6 +770,13 @@
       if (idx !== -1) all[idx] = f; else all.unshift(f);
       localStorage.setItem('ck_feedback', JSON.stringify(all));
       return f;
+    },
+    async deleteFeedback(id) {
+      if (canUseSupabase()) {
+        try { await window.supabaseClient.from('feedback').delete().eq('id', id); } catch(e) {}
+      }
+      const all = JSON.parse(localStorage.getItem('ck_feedback') || '[]').filter(x => x.id !== id);
+      localStorage.setItem('ck_feedback', JSON.stringify(all));
     }
   };
 
@@ -770,7 +785,7 @@
     async addReview(reviewObj) {
       const note = {
         student: reviewObj.student,
-        coach: reviewObj.coach || 'Sarah Chess',
+        coach: reviewObj.coach || '',
         text: reviewObj.text,
         date: reviewObj.date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
       };
@@ -781,11 +796,24 @@
       notes.push(note);
       localStorage.setItem('ck_coach_notes', JSON.stringify(notes));
 
+      // Update student's last_note and save a rating snapshot (do NOT blindly +15 every call)
       const students = (await CK.db.getProfiles('student')) || [];
       const s = students.find(u => u.full_name.toLowerCase() === reviewObj.student.toLowerCase());
       if (s) {
         s.last_note = reviewObj.text;
-        s.rating = (s.rating || 800) + 15;
+        // Only bump rating if reviewer explicitly provided a delta
+        const delta = parseInt(reviewObj.ratingDelta) || 0;
+        if (delta !== 0) {
+          s.rating = Math.max(100, (s.rating || 800) + delta);
+          // Save rating snapshot to ratings table for chart history
+          await CK.db.saveRating({
+            id: Date.now(),
+            user_id: s.id,
+            online: s.rating,
+            international: parseInt(s.fide_rating) || 0,
+            date: new Date().toISOString()
+          });
+        }
         await CK.db.saveProfile(s);
       }
 
@@ -828,13 +856,15 @@
     },
 
     async setCredential(email, password) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
+      const hashed = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
       if (canUseSupabase()) {
         try {
-          await window.supabaseClient.from('credentials').upsert({ email: email.toLowerCase(), password });
+          await window.supabaseClient.from('credentials').upsert({ email: email.toLowerCase(), password: hashed });
         } catch(e) {}
       }
       const c = JSON.parse(localStorage.getItem(this.CREDS_KEY) || '{}');
-      c[email.toLowerCase()] = password;
+      c[email.toLowerCase()] = hashed;
       localStorage.setItem(this.CREDS_KEY, JSON.stringify(c));
     },
 
@@ -899,17 +929,52 @@
 
     _rows(users, creds) {
       const _e = CK.esc || (s => s);
-      return users.map(u => `
+      return users.map(u => {
+        const safeEmail = _e(u.email?.replace(/'/g,'&apos;') || '');
+        const safeName  = _e((u.full_name||'').replace(/'/g,'&apos;'));
+        const safeId    = _e((u.id||'').replace(/'/g,'&apos;'));
+        const hasAccess = u.email && creds[u.email.toLowerCase()];
+        return `
         <tr data-name="${_e((u.full_name||'').toLowerCase())}" data-email="${_e((u.email||'').toLowerCase())}" data-role="${_e(u.role)}">
           <td style="font-weight:600">${_e(u.full_name || '—')}</td>
           <td style="font-family:monospace;font-size:0.82rem">${_e(u.email || '—')}</td>
-          <td><span class="p-badge p-badge-${u.role==='coach'?'blue':u.role==='parent'?'teal':'green'}">${_e(u.role)}</span></td>
-          <td>${u.email && creds[u.email.toLowerCase()] ? '<span class="p-badge p-badge-green">✓ Active</span>' : '<span class="p-badge p-badge-red">No Access</span>'}</td>
           <td>
-            ${u.email ? `<button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.accessManager.setDialog('${_e(u.email?.replace(/'/g,'&apos;'))}','${_e((u.full_name||'').replace(/'/g,'&apos;'))}')">🔑 Set Password</button>` : ''}
-            ${u.email && creds[u.email.toLowerCase()] ? `<button class="p-btn p-btn-ghost p-btn-sm" style="color:var(--p-danger)" onclick="CK.accessManager.revokeAccess('${_e(u.email?.replace(/'/g,'&apos;'))}')">✕ Revoke</button>` : ''}
+            <select class="p-input" style="height:28px;padding:0 6px;font-size:0.8rem;width:100px"
+                onchange="CK.accessManager.changeRole('${safeId}','${safeEmail}',this.value,this)">
+              ${['student','coach','parent'].map(r =>
+                `<option value="${r}" ${u.role===r?'selected':''}>${r}</option>`).join('')}
+            </select>
           </td>
-        </tr>`).join('');
+          <td>${hasAccess ? '<span class="p-badge p-badge-green">✓ Active</span>' : '<span class="p-badge p-badge-red">No Access</span>'}</td>
+          <td style="display:flex;gap:4px;flex-wrap:wrap">
+            ${u.email ? `<button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.accessManager.setDialog('${safeEmail}','${safeName}')">🔑 Set Password</button>` : ''}
+            ${hasAccess ? `<button class="p-btn p-btn-ghost p-btn-sm" style="color:var(--p-danger)" onclick="CK.accessManager.revokeAccess('${safeEmail}')">✕ Revoke</button>` : ''}
+            ${u.role === 'parent' ? `<button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.accessManager.setChildDialog('${safeId}','${safeName}')">🔗 Set Child</button>` : ''}
+          </td>
+        </tr>`;
+      }).join('');
+    },
+
+    async changeRole(userId, email, newRole, selectEl) {
+      if (!userId) return;
+      const profile = await CK.db.getProfile(userId);
+      if (!profile) { CK.showToast('User not found.', 'error'); return; }
+      profile.role = newRole;
+      await CK.db.saveProfile(profile);
+      CK.showToast(`Role changed to ${newRole} for ${profile.full_name || email}.`, 'success');
+      // Update row role filter attribute
+      const tr = selectEl?.closest('tr');
+      if (tr) tr.dataset.role = newRole;
+    },
+
+    async setChildDialog(parentId, parentName) {
+      const childEmail = prompt(`Enter the student's email to link as child for ${parentName}:`);
+      if (!childEmail) return;
+      const profile = await CK.db.getProfile(parentId);
+      if (!profile) return CK.showToast('Parent profile not found.', 'error');
+      profile.childEmail = childEmail.trim().toLowerCase();
+      await CK.db.saveProfile(profile);
+      CK.showToast(`Child (${childEmail}) linked to ${parentName}.`, 'success');
     },
 
     _filter(query) {

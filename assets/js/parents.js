@@ -119,11 +119,11 @@ CK.parents = (() => {
      ATTENDANCE VIEW
   ═════════════════════════════════════════════════════════ */
 
-  function renderAttendance() {
+  async function renderAttendance() {
     const el = document.getElementById('parAttendanceContent');
     if (!el || !_childProfile) return;
-    const records = JSON.parse(localStorage.getItem('ck_db_attendance') || '[]')
-      .filter(r => r.userid === _childProfile.id);
+    const allRecords = (await CK.db.getAttendance(_childProfile.id)) || [];
+    const records = allRecords;
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth();
@@ -166,9 +166,14 @@ CK.parents = (() => {
     const el = document.getElementById('parProgressContent');
     if (!el || !_childProfile) return;
     const c = _childProfile;
-    const ratings = JSON.parse(localStorage.getItem('ck_db_ratings') || '[]').filter(r => r.user_id === (c.userid || c.id));
-    const puzzlesSolved = ((await CK.puzzlesPro?.getLeaderboard()) || []).find(u => u.userId === c.id)?.solved || 0;
-    const attnSummary = (await CK.classSystem?.getStudentAttendanceSummary(c.id)) || { pct: 100 };
+    const childId = c.id || c.userid;
+    const [ratingsRaw, leaderboard, attnSummary] = await Promise.all([
+      CK.db.getRatings ? CK.db.getRatings(childId) : Promise.resolve(null),
+      CK.puzzlesPro?.getLeaderboard() || Promise.resolve([]),
+      CK.classSystem?.getStudentAttendanceSummary(childId) || Promise.resolve({ pct: 100 })
+    ]);
+    const ratings = ratingsRaw || JSON.parse(localStorage.getItem('ck_db_ratings') || '[]').filter(r => r.user_id === childId);
+    const puzzlesSolved = (leaderboard || []).find(u => u.userId === childId)?.solved || 0;
     const hw = JSON.parse(localStorage.getItem('ck_hw_submissions') || '[]').filter(s => s.studentId === c.id);
     const hwDone = hw.filter(s => s.completed).length;
     const hwTotal = (JSON.parse(localStorage.getItem('ck_assignments') || '[]')).length;

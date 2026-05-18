@@ -10,13 +10,13 @@ CK.student = {
 
   // List of interactive mock tactical puzzles
   puzzlesDb: [
-    { id: 'P1', title: 'Back-Rank Mate', type: 'Tactics', diff: 'Easy', coach: 'Sarah Chess', due: 'Today', instruction: 'White to move. Find the back-rank checkmate!', boardSetup: 'black-king-f8-pawns-g7-h7-white-rook-d1', solution: 'd8', desc: 'Rook to d8 delivers checkmate as the Black king is trapped behind its own pawns.' },
-    { id: 'P2', title: 'Tactical Fork Opportunity', type: 'Tactics', diff: 'Medium', coach: 'Sarah Chess', due: 'Tomorrow', instruction: 'White to move. Fork the black King and Rook with your Knight!', boardSetup: 'black-king-e8-rook-a8-white-knight-d5', solution: 'c7', desc: 'Knight to c7 forks both the king on e8 and the rook on a8, winning material.' },
-    { id: 'P3', title: 'Smothered Mate', type: 'Endgame', diff: 'Hard', coach: 'Michael Knight', due: 'May 18', instruction: 'White to move. Deliver the famous smothered mate with your Knight!', boardSetup: 'black-king-h8-rook-g8-pawns-h7-g7-f7-white-knight-f5', solution: 'f7', desc: 'Knight to f7 delivers checkmate because the king is completely boxed in by its own pieces.' },
-    { id: 'P4', title: 'Queen Snipes the Rook', type: 'Tactics', diff: 'Easy', coach: 'Michael Knight', due: 'Today', instruction: 'White to move. Slide your queen up the h-file and capture the undefended rook!', boardSetup: 'black-king-e8-rook-h8-white-queen-h1', solution: 'h8', desc: 'Queen to h8 captures the undefended rook. The black king on e8 cannot reach in time — a free piece!' },
-    { id: 'P5', title: 'Knight Fork — King & Rook', type: 'Tactics', diff: 'Medium', coach: 'Sarah Chess', due: 'May 16', instruction: 'White knight leaps to a square that attacks both the black king AND rook simultaneously. Find the forking square!', boardSetup: 'black-king-g5-rook-d6-white-knight-c3', solution: 'e4', desc: 'Knight to e4 forks the black king on g5 and rook on d6. White wins a full rook next move!' },
-    { id: 'P6', title: 'Pin and Win', type: 'Tactics', diff: 'Medium', coach: 'Sarah Chess', due: 'May 17', instruction: 'The black rook is pinned along the bishop diagonal — a pinned piece cannot move. Simply capture it!', boardSetup: 'black-king-e5-rook-c3-white-bishop-a1', solution: 'c3', desc: 'Bishop takes c3! The rook was pinned to the king along the a1–e5 diagonal and could not escape.' },
-    { id: 'P7', title: 'Pawn Promotion', type: 'Endgame', diff: 'Easy', coach: 'Michael Knight', due: 'May 19', instruction: 'White pawn is one square from queening! Click the promotion square to advance.', boardSetup: 'white-pawn-e7-white-king-e5-black-king-c7', solution: 'e8', desc: 'Pawn to e8, queening! The black king is too far away to stop it — a textbook passed pawn endgame win.' }
+    { id: 'P1', title: 'Back-Rank Mate', type: 'Tactics', diff: 'Easy', coach: 'ARIVUSELVAM', due: 'Today', instruction: 'White to move. Find the back-rank checkmate!', boardSetup: 'black-king-f8-pawns-g7-h7-white-rook-d1', solution: 'd8', desc: 'Rook to d8 delivers checkmate as the Black king is trapped behind its own pawns.' },
+    { id: 'P2', title: 'Tactical Fork Opportunity', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'Tomorrow', instruction: 'White to move. Fork the black King and Rook with your Knight!', boardSetup: 'black-king-e8-rook-a8-white-knight-d5', solution: 'c7', desc: 'Knight to c7 forks both the king on e8 and the rook on a8, winning material.' },
+    { id: 'P3', title: 'Smothered Mate', type: 'Endgame', diff: 'Hard', coach: 'VISHNU', due: 'May 18', instruction: 'White to move. Deliver the famous smothered mate with your Knight!', boardSetup: 'black-king-h8-rook-g8-pawns-h7-g7-f7-white-knight-f5', solution: 'f7', desc: 'Knight to f7 delivers checkmate because the king is completely boxed in by its own pieces.' },
+    { id: 'P4', title: 'Queen Snipes the Rook', type: 'Tactics', diff: 'Easy', coach: 'VISHNU', due: 'Today', instruction: 'White to move. Slide your queen up the h-file and capture the undefended rook!', boardSetup: 'black-king-e8-rook-h8-white-queen-h1', solution: 'h8', desc: 'Queen to h8 captures the undefended rook. The black king on e8 cannot reach in time — a free piece!' },
+    { id: 'P5', title: 'Knight Fork — King & Rook', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'May 16', instruction: 'White knight leaps to a square that attacks both the black king AND rook simultaneously. Find the forking square!', boardSetup: 'black-king-g5-rook-d6-white-knight-c3', solution: 'e4', desc: 'Knight to e4 forks the black king on g5 and rook on d6. White wins a full rook next move!' },
+    { id: 'P6', title: 'Pin and Win', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'May 17', instruction: 'The black rook is pinned along the bishop diagonal — a pinned piece cannot move. Simply capture it!', boardSetup: 'black-king-e5-rook-c3-white-bishop-a1', solution: 'c3', desc: 'Bishop takes c3! The rook was pinned to the king along the a1–e5 diagonal and could not escape.' },
+    { id: 'P7', title: 'Pawn Promotion', type: 'Endgame', diff: 'Easy', coach: 'VISHNU', due: 'May 19', instruction: 'White pawn is one square from queening! Click the promotion square to advance.', boardSetup: 'white-pawn-e7-white-king-e5-black-king-c7', solution: 'e8', desc: 'Pawn to e8, queening! The black king is too far away to stop it — a textbook passed pawn endgame win.' }
   ],
 
   async init() {
@@ -31,6 +31,7 @@ CK.student = {
     }
 
     this.userProfile = await CK.db.getProfile(currentUser.id) || currentUser;
+    this._solvedPuzzles = new Set(); // reset per-session so a new login starts fresh
 
     // Ensure numeric values and proper defaults
     this.userProfile.rating = parseInt(this.userProfile.rating) || 800;
@@ -293,7 +294,7 @@ CK.student = {
     const sTable = document.getElementById('studentUpcomingTable');
     if (sTable) {
       const todayStr = new Date().toISOString().split('T')[0];
-      const allMeetings = await CK.db.getMeetings();
+      const allMeetings = (await CK.db.getMeetings()) || [];
       const meetings = allMeetings
         .filter(m => m.date >= todayStr && (!m.batch || m.batch === p.batch))
         .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
@@ -313,22 +314,7 @@ CK.student = {
           </tr>`;
         }).join('');
       } else {
-        // Static fallback when no meetings in DB
-        const schedule = [
-          { date: 'Today', class: `${p.level || 'Intermediate'} Strategy`, coach: p.coach || 'Sarah Chess', time: '4:00 PM', dur: '60m', status: 'p-badge-green' },
-          { date: 'May 18, 2026', class: 'Tactics & Calculation Workshop', coach: 'Michael Knight', time: '5:30 PM', dur: '45m', status: 'p-badge-blue' },
-          { date: 'May 22, 2026', class: 'Opening Prep: Italian & Sicilian', coach: p.coach || 'Sarah Chess', time: '4:00 PM', dur: '60m', status: 'p-badge-blue' }
-        ];
-        sTable.innerHTML = schedule.map(s => `
-          <tr>
-            <td>${s.date}</td>
-            <td style="font-weight:600">${s.class}</td>
-            <td>${s.coach}</td>
-            <td>${s.time}</td>
-            <td>${s.dur}</td>
-            <td><span class="p-badge ${s.status}">${s.date==='Today'?'Upcoming':'Scheduled'}</span></td>
-          </tr>
-        `).join('');
+        sTable.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; opacity:0.55;">No upcoming classes scheduled yet. Your coach will add sessions soon!</td></tr>`;
       }
     }
   },
@@ -407,23 +393,49 @@ CK.student = {
     const list = document.getElementById('studentResourcesList');
     if (!list) return;
 
+    const myId    = this.userProfile.id    || this.userProfile.userid || '';
     const myLevel = this.userProfile.level || 'Beginner';
-    const docs = await CK.db.getDocuments(myLevel);
+    const myBatch = this.userProfile.batch || '';
+    const myCoach = this.userProfile.coach || '';
 
-    if (!docs || docs.length === 0) {
+    const allDocs = await CK.db.getDocuments();
+    const docs = (allDocs || []).filter(f => {
+      // Show if directly assigned to this student
+      if (f.user_ids) {
+        const ids = f.user_ids.split(',').map(s => s.trim());
+        if (ids.includes(myId)) return true;
+      }
+      // Fallback: show if level + (batch or coach) match and no specific assignment
+      const levelMatch = !f.level || f.level === myLevel;
+      const batchMatch = !f.batch || f.batch === 'All Batches' || f.batch === myBatch;
+      const coachMatch = !f.coach || f.coach === myCoach;
+      return levelMatch && batchMatch && coachMatch;
+    });
+
+    if (!docs.length) {
       list.innerHTML = '<div style="opacity:0.6; padding:20px; text-align:center;">No resources assigned to your level yet. Check back soon!</div>';
       return;
     }
 
-    list.innerHTML = docs.map(f => `
-      <div class="p-resource-item">
-        <div>
-          <div class="p-resource-name">📄 ${f.name}</div>
-          <div class="p-resource-note">📝 ${f.level} · Added by ${f.coach || 'Coach'}</div>
-        </div>
-        <button class="p-btn p-btn-blue p-btn-sm" onclick="CK.showToast('Downloading ${f.name}...', 'success')">Download</button>
-      </div>
-    `).join('');
+    const _e = CK.esc || (s => s);
+    list.innerHTML = docs.map(f => {
+      const downloadUrl = f.file_name
+        ? (window.supabaseClient
+            ? window.supabaseClient.storage.from('documents').getPublicUrl(f.file_name).data?.publicUrl
+            : null)
+        : null;
+      const dlAttr = downloadUrl
+        ? `onclick="window.open('${_e(downloadUrl)}','_blank')"`
+        : `onclick="CK.showToast('File not available yet.','error')"`;
+      return `
+        <div class="p-resource-item">
+          <div>
+            <div class="p-resource-name">📄 ${_e(f.name)}</div>
+            <div class="p-resource-note">📝 ${_e(f.level || myLevel)} · ${_e(f.type || 'Material')}${f.notes ? ' · ' + _e(f.notes) : ''}</div>
+          </div>
+          <button class="p-btn p-btn-blue p-btn-sm" ${dlAttr}>Download</button>
+        </div>`;
+    }).join('');
   },
 
   _PUZZLE_SETUPS: {
@@ -695,6 +707,20 @@ CK.student = {
         this.userProfile.star = (this.userProfile.star || 0) + 1;
       }
       await CK.db.saveProfile(this.userProfile);
+
+      // Persist individual puzzle solve to puzzle_scores table
+      await CK.db.savePuzzleScore({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+        userId: this.userProfile.id || this.userProfile.userid,
+        userName: this.userProfile.full_name || '',
+        puzzleId: p.id,
+        solved: true,
+        time: this._puzzleSeconds,
+        mistakes: this._puzzleMistakes,
+        xp: this.getXPForPuzzle(p.diff, this._puzzleSeconds, this._puzzleMistakes),
+        date: new Date().toISOString()
+      });
+
       this.updateProfile();
       this.renderDashboard();
       this.renderPuzzlesList();
@@ -722,7 +748,7 @@ CK.student = {
     const container = document.getElementById('studentReviewsContainer');
     if (!container) return;
 
-    const myReviews = await CK.tracker.getReviews(this.userProfile ? this.userProfile.full_name : 'Emma Wilson');
+    const myReviews = await CK.tracker?.getReviews(this.userProfile?.full_name || '') || [];
 
     if (!myReviews.length) {
       container.innerHTML = '<div class="cls-empty">📭 No coach reviews posted yet. Keep attending classes!</div>';
@@ -1023,7 +1049,7 @@ CK.student = {
     if (!p) return;
 
     // 1. Attendance (30%) — from advanced attendance records
-    const attnSummary = (await CK.classSystem?.getStudentAttendanceSummary(p.id)) || null;
+    const attnSummary = (await CK.classSystem?.getStudentAttendanceSummary(p.id)) || { total: 0, present: 0, pct: 0 };
     const logs = (await CK.db.getAttendance(p.id)) || [];
     const presentCount = logs.filter(l => l.status === 'present').length;
     const totalSessions = attnSummary ? attnSummary.total : logs.length;
@@ -1119,19 +1145,21 @@ CK.student = {
     if (!ctx) return;
 
     // Fetch historical ratings from DB
-    const history = await CK.db.getRatings(this.userProfile.userid || this.userProfile.id);
+    const history = await CK.db.getRatings(this.userProfile.id || this.userProfile.userid);
     
-    let labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Now'];
-    let onlineData = [800, 850, 920, 1050, 1100, 1120];
-    let intData = [0, 0, 1000, 1050, 1080, 1100];
+    const now = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    let labels = [now];
+    let onlineData = [this.userProfile.rating || 800];
+    let intData = [parseInt(this.userProfile.fide_rating) || 0];
 
     if (history && history.length > 0) {
-      labels = history.map(h => {
-        const d = new Date(h.date);
-        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      });
-      onlineData = history.map(h => h.online || this.userProfile.rating);
+      labels = history.map(h => new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+      onlineData = history.map(h => h.online || this.userProfile.rating || 800);
       intData = history.map(h => h.international || 0);
+      // Append current rating as last data point if not already today's
+      labels.push(now);
+      onlineData.push(this.userProfile.rating || 800);
+      intData.push(parseInt(this.userProfile.fide_rating) || 0);
     }
 
     // Destroy existing chart if present to prevent rendering bugs
@@ -1254,7 +1282,7 @@ CK.student = {
 
     let classTime = null;
     let classTitle = `${p.level || 'Intermediate'} Strategy Session`;
-    let classCoach = p.coach || 'Sarah Chess';
+    let classCoach = p.coach || '—';
 
     if (meetings.length) {
       const next = meetings[0];
@@ -1385,7 +1413,7 @@ CK.student = {
               </div>
               <div class="rc-info-item">
                 <span class="rc-info-label">Assigned Coach</span>
-                <span class="rc-info-val">${p.coach || 'Sarah Chess'}</span>
+                <span class="rc-info-val">${p.coach || '—'}</span>
               </div>
               <div class="rc-info-item">
                 <span class="rc-info-label">Academic Term</span>
@@ -1464,7 +1492,7 @@ CK.student = {
           <!-- Signatures -->
           <div class="rc-signatures">
             <div class="rc-sig-box">
-              <div class="rc-sig-line">${p.coach || 'Sarah Chess'}</div>
+              <div class="rc-sig-line">${p.coach || '—'}</div>
               <div class="rc-sig-title">Master Coach Signature</div>
             </div>
             <div class="rc-sig-box">
@@ -1612,7 +1640,8 @@ CK.student = {
       p.last_txn_id = response.razorpay_payment_id || ('CK_TXN_' + Math.floor(1e8 + Math.random() * 9e8));
       p.paid_date = new Date().toLocaleDateString('en-GB');
       p.pay_method = 'Razorpay';
-      p.due_date = '14-Jun-2026';
+      const _rd = new Date(); _rd.setMonth(_rd.getMonth() + 1); _rd.setDate(14);
+      p.due_date = _rd.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
       await CK.db.saveProfile(p);
     }
     CK.showToast('Payment successful! Your account has been updated.', 'success');
@@ -1718,7 +1747,7 @@ CK.student = {
     const utrEl = document.getElementById('upiUtrInput');
     const utr   = utrEl ? utrEl.value.trim() : '';
 
-    if (!utr || utr.length < 8 || utr.length > 30 || !/^[A-Z0-9]+$/.test(utr)) {
+    if (!utr || utr.length < 8 || utr.length > 30 || !/^[A-Z0-9]+$/i.test(utr)) {
       CK.showToast('Please enter a valid UTR / Transaction ID (8–30 alphanumeric characters).', 'warning');
       return;
     }
@@ -1735,7 +1764,8 @@ CK.student = {
         p.last_txn_id = utr;
         p.paid_date  = new Date().toLocaleDateString('en-GB');
         p.pay_method = 'UPI / Google Pay';
-        p.due_date   = '14-Jun-2026';
+        const _ud = new Date(); _ud.setMonth(_ud.getMonth() + 1); _ud.setDate(14);
+        p.due_date   = _ud.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
         await CK.db.saveProfile(p);
       }
 
@@ -2058,7 +2088,7 @@ CK.student = {
             <p style="color:#94a3b8; font-size:0.9rem;">Issued on ${new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' })}</p>
             <div class="signatures">
               <div>
-                <div class="sig">${this.userProfile.coach || 'Sarah Chess'}</div>
+                <div class="sig">${this.userProfile.coach || '—'}</div>
                 <div style="font-size:0.8rem; margin-top:5px; opacity:0.6;">Assigned Coach</div>
               </div>
               <div>

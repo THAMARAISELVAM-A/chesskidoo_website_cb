@@ -20,19 +20,7 @@ CK.classSystem = (() => {
   const uid            = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
   const today          = () => new Date().toISOString().split('T')[0];
 
-  /* ─── seed default classes so coaches see something on first load ─── */
-  async function _seed() {
-    const existing = await getClasses();
-    if (existing.length) return;
-    const seedData = [
-      { id:'cls1', coachId:'c1', coachName:'ARIVUSELVAM', title:'Beginner Fundamentals', level:'Beginner', batch:'Group', days:['Mon','Thu'], time:'17:00', duration:60, zoomLink:'https://meet.google.com/beg-ari-abc', studentIds:['s1','s8','s27'], maxStudents:10, active:true, createdAt: today() },
-      { id:'cls2', coachId:'c2', coachName:'GYANASURYA',  title:'Weekend Tactics',        level:'Beginner', batch:'WEEKEND', days:['Sat','Sun'], time:'10:00', duration:90, zoomLink:'https://meet.google.com/gya-wk-xyz', studentIds:['s2','s9','s21'], maxStudents:10, active:true, createdAt: today() },
-      { id:'cls3', coachId:'c3', coachName:'VISHNU',      title:'Intermediate Strategy',  level:'Intermediate', batch:'FRI&SAT', days:['Fri','Sat'], time:'16:00', duration:75, zoomLink:'https://meet.google.com/vis-int-str', studentIds:['s3','s14','s19'], maxStudents:8, active:true, createdAt: today() },
-      { id:'cls4', coachId:'c7', coachName:'RANJITH',     title:'Advanced Openings',      level:'Advanced', batch:'Weekend', days:['Sat'], time:'09:00', duration:90, zoomLink:'https://meet.google.com/raj-adv-opn', studentIds:['s26','s35','s36'], maxStudents:6, active:true, createdAt: today() }
-    ];
-    for (const c of seedData) await CK.db.saveClass(c);
-  }
-  _seed();
+  // No seed data — classes are created by real coaches via the Add Class form
 
   /* ═══════════════════════════════════════════════════════════
      COACH — CLASS MANAGEMENT
@@ -242,19 +230,25 @@ CK.classSystem = (() => {
                 const _e = CK.esc || (s => s);
                 const rec = attnRecords.find(a => a.studentId === s.id && a.classId === cls.id);
                 const status = rec?.status || '';
+                const _da = `data-sid="${_e(s.id)}" data-sname="${_e(s.full_name)}" data-cid="${_e(cls.id)}" data-ctitle="${_e(cls.title)}" data-coach="${_e(coachId)}" data-date="${_e(date)}" data-container="${_e(containerId)}"`;
                 return `
                   <div class="cls-attn-row">
                     <div class="cls-attn-name">${_e(s.full_name)}</div>
                     <div class="cls-attn-btns">
-                      <button class="cls-attn-btn ${status==='present'?'active-present':''}" onclick="CK.classSystem.markStudentAttn('${_e(s.id)}','${_e(s.full_name?.replace(/'/g,"&apos;"))}','${_e(cls.id)}','${_e(cls.title?.replace(/'/g,"&apos;"))}','${_e(coachId)}','${_e(date)}','present','${_e(containerId)}')">✅ Present</button>
-                      <button class="cls-attn-btn ${status==='absent'?'active-absent':''}" onclick="CK.classSystem.markStudentAttn('${_e(s.id)}','${_e(s.full_name?.replace(/'/g,"&apos;"))}','${_e(cls.id)}','${_e(cls.title?.replace(/'/g,"&apos;"))}','${_e(coachId)}','${_e(date)}','absent','${_e(containerId)}')">❌ Absent</button>
-                      <button class="cls-attn-btn ${status==='late'?'active-late':''}" onclick="CK.classSystem.markStudentAttn('${_e(s.id)}','${_e(s.full_name?.replace(/'/g,"&apos;"))}','${_e(cls.id)}','${_e(cls.title?.replace(/'/g,"&apos;"))}','${_e(coachId)}','${_e(date)}','late','${_e(containerId)}')">⏰ Late</button>
+                      <button class="cls-attn-btn ${status==='present'?'active-present':''}" ${_da} data-status="present" onclick="CK.classSystem.markAttnFromBtn(this)">✅ Present</button>
+                      <button class="cls-attn-btn ${status==='absent'?'active-absent':''}" ${_da} data-status="absent" onclick="CK.classSystem.markAttnFromBtn(this)">❌ Absent</button>
+                      <button class="cls-attn-btn ${status==='late'?'active-late':''}" ${_da} data-status="late" onclick="CK.classSystem.markAttnFromBtn(this)">⏰ Late</button>
                     </div>
                   </div>`;
               }).join('') : `<div class="cls-empty" style="padding:12px;">No students assigned to this class yet.</div>`}
             </div>
           </div>`;
       }).join('')}`;
+  }
+
+  function markAttnFromBtn(btn) {
+    const d = btn.dataset;
+    markStudentAttn(d.sid, d.sname, d.cid, d.ctitle, d.coach, d.date, d.status, d.container);
   }
 
   async function markStudentAttn(studentId, studentName, classId, className, coachId, date, status, containerId) {
@@ -383,7 +377,7 @@ CK.classSystem = (() => {
   return {
     getClasses, getCoachClasses, getStudentClasses,
     renderCoachClasses, createClass, editClass, deleteClass,
-    markCoachAttendance, renderAttendanceMarker, markStudentAttn,
+    markCoachAttendance, renderAttendanceMarker, markStudentAttn, markAttnFromBtn,
     openAssignStudentsModal, openClassModal,
     renderAdminClasses, renderCoachAttendanceReport,
     getStudentAttendanceSummary, getStudentAttn

@@ -249,7 +249,8 @@
     if (!msg) return;
     const msgs = document.getElementById('bot-messages');
     if (!msgs) return;
-    msgs.innerHTML += `<div class="bot-msg bot-msg--user">${msg}</div>`;
+    const _e = CK.esc || (s => s);
+    msgs.innerHTML += `<div class="bot-msg bot-msg--user">${_e(msg)}</div>`;
     input.value = '';
     msgs.scrollTop = msgs.scrollHeight;
 
@@ -421,15 +422,33 @@
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
 
-    // Restore session if present (In background only)
-    const savedUser = localStorage.getItem('ck_user');
-    if (savedUser) {
-      try {
-        CK.currentUser = JSON.parse(savedUser);
-      } catch(e) { 
-        localStorage.removeItem('ck_user'); 
+    // Restore session — re-validate via Supabase, fall back to cached profile if offline
+    (async () => {
+      if (window.supabaseClient) {
+        try {
+          const { data: { session } } = await window.supabaseClient.auth.getSession();
+          if (session?.user) {
+            const cached = localStorage.getItem('ck_user');
+            if (cached) {
+              try { CK.currentUser = JSON.parse(cached); } catch(e) { localStorage.removeItem('ck_user'); }
+            }
+          } else {
+            localStorage.removeItem('ck_user');
+            CK.currentUser = null;
+          }
+        } catch(e) {
+          const cached = localStorage.getItem('ck_user');
+          if (cached) {
+            try { CK.currentUser = JSON.parse(cached); } catch(e2) { localStorage.removeItem('ck_user'); }
+          }
+        }
+      } else {
+        const cached = localStorage.getItem('ck_user');
+        if (cached) {
+          try { CK.currentUser = JSON.parse(cached); } catch(e) { localStorage.removeItem('ck_user'); }
+        }
       }
-    }
+    })();
     
     // ALWAYS start on landing page as requested by user
     CK.showPage('landing-page');
@@ -784,7 +803,7 @@ ta: {
       if (this.board) { this.board.destroy(); this.board = null; }
       this.game = new Chess();
       this.board = Chessboard(containerId, {
-        pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+        pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
         position: 'start',
         orientation: this.orientation
       });
@@ -831,7 +850,7 @@ ta: {
 
       if (this.board) { this.board.destroy(); this.board = null; }
       this.board = Chessboard(boardId, {
-        pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+        pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
         position: this.game.fen(),
         orientation: this.orientation
       });
@@ -928,7 +947,7 @@ ta: {
         this._setBanner(null, '');
         if (this.board) { this.board.destroy(); this.board = null; }
         this.board = Chessboard(this._activeBoardId, {
-          pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+          pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
           position: 'start',
           orientation: this.orientation
         });
@@ -1130,7 +1149,7 @@ ta: {
       for (let i = 0; i < this.currentMove; i++) g.move(this.history[i]);
       if (this.board) { this.board.destroy(); this.board = null; }
       this.board = Chessboard(this._activeBoardId, {
-        pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+        pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
         position: g.fen(),
         orientation: this.orientation
       });
@@ -1142,7 +1161,7 @@ ta: {
       const g = new Chess();
       if (this.board) { this.board.destroy(); this.board = null; }
       this.board = Chessboard(this._activeBoardId, {
-        pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+        pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
         position: g.fen(),
         orientation: 'white',
         draggable: false,
@@ -1214,7 +1233,7 @@ ta: {
       if (this.board) { this.board.destroy(); this.board = null; }
       const self = this;
       this.board = Chessboard(this._activeBoardId, {
-        pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+        pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
         position: 'start',
         orientation: 'white',
         draggable: true,
@@ -1253,12 +1272,18 @@ ta: {
     _sparBotMove() {
       if (!this._sparGame || this._sparGame.game_over()) return;
       const expected = this.history[this._sparMoveIdx];
+      const _checkGameOver = () => {
+        if (!this._sparGame.game_over()) return false;
+        const result = this._sparGame.in_checkmate() ? '🏆 Checkmate!' : '½–½ Draw!';
+        this._setBanner(`${result} <strong>Game over.</strong>`, 'spar');
+        return true;
+      };
       if (this._sparFollowing && expected && this._sparMoveIdx < this.history.length) {
         const move = this._sparGame.move(expected.san);
         if (move) {
           this._sparMoveIdx++;
           if (this.board) this.board.position(this._sparGame.fen(), true);
-          this._setBanner(`🤖 <strong>Bot played:</strong> ${move.san}. Your turn (White)!`, 'spar');
+          if (!_checkGameOver()) this._setBanner(`🤖 <strong>Bot played:</strong> ${move.san}. Your turn (White)!`, 'spar');
           this.updateAnalysis(this._sparGame.fen(), move);
           return;
         }
@@ -1271,7 +1296,7 @@ ta: {
             const move = this._sparGame.move({ from: uci.slice(0,2), to: uci.slice(2,4), promotion: uci[4] || 'q' });
             if (move) {
               if (this.board) this.board.position(this._sparGame.fen(), true);
-              this._setBanner(`🤖 <strong>Bot played:</strong> ${move.san} (Stockfish d${result.depth}). Your turn!`, 'spar');
+              if (!_checkGameOver()) this._setBanner(`🤖 <strong>Bot played:</strong> ${move.san} (Stockfish d${result.depth}). Your turn!`, 'spar');
               this.updateAnalysis(this._sparGame.fen(), move);
               return;
             }
@@ -1281,7 +1306,7 @@ ta: {
             const m = moves[Math.floor(Math.random() * moves.length)];
             const move = this._sparGame.move(m);
             if (move && this.board) this.board.position(this._sparGame.fen(), true);
-            this._setBanner(`🤖 <strong>Bot played:</strong> ${move ? move.san : '?'}. Your turn!`, 'spar');
+            if (!_checkGameOver()) this._setBanner(`🤖 <strong>Bot played:</strong> ${move ? move.san : '?'}. Your turn!`, 'spar');
           }
         });
       }
@@ -1319,12 +1344,26 @@ ta: {
     },
 
     broadcastCoach() {
-      CK.showToast('📢 Position broadcasted to 12 active student scratchpads!', 'success');
+      const fen = this._sparGame?.fen() || this.game?.fen() || 'start';
+      const pgn = this.game ? this.game.pgn() : '';
+      const broadcast = { fen, pgn, coach: CK.currentUser?.full_name || 'Coach', ts: Date.now() };
+      localStorage.setItem('ck_coach_broadcast', JSON.stringify(broadcast));
+      if (window.supabaseClient) {
+        try { window.supabaseClient.from('broadcasts').upsert({ id: 'coach_board', ...broadcast }); } catch(e) {}
+      }
+      const active = Object.values(JSON.parse(localStorage.getItem('ck_live_presence') || '{}')).filter(u => u.role === 'student' && Date.now() - u.lastSeen < 300000).length;
+      CK.showToast(`📢 Position broadcasted to ${active} active student${active !== 1 ? 's' : ''}!`, 'success');
     },
 
     handleFileUpload(event, boardId) {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext !== 'pgn' && ext !== 'txt') {
+        CK.showToast('Please upload a .pgn or .txt file.', 'warning');
+        event.target.value = '';
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (e) => {
         const pgnText = e.target.result;
@@ -1374,7 +1413,7 @@ ta: {
     const titleEl = document.getElementById('vaultModalTitle');
     const coachEl = document.getElementById('vaultModalCoach');
     if (titleEl) titleEl.textContent = title || 'Class Replay';
-    if (coachEl) coachEl.textContent = `Coach: ${coach || 'Sarah Chess'}`;
+    if (coachEl) coachEl.textContent = `Coach: ${coach || '—'}`;
     const tsEl = document.getElementById('vaultVideoTimestamp');
     if (tsEl) tsEl.textContent = '00:00 / 45:20';
     const badgeEl = document.getElementById('vaultMoveBadge');

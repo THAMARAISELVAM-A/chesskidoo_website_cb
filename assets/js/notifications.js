@@ -25,11 +25,12 @@ CK.notifs = (() => {
   };
 
   /* ── Storage ── */
-  const getAll  = ()    => JSON.parse(localStorage.getItem(KEY) || '[]');
-  const saveAll = (arr) => localStorage.setItem(KEY, JSON.stringify(arr));
+  const getAll  = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch(e) { return []; } };
+  const saveAll = (arr) => { try { localStorage.setItem(KEY, JSON.stringify(arr)); } catch(e) {} };
 
   /* ── Push a notification ── */
   function push(type, title, body, targetId = null, targetRole = null) {
+    if (!TYPES[type]) type = 'general';
     const all = getAll();
     all.unshift({
       id: uid(), type, title, body,
@@ -174,7 +175,7 @@ CK.notifs = (() => {
         push('class_reminder', 'Classes Scheduled Today', `You have ${todayClasses.length} class(es) today. Remember to mark attendance in the Attendance panel.`, user.id, role);
       }
       // Remind about pending reports
-      const students = JSON.parse(localStorage.getItem('ck_db_users') || '[]').filter(u => u.coach === user.full_name && u.role === 'student');
+      const students = JSON.parse(localStorage.getItem('ck_db_users') || '[]').filter(u => u.role === 'student' && u.coach && u.coach === user.full_name);
       const thisMonth = new Date().getMonth() + 1;
       const thisYear  = new Date().getFullYear();
       const doneReports = reports.filter(r => r.coachId === user.id && r.month === thisMonth && r.year === thisYear);

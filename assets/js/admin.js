@@ -14,13 +14,6 @@ CK.admin = {
     
     // Load class lists from DB
     this.classesDb = await CK.db.getClasses();
-    if (this.classesDb.length === 0) {
-      this.classesDb = [
-        { id: 'CL1', title: 'Intermediate Strategy', level: 'Intermediate', coach: 'Sarah Chess', schedule: 'Mon 4:00 PM', students: 8, max: 10 },
-        { id: 'CL2', title: 'Beginner Basics', level: 'Beginner', coach: 'Michael Knight', schedule: 'Tue 5:00 PM', students: 5, max: 8 }
-      ];
-      for (const cl of this.classesDb) await CK.db.saveClass(cl);
-    }
 
     // Populate default attendance date to today
     const dateEl = document.getElementById('adminAttendanceDate');
@@ -503,15 +496,20 @@ CK.admin = {
     }).join('');
   },
 
+  _nextDueDate() {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 1);
+    d.setDate(14);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
+  },
+
   async toggleFeeStatus(id, newStatus) {
     const s = await CK.db.getProfile(id);
     if (!s) return;
     s.status = newStatus;
-    if (newStatus === 'Paid') {
-      s.due_date = '14-Jun-2026';
-    } else {
-      s.due_date = '⚠️ ' + new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
-    }
+    s.due_date = newStatus === 'Paid'
+      ? this._nextDueDate()
+      : '⚠️ Overdue as of ' + new Date().toLocaleDateString('en-GB');
     await CK.db.saveProfile(s);
     await this.loadStudents();
     CK.showToast(`Student fee status updated to ${newStatus}`, 'success');
@@ -628,7 +626,7 @@ CK.admin = {
       const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = `${s.full_name.replace(/\s/g,'_')}_profile.json`;
+      a.href = url; a.download = `${(s.full_name || 'student').replace(/\s/g,'_')}_profile.json`;
       a.click(); URL.revokeObjectURL(url);
       CK.showToast('Profile exported as JSON', 'success');
     }
@@ -639,7 +637,7 @@ CK.admin = {
     const search = document.getElementById('adminStudentSearch')?.value.toLowerCase() || '';
     const students = (await CK.db.getProfiles('student')) || [];
     const filtered = students.filter(s =>
-      s.full_name.toLowerCase().includes(search) || 
+      (s.full_name || '').toLowerCase().includes(search) ||
       (s.coach && s.coach.toLowerCase().includes(search)) ||
       (s.status && s.status.toLowerCase().includes(search))
     );
@@ -736,7 +734,7 @@ CK.admin = {
       const fee = parseInt((s.fee || '0').toString().replace(/[^0-9]/g, '')) || 0;
       if (s.status === 'Paid') totalIncome += fee;
     });
-    if (totalIncome === 0) totalIncome = 45800;
+    // No fallback — show real 0 if no paid students yet
 
     setExp('adminExpTotalMonth', '₹' + totalExp.toLocaleString());
     setExp('adminExpTotalIncome', '₹' + totalIncome.toLocaleString());
@@ -849,7 +847,7 @@ CK.admin = {
     });
 
     const _e = CK.esc || (s => s);
-    tbody.innerHTML = students.map((s, idx) => {
+    tbody.innerHTML = students.map(s => {
       const currentStatus = attendanceMap[s.id] || 'pending';
       const levelMap = { Beginner: 'Beginner Basics', Intermediate: 'Intermediate Strategy', Advanced: 'Advanced Tournament Prep', 'Tournament Ready': 'Elite Preparation' };
       const classTitle = levelMap[s.level] || s.level || 'Beginner Basics';
@@ -1156,8 +1154,10 @@ CK.admin = {
     await this.populateCoachSelects();
     const setF = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
 
+    const authRow = document.getElementById('admin_s_auth_row');
     if (studentId) {
       if (title) title.innerText = 'Edit Student Enrollment Details';
+      if (authRow) authRow.style.display = 'none'; // auth account already exists
       const s = await CK.db.getProfile(studentId);
       if (!s) return CK.showToast('Student not found.', 'error');
       setF('admin_s_id',       s.id);
@@ -1173,9 +1173,12 @@ CK.admin = {
       setF('admin_s_due',      s.due_date || '14-May-2026');
     } else {
       if (title) title.innerText = 'Enroll New Student';
+      if (authRow) authRow.style.display = ''; // show for new enrollment
       setF('admin_s_id', '');
       setF('admin_s_name', '');
       setF('admin_s_phone', '');
+      setF('admin_s_email', '');
+      setF('admin_s_password', '');
       setF('admin_s_rating', 800);
       setF('admin_s_fee', 5000);
     }
@@ -1183,22 +1186,39 @@ CK.admin = {
   },
 
   async saveStudent() {
-    const getV = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+    const getV = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
     const name  = getV('admin_s_name');
     const phone = getV('admin_s_phone');
     if (!name) return CK.showToast('Student Full Name is required', 'error');
 
-    const id    = getV('admin_s_id') || 'student-' + Date.now();
-    const isNew = !getV('admin_s_id');
+    const existingId = getV('admin_s_id');
+    const isNew = !existingId;
 
     let existing = {};
-    if (!isNew) existing = (await CK.db.getProfile(id)) || {};
+    if (!isNew) existing = (await CK.db.getProfile(existingId)) || {};
+
+    // For new students, require email + password and create a Supabase Auth account
+    let authUid = existingId;
+    if (isNew) {
+      const email    = getV('admin_s_email');
+      const password = getV('admin_s_password');
+      if (!email)    return CK.showToast('Student email is required for new enrollment', 'error');
+      if (!password || password.length < 8) return CK.showToast('Initial password must be at least 8 characters', 'error');
+
+      if (window.supabaseClient) {
+        const { data, error } = await window.supabaseClient.auth.signUp({ email, password });
+        if (error) return CK.showToast('Auth account creation failed: ' + error.message, 'error');
+        authUid = data.user?.id || ('student-' + Date.now());
+      } else {
+        authUid = 'student-' + Date.now();
+      }
+    }
 
     const studentData = {
       ...existing,
-      id: id,
+      id: authUid,
       full_name: name,
-      email: existing.email || `${name.toLowerCase().replace(/\s/g, '')}@gmail.com`,
+      email: existing.email || getV('admin_s_email'),
       phone_number: phone,
       role: 'student',
       level:    getV('admin_s_level')    || 'Beginner',
@@ -1248,19 +1268,50 @@ CK.admin = {
     this.loadStudents(filtered);
   },
 
+  async refreshUploadStudentList(form) {
+    const container = document.getElementById('uploadStudentList');
+    if (!container) return;
+    const level = form?.level?.value || '';
+    const batch = form?.batch?.value?.trim() || '';
+    const students = (await CK.db.getProfiles('student')) || [];
+    const filtered = students.filter(s => {
+      const lvlMatch = !level || s.level === level;
+      const batchMatch = !batch || (s.batch || '').toLowerCase() === batch.toLowerCase();
+      return lvlMatch && batchMatch;
+    });
+    if (!filtered.length) {
+      container.innerHTML = '<span style="color:#aaa; font-size:0.85rem;">No students match this level/batch</span>';
+      return;
+    }
+    const _e = CK.esc || (s => s);
+    container.innerHTML = filtered.map(s => `
+      <label style="display:flex; align-items:center; gap:8px; padding:3px 0; cursor:pointer;">
+        <input type="checkbox" name="assignedStudents" value="${_e(s.id)}" checked
+            style="width:15px; height:15px;" />
+        <span>${_e(s.full_name)}</span>
+        <span style="color:#888; font-size:0.8rem;">${_e(s.level || '')}</span>
+      </label>
+    `).join('');
+  },
+
   async handleResourceUpload(e) {
     e.preventDefault();
     const form = e.target;
     const btn = form.querySelector('[type="submit"]');
     btn.disabled = true;
     btn.textContent = 'Uploading...';
-    
+
     try {
       const fileInput = form.file;
       const file = fileInput.files[0];
       const customName = form.fileName.value;
       const targetLevel = form.level.value;
       const batchName = form.batch.value || 'All Batches';
+
+      // Collect selected student IDs from the dynamic checkbox list
+      const checkedBoxes = form.querySelectorAll('input[name="assignedStudents"]:checked');
+      const selectedUserIds = Array.from(checkedBoxes).map(cb => cb.value);
+      const today = new Date().toISOString().slice(0, 10);
 
       let filePath = `docs/${Date.now()}_mock_file.pdf`;
 
@@ -1269,29 +1320,30 @@ CK.admin = {
         const { error: upErr } = await window.supabaseClient.storage.from('documents').upload(filePath, file);
         if (upErr) throw upErr;
       }
-      
-      // Persist resource via DB layer (Supabase + localStorage mirror)
-      await CK.db.saveResource({
-        id: 'R' + Date.now(),
-        name: file ? file.name : customName,
-        batch: parseInt(form.batch.value) || 0,
-        type: form.type ? form.type.value : 'Material',
-        notes: form.notes ? form.notes.value : ''
-      });
-      // Resource is already saved above via CK.db.saveResource() which syncs Supabase + localStorage
-      // No extra save needed here
-      
+
       await CK.db.saveDocument({
         name: customName,
         file_name: filePath,
         level: targetLevel,
         batch: batchName,
+        user_ids: selectedUserIds.join(','),
+        type: form.type ? form.type.value : 'Material',
+        notes: form.notes ? form.notes.value : '',
         created_at: new Date().toISOString()
       });
-      
-      CK.showToast('Resource learning material published!', 'success');
+
+      // Mark each assigned student as present for today
+      if (selectedUserIds.length) {
+        await Promise.all(selectedUserIds.map(uid =>
+          CK.db.saveAttendance({ userid: uid, date: today, status: 'Present', class_title: customName })
+        ));
+      }
+
+      CK.showToast('Resource published' + (selectedUserIds.length ? ` and ${selectedUserIds.length} student(s) marked present.` : '!'), 'success');
       CK.closeModal('uploadModal');
       form.reset();
+      const usl = document.getElementById('uploadStudentList');
+      if (usl) usl.innerHTML = '<span style="color:#aaa; font-size:0.85rem;">Select level/batch above to load students</span>';
       await this.loadFiles();
 
       if (CK.student && CK.student.userProfile) CK.student.init();
@@ -1356,23 +1408,36 @@ CK.admin = {
   },
 
   async saveCoach() {
-    const getV = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+    const getV = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
     const name  = getV('admin_c_name');
     const phone = getV('admin_c_phone');
-    const email = getV('admin_c_email') || `${name.toLowerCase().replace(/\s/g, '')}@gmail.com`;
-    if (!name) return CK.showToast('Coach name is required', 'error');
+    const email = getV('admin_c_email');
+    if (!name)  return CK.showToast('Coach name is required', 'error');
 
-    const id    = getV('admin_c_id') || 'coach-' + Date.now();
-    const isNew = !getV('admin_c_id');
+    const existingId = getV('admin_c_id');
+    const isNew = !existingId;
+
+    if (isNew && !email) return CK.showToast('Coach email is required', 'error');
 
     let existing = {};
-    if (!isNew) existing = (await CK.db.getProfile(id)) || {};
+    if (!isNew) existing = (await CK.db.getProfile(existingId)) || {};
+
+    let authUid = existingId;
+    if (isNew && window.supabaseClient) {
+      const password = getV('admin_c_password');
+      if (!password || password.length < 8) return CK.showToast('Initial password must be at least 8 characters', 'error');
+      const { data, error } = await window.supabaseClient.auth.signUp({ email, password });
+      if (error) return CK.showToast('Auth account creation failed: ' + error.message, 'error');
+      authUid = data.user?.id || ('coach-' + Date.now());
+    } else if (isNew) {
+      authUid = 'coach-' + Date.now();
+    }
 
     const coachData = {
       ...existing,
-      id: id,
+      id: authUid,
       full_name: name,
-      email: email,
+      email: existing.email || email,
       phone_number: phone,
       role: 'coach',
       puzzle:       getV('admin_c_spec'),
@@ -1384,7 +1449,7 @@ CK.admin = {
       level: 'Advanced',
       userid: isNew ? 'C' + (Math.floor(Math.random() * 900) + 100).toString() : existing.userid
     };
-    
+
     await CK.db.saveProfile(coachData);
     await this.loadCoaches();
     this.updateStats();
@@ -1394,18 +1459,24 @@ CK.admin = {
 
   async openCoachModal(coachId = null) {
     const setC = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
-    setC('admin_c_id',     coachId || '');
-    setC('admin_c_name',   '');
-    setC('admin_c_spec',   '');
-    setC('admin_c_phone',  '');
-    setC('admin_c_email',  '');
-    setC('admin_c_addr',   '');
-    setC('admin_c_photo',  '');
-    setC('admin_c_status', 'Active');
-    setC('admin_c_avail',  'Weekends');
-    setC('admin_c_bio',    '');
+    const authRow = document.getElementById('admin_c_auth_row');
+    const title   = document.getElementById('adminCoachModalTitle');
+
+    setC('admin_c_id',       coachId || '');
+    setC('admin_c_name',     '');
+    setC('admin_c_spec',     '');
+    setC('admin_c_phone',    '');
+    setC('admin_c_email',    '');
+    setC('admin_c_password', '');
+    setC('admin_c_addr',     '');
+    setC('admin_c_photo',    '');
+    setC('admin_c_status',   'Active');
+    setC('admin_c_avail',    'Weekends');
+    setC('admin_c_bio',      '');
 
     if (coachId) {
+      if (title)   title.innerText = 'Edit Coach Details';
+      if (authRow) authRow.style.display = 'none';
       const c = await CK.db.getProfile(coachId);
       if (c) {
         setC('admin_c_name',   c.full_name);
@@ -1418,6 +1489,9 @@ CK.admin = {
         setC('admin_c_avail',  c.availability || 'Weekends');
         setC('admin_c_bio',    c.bio || '');
       }
+    } else {
+      if (title)   title.innerText = 'Add New Coach';
+      if (authRow) authRow.style.display = '';
     }
     this.openModal('adminCoachModal');
   },
@@ -1448,7 +1522,7 @@ CK.admin = {
   },
 
   async saveClass() {
-    const getV = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+    const getV = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
     const title = getV('admin_cl_title');
     if (!title) return CK.showToast('Class title is required', 'error');
 
@@ -1456,15 +1530,31 @@ CK.admin = {
     const editId = saveBtn?.dataset.editId;
     const existing = editId ? this.classesDb.find(c => c.id === editId) : null;
 
+    // Resolve selected coach's profile so we can store coachId + coachName
+    const coachName = getV('admin_cl_coach');
+    const coaches   = (await CK.db.getProfiles('coach')) || [];
+    const coachObj  = coaches.find(c => c.full_name === coachName) || {};
+
+    const daysRaw = getV('admin_cl_day');
+    const days    = daysRaw.includes(',') ? daysRaw.split(',') : [daysRaw];
+
     const newClass = {
-      id: existing ? existing.id : 'CL' + (this.classesDb.length + 1),
-      title: title,
-      level:    getV('admin_cl_level') || 'Beginner',
-      coach:    getV('admin_cl_coach'),
-      schedule: getV('admin_cl_day') + ' ' + getV('admin_cl_time'),
-      students: existing ? existing.students : 0,
-      max: existing ? existing.max : 10
+      id:         existing?.id || ('CL' + Date.now()),
+      title,
+      level:      getV('admin_cl_level')    || 'Beginner',
+      batch:      getV('admin_cl_batch')    || 'General',
+      coachId:    coachObj.id               || existing?.coachId || '',
+      coachName:  coachObj.full_name        || coachName,
+      days,
+      time:       getV('admin_cl_time')     || '16:00',
+      duration:   parseInt(getV('admin_cl_duration')) || 60,
+      zoomLink:   getV('admin_cl_link')     || '',
+      studentIds: existing?.studentIds      || [],
+      maxStudents: existing?.maxStudents    || 10,
+      active:     true,
+      createdAt:  existing?.createdAt       || new Date().toISOString()
     };
+
     if (existing) {
       const idx = this.classesDb.findIndex(c => c.id === editId);
       if (idx !== -1) this.classesDb[idx] = newClass;
@@ -1472,11 +1562,11 @@ CK.admin = {
       this.classesDb.push(newClass);
     }
     await CK.db.saveClass(newClass);
-    
+
     await this.loadClasses();
     this.updateStats();
     this.closeModal('adminClassModal');
-    CK.showToast('New class scheduled successfully!', 'success');
+    CK.showToast(`Class "${title}" ${editId ? 'updated' : 'scheduled'} successfully!`, 'success');
   },
 
   /* ── Settings Persistence ── */
@@ -1686,7 +1776,8 @@ CK.admin = {
     const pending = students.filter(s => s.status !== 'Paid' && s.status !== 'Waiting List');
     if (!pending.length) return CK.showToast('All students are already paid!', 'info');
     if (!confirm(`Mark ${pending.length} student(s) as Paid?`)) return;
-    for (const s of pending) { s.status = 'Paid'; s.due_date = '14-Jun-2026'; await CK.db.saveProfile(s); }
+    const nextDue = this._nextDueDate();
+    for (const s of pending) { s.status = 'Paid'; s.due_date = nextDue; await CK.db.saveProfile(s); }
     await this.loadStudents(); this.updateStats(); this.initCharts();
     CK.showToast(`${pending.length} student(s) marked as Paid.`, 'success');
   },
