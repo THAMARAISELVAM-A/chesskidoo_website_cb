@@ -1291,6 +1291,7 @@ ta: {
       const fen = this._sparGame.fen();
       if (window.CK && CK.engine) {
         CK.engine.evaluate(fen).then(result => {
+          if (!this._sparGame || this._sparGame.game_over()) return;
           if (result && result.pv) {
             const uci = result.pv.split(' ')[0];
             const move = this._sparGame.move({ from: uci.slice(0,2), to: uci.slice(2,4), promotion: uci[4] || 'q' });
@@ -1343,13 +1344,13 @@ ta: {
       .catch(() => CK.showToast('Could not fetch game. Paste the PGN directly.', 'error'));
     },
 
-    broadcastCoach() {
+    async broadcastCoach() {
       const fen = this._sparGame?.fen() || this.game?.fen() || 'start';
       const pgn = this.game ? this.game.pgn() : '';
       const broadcast = { fen, pgn, coach: CK.currentUser?.full_name || 'Coach', ts: Date.now() };
       localStorage.setItem('ck_coach_broadcast', JSON.stringify(broadcast));
       if (window.supabaseClient) {
-        try { window.supabaseClient.from('broadcasts').upsert({ id: 'coach_board', ...broadcast }); } catch(e) {}
+        try { await window.supabaseClient.from('broadcasts').upsert({ id: 'coach_board', ...broadcast }); } catch(e) {}
       }
       const active = Object.values(JSON.parse(localStorage.getItem('ck_live_presence') || '{}')).filter(u => u.role === 'student' && Date.now() - u.lastSeen < 300000).length;
       CK.showToast(`📢 Position broadcasted to ${active} active student${active !== 1 ? 's' : ''}!`, 'success');

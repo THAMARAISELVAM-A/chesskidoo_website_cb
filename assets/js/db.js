@@ -392,7 +392,7 @@
         }
       }
 
-      const att = getLocal('attendance');
+      const att = getLocal('attendance') || [];
       return att.filter(a => {
         const matchUser = userid ? a.userid === userid : true;
         const matchDate = date ? a.date === date : true;
@@ -483,7 +483,7 @@
         }
       }
 
-      const tours = getLocal('tourRatings');
+      const tours = getLocal('tourRatings') || [];
       return tours.filter(t => t.user_id === userid);
     },
 
@@ -607,6 +607,7 @@
       }
       const list = JSON.parse(localStorage.getItem('ck_admin_classes') || '[]');
       localStorage.setItem('ck_admin_classes', JSON.stringify(list.filter(c => c.id !== classId)));
+      return true;
     },
 
     // --- NEW: MONTHLY REPORTS ---
@@ -624,6 +625,7 @@
       return all;
     },
     async saveMonthlyReport(report) {
+      if (!report.id) report.id = 'mr-' + Date.now();
       if (canUseSupabase()) {
         try { await window.supabaseClient.from('monthly_reports').upsert(report); } catch (e) { }
       }
@@ -689,6 +691,7 @@
       }
       const all = JSON.parse(localStorage.getItem('ck_coach_attendance') || '[]').filter(a => a.id !== id);
       localStorage.setItem('ck_coach_attendance', JSON.stringify(all));
+      return true;
     },
 
     /* ── Assignments ── */
@@ -719,6 +722,7 @@
       const all = JSON.parse(localStorage.getItem('ck_assignments') || '[]');
       const filtered = all.filter(x => x.id !== id);
       localStorage.setItem('ck_assignments', JSON.stringify(filtered));
+      return true;
     },
 
     /* ── Submissions ── */
@@ -777,6 +781,7 @@
       }
       const all = JSON.parse(localStorage.getItem('ck_feedback') || '[]').filter(x => x.id !== id);
       localStorage.setItem('ck_feedback', JSON.stringify(all));
+      return true;
     }
   };
 

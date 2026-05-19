@@ -9,11 +9,11 @@ CK.classroom = (() => {
   const LIVE_KEY   = 'ck_live_session';
   const LIB_KEY    = 'ck_pgn_lib';
 
-  /* ─── Storage ─── */
-  const getAssignments  = () => JSON.parse(localStorage.getItem(ASSIGN_KEY) || '[]');
-  const saveAssignments = a  => localStorage.setItem(ASSIGN_KEY, JSON.stringify(a));
-  const getSubmissions  = () => JSON.parse(localStorage.getItem(SUBMIT_KEY) || '[]');
-  const saveSubmissions = s  => localStorage.setItem(SUBMIT_KEY, JSON.stringify(s));
+  /* ─── Storage (Async) ─── */
+  const getAssignments  = async () => await CK.db.getAssignments();
+  const saveAssignment  = async a  => await CK.db.saveAssignment(a);
+  const getSubmissions  = async () => await CK.db.getSubmissions();
+  const saveSubmission  = async s  => await CK.db.saveSubmission(s);
   const getLive         = () => JSON.parse(localStorage.getItem(LIVE_KEY)   || 'null');
   const saveLive        = d  => localStorage.setItem(LIVE_KEY, JSON.stringify(d));
   const getLibrary      = () => JSON.parse(localStorage.getItem(LIB_KEY)    || '[]');
@@ -35,7 +35,7 @@ CK.classroom = (() => {
      STUDENT — TAB SWITCHING
   ═══════════════════════════════════════════════════════════════════ */
 
-  function studentTab(tab) {
+  async function studentTab(tab) {
     ['scTabHomework', 'scTabLive'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
@@ -45,7 +45,7 @@ CK.classroom = (() => {
     const btn   = document.querySelector(`.sc-tab-btn[data-tab="${tab}"]`);
     if (panel) panel.style.display = 'block';
     if (btn)   btn.classList.add('active');
-    if (tab === 'homework') renderStudentHomework();
+    if (tab === 'homework') await renderStudentHomework();
     if (tab === 'live')     joinLiveClass();
     if (tab !== 'live')     _stopPolling();
   }
@@ -54,11 +54,11 @@ CK.classroom = (() => {
      STUDENT — HOMEWORK LIST
   ═══════════════════════════════════════════════════════════════════ */
 
-  function renderStudentHomework() {
+  async function renderStudentHomework() {
     const list = document.getElementById('scHomeworkList');
     if (!list) return;
-    const assignments = getAssignments();
-    const submissions = getSubmissions();
+    const assignments = await getAssignments();
+    const submissions = await getSubmissions();
     const userId = me();
 
     if (!assignments.length) {
@@ -96,8 +96,9 @@ CK.classroom = (() => {
      STUDENT — HOMEWORK BOARD
   ═══════════════════════════════════════════════════════════════════ */
 
-  function openHomework(id) {
-    const a = getAssignments().find(x => x.id === id);
+  async function openHomework(id) {
+    const assignments = await getAssignments();
+    const a = assignments.find(x => x.id === id);
     if (!a) return;
     _hwAssignment = a;
     _hwMode       = a.type === 'guess' ? 'guess' : 'study';
@@ -123,14 +124,17 @@ CK.classroom = (() => {
 
     /* Load PGN */
     const g = new Chess();
-    if (a.pgn) g.load_pgn(a.pgn);
+    if (a.pgn && !g.load_pgn(a.pgn)) {
+      CK.showToast('Could not load homework PGN — showing start position.', 'warning');
+      g.reset();
+    }
     _hwHistory      = g.history({ verbose: true });
     _hwCurrentMove  = 0;
 
     /* Init board after DOM has painted (avoids zero-width init in hidden div) */
     if (_hwBoard) { _hwBoard.destroy(); _hwBoard = null; }
     const cfg = {
-      pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+      pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
       position: 'start',
       orientation: 'white',
       draggable: false
@@ -144,14 +148,14 @@ CK.classroom = (() => {
     });
   }
 
-  function closeHomework() {
+  async function closeHomework() {
     const detail = document.getElementById('scHomeworkDetail');
     const list   = document.getElementById('scHomeworkList');
     if (detail) detail.style.display = 'none';
     if (list)   list.style.display   = 'block';
     if (_hwBoard) { _hwBoard.destroy(); _hwBoard = null; }
     _hwAssignment = null;
-    renderStudentHomework();
+    await renderStudentHomework();
   }
 
   function _applyHwPos() {
@@ -225,7 +229,7 @@ CK.classroom = (() => {
     }
   }
 
-  function submitHomework() {
+  async function submitHomework() {
     if (!_hwAssignment) return;
     const userId  = me();
     const total   = _hwHistory.length;
@@ -237,20 +241,20 @@ CK.classroom = (() => {
           : Math.min(100, Math.round((_hwCurrentMove / total) * 100)))
       : 100;
 
-    const subs = getSubmissions().filter(s => !(s.assignmentId === _hwAssignment.id && s.studentId === userId));
-    subs.push({
-      assignmentId: _hwAssignment.id,
-      studentId:    userId,
+    const submission = {
+      id:           uid(),
+      assignment_id: _hwAssignment.id,
+      student_id:    userId,
       accuracy,
       movesStudied: _hwCurrentMove,
       totalMoves:   total,
       note,
       completed:    true,
-      submittedAt:  Date.now()
-    });
-    saveSubmissions(subs);
+      submittedAt:  new Date().toISOString()
+    };
+    await saveSubmission(submission);
     CK.showToast(`✓ Homework submitted! Accuracy: ${accuracy}%`, 'success');
-    closeHomework();
+    await closeHomework();
   }
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -287,7 +291,7 @@ CK.classroom = (() => {
       _lastLiveFen = session.fen;
       if (!_liveBoard) {
         _liveBoard = Chessboard('scLiveBoard', {
-          pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+          pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
           position:    session.fen,
           orientation: session.orientation || 'white',
           draggable:   false
@@ -302,7 +306,7 @@ CK.classroom = (() => {
      COACH — TAB SWITCHING
   ═══════════════════════════════════════════════════════════════════ */
 
-  function coachTab(tab) {
+  async function coachTab(tab) {
     ['ccTabAssign', 'ccTabLive', 'ccTabGrades', 'ccTabLibrary'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
@@ -312,8 +316,8 @@ CK.classroom = (() => {
     const btn   = document.querySelector(`.cc-tab-btn[data-tab="${tab}"]`);
     if (panel) panel.style.display = 'block';
     if (btn)   btn.classList.add('active');
-    if (tab === 'assign')  renderCoachAssignments();
-    if (tab === 'grades')  renderGrades();
+    if (tab === 'assign')  await renderCoachAssignments();
+    if (tab === 'grades')  await renderGrades();
     if (tab === 'library') renderLibrary();
     if (tab === 'live')    _initCoachLiveUI();
   }
@@ -322,7 +326,7 @@ CK.classroom = (() => {
      COACH — ASSIGN HOMEWORK
   ═══════════════════════════════════════════════════════════════════ */
 
-  function assignHomework() {
+  async function assignHomework() {
     const title  = document.getElementById('ccHwTitle')?.value.trim();
     const pgn    = document.getElementById('ccHwPgn')?.value.trim();
     const type   = document.getElementById('ccHwType')?.value || 'study';
@@ -338,23 +342,21 @@ CK.classroom = (() => {
     if (!g.load_pgn(pgn)) { CK.showToast('Invalid PGN — check the notation', 'warning'); return; }
 
     const assignment = { id: uid(), title, pgn, type, assignedTo: to, dueDate: due, description: desc, coach, moves: g.history().length, created: Date.now() };
-    const list = getAssignments();
-    list.unshift(assignment);
-    saveAssignments(list);
+    await saveAssignment(assignment);
 
     CK.showToast(`✓ Assigned: "${title}" (${g.history().length} moves, ${type} mode)`, 'success');
     ['ccHwTitle', 'ccHwPgn', 'ccHwDesc'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-    renderCoachAssignments();
+    await renderCoachAssignments();
   }
 
-  function renderCoachAssignments() {
+  async function renderCoachAssignments() {
     const container = document.getElementById('ccAssignmentList');
     if (!container) return;
-    const assignments = getAssignments();
+    const assignments = await getAssignments();
     if (!assignments.length) { container.innerHTML = '<div class="cls-empty">No assignments yet</div>'; return; }
     container.innerHTML = assignments.map(a => {
       const icon = { study: '📖', guess: '🎯', practice: '⚡' }[a.type] || '📖';
-      const d    = new Date(a.created).toLocaleDateString();
+      const d    = new Date(a.created || a.created_at).toLocaleDateString();
       return `
         <div class="cls-assign-row">
           <span class="cls-type-icon">${icon}</span>
@@ -370,14 +372,15 @@ CK.classroom = (() => {
     }).join('');
   }
 
-  function deleteAssignment(id) {
-    saveAssignments(getAssignments().filter(a => a.id !== id));
-    renderCoachAssignments();
+  async function deleteAssignment(id) {
+    await CK.db.deleteAssignment(id);
+    await renderCoachAssignments();
     CK.showToast('Assignment deleted', 'info');
   }
 
-  function _loadAssignInLab(id) {
-    const a = getAssignments().find(x => x.id === id);
+  async function _loadAssignInLab(id) {
+    const assignments = await getAssignments();
+    const a = assignments.find(x => x.id === id);
     if (!a) return;
     CK.coach.nav('lab');
     setTimeout(() => {
@@ -403,16 +406,22 @@ CK.classroom = (() => {
   function coachStartLive() {
     const pgn = document.getElementById('ccLivePgn')?.value.trim() || '';
     const g = new Chess();
-    if (pgn) g.load_pgn(pgn);
+    if (pgn && !g.load_pgn(pgn)) {
+      CK.showToast('Invalid PGN — check the notation and try again.', 'warning');
+      return;
+    }
     _ccLiveHistory = g.history({ verbose: true });
     _ccLiveMove    = _ccLiveHistory.length;
 
     if (_ccLiveBoard) { _ccLiveBoard.destroy(); _ccLiveBoard = null; }
-    _ccLiveBoard = Chessboard('ccLiveBoard', {
-      pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
-      position:    g.fen(),
-      orientation: 'white',
-      draggable:   false
+    const liveFen = g.fen();
+    requestAnimationFrame(() => {
+      _ccLiveBoard = Chessboard('ccLiveBoard', {
+        pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
+        position:    liveFen,
+        orientation: 'white',
+        draggable:   false
+      });
     });
 
     saveLive({ active: true, pgn, fen: g.fen(), orientation: 'white', currentMove: _ccLiveMove, coachNote: '', updatedAt: Date.now() });
@@ -461,25 +470,25 @@ CK.classroom = (() => {
      COACH — GRADES
   ═══════════════════════════════════════════════════════════════════ */
 
-  function renderGrades() {
+  async function renderGrades() {
     const container = document.getElementById('ccGradesList');
     if (!container) return;
-    const assignments = getAssignments();
-    const submissions = getSubmissions();
+    const assignments = await getAssignments();
+    const submissions = await getSubmissions();
     if (!assignments.length) { container.innerHTML = '<div class="cls-empty">No assignments yet</div>'; return; }
 
     container.innerHTML = assignments.map(a => {
-      const subs = submissions.filter(s => s.assignmentId === a.id);
+      const subs = submissions.filter(s => s.assignment_id === a.id);
       const avg  = subs.length ? Math.round(subs.reduce((s, x) => s + x.accuracy, 0) / subs.length) : null;
       const rows = subs.length
         ? subs.map(s => {
             const acc = s.accuracy;
             const col = acc >= 80 ? 'var(--p-teal)' : acc >= 60 ? 'var(--p-gold)' : '#ef4444';
             return `<tr>
-              <td>${s.studentId}</td>
+              <td>${s.student_id}</td>
               <td style="color:${col};font-weight:700;">${acc}%</td>
               <td>${s.movesStudied}/${s.totalMoves}</td>
-              <td style="color:var(--p-text-muted);">${new Date(s.submittedAt).toLocaleDateString()}</td>
+              <td style="color:var(--p-text-muted);">${new Date(s.submittedAt || s.created_at).toLocaleDateString()}</td>
               <td style="color:var(--p-text-muted);font-size:0.82rem;">${s.note || '—'}</td>
             </tr>`;
           }).join('')

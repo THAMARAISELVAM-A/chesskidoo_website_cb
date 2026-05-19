@@ -1498,13 +1498,13 @@
             <form id="loginForm" onsubmit="CK.handleLogin(event)">
               <div class="form-group-v2">
                 <label class="form-group-v2-label">Email Address</label>
-                <input type="email" name="email" value="admin@gmail.com" placeholder="admin@gmail.com" required
+                <input type="email" name="email" value="" placeholder="Enter your email" required
                   autocomplete="username" class="form-group-v2-input">
               </div>
 
               <div class="form-group-v2" style="position:relative;">
                 <label class="form-group-v2-label">Password</label>
-                <input type="password" name="password" value="Admin123$" placeholder="••••••••" required
+                <input type="password" name="password" value="" placeholder="••••••••" required
                   autocomplete="current-password" class="form-group-v2-input" style="padding-right: 50px;">
                 <button type="button" onclick="CK.togglePassword('loginForm')" class="form-group-v2-eye">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -2439,7 +2439,7 @@
                       <div class="sd-session-info">
                         <div class="sd-session-time" id="nextClassTime">4:00 PM</div>
                         <div class="sd-session-name" id="nextClassName">Intermediate Strategy Session</div>
-                        <div class="sd-session-coach" id="nextClassSub">with Coach Sarah Chess</div>
+                        <div class="sd-session-coach" id="nextClassSub">with your Coach</div>
                         <div class="sd-session-meta-row">
                           <span class="sd-meta-chip">⏱ 60 mins</span>
                           <span class="sd-meta-chip">📡 Live Video</span>
@@ -2590,7 +2590,7 @@
                           <div class="sd-lesson-prog-track">
                             <div class="sd-lesson-prog-fill" style="width:0%;"></div>
                           </div>
-                          <div class="sd-lesson-prog-label">Recommended by Coach Sarah</div>
+                          <div class="sd-lesson-prog-label">Recommended by your Coach</div>
                         </div>
                         <button class="sd-lesson-btn start"
                           onclick="CK.showToast('Starting Rook vs Bishop Endgame…','success')">▶ Start</button>
@@ -2991,11 +2991,10 @@
                         <div class="p-badge p-badge-blue" style="margin-bottom:8px;">Tactics Masterclass</div>
                         <h3 style="font-size:1.25rem; font-family:var(--font-display); color:#fff; margin-bottom:8px;">
                           Isolated Pawns & Dynamic Center</h3>
-                        <p style="font-size:0.88rem; color:var(--p-text-muted); margin-bottom:16px;">Coach Sarah breaks
-                          down tactical outposts and active piece play in IQP positions.</p>
+                        <p style="font-size:0.88rem; color:var(--p-text-muted); margin-bottom:16px;">Expert breakdown of tactical outposts and active piece play in IQP positions.</p>
                       </div>
                       <button class="p-btn p-btn-blue" style="width:100%;"
-                        onclick="CK.openVaultSession('Isolated Pawns & Dynamic Center', 'Coach Sarah')">▶ Study
+                        onclick="CK.openVaultSession('Isolated Pawns & Dynamic Center', 'Coach')">▶ Study
                         Interactive Replay</button>
                     </div>
                   </div>
@@ -3020,7 +3019,7 @@
                           and winning methods when navigating complex rook and pawn endgames.</p>
                       </div>
                       <button class="p-btn p-btn-gold" style="width:100%;"
-                        onclick="CK.openVaultSession('Rook Endgames: Lucena & Philidor', 'Coach Sarah')">▶ Study
+                        onclick="CK.openVaultSession('Rook Endgames: Lucena & Philidor', 'Coach')">▶ Study
                         Interactive Replay</button>
                     </div>
                   </div>
@@ -3425,7 +3424,7 @@
                     <div style="text-align:right;">
                       <div style="font-size:1.2rem; font-weight:bold; color:var(--p-blue);">FIDE Standard Assessment
                       </div>
-                      <div style="color:var(--p-text-muted); font-size:0.9rem;">Coach: Sarah Chess</div>
+                      <div style="color:var(--p-text-muted); font-size:0.9rem;" id="rcCoachName">Coach: —</div>
                     </div>
                   </div>
 

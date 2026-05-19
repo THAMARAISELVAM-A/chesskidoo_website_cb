@@ -50,8 +50,8 @@ CK.parents = (() => {
     updateParentHeader();
     if (_childProfile) {
       renderChildProfile();
-      renderAttendance();
-      renderProgress();
+      await renderAttendance();
+      await renderProgress();
       renderSchedule();
       renderReports();
       renderFeedbackList();
@@ -74,7 +74,7 @@ CK.parents = (() => {
     if (sub && _childProfile) sub.textContent = `Tracking progress for ${_childProfile.full_name}`;
   }
 
-  function nav(panelId) {
+  async function nav(panelId) {
     document.querySelectorAll('#parent-page .par-panel').forEach(p => p.classList.remove('active'));
     const target = document.getElementById(`par-panel-${panelId}`);
     if (target) target.classList.add('active');
@@ -82,8 +82,8 @@ CK.parents = (() => {
       b.classList.remove('active');
       if (b.dataset.panel === panelId) b.classList.add('active');
     });
-    if (panelId === 'attendance') renderAttendance();
-    if (panelId === 'progress')   renderProgress();
+    if (panelId === 'attendance') await renderAttendance();
+    if (panelId === 'progress')   await renderProgress();
     if (panelId === 'schedule')   renderSchedule();
     if (panelId === 'reports')    renderReports();
     if (panelId === 'feedback')   renderFeedbackList();
@@ -108,7 +108,7 @@ CK.parents = (() => {
         <div class="par-child-meta">${_e(c.level || 'Beginner')} · Coach: ${_e(c.coach || '—')} · ${_e(c.batch || 'Group')}</div>
         <div class="par-child-stats">
           <div class="par-stat"><span class="par-stat-val">${_e(String(c.rating || 800))}</span><span class="par-stat-lbl">ELO Rating</span></div>
-          <div class="par-stat"><span class="par-stat-val">${attnSummary.pct}%</span><span class="par-stat-lbl">Attendance</span></div>
+          <div class="par-stat"><span class="par-stat-val">${safeSummary.pct}%</span><span class="par-stat-lbl">Attendance</span></div>
           <div class="par-stat"><span class="par-stat-val">${_e(String(puzzlesSolved))}</span><span class="par-stat-lbl">Puzzles Solved</span></div>
           <div class="par-stat"><span class="par-stat-val">${_e(String(c.game || 0))}</span><span class="par-stat-lbl">Games Played</span></div>
         </div>
@@ -167,10 +167,10 @@ CK.parents = (() => {
     if (!el || !_childProfile) return;
     const c = _childProfile;
     const childId = c.id || c.userid;
-    const [ratingsRaw, leaderboard, attnSummary] = await Promise.all([
+    const [ratingsRaw, leaderboard, safeSummary] = await Promise.all([
       CK.db.getRatings ? CK.db.getRatings(childId) : Promise.resolve(null),
       CK.puzzlesPro?.getLeaderboard() || Promise.resolve([]),
-      CK.classSystem?.getStudentAttendanceSummary(childId) || Promise.resolve({ pct: 100 })
+      CK.classSystem ? CK.classSystem.getStudentAttendanceSummary(childId).then(r => r || { pct: 100 }).catch(() => ({ pct: 100 })) : Promise.resolve({ pct: 100 })
     ]);
     const ratings = ratingsRaw || JSON.parse(localStorage.getItem('ck_db_ratings') || '[]').filter(r => r.user_id === childId);
     const puzzlesSolved = (leaderboard || []).find(u => u.userId === childId)?.solved || 0;
@@ -178,7 +178,7 @@ CK.parents = (() => {
     const hwDone = hw.filter(s => s.completed).length;
     const hwTotal = (JSON.parse(localStorage.getItem('ck_assignments') || '[]')).length;
     const progress = Math.round(
-      attnSummary.pct * 0.30 +
+      safeSummary.pct * 0.30 +
       Math.min(100, puzzlesSolved * 2.5) * 0.25 +
       Math.min(100, (c.rating - 800) / 4) * 0.25 +
       Math.min(100, (c.game || 0) * 5) * 0.10 +
@@ -196,7 +196,7 @@ CK.parents = (() => {
         </div>
         <div class="par-progress-breakdown">
           ${[
-            { label: 'Attendance', val: Math.round(attnSummary.pct), color: 'var(--p-teal)' },
+            { label: 'Attendance', val: Math.round(safeSummary.pct), color: 'var(--p-teal)' },
             { label: 'Puzzles', val: Math.min(100, puzzlesSolved * 2.5), color: 'var(--p-blue)' },
             { label: 'Rating Gain', val: Math.min(100, (c.rating - 800) / 4), color: 'var(--p-gold)' },
             { label: 'Games Played', val: Math.min(100, (c.game||0)*5), color: 'var(--p-online)' },

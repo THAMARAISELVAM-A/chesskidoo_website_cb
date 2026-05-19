@@ -431,7 +431,7 @@ CK.admin = {
     const _e = CK.esc || (s => s);
     tbody.innerHTML = list.map((s, i) => {
       const levelStr = `${_e(s.level || 'Beginner')} - ${_e(String(s.rating || 800))} ELO`;
-      const coach = s.coach || 'ARIVUSELVAM';
+      const coach = s.coach || '—';
       const joinDate = s.join_date || '2026-04-20';
       const session = s.session || 'Group';
       const schedule = s.schedule || '17:00';
@@ -817,18 +817,24 @@ CK.admin = {
     if (!tbody) return;
     
     this.classesDb = await CK.db.getClasses();
-    tbody.innerHTML = this.classesDb.map(cl => `
-      <tr>
-        <td>#${cl.id}</td>
-        <td style="font-weight:600">${cl.title}</td>
-        <td><span class="p-badge p-badge-blue">${cl.level}</span></td>
-        <td>${cl.coach}</td>
-        <td>${cl.schedule}</td>
-        <td>${cl.students} / ${cl.max}</td>
-        <td><div class="p-progress-bar"><div class="p-progress-fill" style="width:${(cl.students/cl.max)*100}%"></div></div></td>
-        <td><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.openClassModal('${cl.id}')">Manage</button></td>
-      </tr>
-    `).join('');
+    const _e = CK.esc || (v => v);
+    tbody.innerHTML = this.classesDb.map(cl => {
+      const enrolled = (cl.studentIds || []).length;
+      const cap      = cl.maxStudents || cl.max || '—';
+      const pct      = cap && cap !== '—' ? Math.min(100, Math.round(enrolled / cap * 100)) : 0;
+      const coachName = cl.coachName || cl.coach || '—';
+      const schedule  = cl.time || cl.schedule || '—';
+      return `<tr>
+        <td>#${_e(cl.id)}</td>
+        <td style="font-weight:600">${_e(cl.title)}</td>
+        <td><span class="p-badge p-badge-blue">${_e(cl.level || '—')}</span></td>
+        <td>${_e(coachName)}</td>
+        <td>${_e(schedule)}</td>
+        <td>${enrolled} / ${cap}</td>
+        <td><div class="p-progress-bar"><div class="p-progress-fill" style="width:${pct}%"></div></div></td>
+        <td><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.openClassModal('${_e(cl.id)}')">Manage</button></td>
+      </tr>`;
+    }).join('');
   },
 
   async loadAttendance() {
@@ -1262,7 +1268,7 @@ CK.admin = {
     const q = val.toLowerCase();
     const students = (await CK.db.getProfiles('student')) || [];
     const filtered = students.filter(s =>
-      s.full_name.toLowerCase().includes(q) || 
+      (s.full_name || '').toLowerCase().includes(q) ||
       (s.coach && s.coach.toLowerCase().includes(q))
     );
     this.loadStudents(filtered);
@@ -1335,7 +1341,7 @@ CK.admin = {
       // Mark each assigned student as present for today
       if (selectedUserIds.length) {
         await Promise.all(selectedUserIds.map(uid =>
-          CK.db.saveAttendance({ userid: uid, date: today, status: 'Present', class_title: customName })
+          CK.db.saveAttendance({ userid: uid, date: today, status: 'present', class_title: customName })
         ));
       }
 

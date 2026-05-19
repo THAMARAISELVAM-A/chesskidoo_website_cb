@@ -92,8 +92,8 @@ CK.notifs = (() => {
           <div class="notif-item${n.read ? '' : ' notif-unread'}" onclick="CK.notifs.markRead('${n.id}'); this.classList.remove('notif-unread')">
             <div class="notif-icon" style="color:${t.color}">${t.icon}</div>
             <div class="notif-body">
-              <div class="notif-title">${n.title}</div>
-              <div class="notif-text">${n.body}</div>
+              <div class="notif-title">${CK.esc ? CK.esc(n.title) : n.title}</div>
+              <div class="notif-text">${CK.esc ? CK.esc(n.body) : n.body}</div>
               <div class="notif-age">${age}</div>
             </div>
             ${!n.read ? '<div class="notif-dot"></div>' : ''}

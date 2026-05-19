@@ -1272,7 +1272,7 @@ CK.student = {
 
     // Fetch upcoming meetings via DB layer (Supabase-synced)
     const todayStr = new Date().toISOString().split('T')[0];
-    const allMeetings = await CK.db.getMeetings();
+    const allMeetings = (await CK.db.getMeetings()) || [];
     const meetings = allMeetings
       .filter(m => m.date >= todayStr && m.time && (!m.batch || m.batch === p.batch))
       .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
@@ -1405,7 +1405,7 @@ CK.student = {
             <div class="rc-student-info">
               <div class="rc-info-item">
                 <span class="rc-info-label">Student Name</span>
-                <span class="rc-info-val">${p.full_name || 'Emma Wilson'}</span>
+                <span class="rc-info-val">${p.full_name || '—'}</span>
               </div>
               <div class="rc-info-item">
                 <span class="rc-info-label">Current Level</span>
@@ -1836,10 +1836,10 @@ CK.student = {
 
   downloadReceipt() {
     const p = this.userProfile || {};
-    const name = p.full_name ? p.full_name.toUpperCase() : 'SAI';
+    const name = (p.full_name || 'STUDENT').toUpperCase();
     const level = p.level || 'Beginner';
     const rating = p.rating || 800;
-    const coach = p.coach ? p.coach.toUpperCase() : 'YOGESH';
+    const coach = (p.coach || 'COACH').toUpperCase();
     const feeAmount = p.fee || 1600;
     const dateStr = new Date().toLocaleDateString('en-GB');
 
@@ -2007,7 +2007,7 @@ CK.student = {
             </div>
             <div class="r-subhead">OFFICIAL RECEIPT</div>
             <div class="r-meta">
-              <div>Receipt No: <strong>CK-8C1561</strong></div>
+              <div>Receipt No: <strong>CK-${(p.last_txn_id || Date.now().toString(36)).slice(-8).toUpperCase()}</strong></div>
               <div>Date: <strong>${dateStr}</strong></div>
             </div>
             <div class="r-body">

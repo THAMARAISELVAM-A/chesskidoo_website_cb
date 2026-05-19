@@ -218,7 +218,7 @@ CK.classSystem = (() => {
     el.innerHTML = `
       <div class="cls-attn-date-row">
         <label>Date:</label>
-        <input class="p-input" type="date" id="attnDatePicker" value="${date}" onchange="CK.classSystem.renderAttendanceMarker('${containerId}','${coachId}',this.value)">
+        <input class="p-input" type="date" id="attnDatePicker" value="${date}" data-container="${_e(containerId)}" data-coach="${_e(coachId)}" onchange="CK.classSystem.renderAttendanceMarker(this.dataset.container,this.dataset.coach,this.value)">
       </div>
       ${classes.map(cls => {
         const classStudents = allStudents.filter(s => (cls.studentIds||[]).includes(s.id));
@@ -227,7 +227,7 @@ CK.classSystem = (() => {
             <div class="cls-attn-class-title">📋 ${cls.title} <span class="p-badge p-badge-blue">${cls.days?.join(', ')} ${cls.time}</span></div>
             <div class="cls-attn-grid">
               ${classStudents.length ? classStudents.map(s => {
-                const _e = CK.esc || (s => s);
+                const _e = CK.esc || (v => v);
                 const rec = attnRecords.find(a => a.studentId === s.id && a.classId === cls.id);
                 const status = rec?.status || '';
                 const _da = `data-sid="${_e(s.id)}" data-sname="${_e(s.full_name)}" data-cid="${_e(cls.id)}" data-ctitle="${_e(cls.title)}" data-coach="${_e(coachId)}" data-date="${_e(date)}" data-container="${_e(containerId)}"`;
@@ -274,7 +274,7 @@ CK.classSystem = (() => {
       <div class="cls-modal">
         <div class="cls-modal-header"><h3>👥 Assign Students — ${cls.title}</h3><button class="cls-modal-close" onclick="this.closest('.cls-modal-overlay').remove()">✕</button></div>
         <div class="cls-modal-body" style="max-height:400px;overflow-y:auto;">
-          ${allStudents.map(s => { const _e = CK.esc || (s => s); return `
+          ${allStudents.map(s => { const _e = CK.esc || (v => v); return `
             <label class="cls-assign-student-row">
               <input type="checkbox" value="${_e(s.id)}" ${(cls.studentIds||[]).includes(s.id)?'checked':''}>
               <span>${_e(s.full_name)}</span>
@@ -310,7 +310,7 @@ CK.classSystem = (() => {
         <thead><tr><th>Class</th><th>Coach</th><th>Level</th><th>Days/Time</th><th>Students</th><th>Coach Attendance (This Month)</th></tr></thead>
         <tbody>
           ${classes.map(c => {
-            const _e = CK.esc || (s => s);
+            const _e = CK.esc || (v => v);
             const thisMonth = new Date().toISOString().slice(0,7);
             const attended = coachAttn.filter(a => a.classId === c.id && a.date.startsWith(thisMonth)).length;
             return `<tr>
@@ -341,7 +341,7 @@ CK.classSystem = (() => {
         <thead><tr><th>Coach</th><th>Sessions Taken</th><th>Unique Days</th><th>Last Session</th><th>Status</th></tr></thead>
         <tbody>
           ${coaches.map(coach => {
-            const _e = CK.esc || (s => s);
+            const _e = CK.esc || (v => v);
             const records = coachAttn.filter(a => a.date.startsWith(thisMonth) && classes.find(c => c.id === a.classId && c.coachId === coach.id));
             const uniqueDays = [...new Set(records.map(r => r.date))].length;
             const last = records.sort((a,b) => b.date.localeCompare(a.date))[0];

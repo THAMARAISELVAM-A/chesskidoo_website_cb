@@ -54,9 +54,10 @@ CK.gameTracker = (() => {
     save(games);
 
     // Update student's game count via CK.db (falls back to localStorage)
-    if (CK.db && CK.db.getProfile) {
+    // Note: bulk callers (importFromLichess) must do their own single batch update instead
+    if (CK.db && CK.db.getProfile && !submitGame._bulkMode) {
       CK.db.getProfile(studentId).then(profile => {
-        if (profile) { profile.game = (profile.game || 0) + 1; CK.db.saveProfile(profile); }
+        if (profile) return CK.db.saveProfile({ ...profile, game: (profile.game || 0) + 1 });
       }).catch(() => {
         const users = JSON.parse(localStorage.getItem('ck_db_users') || '[]');
         const idx = users.findIndex(u => u.id === studentId);
@@ -101,6 +102,7 @@ CK.gameTracker = (() => {
       if (!res.ok) throw new Error('Lichess API error');
       const text = await res.text();
       const lines = text.trim().split('\n').filter(Boolean);
+      submitGame._bulkMode = true; // suppress per-game profile updates
       let imported = 0;
       for (const line of lines) {
         try {
@@ -122,6 +124,17 @@ CK.gameTracker = (() => {
           });
           if (ok !== false) imported++;
         } catch (_) {}
+      }
+      submitGame._bulkMode = false;
+      // Single batch profile update avoids N-way race condition
+      if (imported > 0 && CK.db?.getProfile) {
+        CK.db.getProfile(studentId).then(profile => {
+          if (profile) return CK.db.saveProfile({ ...profile, game: (profile.game || 0) + imported });
+        }).catch(() => {
+          const users = JSON.parse(localStorage.getItem('ck_db_users') || '[]');
+          const idx = users.findIndex(u => u.id === studentId);
+          if (idx !== -1) { users[idx].game = (users[idx].game || 0) + imported; localStorage.setItem('ck_db_users', JSON.stringify(users)); }
+        });
       }
       CK.showToast(`Imported ${imported} game${imported !== 1 ? 's' : ''} from Lichess!`, 'success');
     } catch (err) {

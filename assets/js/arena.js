@@ -197,30 +197,39 @@
   /* ─── Engine Init ─── */
   function initEngine() {
     const statusEl = document.getElementById('arena-engine-status');
-    if (window.Stockfish) {
-      console.log('Arena: Loading Stockfish WASM...');
-      try {
-        stockfish = new window.Stockfish();
-        stockfish.onmessage = handleEngineMessage;
-        stockfish.postMessage('uci');
-      } catch (e) {
-        console.error('Arena: Stockfish WASM failed, using minimax:', e);
+
+    function _tryLoad() {
+      if (window.Stockfish) {
+        try {
+          stockfish = new window.Stockfish();
+          stockfish.onmessage = handleEngineMessage;
+          stockfish.postMessage('uci');
+          return true;
+        } catch(e) { /* fall through to minimax */ }
+      }
+      return false;
+    }
+
+    if (_tryLoad()) return;
+
+    // Stockfish may still be loading asynchronously — poll up to 3 s then fall back
+    let _polls = 0;
+    const _timer = setInterval(() => {
+      _polls++;
+      if (_tryLoad()) { clearInterval(_timer); return; }
+      if (_polls >= 6) {
+        clearInterval(_timer);
         engineReady = true;
         useWasm = false;
         if (statusEl) statusEl.textContent = 'Engine ready (built-in)';
       }
-    } else {
-      console.log('Arena: Stockfish not available, using minimax...');
-      engineReady = true;
-      useWasm = false;
-      if (statusEl) statusEl.textContent = 'Engine ready (built-in)';
-    }
+    }, 500);
   }
 
   function handleEngineMessage(e) {
     const line = e.data;
     if (line === 'uciok') {
-      stockfish.postMessage('ucinewposition startpos');
+      stockfish.postMessage('ucinewgame');
       stockfish.postMessage('isready');
       return;
     }
@@ -365,7 +374,7 @@
         if (piece) {
           const pieceEl = document.createElement('div');
           pieceEl.className = `a-piece piece-${piece.color}`;
-          pieceEl.innerHTML = `<img src="https://lichess1.org/assets/piece/cburnett/${piece.color}${piece.type.toUpperCase()}.svg" style="width: 92%; height: 92%; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.4)); pointer-events: none;" alt="${piece.type}">`;
+          pieceEl.innerHTML = `<img src="https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/${piece.color}${piece.type.toUpperCase()}.png" style="width: 92%; height: 92%; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.4)); pointer-events: none;" alt="${piece.type}">`;
           sqEl.appendChild(pieceEl);
         }
 
