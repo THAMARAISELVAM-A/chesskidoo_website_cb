@@ -1,0 +1,755 @@
+{
+  "admin.js": [
+    {
+      "line": 222,
+      "type": "inline-onclick",
+      "code": "else if (panelId === 'access')  { btn.innerText = '+ Add Parent'; btn.style.display = 'block'; btn.onclick = () => CK.ac"
+    },
+    {
+      "line": 223,
+      "type": "inline-onclick",
+      "code": "else { btn.style.display = 'none'; btn.onclick = null; }"
+    },
+    {
+      "line": 451,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" data-sid=\"${sid}\" data-sname=\"${_e(s.full_name || 'Student')}\" onclick=\"CK.ad"
+    },
+    {
+      "line": 452,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" data-sid=\"${sid}\" onclick=\"CK.admin.viewStudentInfo(this.dataset.sid)\">View</"
+    },
+    {
+      "line": 453,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" data-sid=\"${sid}\" onclick=\"CK.admin.editStudent(this.dataset.sid)\">Edit</butt"
+    },
+    {
+      "line": 454,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" style=\"color:var(--p-danger)\" data-sid=\"${sid}\" onclick=\"CK.admin.deleteStude"
+    },
+    {
+      "line": 455,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" data-sid=\"${sid}\" onclick=\"CK.admin.toggleFeeStatus(this.dataset.sid,'Pending"
+    },
+    {
+      "line": 459,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" data-sid=\"${sid}\" onclick=\"CK.admin.viewStudentInfo(this.dataset.sid)\">View</"
+    },
+    {
+      "line": 460,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" data-sid=\"${sid}\" onclick=\"CK.admin.editStudent(this.dataset.sid)\">Edit</butt"
+    },
+    {
+      "line": 461,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" style=\"color:var(--p-danger)\" data-sid=\"${sid}\" onclick=\"CK.admin.deleteStude"
+    },
+    {
+      "line": 465,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-teal p-btn-sm\" data-sid=\"${sid}\" onclick=\"CK.admin.toggleFeeStatus(this.dataset.sid,'Paid')\">"
+    },
+    {
+      "line": 466,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" data-sid=\"${sid}\" onclick=\"CK.admin.viewStudentInfo(this.dataset.sid)\">View</"
+    },
+    {
+      "line": 467,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" data-sid=\"${sid}\" onclick=\"CK.admin.editStudent(this.dataset.sid)\">Edit</butt"
+    },
+    {
+      "line": 468,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" style=\"color:var(--p-danger)\" data-sid=\"${sid}\" onclick=\"CK.admin.deleteStude"
+    },
+    {
+      "line": 469,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" data-sid=\"${sid}\" data-sname=\"${_e(s.full_name || 'Student')}\" onclick=\"CK.ad"
+    },
+    {
+      "line": 491,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.admin.moreStudentOptions('${s.id}')\">⋮ More</button>"
+    },
+    {
+      "line": 675,
+      "type": "inline-onclick",
+      "code": "<tr style=\"cursor:pointer;\" onclick=\"CK.admin.viewCoachDetails('${c.id}')\">"
+    },
+    {
+      "line": 685,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"event.stopPropagation(); CK.admin.editCoach('${c.id}')\">Edit</button"
+    },
+    {
+      "line": 686,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-teal p-btn-sm\" onclick=\"event.stopPropagation(); CK.admin.viewCoachDetails('${c.id}')\">View D"
+    },
+    {
+      "line": 758,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-icon-btn p-btn-sm\" data-eid=\"${e.id}\" onclick=\"CK.admin.editExpense(this.dataset.eid)\" title=\"Edit\">✏️<"
+    },
+    {
+      "line": 759,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-icon-btn p-btn-sm\" style=\"color:var(--p-danger)\" data-eid=\"${e.id}\" onclick=\"CK.admin.deleteExpense(thi"
+    },
+    {
+      "line": 838,
+      "type": "inline-onclick",
+      "code": "<td><button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.admin.openClassModal('${_e(cl.id)}')\">Manage</button></td>"
+    },
+    {
+      "line": 981,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-icon-btn\" title=\"View Coach Details\" onclick=\"CK.admin.viewCoachDetails && CK.admin.viewCoachDetails('$"
+    },
+    {
+      "line": 1006,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-icon-btn\" title=\"View Profile\" onclick=\"CK.admin.viewStudentInfo('${s.id}')\">👁️</button>"
+    },
+    {
+      "line": 1007,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-icon-btn\" title=\"Quick Info\" onclick=\"CK.admin.informStudent('${s.id}','${s.full_name?.replace(/'/g,\"\\\\"
+    },
+    {
+      "line": 1385,
+      "type": "inline-onclick",
+      "code": "<td><button class=\"p-btn p-btn-ghost p-btn-sm\" data-fname=\"${_e(f.file_name)}\" onclick=\"CK.admin.downloadFile(this.datas"
+    },
+    {
+      "line": 1387,
+      "type": "inline-onclick",
+      "code": "<td><button class=\"p-icon-btn\" style=\"color:var(--p-danger)\" data-fid=\"${_e(String(f.id))}\" data-fname=\"${_e(f.file_name"
+    },
+    {
+      "line": 1663,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-icon-btn p-btn-sm\" data-tid=\"${_e(String(t.id))}\" onclick=\"CK.admin.openTournamentModal(this.dataset.ti"
+    },
+    {
+      "line": 1664,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-icon-btn p-btn-sm\" style=\"color:var(--p-danger)\" data-tid=\"${_e(String(t.id))}\" onclick=\"CK.admin.delet"
+    }
+  ],
+  "arcade.js": [
+    {
+      "line": 220,
+      "type": "inline-onclick",
+      "code": "<button class=\"arcade-exit-btn\" onclick=\"CK.arcade.exitGame()\">✕ Exit Arcade</button>"
+    },
+    {
+      "line": 262,
+      "type": "inline-onclick",
+      "code": "<button class=\"arcade-action-btn\" onclick=\"CK.arcade.resetCurrentPuzzle()\">Reset Puzzle</button>"
+    },
+    {
+      "line": 263,
+      "type": "inline-onclick",
+      "code": "<button class=\"arcade-action-btn primary\" onclick=\"CK.arcade.nextPuzzleSkip()\">Skip &rarr;</button>"
+    },
+    {
+      "line": 446,
+      "type": "inline-onclick",
+      "code": "<button class=\"gm-option-btn\" onclick=\"CK.arcade.submitGMAnswer(${idx}, this)\">"
+    },
+    {
+      "line": 459,
+      "type": "inline-onclick",
+      "code": "<button class=\"arcade-exit-btn\" onclick=\"CK.arcade.exitGame()\">✕ Exit Arcade</button>"
+    },
+    {
+      "line": 494,
+      "type": "inline-onclick",
+      "code": "<button class=\"arcade-action-btn primary\" id=\"gm-next-btn\" disabled onclick=\"CK.arcade.nextGM()\">Next GM &rarr;</button>"
+    },
+    {
+      "line": 603,
+      "type": "inline-onclick",
+      "code": "<div class=\"memory-card-element ${card.flipped ? 'flipped' : ''} ${card.matched ? 'matched' : ''}\" data-idx=\"${idx}\" onc"
+    },
+    {
+      "line": 618,
+      "type": "inline-onclick",
+      "code": "<button class=\"arcade-exit-btn\" onclick=\"CK.arcade.exitGame()\">✕ Exit Arcade</button>"
+    },
+    {
+      "line": 651,
+      "type": "inline-onclick",
+      "code": "<button class=\"arcade-action-btn primary\" onclick=\"window.CK.arcade.startMemoryMatchGame()\">Restart Game</button>"
+    },
+    {
+      "line": 707,
+      "type": "inline-onclick",
+      "code": "if (content) content.innerHTML = `<div style=\"text-align:center;padding:40px 20px;\"><div style=\"font-size:4rem;\">⏱️</div"
+    },
+    {
+      "line": 822,
+      "type": "inline-onclick",
+      "code": "<button class=\"arcade-exit-btn\" onclick=\"CK.arcade.exitGame()\">✕ Exit Arcade</button>"
+    },
+    {
+      "line": 860,
+      "type": "inline-onclick",
+      "code": "<button class=\"arcade-action-btn primary\" onclick=\"window.CK.arcade.startKnightStarCatcher()\">Restart Maze</button>"
+    },
+    {
+      "line": 1032,
+      "type": "inline-onclick",
+      "code": "<button class=\"arcade-exit-btn\" onclick=\"CK.arcade.exitGame()\">✕ Exit Arcade</button>"
+    },
+    {
+      "line": 1065,
+      "type": "inline-onclick",
+      "code": "<button class=\"arcade-action-btn primary\" onclick=\"window.CK.arcade.startPawnStormGame()\">Restart</button>"
+    },
+    {
+      "line": 1211,
+      "type": "inline-onclick",
+      "code": "<button class=\"arcade-exit-btn\" onclick=\"CK.arcade.exitGame()\">✕ Exit Arcade</button>"
+    },
+    {
+      "line": 1249,
+      "type": "inline-onclick",
+      "code": "<button class=\"arcade-action-btn primary\" onclick=\"window.CK.arcade.startQueenQuestGame()\">Restart Quest</button>"
+    },
+    {
+      "line": 1358,
+      "type": "inline-onclick",
+      "code": "<button class=\"arcade-action-btn primary\" style=\"min-width:180px;\" onclick=\"${restartFn}\">Play Again</button>"
+    },
+    {
+      "line": 1359,
+      "type": "inline-onclick",
+      "code": "<button class=\"arcade-action-btn\" style=\"min-width:160px;\" onclick=\"CK.arcade.exitGame()\">Exit Arcade</button>"
+    },
+    {
+      "line": 1431,
+      "type": "inline-onclick",
+      "code": "<button class=\"quiz-opt-btn\" id=\"quiz-opt-${i}\" onclick=\"CK.arcade.submitQuizAnswer(${i})\">${opt}</button>"
+    },
+    {
+      "line": 1440,
+      "type": "inline-onclick",
+      "code": "<button class=\"arcade-exit-btn\" onclick=\"CK.arcade.exitGame()\">✕ Exit</button>"
+    }
+  ],
+  "arena.js": [
+    {
+      "line": 1103,
+      "type": "inline-onclick",
+      "code": "<button class=\"report-btn report-btn-secondary\" onclick=\"CK.arena.closeReport()\">Close</button>"
+    },
+    {
+      "line": 1104,
+      "type": "inline-onclick",
+      "code": "<button class=\"report-btn report-btn-secondary\" onclick=\"CK.arena.playAgain()\">Play Again</button>"
+    },
+    {
+      "line": 1105,
+      "type": "inline-onclick",
+      "code": "<button class=\"report-btn report-btn-primary\" onclick=\"CK.arena.showCertificate('${result}', '${grade}', '${gradeClass}'"
+    },
+    {
+      "line": 1339,
+      "type": "inline-onclick",
+      "code": "<button class=\"cert-btn cert-btn-close\" onclick=\"CK.arena.closeCertificate()\" style=\"padding: 14px 32px; background: #f1"
+    },
+    {
+      "line": 1365,
+      "type": "inline-onclick",
+      "code": "downloadBtn.onclick = () => {"
+    }
+  ],
+  "certs.js": [
+    {
+      "line": 220,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-gold p-btn-sm\" onclick=\"CK.certs.downloadCert('${cert.id}')\">⬇ Download PDF</button>"
+    },
+    {
+      "line": 236,
+      "type": "inline-onclick",
+      "code": "? `<button class=\"p-btn p-btn-gold\" onclick=\"CK.certs.claimCert()\">🎓 Claim Your ${level} Certificate!</button>`"
+    }
+  ],
+  "chessboard.js": [
+    {
+      "line": 218,
+      "type": "inline-onclick",
+      "code": "whiteSpan.onclick = (() => {"
+    },
+    {
+      "line": 231,
+      "type": "inline-onclick",
+      "code": "blackSpan.onclick = (() => {"
+    }
+  ],
+  "classes-system.js": [
+    {
+      "line": 51,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.classSystem.editClass('${c.id}')\">✏️ Edit</button>"
+    },
+    {
+      "line": 52,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" style=\"color:var(--p-danger)\" onclick=\"CK.classSystem.deleteClass('${c.id}')\""
+    },
+    {
+      "line": 58,
+      "type": "inline-onclick",
+      "code": "<a href=\"${c.zoomLink}\" target=\"_blank\" class=\"cls-zoom-link\" onclick=\"CK.classSystem.markCoachAttendance('${c.id}','${c"
+    },
+    {
+      "line": 64,
+      "type": "inline-onclick",
+      "code": ": `<button class=\"p-btn p-btn-teal p-btn-sm\" onclick=\"CK.classSystem.markCoachAttendance('${c.id}','${coachId}')\">▶ Mark"
+    },
+    {
+      "line": 120,
+      "type": "inline-onclick",
+      "code": "<button class=\"cls-modal-close\" onclick=\"this.closest('.cls-modal-overlay').remove()\">✕</button>"
+    },
+    {
+      "line": 163,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost\" onclick=\"this.closest('.cls-modal-overlay').remove()\">Cancel</button>"
+    },
+    {
+      "line": 233,
+      "type": "inline-onclick",
+      "code": "<button class=\"cls-attn-btn ${status==='present'?'active-present':''}\" ${_da} data-status=\"present\" onclick=\"CK.classSys"
+    },
+    {
+      "line": 234,
+      "type": "inline-onclick",
+      "code": "<button class=\"cls-attn-btn ${status==='absent'?'active-absent':''}\" ${_da} data-status=\"absent\" onclick=\"CK.classSystem"
+    },
+    {
+      "line": 235,
+      "type": "inline-onclick",
+      "code": "<button class=\"cls-attn-btn ${status==='late'?'active-late':''}\" ${_da} data-status=\"late\" onclick=\"CK.classSystem.markA"
+    },
+    {
+      "line": 270,
+      "type": "inline-onclick",
+      "code": "<div class=\"cls-modal-header\"><h3>👥 Assign Students — ${cls.title}</h3><button class=\"cls-modal-close\" onclick=\"this.cl"
+    },
+    {
+      "line": 280,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost\" onclick=\"this.closest('.cls-modal-overlay').remove()\">Cancel</button>"
+    }
+  ],
+  "classroom.js": [
+    {
+      "line": 87,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-blue p-btn-sm\" onclick=\"CK.classroom.openHomework('${a.id}')\">"
+    },
+    {
+      "line": 368,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.classroom._loadAssignInLab('${a.id}')\">Open Lab</button>"
+    },
+    {
+      "line": 369,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" style=\"color:#ef4444;\" onclick=\"CK.classroom.deleteAssignment('${a.id}')\">🗑<"
+    },
+    {
+      "line": 543,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-blue p-btn-sm\" onclick=\"CK.classroom._libLoadInLab('${item.id}')\">Open Lab</button>"
+    },
+    {
+      "line": 544,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.classroom._libAssign('${item.id}')\">Assign</button>"
+    },
+    {
+      "line": 545,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" style=\"color:#ef4444;\" onclick=\"CK.classroom._libDelete('${item.id}')\">🗑</bu"
+    }
+  ],
+  "coach.js": [
+    {
+      "line": 127,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-icon-btn\" data-sid=\"${_e(String(s.id))}\" onclick=\"CK.coach.viewStudentMetrics(this.dataset.sid)\" title="
+    },
+    {
+      "line": 128,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-icon-btn\" data-sid=\"${_e(String(s.id))}\" data-sname=\"${_e(s.full_name || '')}\" onclick=\"CK.coach.quickN"
+    },
+    {
+      "line": 259,
+      "type": "inline-onclick",
+      "code": "<tr><td>Monday</td><td>4:00 PM - 5:00 PM</td><td>Intermediate Strategy</td><td><span class=\"p-badge p-badge-blue\">Interm"
+    },
+    {
+      "line": 260,
+      "type": "inline-onclick",
+      "code": "<tr><td>Tuesday</td><td>5:00 PM - 6:00 PM</td><td>Advanced Endgames</td><td><span class=\"p-badge p-badge-gold\">Advanced<"
+    },
+    {
+      "line": 261,
+      "type": "inline-onclick",
+      "code": "<tr><td>Friday</td><td>6:30 PM - 8:00 PM</td><td>Beginner Fundamentals</td><td><span class=\"p-badge p-badge-green\">Begin"
+    },
+    {
+      "line": 367,
+      "type": "inline-onclick",
+      "code": "? `onclick=\"window.open('${_e(publicUrl)}','_blank')\"`"
+    },
+    {
+      "line": 368,
+      "type": "inline-onclick",
+      "code": ": `onclick=\"CK.showToast('File not available yet.','error')\"`;"
+    },
+    {
+      "line": 400,
+      "type": "inline-onclick",
+      "code": "<td><button class=\"p-btn p-btn-teal p-btn-sm\" onclick=\"CK.coach.startSession('${c.id}')\">▶ Start</button></td>"
+    },
+    {
+      "line": 476,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-teal p-btn-sm\" onclick=\"CK.coach.markAttendance('${s.id}','${selectedDate}','present')\""
+    },
+    {
+      "line": 478,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.coach.markAttendance('${s.id}','${selectedDate}','absent')\""
+    },
+    {
+      "line": 480,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.coach.markAttendance('${s.id}','${selectedDate}','pending')\""
+    },
+    {
+      "line": 715,
+      "type": "inline-onclick",
+      "code": "<button style=\"position:absolute;top:10px;right:10px;background:none;border:none;color:var(--p-text-muted);cursor:pointe"
+    }
+  ],
+  "db.js": [
+    {
+      "line": 939,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.accessManager.bulkDialog('student')\">🔑 Set Password for All Stud"
+    },
+    {
+      "line": 940,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.accessManager.bulkDialog('coach')\">🔑 Set Password for All Coache"
+    },
+    {
+      "line": 941,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-blue p-btn-sm\" onclick=\"CK.accessManager.addParentDialog()\">➕ Add Parent Account</button>"
+    },
+    {
+      "line": 971,
+      "type": "inline-onclick",
+      "code": "${u.email ? `<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.accessManager.setDialog('${safeEmail}','${safeName}'"
+    },
+    {
+      "line": 972,
+      "type": "inline-onclick",
+      "code": "${hasAccess ? `<button class=\"p-btn p-btn-ghost p-btn-sm\" style=\"color:var(--p-danger)\" onclick=\"CK.accessManager.revoke"
+    },
+    {
+      "line": 973,
+      "type": "inline-onclick",
+      "code": "${u.role === 'parent' ? `<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.accessManager.setChildDialog('${safeId}'"
+    },
+    {
+      "line": 1039,
+      "type": "inline-onclick",
+      "code": "<div class=\"p-modal-header\"><h3 class=\"p-modal-title\">➕ Add Parent Account</h3><button class=\"p-modal-close\" onclick=\"th"
+    },
+    {
+      "line": 1047,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost\" onclick=\"this.closest('.p-modal-overlay').remove()\">Cancel</button>"
+    },
+    {
+      "line": 1048,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-blue\" onclick=\"CK.accessManager._doAddParent()\">➕ Create Parent</button>"
+    }
+  ],
+  "game-tracker.js": [
+    {
+      "line": 221,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-teal\" onclick=\"CK.gameTracker._doSubmit('${studentId}')\">💾 Save Game</button>"
+    },
+    {
+      "line": 224,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-blue p-btn-sm\" onclick=\"CK.gameTracker._doLichessImport('${studentId}')\">⬇ Import Last 5 from"
+    },
+    {
+      "line": 284,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.gameTracker.filterGames('${containerId}','${studentId}','all')\">A"
+    },
+    {
+      "line": 285,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.gameTracker.filterGames('${containerId}','${studentId}','win')\">W"
+    },
+    {
+      "line": 286,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.gameTracker.filterGames('${containerId}','${studentId}','loss')\">"
+    }
+  ],
+  "main.js": [
+    {
+      "line": 912,
+      "type": "inline-onclick",
+      "code": "<span class=\"lab-move-san${wActive}\" onclick=\"CK.lab.goToMove(${i + 1})\">${wMv.san}${wAnnot}</span>"
+    },
+    {
+      "line": 914,
+      "type": "inline-onclick",
+      "code": "? `<span class=\"lab-move-san${bActive}\" onclick=\"CK.lab.goToMove(${i + 2})\">${bMv.san}${bAnnot}</span>`"
+    }
+  ],
+  "notifications.js": [
+    {
+      "line": 87,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" data-uid=\"${userId}\" data-role=\"${role}\" data-cid=\"${containerId}\" onclick=\"C"
+    },
+    {
+      "line": 94,
+      "type": "inline-onclick",
+      "code": "<div class=\"notif-item${n.read ? '' : ' notif-unread'}\" data-nid=\"${_esc(String(n.id))}\" onclick=\"CK.notifs.markRead(thi"
+    }
+  ],
+  "opening-trainer.js": [
+    {
+      "line": 180,
+      "type": "inline-onclick",
+      "code": "<button class=\"ot-filter-btn${filter==='all'?' active':''}\" onclick=\"CK.openingTrainer.renderOpeningList('${containerId}"
+    },
+    {
+      "line": 181,
+      "type": "inline-onclick",
+      "code": "<button class=\"ot-filter-btn${filter==='white'?' active':''}\" onclick=\"CK.openingTrainer.renderOpeningList('${containerI"
+    },
+    {
+      "line": 182,
+      "type": "inline-onclick",
+      "code": "<button class=\"ot-filter-btn${filter==='black'?' active':''}\" onclick=\"CK.openingTrainer.renderOpeningList('${containerI"
+    },
+    {
+      "line": 189,
+      "type": "inline-onclick",
+      "code": "<div class=\"ot-card\" onclick=\"CK.openingTrainer.startDrill('${o.id}','${userId}')\" style=\"border-top:3px solid ${o.color"
+    },
+    {
+      "line": 238,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.openingTrainer.closeDrill()\">✕ Close</button>"
+    },
+    {
+      "line": 260,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.openingTrainer._showSolution()\">💡 Show Move</button>"
+    },
+    {
+      "line": 261,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-teal p-btn-sm\" id=\"otNextBtn\" style=\"display:none;\" onclick=\"CK.openingTrainer._advanceDrill("
+    },
+    {
+      "line": 389,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-teal p-btn-sm\" style=\"margin-top:10px;\" onclick=\"CK.openingTrainer.startDrill('${opening.id}'"
+    }
+  ],
+  "parents.js": [
+    {
+      "line": 285,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-blue\" onclick=\"CK.parents.submitFeedback()\">📤 Submit Feedback</button>"
+    },
+    {
+      "line": 344,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-blue p-btn-sm\" onclick=\"CK.parents.replyFeedback('${_e(f.id)}')\">Reply</button>"
+    }
+  ],
+  "pgn-library.js": [
+    {
+      "line": 141,
+      "type": "inline-onclick",
+      "code": "<div class=\"pgn-lib-card\" onclick=\"CK.pgnLibrary.load('${g.id}','${boardId}')\">"
+    }
+  ],
+  "puzzles-pro.js": [
+    {
+      "line": 172,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-blue p-btn-sm\" onclick=\"CK.puzzlesPro.openPuzzle('${p.id}','${userId}','${userName}')\">"
+    },
+    {
+      "line": 204,
+      "type": "inline-onclick",
+      "code": "<button class=\"cls-modal-close\" onclick=\"CK.puzzlesPro.closePuzzle()\">✕</button>"
+    },
+    {
+      "line": 213,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.puzzlesPro.showSolution()\">👁 Show Solution</button>"
+    },
+    {
+      "line": 214,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.puzzlesPro.resetPuzzle()\">🔄 Reset</button>"
+    }
+  ],
+  "reports-system.js": [
+    {
+      "line": 53,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-${existing?'ghost':'blue'} p-btn-sm\" onclick=\"CK.reportSystem.openReportEditor('${_e(s.id)}',"
+    },
+    {
+      "line": 83,
+      "type": "inline-onclick",
+      "code": "<button class=\"cls-modal-close\" onclick=\"this.closest('.cls-modal-overlay').remove()\">✕</button>"
+    },
+    {
+      "line": 93,
+      "type": "inline-onclick",
+      "code": "${[1,2,3,4,5].map(n => `<span class=\"fb-star${existing && existing.rating >= n ? '' : ''}\" data-val=\"${n}\" onclick=\"docu"
+    },
+    {
+      "line": 111,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost\" onclick=\"this.closest('.cls-modal-overlay').remove()\">Cancel</button>"
+    },
+    {
+      "line": 112,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-blue\" onclick=\"CK.reportSystem.saveReport('${studentId}','${studentName}','${coachId}','${coa"
+    }
+  ],
+  "schedule-pro.js": [
+    {
+      "line": 51,
+      "type": "inline-onclick",
+      "code": "${m.link ? `<a href=\"${m.link}\" target=\"_blank\" class=\"sched-join-btn\" onclick=\"event.stopPropagation()\">▶ Join Class</a"
+    },
+    {
+      "line": 54,
+      "type": "inline-onclick",
+      "code": "${!isPast ? `<button class=\"p-btn p-btn-ghost p-btn-sm\" onclick=\"CK.schedulePro.editMeeting('${m.id}','${containerId}')\""
+    },
+    {
+      "line": 55,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost p-btn-sm\" style=\"color:var(--p-danger)\" onclick=\"CK.schedulePro.deleteMeeting('${m.id}'"
+    },
+    {
+      "line": 108,
+      "type": "inline-onclick",
+      "code": "<button class=\"cls-modal-close\" onclick=\"this.closest('.cls-modal-overlay').remove()\">✕</button>"
+    },
+    {
+      "line": 128,
+      "type": "inline-onclick",
+      "code": "<button class=\"p-btn p-btn-ghost\" onclick=\"this.closest('.cls-modal-overlay').remove()\">Cancel</button>"
+    }
+  ],
+  "student.js": [
+    {
+      "line": 270,
+      "type": "inline-onclick",
+      "code": "<td><button class=\"p-btn p-btn-blue p-btn-sm\" onclick=\"CK.student.loadAndGoToPuzzle('${px.id}')\">Solve</button></td>"
+    },
+    {
+      "line": 431,
+      "type": "inline-onclick",
+      "code": "? `onclick=\"window.open('${_e(downloadUrl)}','_blank')\"`"
+    },
+    {
+      "line": 432,
+      "type": "inline-onclick",
+      "code": ": `onclick=\"CK.showToast('File not available yet.','error')\"`;"
+    },
+    {
+      "line": 545,
+      "type": "inline-onclick",
+      "code": "<div class=\"p-puzzle-card ${this.activePuzzleId === p.id ? 'active' : ''}\" onclick=\"CK.student.loadPuzzle('${p.id}')\">"
+    },
+    {
+      "line": 631,
+      "type": "inline-onclick",
+      "code": "html += `<div style=\"width:${sqSize};height:${sqSize};background:${bg};display:flex;align-items:center;justify-content:c"
+    },
+    {
+      "line": 832,
+      "type": "inline-onclick",
+      "code": "if (hasCert) downloadBtn.onclick = () => CK.certs?.claimCert();"
+    },
+    {
+      "line": 1038,
+      "type": "inline-onclick",
+      "code": "<div class=\"srs-card\" onclick=\"CK.student.loadAndGoToPuzzle('${p.id}')\">"
+    },
+    {
+      "line": 2129,
+      "type": "inline-onclick",
+      "code": "<button onclick=\"window.print()\" style=\"margin-top: 30px; background: #e8b84b; color: #000; border: none; padding: 12px "
+    },
+    {
+      "line": 2175,
+      "type": "inline-onclick",
+      "code": "<button class=\"btn-primary\" data-uname=\"${_e(p.lichess_username)}\" onclick=\"CK.student.linkLichess(this.dataset.uname)\">"
+    },
+    {
+      "line": 2176,
+      "type": "inline-onclick",
+      "code": "<button class=\"btn-secondary\" data-uname=\"${_e(p.lichess_username)}\" onclick=\"CK.gameTracker&&CK.gameTracker.importFromL"
+    },
+    {
+      "line": 2185,
+      "type": "inline-onclick",
+      "code": "<button class=\"btn-primary\" onclick=\"CK.student.linkLichess(document.getElementById('lichessUsernameInput').value.trim()"
+    },
+    {
+      "line": 2228,
+      "type": "inline-onclick",
+      "code": "<button class=\"btn-secondary\" data-fide=\"${_e(String(p.fide_id))}\" onclick=\"CK.student.linkFide(this.dataset.fide)\">↻ Re"
+    },
+    {
+      "line": 2238,
+      "type": "inline-onclick",
+      "code": "<button class=\"btn-primary\" onclick=\"CK.student.linkFide(document.getElementById('fideIdInput').value.trim())\" style=\"ba"
+    }
+  ]
+}

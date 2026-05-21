@@ -6,17 +6,12 @@
 window.CK = window.CK || {};
 
 CK.classSystem = (() => {
-  const CLASSES_KEY  = 'ck_classes';
-  const CATTN_KEY    = 'ck_coach_attendance';  // coach's own attendance
-  const SATTN_KEY    = 'ck_student_attendance'; // student attendance per class
+  const _e = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
   /* ─── Storage helpers ─── */
   const getClasses     = async () => await CK.db.getClasses();
-  const saveClasses    = async d  => { /* handled in CK.db */ };
   const getCoachAttn   = async () => await CK.db.getCoachAttendance();
-  const saveCoachAttn  = async d  => { /* handled in CK.db */ };
   const getStudentAttn = async () => await CK.db.getAttendance(); // use main attendance table
-  const saveStudentAttn= async d  => { /* handled in CK.db */ };
   const uid            = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
   const today          = () => new Date().toISOString().split('T')[0];
 

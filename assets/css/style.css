@@ -3,6 +3,28 @@
    Refined & Consolidated Version
    --------------------------------------------------------------- */
 
+/* Skip-to-content link (accessibility) */
+.skip-to-content {
+  position: absolute;
+  top: -100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #D97706;
+  color: #fff;
+  padding: 10px 24px;
+  border-radius: 0 0 8px 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  z-index: 99999;
+  text-decoration: none;
+  transition: top 0.2s;
+}
+.skip-to-content:focus {
+  top: 0;
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
 :root {
   --ink: #1A1209;
   --cream: #FDF6EC;
@@ -30,8 +52,8 @@
   --font-header: 'Poppins', sans-serif;
   
   /* Board Specific */
-  --board-light: #F0D9B5;
-  --board-dark: #B58863;
+  --board-light: #d4d4a8;
+  --board-dark: #4a7a2e;
   --board-border: #7A5530;
   
   /* Arena Colors */
@@ -50,6 +72,7 @@
 
 /* ─── Reset & Base ─── */
 * { margin: 0; padding: 0; box-sizing: border-box; }
+img { max-width: 100%; display: block; }
 html { scroll-behavior: smooth; scroll-margin-top: 80px; }
 body { 
   font-family: var(--font-body); 
@@ -97,6 +120,7 @@ body {
 }
 @keyframes preloaderPulse { 0%, 100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.15); opacity: 1; } }
 @keyframes spin { to { transform: rotate(360deg); } }
+body.loaded #preloader { opacity: 0; visibility: hidden; pointer-events: none; }
 
 /* ─── Header ─── */
 .site-header {
@@ -217,20 +241,24 @@ body {
 @media (max-width: 768px) {
   .mobile-menu-btn { display: flex; }
   .nav-links {
-    position: fixed; top: 64px; left: 0; right: 0;
-    background: rgba(13, 27, 42, 0.98);
+    position: fixed; top: 64px; left: 0; right: 0; bottom: 0;
+    background: rgba(13, 27, 42, 1);
     backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-    flex-direction: column; padding: 16px 20px;
+    flex-direction: column; padding: 16px 20px 48px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     display: none;
     box-shadow: 0 20px 40px rgba(0,0,0,0.25);
     animation: navSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    z-index: 9999;
   }
   .nav-links.open { display: flex; }
   .nav-link { width: 100%; text-align: left; padding: 14px 16px; font-size: 0.95rem; color: #FFFFFF !important; }
   .nav-link::after { display: none; }
   .nav-cta, .nav-login { margin-left: 0; margin-top: 8px; width: 100%; }
   .nav-phone { display: flex; width: 38px; color: #FFFFFF; }
+  body.nav-open { overflow: hidden; }
 }
 
 @keyframes navSlideDown {
@@ -399,8 +427,8 @@ body {
   .hero-sub { margin-left: auto; margin-right: auto; }
   .hero-btns { justify-content: center; }
   .hero-stats { justify-content: center; }
-  .hero-visual { margin-top: 40px !important; perspective: none; }
-  .hero-board-frame { margin: 0 auto !important; }
+  .hero-visual { margin-top: 40px !important; margin-left: 0 !important; perspective: none; }
+  .hero-board-frame { margin: 0 auto !important; transform: none !important; }
   .board-panel { margin: 0 auto; max-width: 560px; }
 }
 
@@ -852,10 +880,10 @@ body {
   transition: filter 0.05s;
 }
 .sq.light {
-  background: #ffffff;
+  background: #d4d4a8;
 }
 .sq.dark {
-  background: #4a7c40;
+  background: #4a7a2e;
 }
 .sq.hl-from {
   background: rgba(255, 220, 100, 0.7) !important;
@@ -1539,9 +1567,6 @@ body {
 }
 
 /* ─── Smooth Page Transition ─── */
-.page {
-  animation: pageTransition3D 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
 .page.active {
   animation: pageTransitionIn3D 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -1740,7 +1765,7 @@ body {
   transition: color 0.2s;
 }
 .faq-item:hover .faq-question {
-  color: var(--gold);
+  color: var(--amber);
 }
 .faq-item.active .faq-question {
   color: var(--navy);
@@ -1757,7 +1782,7 @@ body {
   transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 .faq-item:hover .faq-icon-arrow {
-  background: var(--gold);
+  background: var(--amber);
   color: white;
 }
 .faq-item.active .faq-icon-arrow {
@@ -2076,10 +2101,6 @@ button, input, textarea, select, a {
     width: 44px;
     height: 44px;
     padding: 10px;
-  }
-  
-  .nav-links {
-    top: 60px;
   }
   
   .hero-btns {
@@ -2855,7 +2876,7 @@ button, input, textarea, select, a {
   color:var(--amber); flex-shrink:0;
   transition: all .35s cubic-bezier(.23,1,.32,1);
 }
-.faq-item.open .faq-icon-arrow { transform:rotate(180deg); background:var(--amber); color:#fff; }
+.faq-item.active .faq-icon-arrow { transform:rotate(180deg); background:var(--amber); color:#fff; }
 
 /* Level Card CTA bar */
 .level-card-cta {
@@ -3256,3 +3277,133 @@ button, input, textarea, select, a {
   .cj-step { flex: 0 0 100%; }
   .cj-circle { width: 80px; height: 80px; font-size: 2.2rem; }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   COMPREHENSIVE MOBILE FIX LAYER
+   ════════════════════════════════════════════════════════════════ */
+
+/* Demo / Book Free modal — less padding on small phones */
+@media (max-width: 480px) {
+  .modal-card { padding: 24px 20px; border-radius: 20px; }
+  .modal-overlay { padding: 12px; align-items: flex-end; }
+  .modal-overlay.active .modal-card { transform: scale(1) translateY(0); }
+}
+
+/* FAQ — smaller text on tiny screens */
+@media (max-width: 360px) {
+  .faq-question { font-size: 0.9rem; }
+  .faq-trigger { padding: 14px 16px; gap: 12px; }
+}
+
+/* Players bar — reduce font on small phones to prevent overflow */
+@media (max-width: 480px) {
+  .pname { font-size: 11px; }
+  .pelo { font-size: 9px; }
+  .match-loc { font-size: 9px; }
+  .players-bar { gap: 6px; }
+}
+
+/* Board controls — stack buttons on very small screens */
+@media (max-width: 400px) {
+  .board-controls { gap: 8px; flex-wrap: wrap; }
+  .ctrl-group { flex-wrap: wrap; justify-content: center; }
+  .check-level-btn { width: 100%; justify-content: center; }
+}
+
+/* Touch devices: disable 3D hover effects that cause visual jitter */
+@media (hover: none) and (pointer: coarse) {
+  .coach-grid > div:hover,
+  .coach-grid > .reveal:hover {
+    transform: none !important;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.07) !important;
+  }
+  .why-item:hover {
+    transform: none !important;
+    box-shadow: 0 10px 30px rgba(13,27,42,0.03) !important;
+  }
+  .showcase-gallery-item:hover {
+    transform: none !important;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4) !important;
+  }
+  .feat-card:hover { transform: none !important; }
+  .level-card:hover { transform: none !important; }
+  .price-card:hover { transform: none !important; }
+  .review-card:hover { transform: none !important; }
+  .coach-card-premium:hover { transform: none !important; }
+}
+
+/* Floating action buttons — extra bottom offset for iOS safe area */
+.floating-ui {
+  bottom: calc(20px + env(safe-area-inset-bottom));
+}
+
+/* Ensure portals bottom nav clears iOS home indicator */
+@media (max-width: 600px) {
+  .p-sidebar {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   IMAGE MOBILE OPTIMIZATIONS
+   ════════════════════════════════════════════════════════════════ */
+
+/* Coach image height — reduce on mobile so cards aren't too tall */
+@media (max-width: 640px) {
+  .coach-img-box { height: 220px; }
+  .coach-img-wrap { height: 220px; }
+}
+@media (max-width: 400px) {
+  .coach-img-box { height: 180px; }
+  .coach-img-wrap { height: 180px; }
+}
+
+/* Showcase/achievement gallery — 2 columns on mobile, not 1 */
+/* Overrides the !important single-column rule above for this specific grid */
+@media (max-width: 768px) {
+  .showcase-gallery-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 14px !important;
+  }
+  .showcase-gallery-item { border-radius: 18px; padding: 12px; }
+  .showcase-info h4 { font-size: 1rem; }
+  .showcase-info p { font-size: 0.78rem; }
+}
+@media (max-width: 360px) {
+  /* On the tiniest screens, fall back to single column */
+  .showcase-gallery-grid { grid-template-columns: 1fr !important; }
+}
+
+/* FIDE/ISO certificate images — reduce heavy border on mobile */
+@media (max-width: 480px) {
+  .cert-img { border-width: 6px !important; border-radius: 8px !important; }
+}
+
+/* Achievement card — reduce padding on small phones */
+@media (max-width: 480px) {
+  .achievement-card { padding: 20px 16px; }
+  .achievement-icon { width: 60px; height: 60px; font-size: 1.6rem; }
+  .achievement-card h3 { font-size: 1.2rem; }
+}
+
+/* Chess.com Style Board Theme Overrides */
+.white-1e1d7 {
+  background-color: #eeeed2 !important;
+  color: #769656 !important;
+}
+.black-3c85d {
+  background-color: #769656 !important;
+  color: #eeeed2 !important;
+}
+.notation-322f9 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+}
+.white-1e1d7 .notation-322f9 {
+  color: #769656 !important;
+}
+.black-3c85d .notation-322f9 {
+  color: #eeeed2 !important;
+}
+

@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /assets/js/
+Disallow: /.env
+Disallow: /supabase/
+
+Sitemap: https://chesskidoo.com/sitemap.xml

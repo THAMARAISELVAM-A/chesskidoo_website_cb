@@ -148,11 +148,29 @@
         localStorage.setItem(storeKey, JSON.stringify(DEFAULT_DB[key]));
       }
     });
+    // Pre-populate offline credentials in localStorage so demo accounts are fully accessible out-of-the-box
+    const credsKey = 'ck_user_credentials';
+    if (!localStorage.getItem(credsKey)) {
+      const defaultCreds = {
+        'admin@chesskidoo.com': '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', // admin123
+        'admin@gmail.com': '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', // admin123
+        'student@gmail.com': '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55', // chess123
+        'arivuselvam@gmail.com': '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55', // chess123
+        'gyanasurya@gmail.com': '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55', // chess123
+        'vishnu@gmail.com': '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55', // chess123
+        'haris@gmail.com': '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55', // chess123
+        'yogesh@gmail.com': '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55', // chess123
+        'sudhin@gmail.com': '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55', // chess123
+        'ranjith@gmail.com': '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55', // chess123
+        'rohith@gmail.com': '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55' // chess123
+      };
+      localStorage.setItem(credsKey, JSON.stringify(defaultCreds));
+    }
   };
   initLocalStore();
 
-  // Helper: Get local storage item
-  const getLocal = (key) => JSON.parse(localStorage.getItem(`ck_db_${key}`));
+  // Helper: Get local storage item (always returns array, never null)
+  const getLocal = (key) => { try { return JSON.parse(localStorage.getItem(`ck_db_${key}`)) || []; } catch(e) { return []; } };
 
   // Helper: Set local storage item
   const setLocal = (key, data) => localStorage.setItem(`ck_db_${key}`, JSON.stringify(data));
@@ -233,11 +251,7 @@
           const { error } = await window.supabaseClient
             .from('users')
             .upsert(profile);
-          if (!error) {
-            console.log("[ChessKidoo DB] Saved to Supabase successfully.");
-          } else {
-            console.warn("[ChessKidoo DB] Supabase save failed, saving to local only:", error);
-          }
+          if (error) console.warn("[ChessKidoo DB] Supabase save failed, saving to local only:", error);
         } catch (e) {
           console.warn("[ChessKidoo DB] Supabase error during save:", e);
         }
@@ -263,11 +277,7 @@
             .from('users')
             .delete()
             .eq('id', id);
-          if (!error) {
-            console.log("[ChessKidoo DB] Deleted from Supabase successfully.");
-          } else {
-            console.warn("[ChessKidoo DB] Supabase delete failed:", error);
-          }
+          if (error) console.warn("[ChessKidoo DB] Supabase delete failed:", error);
         } catch (e) {
           console.warn("[ChessKidoo DB] Supabase delete error:", e);
         }
@@ -343,7 +353,7 @@
       if (canUseSupabase()) {
         try {
           const { error } = await window.supabaseClient.from('document').upsert(doc);
-          if (!error) console.log("[ChessKidoo DB] Document saved to Supabase.");
+          if (error) console.warn('[ChessKidoo DB] saveDocument Supabase error:', error.message);
         } catch (e) {
           console.warn("[ChessKidoo DB] Document save error, local only:", e);
         }
@@ -363,7 +373,7 @@
       if (canUseSupabase()) {
         try {
           const { error } = await window.supabaseClient.from('document').delete().eq('id', numId);
-          if (!error) console.log("[ChessKidoo DB] Document deleted from Supabase.");
+          if (error) console.warn('[ChessKidoo DB] deleteDocument Supabase error:', error.message);
         } catch (e) {
           console.warn("[ChessKidoo DB] Document delete error, local only:", e);
         }
@@ -408,7 +418,7 @@
       if (canUseSupabase()) {
         try {
           const { error } = await window.supabaseClient.from('attendance').upsert(log);
-          if (!error) console.log("[ChessKidoo DB] Attendance saved to Supabase.");
+          if (error) console.warn("[ChessKidoo DB] Attendance save error:", error.message);
         } catch (e) {
           console.warn("[ChessKidoo DB] Attendance save error, local only:", e);
         }
@@ -454,14 +464,16 @@
       if (canUseSupabase()) {
         try {
           const { error } = await window.supabaseClient.from('ratings').upsert(ratingLog);
-          if (!error) console.log("[ChessKidoo DB] Rating saved to Supabase.");
+          if (error) console.warn("[ChessKidoo DB] Rating save error:", error.message);
         } catch (e) {
           console.warn("[ChessKidoo DB] Rating save error, local only:", e);
         }
       }
 
       const ratings = getLocal('ratings') || [];
-      ratings.push(ratingLog);
+      const rIdx = ratings.findIndex(r => r.id === ratingLog.id);
+      if (rIdx !== -1) ratings[rIdx] = { ...ratings[rIdx], ...ratingLog };
+      else ratings.push(ratingLog);
       setLocal('ratings', ratings);
       return ratingLog;
     },
@@ -494,14 +506,16 @@
       if (canUseSupabase()) {
         try {
           const { error } = await window.supabaseClient.from('tourRatings').upsert(tourLog);
-          if (!error) console.log("[ChessKidoo DB] TourRating saved to Supabase.");
+          if (error) console.warn("[ChessKidoo DB] TourRating save error:", error.message);
         } catch (e) {
           console.warn("[ChessKidoo DB] TourRating save error, local only:", e);
         }
       }
 
       const tours = getLocal('tourRatings') || [];
-      tours.push(tourLog);
+      const tIdx = tours.findIndex(t => t.id === tourLog.id);
+      if (tIdx !== -1) tours[tIdx] = { ...tours[tIdx], ...tourLog };
+      else tours.push(tourLog);
       setLocal('tourRatings', tours);
       return tourLog;
     },
@@ -633,6 +647,7 @@
       const idx = all.findIndex(r => r.id === report.id);
       if (idx !== -1) all[idx] = report; else all.push(report);
       localStorage.setItem('ck_monthly_reports', JSON.stringify(all));
+      return report;
     },
 
     // --- NEW: PUZZLE SCORES ---
@@ -658,6 +673,7 @@
       const idx = all.findIndex(s => s.id === score.id);
       if (idx !== -1) all[idx] = score; else all.push(score);
       localStorage.setItem('ck_puzzle_scores', JSON.stringify(all));
+      return score;
     },
 
     // --- NEW: COACH ATTENDANCE ---
@@ -803,7 +819,7 @@
 
       // Update student's last_note and save a rating snapshot (do NOT blindly +15 every call)
       const students = (await CK.db.getProfiles('student')) || [];
-      const s = students.find(u => u.full_name.toLowerCase() === reviewObj.student.toLowerCase());
+      const s = students.find(u => (u.full_name || '').toLowerCase() === reviewObj.student.toLowerCase());
       if (s) {
         s.last_note = reviewObj.text;
         // Only bump rating if reviewer explicitly provided a delta

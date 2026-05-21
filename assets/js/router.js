@@ -37,7 +37,7 @@
       CK.navigate('more-games');
       return;
     }
-    if (['admin', 'student', 'coach'].includes(hash)) {
+    if (['admin', 'student', 'coach', 'parent'].includes(hash)) {
       const u = CK.checkAuth();
       if (!u || u.role.toLowerCase() !== hash) {
         CK.showToast('Please log in to access this portal.', 'warning');
@@ -45,9 +45,10 @@
       } else {
         CK.showPage(`${hash}-page`);
         setTimeout(() => {
-          if (hash === 'admin' && CK.admin) CK.admin.init();
+          if (hash === 'admin'   && CK.admin)   CK.admin.init();
           if (hash === 'student' && CK.student) CK.student.init();
-          if (hash === 'coach' && CK.coach) CK.coach.init();
+          if (hash === 'coach'   && CK.coach)   CK.coach.init();
+          if (hash === 'parent'  && CK.parents) CK.parents.init();
         }, 100);
       }
       return;

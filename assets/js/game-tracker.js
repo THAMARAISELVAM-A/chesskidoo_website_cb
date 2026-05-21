@@ -14,7 +14,7 @@ CK.gameTracker = (() => {
   function _estimateAccuracy(pgn) {
     if (!pgn) return null;
     const blunders  = (pgn.match(/\?\?/g) || []).length;
-    const mistakes  = (pgn.match(/\?[^?]/g) || []).length;
+    const mistakes  = (pgn.match(/(?<![?!])\?(?!\?)/g) || []).length;
     const inaccurate= (pgn.match(/!\?|!!/g) || []).length;
     // rough: start at 95, penalise blunders -8, mistakes -4, inaccurate -2
     const raw = Math.max(40, 95 - blunders * 8 - mistakes * 4 - inaccurate * 2);
@@ -99,14 +99,18 @@ CK.gameTracker = (() => {
       CK.showToast('Fetching from Lichess...', 'info');
       const url = `https://lichess.org/api/games/user/${encodeURIComponent(lichessUsername.trim())}?max=${maxGames}&pgnInJson=true&opening=true`;
       const res = await fetch(url, { headers: { 'Accept': 'application/x-ndjson' } });
+      if (res.status === 429) { CK.showToast('Lichess rate limit reached. Please wait a moment and try again.', 'warning'); return; }
       if (!res.ok) throw new Error('Lichess API error');
       const text = await res.text();
       const lines = text.trim().split('\n').filter(Boolean);
       submitGame._bulkMode = true; // suppress per-game profile updates
       let imported = 0;
+      const existingUrls = new Set(getGames(studentId, 999).map(e => e.lichessUrl).filter(Boolean));
       for (const line of lines) {
         try {
           const g = JSON.parse(line);
+          const lichessUrl = `https://lichess.org/${g.id}`;
+          if (existingUrls.has(lichessUrl)) continue;
           const isWhite = g.players?.white?.user?.name?.toLowerCase() === lichessUsername.toLowerCase();
           const wR = g.players?.white?.ratingDiff || 0;
           const bR = g.players?.black?.ratingDiff || 0;
@@ -119,11 +123,11 @@ CK.gameTracker = (() => {
             opening: g.opening?.name || '',
             ratingBefore: isWhite ? g.players?.white?.rating : g.players?.black?.rating,
             ratingAfter: isWhite ? (g.players?.white?.rating || 0) + wR : (g.players?.black?.rating || 0) + bR,
-            lichessUrl: `https://lichess.org/${g.id}`,
+            lichessUrl,
             accuracy: g.players?.[isWhite ? 'white' : 'black']?.analysis?.accuracy || null,
           });
-          if (ok !== false) imported++;
-        } catch (_) {}
+          if (ok !== false) { imported++; existingUrls.add(lichessUrl); }
+        } catch (_) { console.warn('[CK] Lichess game parse error:', _); }
       }
       submitGame._bulkMode = false;
       // Single batch profile update avoids N-way race condition
@@ -138,6 +142,7 @@ CK.gameTracker = (() => {
       }
       CK.showToast(`Imported ${imported} game${imported !== 1 ? 's' : ''} from Lichess!`, 'success');
     } catch (err) {
+      submitGame._bulkMode = false;
       CK.showToast('Could not reach Lichess. Check username or try again later.', 'error');
     }
   }

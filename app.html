@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>ChessKidoo — Dashboard</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <!-- Portal styles — loaded here, not in landing bundle -->
+  <link rel="stylesheet" href="/src/styles/tokens.css" />
+  <link rel="stylesheet" href="/src/styles/base.css" />
+  <link rel="stylesheet" href="/src/styles/components.css" />
+  <link rel="stylesheet" href="/src/styles/portals.css" />
+</head>
+<body class="app-shell">
+
+  <!-- Skip-to-content for keyboard / screen-reader users -->
+  <a href="#app-outlet" class="skip-link">Skip to content</a>
+
+  <!-- Route outlet — pages are mounted here by the router -->
+  <main id="app-outlet" role="main" aria-live="polite"></main>
+
+  <!-- Page-transition loader (shown by router during lazy imports) -->
+  <div id="ck-page-loader" class="ck-page-loader" aria-hidden="true">
+    <span class="ck-spinner"></span>
+  </div>
+
+  <!-- Toast (mounted by toast.js on first use) -->
+
+  <!-- App entry — Vite resolves this as a separate bundle from landing -->
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

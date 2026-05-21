@@ -12,21 +12,7 @@ CK.schedulePro = (() => {
   const uid  = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
   const today = () => new Date().toISOString().split('T')[0];
 
-  /* seed demo meetings */
-  async function _seed() {
-    const existing = await get();
-    if (existing.length) return;
-    const now = new Date();
-    const addDays = (d) => { const dt = new Date(now); dt.setDate(dt.getDate() + d); return dt.toISOString().split('T')[0]; };
-    const seedData = [
-      { id:'m1', coachId:'c1', coachName:'ARIVUSELVAM', title:'Beginner Opening Principles', batch:'Group', date: addDays(1), time:'17:00', duration:60, link:'https://meet.google.com/beg-ari-abc', notes:'Study Ruy Lopez lines before class.', type:'class', studentIds:['s1','s8','s27'] },
-      { id:'m2', coachId:'c3', coachName:'VISHNU', title:'Intermediate Tactics Workshop', batch:'FRI&SAT', date: addDays(3), time:'16:00', duration:75, link:'https://meet.google.com/vis-int-str', notes:'Bring your puzzle notebooks.', type:'class', studentIds:['s3','s14','s19'] },
-      { id:'m3', coachId:'c7', coachName:'RANJITH', title:'Advanced Opening Review — 1-on-1', batch:'Weekend', date: addDays(2), time:'09:00', duration:45, link:'https://meet.google.com/raj-adv-opn', notes:'Individual session — rating target: 1400', type:'oneOnOne', studentIds:['s26'] },
-      { id:'m4', coachId:'c2', coachName:'GYANASURYA', title:'Weekend Tournament Prep', batch:'WEEKEND', date: addDays(5), time:'10:00', duration:90, link:'https://meet.google.com/gya-wk-xyz', notes:'We will analyze the last tournament games.', type:'class', studentIds:['s2','s9','s21'] }
-    ];
-    for (const m of seedData) await CK.db.saveMeeting(m);
-  }
-  _seed();
+  // No seed data — meetings are created by real coaches via the Add Session form
 
   /* ═══════════════════════════════════════════════════════
      COACH — RENDER OWN SCHEDULE

@@ -6,9 +6,8 @@
 window.CK = window.CK || {};
 
 CK.puzzlesPro = (() => {
-  const SCORES_KEY = 'ck_puzzle_scores';
-  const getScores  = () => JSON.parse(localStorage.getItem(SCORES_KEY) || '[]');
-  const saveScores = d  => localStorage.setItem(SCORES_KEY, JSON.stringify(d));
+  const getScores  = async () => await CK.db.getPuzzleScores();
+  const saveScores = async d  => { /* handled in CK.db */ };
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
 
   /* ─── 60 curated tactical puzzles (Lichess CC0 database) ─── */
@@ -84,8 +83,8 @@ CK.puzzlesPro = (() => {
   ];
 
   /* ─── Leaderboard ─── */
-  function getLeaderboard() {
-    const scores = getScores();
+  async function getLeaderboard() {
+    const scores = await getScores();
     const byUser = {};
     scores.forEach(s => {
       if (!byUser[s.userId]) byUser[s.userId] = { userId: s.userId, name: s.userName, solved: 0, totalXP: 0, avgTime: 0, times: [] };
@@ -97,16 +96,16 @@ CK.puzzlesPro = (() => {
     })).sort((a,b) => b.totalXP - a.totalXP || b.solved - a.solved);
   }
 
-  function recordScore(userId, userName, puzzleId, solved, time, mistakes) {
+  async function recordScore(userId, userName, puzzleId, solved, time, mistakes) {
     const xp = solved ? Math.max(5, 50 - Math.floor(time/10) - mistakes*5) : 0;
-    const scores = getScores();
-    scores.push({ id: uid(), userId, userName, puzzleId, solved, time, mistakes, xp, date: new Date().toISOString() });
-    saveScores(scores);
+    const score = { id: uid(), userId, userName, puzzleId, solved, time, mistakes, xp, date: new Date().toISOString() };
+    await CK.db.savePuzzleScore(score);
     return xp;
   }
 
-  function hasSolved(userId, puzzleId) {
-    return getScores().some(s => s.userId === userId && s.puzzleId === puzzleId && s.solved);
+  async function hasSolved(userId, puzzleId) {
+    const scores = await getScores();
+    return scores.some(s => s.userId === userId && s.puzzleId === puzzleId && s.solved);
   }
 
   function getPuzzleById(id) { return PUZZLES.find(p => p.id === id) || null; }
@@ -124,10 +123,10 @@ CK.puzzlesPro = (() => {
   }
 
   /* ─── Render Leaderboard ─── */
-  function renderLeaderboard(containerId) {
+  async function renderLeaderboard(containerId) {
     const el = document.getElementById(containerId);
     if (!el) return;
-    const board = getLeaderboard();
+    const board = await getLeaderboard();
     if (!board.length) {
       el.innerHTML = `<div class="cls-empty">🏆 No scores yet — be the first to solve puzzles!</div>`; return;
     }
@@ -147,15 +146,15 @@ CK.puzzlesPro = (() => {
   }
 
   /* ─── Render puzzle list for student portal ─── */
-  function renderPuzzleList(containerId, userId, userName, difficulty = null) {
+  async function renderPuzzleList(containerId, userId, userName, difficulty = null) {
     const el = document.getElementById(containerId);
     if (!el) return;
     const ratingMap = { Easy: [0,900], Medium: [900,1100], Hard: [1100,9999] };
     const [min, max] = ratingMap[difficulty] || [0,9999];
     const list = getFilteredPuzzles(null, max, min);
 
-    el.innerHTML = list.map(p => {
-      const solved = hasSolved(userId, p.id);
+    el.innerHTML = (await Promise.all(list.map(async p => {
+      const solved = await hasSolved(userId, p.id);
       const themeLabel = p.theme.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase());
       const diff = p.rating < 900 ? 'Easy' : p.rating < 1100 ? 'Medium' : 'Hard';
       return `
@@ -175,20 +174,21 @@ CK.puzzlesPro = (() => {
             </button>
           </div>
         </div>`;
-    }).join('');
+    }))).join('');
   }
 
   /* ─── Interactive Puzzle Solver (board modal) ─── */
   let _activePuzzle = null, _pzMoveIdx = 0, _pzTimer = null, _pzSeconds = 0, _pzMistakes = 0;
-  let _pzBoard = null, _pzGame = null, _pzUserId = '', _pzUserName = '';
+  let _pzBoard = null, _pzGame = null, _pzUserId = '', _pzUserName = '', _pzAwaitingOpponent = false;
 
   function openPuzzle(puzzleId, userId, userName) {
     const puzzle = getPuzzleById(puzzleId);
     if (!puzzle) return;
     _activePuzzle = puzzle; _pzMoveIdx = 0; _pzSeconds = 0; _pzMistakes = 0;
-    _pzUserId = userId; _pzUserName = userName;
+    _pzUserId = userId; _pzUserName = userName; _pzAwaitingOpponent = false;
 
-    // Build modal
+    // Build modal — remove any stale instance first
+    document.getElementById('pzProModal')?.remove();
     const modal = document.createElement('div');
     modal.id = 'pzProModal';
     modal.className = 'cls-modal-overlay';
@@ -227,16 +227,21 @@ CK.puzzlesPro = (() => {
     }
     _pzMoveIdx = 1; // player now solves from index 1
 
-    requestAnimationFrame(() => {
+    // Double rAF: first frame appends modal, second frame reads correct dimensions
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const wrap = document.getElementById('pzProBoardWrap');
+      if (!wrap) return;
       _pzBoard = Chessboard('pzProBoardWrap', {
-        pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+        pieceTheme: function (piece) {
+          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+        },
         position: _pzGame.fen(),
         orientation: _pzGame.turn() === 'w' ? 'white' : 'black',
         draggable: true,
         onDrop: _pzHandleDrop,
         onSnapEnd: () => { if (_pzBoard) _pzBoard.position(_pzGame.fen()); }
       });
-    });
+    }));
 
     // Start timer
     _pzTimer = setInterval(() => {
@@ -249,6 +254,7 @@ CK.puzzlesPro = (() => {
   }
 
   function _pzHandleDrop(from, to) {
+    if (_pzAwaitingOpponent) return 'snapback';
     const move = _pzGame.move({ from, to, promotion: 'q' });
     if (!move) return 'snapback';
 
@@ -265,12 +271,14 @@ CK.puzzlesPro = (() => {
         // Puzzle complete!
         clearInterval(_pzTimer);
         if (statusEl) statusEl.innerHTML = `<div class="pz-success">✅ Brilliant! Puzzle solved in ${_pzSeconds}s with ${_pzMistakes} mistake${_pzMistakes===1?'':'s'}!</div>`;
-        const xp = recordScore(_pzUserId, _pzUserName, _activePuzzle.id, true, _pzSeconds, _pzMistakes);
-        CK.showToast(`🎉 Puzzle solved! +${xp} XP`, 'success');
+        recordScore(_pzUserId, _pzUserName, _activePuzzle.id, true, _pzSeconds, _pzMistakes).then(xp => {
+          CK.showToast(`🎉 Puzzle solved! +${xp} XP`, 'success');
+        });
         setTimeout(closePuzzle, 3000);
       } else {
         // Play opponent's response
         if (statusEl) statusEl.innerHTML = `<div class="pz-correct">✓ Correct! Keep going...</div>`;
+        _pzAwaitingOpponent = true;
         setTimeout(() => {
           const oppMove = _activePuzzle.moves[_pzMoveIdx];
           if (oppMove) {
@@ -278,6 +286,7 @@ CK.puzzlesPro = (() => {
             _pzMoveIdx++;
             if (_pzBoard) _pzBoard.position(_pzGame.fen(), true);
           }
+          _pzAwaitingOpponent = false;
         }, 500);
       }
     } else {
@@ -290,14 +299,16 @@ CK.puzzlesPro = (() => {
 
   function showSolution() {
     if (!_activePuzzle) return;
-    const moves = _activePuzzle.moves.slice(1).filter((_,i) => i % 2 === 0); // player moves
-    CK.showToast(`Solution: ${moves.join(' → ')}`, 'info');
+    const remaining = _activePuzzle.moves.slice(_pzMoveIdx);
+    const playerMoves = remaining.filter((_, i) => i % 2 === 0);
+    CK.showToast(`Solution: ${playerMoves.join(' → ')}`, 'info');
     recordScore(_pzUserId, _pzUserName, _activePuzzle.id, false, _pzSeconds, 99);
   }
 
   function resetPuzzle() {
+    const puzzleId = _activePuzzle?.id;
     closePuzzle();
-    setTimeout(() => openPuzzle(_activePuzzle?.id, _pzUserId, _pzUserName), 200);
+    setTimeout(() => openPuzzle(puzzleId, _pzUserId, _pzUserName), 200);
   }
 
   function closePuzzle() {

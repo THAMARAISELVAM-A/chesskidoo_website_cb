@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"d:\\\\MY\\\\chessk\" -Recurse -File)",
+      "Bash(Select-Object FullName, Length)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(node -e ' *)",
+      "Bash(python3)",
+      "Bash(ls -la \"d:\\\\MY\\\\chessk\\\\\" | head -30)",
+      "Read(//d/MY/**)",
+      "mcp__881e6a95-12ae-440f-9724-85fe37561b8d__list_projects",
+      "mcp__Claude_Preview__preview_start"
+    ]
+  }
+}

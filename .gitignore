@@ -49,3 +49,13 @@ coverage/
 *.seed
 *.pid.lock
 .sixth/
+
+# ─── Dev Artifacts (not for production) ──
+scratch/
+.kilo/
+upgrade_*.py
+replace_ui.py
+*.kilo
+
+# ─── Claude agent worktrees ──────────────
+.claude/worktrees/

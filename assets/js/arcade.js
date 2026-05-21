@@ -202,7 +202,13 @@ CK.arcade = (() => {
         const sq = file + rank;
         const isDark = (files.indexOf(file) + ranks.indexOf(rank)) % 2 !== 0;
         const piece = puzzle.pieces[sq];
-        const pieceHTML = piece ? `<div class="arcade-piece ${piece.color}">${piece.unicode}</div>` : '';
+        let pieceHTML = '';
+        if (piece) {
+          const colorPrefix = piece.color === 'white' ? 'w' : 'b';
+          const typeCode = piece.type.toLowerCase();
+          const imgSrc = `https://images.chesscomfiles.com/chess-themes/pieces/neo/150/${colorPrefix}${typeCode}.png`;
+          pieceHTML = `<div class="arcade-piece ${piece.color}" style="width:100%;height:100%;"><img src="${imgSrc}" style="width:85%;height:85%;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.5));pointer-events:none;"></div>`;
+        }
         boardHTML += `
           <div class="arcade-sq ${isDark ? 'dark' : 'light'}" data-sq="${sq}">
             ${pieceHTML}
@@ -541,12 +547,12 @@ CK.arcade = (() => {
      GAME 3: CHESS MATCH-3 (MEMORY MATCHING)
      ========================================== */
   const MEMORY_PIECES = [
-    { code: 'K', unicode: '♚' },
-    { code: 'Q', unicode: '♛' },
-    { code: 'R', unicode: '♜' },
-    { code: 'B', unicode: '♝' },
-    { code: 'N', unicode: '♞' },
-    { code: 'P', unicode: '♟' }
+    { code: 'K', img: 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wk.png' },
+    { code: 'Q', img: 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wq.png' },
+    { code: 'R', img: 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wr.png' },
+    { code: 'B', img: 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wb.png' },
+    { code: 'N', img: 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wn.png' },
+    { code: 'P', img: 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wp.png' }
   ];
 
   ARC.startMemoryMatchGame = () => {
@@ -603,7 +609,7 @@ CK.arcade = (() => {
         <div class="memory-card-element ${card.flipped ? 'flipped' : ''} ${card.matched ? 'matched' : ''}" data-idx="${idx}" onclick="CK.arcade.flipCard(${idx})">
           <div class="memory-card-inner">
             <div class="memory-card-front">❓</div>
-            <div class="memory-card-back">${card.piece.unicode}</div>
+            <div class="memory-card-back" style="display:flex;align-items:center;justify-content:center;background:#1e293b;border-radius:10px;"><img src="${card.piece.img}" style="width:80%;height:80%;pointer-events:none;"></div>
           </div>
         </div>
       `;
@@ -800,7 +806,7 @@ CK.arcade = (() => {
 
         let entityHTML = '';
         if (isKnight) {
-          entityHTML = '<div class="arcade-piece white" style="font-size:3rem;">♞</div>';
+          entityHTML = '<div class="arcade-piece white" style="width:100%;height:100%;"><img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wn.png" style="width:85%;height:85%;pointer-events:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.5));"></div>';
         } else if (isTarget) {
           entityHTML = '<div class="arcade-star">⭐</div>';
         }
@@ -1152,6 +1158,7 @@ CK.arcade = (() => {
 
     directions.forEach(dir => {
       let step = 1;
+      // eslint-disable-next-line no-constant-condition
       while (true) {
         const nf = fileIdx + dir[0] * step;
         const nr = rankIdx + dir[1] * step;
@@ -1426,8 +1433,9 @@ CK.arcade = (() => {
     const content = document.getElementById('arcade-cabinet-content');
     if (!content) return;
 
+    const _e = CK.esc || (s => s);
     const optHTML = q.opts.map((opt, i) => `
-      <button class="quiz-opt-btn" id="quiz-opt-${i}" onclick="CK.arcade.submitQuizAnswer(${i})">${opt}</button>
+      <button class="quiz-opt-btn" id="quiz-opt-${i}" onclick="CK.arcade.submitQuizAnswer(${i})">${_e(opt)}</button>
     `).join('');
 
     content.innerHTML = `
@@ -1448,7 +1456,7 @@ CK.arcade = (() => {
             </span>
           </div>
           <div class="quiz-timer-track"><div class="quiz-timer-bar" id="quiz-timer-bar"></div></div>
-          <div class="quiz-question">${q.q}</div>
+          <div class="quiz-question">${_e(q.q)}</div>
           <div class="quiz-options">${optHTML}</div>
           <div class="quiz-explanation" id="quiz-explanation" style="display:none;"></div>
         </div>
@@ -1487,7 +1495,7 @@ CK.arcade = (() => {
     const expEl = document.getElementById('quiz-explanation');
     if (expEl) {
       expEl.style.display = 'block';
-      expEl.innerHTML = `${isCorrect ? '✅' : '❌'} <strong>${isCorrect ? 'Correct!' : 'Wrong.'}</strong> ${q.exp}`;
+      expEl.innerHTML = `${isCorrect ? '✅' : '❌'} <strong>${isCorrect ? 'Correct!' : 'Wrong.'}</strong> ${CK.esc ? CK.esc(String(q.exp || '')) : String(q.exp || '')}`;
       expEl.style.borderLeftColor = isCorrect ? '#22c55e' : '#ef4444';
     }
 

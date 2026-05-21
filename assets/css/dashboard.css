@@ -323,29 +323,6 @@ html, body {
     font-size: 1.6rem;
   }
 }
-  .sidebar {
-    width: 100%;
-    height: auto;
-    position: static;
-    flex-direction: row;
-    align-items: center;
-    padding: 16px 20px;
-  }
-  .sidebar-brand {
-    margin-bottom: 0;
-    margin-right: 20px;
-  }
-  .sidebar-nav {
-    flex-direction: row;
-    overflow-x: auto;
-  }
-  .sidebar-nav a {
-    white-space: nowrap;
-  }
-  .dashboard-main {
-    padding: 24px;
-  }
-}
 
 @media (max-width: 768px) {
   .stats-grid {

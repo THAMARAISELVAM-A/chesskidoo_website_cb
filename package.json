@@ -1,15 +1,24 @@
 {
-  "name": "chesskidoo-website",
-  "version": "2.0.0",
-  "description": "ChessKidoo — India's Premier Chess Academy. Static SPA with Supabase backend.",
+  "name": "chesskidoo",
+  "version": "3.0.0",
+  "description": "ChessKidoo Academy — modular Vite SPA with Supabase backend",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "npx serve . -p 3000",
-    "lint": "echo 'No build step required — pure static SPA'"
+    "dev":     "vite",
+    "build":   "vite build",
+    "preview": "vite preview",
+    "lint":    "eslint src --ext .js --max-warnings 0",
+    "format":  "prettier --write \"src/**/*.{js,css,html}\""
   },
-  "dependencies": {},
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  },
   "devDependencies": {
-    "serve": "^14.2.3"
+    "vite":                   "^5.4.0",
+    "eslint":                 "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier":               "^3.3.0"
   },
   "engines": {
     "node": ">=18"

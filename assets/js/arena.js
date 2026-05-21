@@ -25,7 +25,7 @@
   let stockfish = null;
   let engineReady = false;
   let useWasm = false;
-  let playerColor = 'w';
+  const playerColor = 'w';
   let gameStartTime = null;
   let whiteClock = 600;
   let blackClock = 600;
@@ -37,6 +37,9 @@
   let achievements = [];
   let puzzleMode = false;
   let awaitingAIMove = false;
+  let quickMoveState = null;
+  let memoryGameState = null;
+  let gameTimer = null;
 
   const DIFFICULTY_DEPTH = { Beginner: 1, Intermediate: 2, Advanced: 3, Expert: 4 };
   const PIECE_VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
@@ -59,17 +62,6 @@
     }
   };
 
-  const PST_PAWN = [
-    [0,0,0,0,0,0,0,0],
-    [50,50,50,50,50,50,50,50],
-    [10,10,20,30,30,20,10,10],
-    [5,5,10,25,25,10,5,5],
-    [0,0,0,20,20,0,0,0],
-    [5,-5,-10,0,0,-10,-5,5],
-    [5,10,10,-20,-20,10,10,5],
-    [0,0,0,0,0,0,0,0]
-  ];
-
   const OPENING_BOOK = {
     'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1': 'e2e4',
     'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1': 'e7e5',
@@ -86,13 +78,11 @@
 
   /* ─── Init ─── */
   A.init = () => {
-    console.log('Arena: Initializing AI Challenge Arena...');
-    // Clear any active clock/timer from previous game or mini-game modes
     if (clockInterval) { clearInterval(clockInterval); clockInterval = null; }
     if (typeof gameTimer !== 'undefined' && gameTimer) { clearInterval(gameTimer); gameTimer = null; }
 
     puzzleMode = false;
-    quickMoveState = null;   // reset mini-game state so regular moves aren't blocked
+    quickMoveState = null;
     memoryGameState = null;
 
     game = new Chess();
@@ -121,19 +111,13 @@
     awaitingAIMove = false;
     achievements = JSON.parse(localStorage.getItem('ck_achievements') || '[]');
 
-    console.log('Arena: Rendering board...');
     renderBoard();
-    console.log('Arena: Rendering analysis panel...');
     renderAnalysisPanel();
     updateStatus('Your turn — play as White');
-    console.log('Arena: Initializing engine...');
     initEngine();
-    console.log('Arena: Starting clock...');
     startClock();
-    console.log('Arena: Initializing eval chart...');
     initEvalChart();
     A.updateMinimaxAnalysis();
-    console.log('Arena: Initialization complete!');
   };
 
   function handleTimeout(loserColor) {
@@ -171,7 +155,7 @@
           blackClock = Math.max(0, blackClock - elapsedSec);
           if (blackClock === 0) { handleTimeout('b'); return; }
         }
-        lastTickTime = now;
+        lastTickTime += elapsedSec * 1000;
         updateClockDisplay();
       }
     }, 250);
@@ -229,6 +213,7 @@
   function handleEngineMessage(e) {
     const line = e.data;
     if (line === 'uciok') {
+      if (!stockfish) return;
       stockfish.postMessage('ucinewgame');
       stockfish.postMessage('isready');
       return;
@@ -352,15 +337,11 @@
 
   /* ─── Board Rendering ─── */
   function renderBoard() {
-    console.log('Arena: Rendering board...');
     if (!boardEl) {
       console.error('Arena: Board element not found!');
       return;
     }
     boardEl.innerHTML = '';
-    const fen = game.fen();
-    console.log('Arena: Current FEN:', fen);
-    const parts = fen.split(' ');
 
     for (let rank = 0; rank < 8; rank++) {
       for (let file = 0; file < 8; file++) {
@@ -374,7 +355,7 @@
         if (piece) {
           const pieceEl = document.createElement('div');
           pieceEl.className = `a-piece piece-${piece.color}`;
-          pieceEl.innerHTML = `<img src="https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/${piece.color}${piece.type.toUpperCase()}.png" style="width: 92%; height: 92%; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.4)); pointer-events: none;" alt="${piece.type}">`;
+          pieceEl.innerHTML = `<img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/${piece.color}${piece.type.toLowerCase()}.png" style="width: 92%; height: 92%; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.4)); pointer-events: none;" alt="${piece.type}">`;
           sqEl.appendChild(pieceEl);
         }
 
@@ -383,7 +364,6 @@
       }
     }
 
-    console.log('Arena: Board rendered with', boardEl.children.length, 'squares');
     highlightLastMove();
     highlightCheck();
   }
@@ -550,12 +530,10 @@ function executePlayerMove(move) {
     const fen = game.fen();
     if (OPENING_BOOK[fen] && Math.random() < 0.3) {
       const bookMove = OPENING_BOOK[fen];
-      console.log('Arena: Playing opening book move:', bookMove);
       makeAIMove(bookMove);
       return;
     }
 
-    console.log('Arena: AI thinking...');
     if (useWasm && engineReady && stockfish) {
       awaitingAIMove = true;
       stockfish.postMessage(`position fen ${fen}`);
@@ -564,10 +542,8 @@ function executePlayerMove(move) {
       const depth = DIFFICULTY_DEPTH[currentDifficulty] || 2;
       const bestMove = getBestMoveMinimax(depth);
       if (bestMove) {
-        console.log('Arena: AI found best move:', bestMove);
         makeAIMove(bestMove.from + bestMove.to + (bestMove.promotion || ''));
       } else {
-        console.log('Arena: No best move found, using random move');
         const moves = game.moves({ verbose: true });
         if (moves.length > 0) {
           const random = moves[Math.floor(Math.random() * moves.length)];
@@ -654,14 +630,11 @@ function executePlayerMove(move) {
 
   /* ─── Minimax Fallback ─── */
   function getBestMoveMinimax(maxDepth) {
-    console.log('Arena: Getting best move with depth', maxDepth);
     const moves = game.moves({ verbose: true });
     if (moves.length === 0) {
-      console.log('Arena: No moves available');
       return null;
     }
 
-    console.log('Arena: Evaluating', moves.length, 'moves');
 
     let bestMove = null;
     let bestEval = game.turn() === 'w' ? -Infinity : Infinity;
@@ -738,59 +711,42 @@ function executePlayerMove(move) {
     return score;
   }
 
-  /* ─── Move Classification ─── */
+  /* ─── Move Classification (always uses minimax to avoid racing Stockfish AI requests) ─── */
   function getEvalForPosition(fenBefore, playerSan) {
-    if (useWasm && engineReady && stockfish) {
-      stockfish.postMessage(`position fen ${fenBefore}`);
-      stockfish.postMessage(`go depth ${DIFFICULTY_DEPTH[currentDifficulty] || 2}`);
-      const currentMoveNum = moveHistory.length;
-      setTimeout(() => {
-        classifyMoveFromEval(currentMoveNum);
-      }, 300);
-    } else {
-      const depth = DIFFICULTY_DEPTH[currentDifficulty] || 2;
-      const savedGame = game;
-      game = new Chess(fenBefore);
-      const moves = game.moves({ verbose: true });
-      let bestEval = game.turn() === 'w' ? -Infinity : Infinity;
-      let bestMove = null;
-      const isMax = game.turn() === 'w';
+    const depth = DIFFICULTY_DEPTH[currentDifficulty] || 2;
+    const savedGame = game;
+    game = new Chess(fenBefore);
+    const moves = game.moves({ verbose: true });
+    let bestEval = game.turn() === 'w' ? -Infinity : Infinity;
+    let bestMove = null;
+    const isMax = game.turn() === 'w';
 
-      for (const m of moves) {
-        game.move(m);
-        const ev = minimax(depth - 1, -Infinity, Infinity, !isMax);
-        game.undo();
-        if (isMax && ev > bestEval) { bestEval = ev; bestMove = m; }
-        if (!isMax && ev < bestEval) { bestEval = ev; bestMove = m; }
-      }
-
-      const playerMove = moves.find(m => m.san === playerSan);
-      let playerEval = 0;
-      if (playerMove) {
-        game.move(playerMove);
-        playerEval = minimax(depth - 1, -Infinity, Infinity, !isMax);
-        game.undo();
-      }
-      game = savedGame;
-
-      const diff = isMax ? (bestEval - playerEval) : (playerEval - bestEval);
-      const classification = classifyFromDiff(diff, playerMove, bestMove);
-      classificationHistory.push({ san: playerSan, classification, eval: playerEval });
-      evalHistory.push(playerEval);
-      updateEvalChart(moveHistory.length, playerEval);
-      renderAnalysisPanel();
-      
-      // Update Engine Analysis HUD display in Minimax Mode
-      const displayEval = playerEval / 10;
-      updateEngineDisplay(displayEval, depth, bestMove ? [bestMove.san] : []);
+    for (const m of moves) {
+      game.move(m);
+      const ev = minimax(depth - 1, -Infinity, Infinity, !isMax);
+      game.undo();
+      if (isMax && ev > bestEval) { bestEval = ev; bestMove = m; }
+      if (!isMax && ev < bestEval) { bestEval = ev; bestMove = m; }
     }
-  }
 
-  function classifyMoveFromEval(moveNum) {
-    if (classificationHistory.length > moveNum) return;
-    classificationHistory.push({ san: moveHistory[moveNum]?.san || '?', classification: 'good', eval: 0 });
-    evalHistory.push(0);
+    const playerMove = moves.find(m => m.san === playerSan);
+    let playerEval = 0;
+    if (playerMove) {
+      game.move(playerMove);
+      playerEval = minimax(depth - 1, -Infinity, Infinity, !isMax);
+      game.undo();
+    }
+    game = savedGame;
+
+    const diff = isMax ? (bestEval - playerEval) : (playerEval - bestEval);
+    const classification = classifyFromDiff(diff, playerMove, bestMove);
+    classificationHistory.push({ san: playerSan, classification, eval: playerEval });
+    evalHistory.push(playerEval);
+    updateEvalChart(moveHistory.length, playerEval);
     renderAnalysisPanel();
+
+    const displayEval = playerEval / 10;
+    updateEngineDisplay(displayEval, depth, bestMove ? [bestMove.san] : []);
   }
 
   function classifyFromDiff(diff, playerMove, bestMove) {
@@ -881,7 +837,6 @@ function executePlayerMove(move) {
   function checkAchievements(result) {
     const classifications = classificationHistory.map(c => c.classification);
     const totalMoves = moveHistory.length;
-    const duration = Math.floor((Date.now() - gameStartTime) / 1000);
 
     const weights = { brilliant: 1, best: 1, excellent: 0.9, good: 0.7, inaccuracy: 0.4, mistake: 0.2, blunder: 0 };
     let totalWeight = 0;
@@ -1284,7 +1239,8 @@ function executePlayerMove(move) {
   }
 
   function getBestMoveForTurn(moveIndex) {
-    const depth = DIFFICULTY_DEPTH[currentDifficulty] || 2;
+    // Use depth 1 only — this is a post-game display table, not actual AI play.
+    // Running full-depth minimax for every move in history freezes the UI thread.
     const fenBefore = moveIndex === 0
       ? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
       : (moveHistory[moveIndex - 1]?.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
@@ -1297,7 +1253,7 @@ function executePlayerMove(move) {
     const isMax = game.turn() === 'w';
     for (const m of moves) {
       game.move(m);
-      const ev = minimax(depth - 1, -Infinity, Infinity, !isMax);
+      const ev = evaluateBoard();
       game.undo();
       if (isMax && ev > bestEval) { bestEval = ev; bestMove = m; }
       if (!isMax && ev < bestEval) { bestEval = ev; bestMove = m; }
@@ -1344,9 +1300,9 @@ A.showCertificate = (result, grade, gradeClass, accuracy) => {
           </div>
           
           <div class="cert-input-section" style="margin: 24px 0; padding: 20px; background: rgba(232, 184, 75, 0.08); border-radius: 16px; border: 1px dashed rgba(200, 154, 56, 0.4);">
-            <input type="text" id="cert-player-name" placeholder="Enter your name" value="${savedName}" style="width: 70%; max-width: 300px; padding: 14px 20px; border-radius: 10px; border: 2px solid #e8b84b; font-size: 16px; margin-bottom: 12px; background: #fff; font-family: inherit;">
+            <input type="text" id="cert-player-name" placeholder="Enter your name" value="${savedName.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}" style="width: 70%; max-width: 300px; padding: 14px 20px; border-radius: 10px; border: 2px solid #e8b84b; font-size: 16px; margin-bottom: 12px; background: #fff; font-family: inherit;">
             <div class="cert-presented" style="font-size: 13px; color: #666; margin-bottom: 10px; letter-spacing: 0.5px;">This certificate is proudly presented to</div>
-            <div class="cert-player-name" id="cert-display-name" style="font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 900; color: #1a1a1a; min-height: 40px; display: flex; align-items: center; justify-content: center; letter-spacing: -0.5px;">${savedName || '---'}</div>
+            <div class="cert-player-name" id="cert-display-name" style="font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 900; color: #1a1a1a; min-height: 40px; display: flex; align-items: center; justify-content: center; letter-spacing: -0.5px;">${savedName.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') || '---'}</div>
           </div>
           
           <div class="cert-details-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 440px; margin: 24px auto; text-align: left;">
@@ -1377,8 +1333,8 @@ A.showCertificate = (result, grade, gradeClass, accuracy) => {
             </div>
           </div>
           
-          <div class="cert-id" style="font-family: monospace; font-size: 12px; color: #aaa; margin-top: 20px; letter-spacing: 0.5px;">Certificate ID: CK-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}</div>
-          <div class="cert-date" style="font-size: 12px; color: #888; margin-top: 6px;">${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+          <div class="cert-id" style="font-family: monospace; font-size: 12px; color: #aaa; margin-top: 20px; letter-spacing: 0.5px;">Certificate ID: ${certId}</div>
+          <div class="cert-date" style="font-size: 12px; color: #888; margin-top: 6px;">${dateStr}</div>
           
           <div class="cert-actions" style="display: flex; gap: 16px; justify-content: center; margin-top: 28px;">
             <button class="cert-btn cert-btn-print" id="cert-download-btn" ${savedName.length >= 2 ? '' : 'disabled'} style="padding: 14px 32px; background: #c89a38; color: #fff; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; ${savedName.length >= 2 ? '' : 'opacity: 0.5; cursor: not-allowed;'}">🖨️ Download Certificate</button>
@@ -1417,7 +1373,6 @@ A.showCertificate = (result, grade, gradeClass, accuracy) => {
   
   function downloadCertificateAsImage() {
     const name = nameInput.value.trim();
-    const certId = 'CK-' + new Date().getFullYear() + '-' + Math.random().toString(36).substring(2, 8).toUpperCase();
     const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     
     const printWindow = window.open('', '_blank');
@@ -1680,7 +1635,6 @@ const PUZZLES = [
 ];
 
 let currentPuzzle = null;
-let puzzleMoves = [];
 
 /* ─── Puzzle Mode ─── */
 A.startPuzzle = (puzzleId = null) => {
@@ -1734,13 +1688,7 @@ A.checkPuzzleSolution = (moveStr) => {
 };
 
 /* ─── Mini-Games ─── */
-let miniGameActive = null;
-let miniGameScore = 0;
-
 A.startMiniGame = (gameType) => {
-  miniGameActive = gameType;
-  miniGameScore = 0;
-  
   if (gameType === 'piece-assembly') {
     startPieceAssembly();
   } else if (gameType === 'find-move') {
@@ -1765,20 +1713,7 @@ function startFindMove() {
   updateStatus(`Mini-Game: Find the best move for White! Goal: ${pos.goal}`);
 }
 
-function checkMiniGameMove(move) {
-  if (!miniGameActive) return true;
-  const moveObj = game.move(move);
-  if (!moveObj) return false;
-  
-  miniGameScore += 10;
-  updateStatus(`Score: ${miniGameScore}`, 'gameover');
-  return true;
-}
-
 /* ─── More Games ─── */
-let memoryGameState = null;
-let quickMoveState = null;
-let gameTimer = null;
 
 A.startMemoryGame = () => {
   if (!game) game = new Chess();
@@ -1910,6 +1845,7 @@ A.showToast = (msg, type = 'info') => {
       stockfish = null;
     }
     if (clockInterval) clearInterval(clockInterval);
+    if (gameTimer) clearInterval(gameTimer);
     CK.showPage('landing-page');
   };
 

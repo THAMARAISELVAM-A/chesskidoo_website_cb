@@ -5,19 +5,47 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="description"
-    content="ChessKiddo — India's 1st Chess Student Tracking System and Premier Academy. FIDE-certified coaching for students aged 6–18." />
+    content="ChessKidoo — India's 1st Chess Student Tracking System and Premier Academy. FIDE-certified coaching for students aged 6–18." />
+  <meta name="keywords" content="chess academy India, FIDE chess coaching, chess for kids, online chess classes, chess student tracking" />
   <meta name="theme-color" content="#D97706" />
   <title>ChessKidoo | India's Premier Chess Academy</title>
 
-  <!-- Professional Chess Favicon -->
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://chesskidoo.com/" />
+  <meta property="og:title"       content="ChessKidoo | India's Premier Chess Academy" />
+  <meta property="og:description" content="FIDE-certified chess coaching for students aged 6–18. Track progress, play AI, solve puzzles — all in one platform." />
+  <meta property="og:image"       content="https://chesskidoo.com/assets/img/og-cover.png" />
+  <meta property="og:image:width"  content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:site_name"   content="ChessKidoo" />
+  <meta property="og:locale"      content="en_IN" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="ChessKidoo | India's Premier Chess Academy" />
+  <meta name="twitter:description" content="FIDE-certified chess coaching for students aged 6–18. Track progress, play AI, solve puzzles." />
+  <meta name="twitter:image"       content="https://chesskidoo.com/assets/img/og-cover.png" />
+
+  <!-- Canonical -->
+  <link rel="canonical" href="https://chesskidoo.com/" />
+
+  <!-- Professional Chess Favicon + PWA -->
   <link rel="icon" type="image/svg+xml"
-    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23D97706%22/><text y=%22.85em%22 x=%2250%%22 text-anchor=%22middle%22 font-size=%2270%22 fill=%22white%22>♘</text></svg>">
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23D97706%22/><text y=%22.85em%22 x=%2250%25%22 text-anchor=%22middle%22 font-size=%2270%22 fill=%22white%22>♘</text></svg>">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ChessKidoo">
+  <meta name="mobile-web-app-capable" content="yes">
 
   <!-- Fonts & Styles -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Poppins 400/600/800 + Inter 400/600 only — was 25 font files, now 5 -->
   <link
-    href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=Inter:wght@400;600&display=swap"
     rel="stylesheet">
   <!-- Razorpay Payment SDK -->
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
@@ -26,6 +54,7 @@
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/portals.css">
   <link rel="stylesheet" href="assets/css/arena.css">
+  <link rel="stylesheet" href="assets/css/dashboard.css">
   <link rel="stylesheet" href="assets/css/mobile-landing.css">
   <link rel="stylesheet" href="assets/css/mobile-portals.css">
   <link rel="stylesheet" href="assets/css/mobile-arena.css">
@@ -34,6 +63,69 @@
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+
+  <!-- Structured Data: LocalBusiness + Course -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "LocalBusiness",
+        "@id": "https://chesskidoo.com/#business",
+        "name": "ChessKidoo Academy",
+        "description": "India's premier chess academy offering FIDE-certified coaching for students aged 6–18.",
+        "url": "https://chesskidoo.com",
+        "telephone": "+919025846663",
+        "email": "chesskidoo37@gmail.com",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Chennai",
+          "addressRegion": "Tamil Nadu",
+          "addressCountry": "IN"
+        },
+        "sameAs": ["https://wa.me/919025846663"],
+        "priceRange": "₹₹",
+        "openingHours": "Mo-Su 09:00-21:00"
+      },
+      {
+        "@type": "Course",
+        "name": "Chess Beginner Programme",
+        "description": "Master chess fundamentals — piece movements, board control, and opening principles.",
+        "provider": { "@id": "https://chesskidoo.com/#business" },
+        "educationalLevel": "Beginner",
+        "audience": { "@type": "EducationalAudience", "educationalRole": "student" }
+      },
+      {
+        "@type": "Course",
+        "name": "Chess Intermediate Programme",
+        "description": "Tactical patterns, positional play, and tournament preparation.",
+        "provider": { "@id": "https://chesskidoo.com/#business" },
+        "educationalLevel": "Intermediate",
+        "audience": { "@type": "EducationalAudience", "educationalRole": "student" }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What age groups does ChessKidoo teach?",
+            "acceptedAnswer": { "@type": "Answer", "text": "We teach students aged 6 to 18 years across Beginner, Intermediate, and Advanced levels." }
+          },
+          {
+            "@type": "Question",
+            "name": "Are the coaches FIDE certified?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. All our coaches hold FIDE certifications and have competitive tournament experience." }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a free trial class?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes — the first demo class is always free, with no commitment required." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
 
   <!-- Failsafe Reveal -->
   <script>
@@ -52,14 +144,22 @@
 </head>
 
 <body>
+  <!-- Skip to content (accessibility) -->
+  <a href="#home" class="skip-to-content">Skip to main content</a>
+
+  <!-- Offline indicator -->
+  <div id="offlineBanner" role="alert" aria-live="assertive" style="display:none;position:fixed;top:0;left:0;width:100%;background:#ef4444;color:#fff;text-align:center;padding:8px 16px;font-size:0.85rem;font-weight:600;z-index:99999;letter-spacing:0.02em;">
+    📡 You're offline — some features are limited. Data is saved locally and will sync when you reconnect.
+  </div>
+
   <!-- Scroll Progress -->
   <div id="scrollProgress"></div>
 
   <!-- Preloader -->
   <div id="preloader">
-    <img class="preloader-logo" src="assets/img/logo.png" alt="ChessKiddo Logo">
+    <img class="preloader-logo" src="assets/img/logo.png" alt="ChessKidoo Logo">
     <div class="preloader-spinner"></div>
-    <div class="preloader-text">CHESS KIDDO</div>
+    <div class="preloader-text">CHESSKIDOO</div>
   </div>
 
   <!-- Global Header -->
@@ -104,7 +204,7 @@
     <!-- ======================== LANDING PAGE ======================== -->
     <div id="landing-page" class="page active">
       <!-- Hero Section -->
-      <section class="hero" id="home">
+      <section class="hero" id="home" tabindex="-1">
         <div class="hero-bg-pattern"></div>
         <!-- Floating chess pieces for ambiance -->
         <span class="hero-floating-piece">♟</span>
@@ -1550,26 +1650,6 @@
               have an account? <a href="#" style="color:#d97706; font-weight:700; text-decoration: none;">Create
                 Account</a></p>
 
-            <div
-              style="margin-top: 24px; padding: 16px; background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(217, 119, 6, 0.2); border-radius: 12px;">
-              <div
-                style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: #d97706; font-weight: 700; margin-bottom: 12px; text-align: center;">
-                ⚡ Quick Demo Access</div>
-              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-                <button type="button"
-                  onclick="document.querySelector('#loginForm [name=email]').value='admin@gmail.com'; document.querySelector('#loginForm [name=password]').value='Admin123$'; CK.showToast('Admin credentials filled!', 'info');"
-                  style="padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #f8fafc; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">👑
-                  Admin</button>
-                <button type="button"
-                  onclick="document.querySelector('#loginForm [name=email]').value='student@gmail.com'; document.querySelector('#loginForm [name=password]').value='Student123'; CK.showToast('Student credentials filled!', 'info');"
-                  style="padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #f8fafc; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">🧑‍🎓
-                  Student</button>
-                <button type="button"
-                  onclick="document.querySelector('#loginForm [name=email]').value='coach@gmail.com'; document.querySelector('#loginForm [name=password]').value='Coach123'; CK.showToast('Coach credentials filled!', 'info');"
-                  style="padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #f8fafc; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">👨‍🏫
-                  Coach</button>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -1639,6 +1719,16 @@
             </button>
             <button class="p-nav-item" onclick="CK.admin.showPanel('coachattendance')">
               <span class="icon">👨‍🏫</span><span>Coach Attendance</span>
+            </button>
+            <div class="p-nav-section-label">Intelligence</div>
+            <button class="p-nav-item" onclick="CK.admin.showPanel('analytics')">
+              <span class="icon">🧠</span><span>AI Analytics</span>
+            </button>
+            <button class="p-nav-item" onclick="CK.admin.showPanel('leaderboard')">
+              <span class="icon">🏅</span><span>Leaderboard & XP</span>
+            </button>
+            <button class="p-nav-item" onclick="CK.admin.showPanel('audit')">
+              <span class="icon">🛡️</span><span>Audit Logs</span>
             </button>
             <div class="p-section-sep"></div>
             <button class="p-nav-item" onclick="CK.admin.showPanel('settings')">
@@ -2002,32 +2092,23 @@
               </div>
             </div>
 
-            <!-- ══ TOURNAMENTS PANEL ══ -->
+            <!-- ══ TOURNAMENTS PANEL (Engine-Powered) ══ -->
             <div class="p-panel" id="p-panel-tournaments">
+              <div class="p-card" style="margin-bottom:20px;">
+                <div class="p-card-header">
+                  <div class="p-card-title">🏆 Tournament Engine</div>
+                  <div style="display:flex;gap:8px;">
+                    <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.tournament&&CK.tournament.showCreateForm('adminTournamentCreate')">+ Create Tournament</button>
+                  </div>
+                </div>
+                <div class="p-card-body" id="adminTournamentCreate"></div>
+              </div>
               <div class="p-card">
                 <div class="p-card-header">
-                  <div class="p-card-title">🏆 Tournament Management</div>
-                  <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.admin.openTournamentModal()">+ Create
-                    Tournament</button>
+                  <div class="p-card-title">Active & Past Tournaments</div>
                 </div>
-                <div class="p-card-body" style="overflow-x:auto">
-                  <table class="p-table">
-                    <thead>
-                      <tr>
-                        <th>Name</th>
-                        <th>Date</th>
-                        <th>Format</th>
-                        <th>Participants</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="adminTournamentsTable">
-                      <tr>
-                        <td colspan="6" style="text-align:center;opacity:0.5;padding:20px;">Loading tournaments...</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <div class="p-card-body" id="adminTournamentList" style="padding:16px;">
+                  <div style="text-align:center;opacity:.4;padding:30px;">Loading tournaments...</div>
                 </div>
               </div>
             </div>
@@ -2114,6 +2195,99 @@
               </div>
             </div>
             <!-- ══ SETTINGS PANEL ══ -->
+            <!-- ══ AI ANALYTICS PANEL ══ -->
+            <div class="p-panel" id="p-panel-analytics">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
+                <div class="p-card">
+                  <div class="p-card-header"><div class="p-card-title">🧠 AI Engagement Overview</div></div>
+                  <div class="p-card-body" id="adminEngagementOverview" style="padding:20px;">
+                    <div style="text-align:center;opacity:.4;padding:30px;">Analyzing student data...</div>
+                  </div>
+                </div>
+                <div class="p-card">
+                  <div class="p-card-header"><div class="p-card-title">📉 Dropout Risk Monitor</div></div>
+                  <div class="p-card-body" id="adminDropoutRisk" style="padding:20px;">
+                    <div style="text-align:center;opacity:.4;padding:30px;">Scanning risk factors...</div>
+                  </div>
+                </div>
+              </div>
+              <div class="p-card" style="margin-bottom:20px;">
+                <div class="p-card-header"><div class="p-card-title">👨‍🏫 Coach Effectiveness Scorecard</div></div>
+                <div class="p-card-body" id="adminCoachEffectiveness" style="padding:20px;">
+                  <div style="text-align:center;opacity:.4;padding:30px;">Calculating coach metrics...</div>
+                </div>
+              </div>
+              <div class="p-card">
+                <div class="p-card-header">
+                  <div class="p-card-title">🎯 Student Weakness Radar</div>
+                  <select class="p-form-control" id="adminWeaknessStudentSelect" style="max-width:250px;" onchange="CK.admin.renderStudentWeakness(this.value)">
+                    <option value="">Select a student...</option>
+                  </select>
+                </div>
+                <div class="p-card-body" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                  <div id="adminWeaknessChart" style="padding:20px; min-height:300px;">
+                    <div style="text-align:center;opacity:.4;padding:60px;">Select a student to view their weakness analysis</div>
+                  </div>
+                  <div id="adminStudyPlan" style="padding:20px;">
+                    <div style="text-align:center;opacity:.4;padding:60px;">AI study plan will appear here</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ══ LEADERBOARD & XP PANEL ══ -->
+            <div class="p-panel" id="p-panel-leaderboard">
+              <div style="display:grid; grid-template-columns:2fr 1fr; gap:20px;">
+                <div class="p-card">
+                  <div class="p-card-header"><div class="p-card-title">🏅 Academy Leaderboard</div></div>
+                  <div class="p-card-body" id="adminLeaderboard" style="padding:16px;">
+                    <div style="text-align:center;opacity:.4;padding:30px;">Loading leaderboard...</div>
+                  </div>
+                </div>
+                <div>
+                  <div class="p-card" style="margin-bottom:20px;">
+                    <div class="p-card-header"><div class="p-card-title">⚡ Recent XP Activity</div></div>
+                    <div class="p-card-body" id="adminXPFeed" style="padding:16px; max-height:400px; overflow-y:auto;">
+                      <div style="text-align:center;opacity:.4;padding:30px;">Loading XP feed...</div>
+                    </div>
+                  </div>
+                  <div class="p-card">
+                    <div class="p-card-header"><div class="p-card-title">🎖️ Badge Showcase</div></div>
+                    <div class="p-card-body" id="adminBadgeShowcase" style="padding:16px;">
+                      <div style="text-align:center;opacity:.4;padding:30px;">Loading badges...</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ══ AUDIT LOGS PANEL ══ -->
+            <div class="p-panel" id="p-panel-audit">
+              <div class="p-card" style="margin-bottom:20px;">
+                <div class="p-card-header">
+                  <div class="p-card-title">🛡️ Security & Audit Logs</div>
+                  <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.security&&CK.security.renderAuditLog('adminAuditLogTable')">🔄 Refresh</button>
+                </div>
+                <div class="p-card-body" id="adminAuditLogTable" style="padding:16px;">
+                  <div style="text-align:center;opacity:.4;padding:30px;">Loading audit logs...</div>
+                </div>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                <div class="p-card">
+                  <div class="p-card-header"><div class="p-card-title">🎮 Fair Play Reports</div></div>
+                  <div class="p-card-body" id="adminFairPlayReports" style="padding:16px;">
+                    <div style="text-align:center;opacity:.4;padding:30px;">No game reports yet</div>
+                  </div>
+                </div>
+                <div class="p-card">
+                  <div class="p-card-header"><div class="p-card-title">🔒 Access Control Summary</div></div>
+                  <div class="p-card-body" id="adminRBACOverview" style="padding:16px;">
+                    <div style="text-align:center;opacity:.4;padding:30px;">Loading access data...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="p-panel" id="p-panel-settings">
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
 
@@ -2363,6 +2537,10 @@
                 Reviews</span></button>
             <button class="p-nav-item" onclick="CK.student.nav('tournaments')"><span
                 class="icon">🏅</span><span>Tournaments</span></button>
+            <button class="p-nav-item" onclick="CK.student.nav('myrank')"><span
+                class="icon">⚔️</span><span>My Rank & XP</span></button>
+            <button class="p-nav-item" onclick="CK.student.nav('studyplan')"><span
+                class="icon">🧠</span><span>AI Study Plan</span></button>
             <button class="p-nav-item" onclick="CK.student.nav('achievements')"><span
                 class="icon">🏆</span><span>Achievements</span></button>
             <div class="p-nav-section-label">Administration</div>
@@ -2370,6 +2548,7 @@
                 Gateway</span></button>
             <button class="p-nav-item" onclick="CK.student.nav('report')"><span class="icon">📊</span><span>View Report
                 Card</span></button>
+            <button class="p-nav-item" onclick="CK.student.nav('linked')"><span class="icon">🔗</span><span>Linked Accounts</span></button>
             <div class="p-section-sep"></div>
             <button class="p-nav-item" onclick="CK.logout()"><span class="icon">🚪</span><span>Log out</span></button>
           </div>
@@ -2483,6 +2662,9 @@
                       <div class="p-stat-label">Win Rate</div>
                     </div>
                   </div>
+
+                  <!-- RPG Rank Card (Gamification) -->
+                  <div id="studentRankCard" style="margin-bottom:4px;"></div>
 
                   <!-- Daily Goal Tracker -->
                   <div class="dg-section">
@@ -2709,6 +2891,58 @@
                       Entry</button>
                   </div>
 
+                </div>
+              </div>
+            </div>
+
+            <!-- MY RANK & XP -->
+            <div class="p-panel" id="student-panel-myrank">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
+                <div id="studentRankCardFull" style="min-height:200px;"></div>
+                <div class="p-card">
+                  <div class="p-card-header"><div class="p-card-title">⚡ Recent XP</div></div>
+                  <div class="p-card-body" id="studentXPFeed" style="padding:16px; max-height:350px; overflow-y:auto;">
+                    <div style="text-align:center;opacity:.4;padding:30px;">Loading XP history...</div>
+                  </div>
+                </div>
+              </div>
+              <div class="p-card" style="margin-bottom:20px;">
+                <div class="p-card-header"><div class="p-card-title">🏅 Academy Leaderboard</div></div>
+                <div class="p-card-body" id="studentLeaderboard" style="padding:16px;">
+                  <div style="text-align:center;opacity:.4;padding:30px;">Loading leaderboard...</div>
+                </div>
+              </div>
+              <div class="p-card">
+                <div class="p-card-header"><div class="p-card-title">🎖️ My Badges</div></div>
+                <div class="p-card-body" id="studentBadgeGrid" style="padding:16px;">
+                  <div style="text-align:center;opacity:.4;padding:30px;">Loading badges...</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI STUDY PLAN -->
+            <div class="p-panel" id="student-panel-studyplan">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
+                <div class="p-card">
+                  <div class="p-card-header"><div class="p-card-title">🎯 My Weakness Radar</div></div>
+                  <div class="p-card-body" id="studentWeaknessChart" style="padding:20px; min-height:300px;">
+                    <div style="text-align:center;opacity:.4;padding:60px;">Analyzing your chess skills...</div>
+                  </div>
+                </div>
+                <div class="p-card">
+                  <div class="p-card-header"><div class="p-card-title">📊 Predicted ELO Progress</div></div>
+                  <div class="p-card-body" id="studentELOPrediction" style="padding:20px;">
+                    <div style="text-align:center;opacity:.4;padding:60px;">Calculating prediction...</div>
+                  </div>
+                </div>
+              </div>
+              <div class="p-card">
+                <div class="p-card-header">
+                  <div class="p-card-title">🧠 AI-Generated Study Plan</div>
+                  <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.student.regenerateStudyPlan()">🔄 Regenerate Plan</button>
+                </div>
+                <div class="p-card-body" id="studentStudyPlan" style="padding:20px;">
+                  <div style="text-align:center;opacity:.4;padding:30px;">Generating personalized study plan...</div>
                 </div>
               </div>
             </div>
@@ -3462,11 +3696,15 @@
                       outstanding growth in positional understanding and middle-game planning. Her ability to identify
                       weak squares and create outpost opportunities is exceptional. For the upcoming semester, we will
                       focus on advanced rook and pawn endgames to prepare for the National FIDE Youth Championship."</p>
-                    <div style="margin-top:15px; text-align:right; font-weight:bold; color:var(--p-blue);">— Coach Sarah
-                      Chess</div>
+                    <div style="margin-top:15px; text-align:right; font-weight:bold; color:var(--p-blue);" id="rcCoachSignature">— Your Coach</div>
                   </div>
                 </div>
               </div>
+            </div>
+
+            <!-- LINKED ACCOUNTS -->
+            <div class="p-panel" id="student-panel-linked">
+              <div id="linkedAccountsContent"></div>
             </div>
 
             <!-- PGN STOCKFISH LAB — v3.0 -->
@@ -3484,6 +3722,7 @@
                     <button class="lab-mode-btn" id="labModeGuess" onclick="CK.lab.setMode('guess')">🎯 Guess</button>
                     <button class="lab-mode-btn" id="labModeSpar" onclick="CK.lab.setMode('spar')">🤖 Sparring</button>
                     <button class="lab-mode-btn" id="labModePlay" onclick="CK.lab.setMode('play')">♟ Play vs AI</button>
+                    <button class="lab-mode-btn" id="labModeLichess" onclick="CK.lab.setMode('lichess')">🌐 Lichess</button>
                   </div>
                 </div>
                 <div class="p-card-body" style="padding:20px 25px;">
@@ -3519,8 +3758,26 @@
                   <!-- Mode Status Banner -->
                   <div id="labModeBanner" class="lab-mode-banner lab-mode-banner-analysis" style="display:none;"></div>
 
+                  <!-- Lichess Viewer Panel (shown in lichess mode) -->
+                  <div id="labLichessPanel" style="display:none;margin-top:4px;">
+                    <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;">
+                      <div style="flex:1;min-width:260px;">
+                        <label style="font-size:0.82rem;color:var(--p-text-muted);display:block;margin-bottom:6px;">Lichess URL — game, study, or puzzle</label>
+                        <input id="lichessEmbedInput" type="text" class="p-form-control" placeholder="e.g. https://lichess.org/abcd1234  or  lichess.org/study/…" />
+                      </div>
+                      <button class="p-btn p-btn-blue" onclick="CK.lab.lichessEmbed('lichessEmbedInput','lichessEmbedFrame')">🌐 Embed</button>
+                      <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.lab.lichessMyGames('lichessEmbedFrame')">♟ My Games</button>
+                    </div>
+                    <div id="lichessEmbedFrame" style="border-radius:10px;overflow:hidden;background:rgba(255,255,255,0.03);min-height:120px;">
+                      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--p-text-muted);gap:12px;text-align:center;">
+                        <span style="font-size:2.5rem;">♞</span>
+                        <span>Paste a Lichess game or study URL above to embed the official Lichess board here.</span>
+                      </div>
+                    </div>
+                  </div>
+
                   <!-- Main Layout: Board | Side Panel -->
-                  <div class="lab-main-grid">
+                  <div class="lab-main-grid" id="studentLabMainGrid">
 
                     <!-- LEFT: Eval Bar + Board + Nav -->
                     <div class="lab-board-section">
@@ -3887,6 +4144,7 @@
                 Manager</span></button>
             <button class="p-nav-item" onclick="CK.coach.nav('classes')"><span class="icon">📋</span><span>Class
                 Manager</span></button>
+            <button class="p-nav-item" onclick="CK.coach.nav('effectiveness')"><span class="icon">🧠</span><span>My Effectiveness</span></button>
             <button class="p-nav-item" onclick="CK.coach.nav('reports')"><span class="icon">📊</span><span>Monthly
                 Reports</span></button>
             <div class="p-section-sep"></div>
@@ -4016,22 +4274,22 @@
                     style="width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 12px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1);">
                     <div
                       style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,201,167,0.8); color: #000; font-size: 0.8rem; font-weight: bold; padding: 2px 8px; border-radius: 4px;">
-                      Live: Coach Sarah</div>
+                      Live: Coach</div>
                     <div style="font-size: 3rem; color: #00c9a7;">👩‍🏫</div>
                   </div>
                   <div
                     style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: var(--p-text-muted);">
                     <span>👥 Connected Students:</span>
-                    <span style="color: #00c9a7; font-weight: bold;">12 Active</span>
+                    <span style="color: #00c9a7; font-weight: bold;" data-presence>0 Active</span>
                   </div>
                   <div
                     style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
                     <div style="font-size: 0.8rem; color: var(--p-gold); font-weight: bold; margin-bottom: 6px;">🎙️
                       Student Spotlight</div>
                     <div style="display: flex; align-items: center; justify-content: space-between;">
-                      <span style="color:#fff; font-size:0.9rem;">Emma Wilson</span>
+                      <span style="color:#fff; font-size:0.9rem;" id="spotlightStudentName">—</span>
                       <button class="p-btn p-btn-sm p-btn-gold"
-                        onclick="CK.showToast('Spotlight active on Emma Wilson!', 'success')">Cast Board</button>
+                        onclick="const n=document.getElementById('spotlightStudentName').textContent;CK.showToast('Spotlight active on '+(n!=='—'?n:'selected student')+'!','success')">Cast Board</button>
                     </div>
                   </div>
                 </div>
@@ -4190,31 +4448,7 @@
                     Assessment</button>
                 </div>
                 <div class="p-card-body" style="padding:20px;" id="coachNotesContainer">
-                  <div class="p-review-note">
-                    <div class="p-review-note-header">
-                      <span class="p-review-note-coach">👩‍🎓 Emma Wilson</span>
-                      <span class="p-review-note-date">May 12, 2026</span>
-                    </div>
-                    <p class="p-review-note-text">"Excellent vision in open Sicilian positions. Missed a subtle
-                      defensive resource in the rook endgame on move 38. Assigned Philidor drawing technique practice."
-                    </p>
-                  </div>
-                  <div class="p-review-note">
-                    <div class="p-review-note-header">
-                      <span class="p-review-note-coach">🧑‍🎓 Alex Grand</span>
-                      <span class="p-review-note-date">May 10, 2026</span>
-                    </div>
-                    <p class="p-review-note-text">"Calculated a brilliant 5-move mating combination against the French
-                      defense. Excellent calculation depth — keep drilling tactical puzzles at this level."</p>
-                  </div>
-                  <div class="p-review-note" style="border-left-color:var(--p-blue);">
-                    <div class="p-review-note-header">
-                      <span class="p-review-note-coach">🧑‍🎓 Michael Chang</span>
-                      <span class="p-review-note-date">May 8, 2026</span>
-                    </div>
-                    <p class="p-review-note-text">"Strong pawn structure play today. Needs to improve rook activation in
-                      the middlegame. Assigned three rook activity puzzles for the weekend."</p>
-                  </div>
+                  <div style="text-align:center;opacity:.45;padding:30px;">Loading notes…</div>
                 </div>
               </div>
 
@@ -4513,6 +4747,21 @@
                     </div>
                   </div>
 
+                  <!-- Lichess Study / Game Embed for Teaching -->
+                  <div style="background:rgba(232,184,75,0.04);border:1px solid rgba(232,184,75,0.15);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
+                    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+                      <div style="flex:1;min-width:200px;">
+                        <label style="font-size:0.82rem;color:var(--p-gold);font-weight:600;display:block;margin-bottom:6px;">🌐 Embed Lichess Study or Game for Students</label>
+                        <input id="coachLichessEmbedInput" type="text" class="p-form-control" placeholder="https://lichess.org/study/… or game URL" style="font-size:0.85rem;" />
+                      </div>
+                      <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.lab.lichessEmbed('coachLichessEmbedInput','coachLichessEmbedFrame')">Embed ▶</button>
+                      <button class="p-btn p-btn-ghost p-btn-sm" onclick="document.getElementById('coachLichessEmbedCard').style.display='none'">✕</button>
+                    </div>
+                    <div id="coachLichessEmbedCard" style="display:none;margin-top:12px;border-radius:8px;overflow:hidden;">
+                      <div id="coachLichessEmbedFrame"></div>
+                    </div>
+                  </div>
+
                   <!-- Main Layout: Board | Side Panel -->
                   <div class="lab-main-grid">
 
@@ -4789,6 +5038,32 @@
             </div>
 
             <!-- COACH MONTHLY REPORTS -->
+            <!-- COACH EFFECTIVENESS -->
+            <div class="p-panel" id="coach-panel-effectiveness">
+              <div class="p-card" style="margin-bottom:20px;">
+                <div class="p-card-header">
+                  <div class="p-card-title">🧠 My Effectiveness Score</div>
+                </div>
+                <div class="p-card-body" id="coachEffectivenessCard" style="padding:20px;">
+                  <div style="text-align:center;opacity:.4;padding:30px;">Calculating your effectiveness...</div>
+                </div>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                <div class="p-card">
+                  <div class="p-card-header"><div class="p-card-title">📈 Student Progress Under Me</div></div>
+                  <div class="p-card-body" id="coachStudentProgress" style="padding:16px;">
+                    <div style="text-align:center;opacity:.4;padding:30px;">Loading student metrics...</div>
+                  </div>
+                </div>
+                <div class="p-card">
+                  <div class="p-card-header"><div class="p-card-title">🎯 Student Weakness Overview</div></div>
+                  <div class="p-card-body" id="coachWeaknessOverview" style="padding:16px;">
+                    <div style="text-align:center;opacity:.4;padding:30px;">Loading weakness data...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="p-panel" id="coach-panel-reports">
               <div class="p-card">
                 <div class="p-card-header">
@@ -4833,6 +5108,8 @@
                 class="icon">📅</span><span>Schedule</span></button>
             <button class="p-nav-item par-nav-btn" data-panel="reports" onclick="CK.parents.nav('reports')"><span
                 class="icon">📋</span><span>Reports</span></button>
+            <button class="p-nav-item par-nav-btn" data-panel="aiweekly" onclick="CK.parents.nav('aiweekly')"><span
+                class="icon">🧠</span><span>AI Weekly Report</span></button>
             <div class="p-nav-section-label">Communication</div>
             <button class="p-nav-item par-nav-btn" data-panel="feedback" onclick="CK.parents.nav('feedback')"><span
                 class="icon">💬</span><span>Feedback</span></button>
@@ -4987,6 +5264,30 @@
             </div>
 
             <!-- FEEDBACK — parents.js renders form into parFeedbackContent -->
+            <!-- AI WEEKLY REPORT PANEL -->
+            <div class="p-panel par-panel" id="par-panel-aiweekly">
+              <div class="p-card" style="margin-bottom:20px;">
+                <div class="p-card-header">
+                  <div class="p-card-title">🧠 AI Weekly Report</div>
+                  <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.parents.generateAIReport()">🔄 Generate New Report</button>
+                </div>
+                <div class="p-card-body" id="parAIWeeklyReport" style="padding:20px;">
+                  <div style="text-align:center;opacity:.4;padding:40px;">
+                    <div style="font-size:3rem;margin-bottom:12px;">🧠</div>
+                    <div style="font-size:1.1rem;font-weight:600;margin-bottom:6px;">AI-Powered Weekly Report</div>
+                    <div style="font-size:0.85rem;color:var(--p-text-muted);">Get a detailed analysis of your child's chess progress, strengths, and areas for improvement — powered by our AI engine.</div>
+                    <button class="p-btn p-btn-teal" style="margin-top:16px;" onclick="CK.parents.generateAIReport()">Generate Report</button>
+                  </div>
+                </div>
+              </div>
+              <div class="p-card">
+                <div class="p-card-header"><div class="p-card-title">📊 Engagement Score</div></div>
+                <div class="p-card-body" id="parEngagementScore" style="padding:20px;">
+                  <div style="text-align:center;opacity:.4;padding:30px;">Generate a report to see engagement metrics</div>
+                </div>
+              </div>
+            </div>
+
             <div class="p-panel par-panel" id="par-panel-feedback">
               <div class="p-card">
                 <div class="p-card-header">
@@ -5011,7 +5312,7 @@
         <div class="arena-header-left">
           <a href="#" class="arena-logo" onclick="CK.navigate('home'); return false;"
             style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
-            <img class="logo-img" src="assets/img/logo.png" alt="ChessKiddo Logo"
+            <img class="logo-img" src="assets/img/logo.png" alt="ChessKidoo Logo"
               style="height: 36px; width: auto; object-fit: contain;">
             <span class="arena-logo-text"
               style="font-family: var(--font-display); font-weight: 900; font-size: 1.2rem; color: white;">Chess<span
@@ -5377,7 +5678,7 @@
         <div class="p-modal-title" id="adminStudentModalTitle">Enroll New Student</div>
         <button class="p-modal-close" onclick="CK.closeModal('adminStudentModal')">✕</button>
       </div>
-      <div class="p-modal-body" style="max-height: 70vh; overflow-y: auto;">
+      <form class="p-modal-body" style="max-height: 70vh; overflow-y: auto;" onsubmit="return false" autocomplete="off">
         <input type="hidden" id="admin_s_id" />
         <div class="p-form-row">
           <div class="p-form-group"><label class="p-form-label">Full Name</label><input class="p-form-control"
@@ -5433,7 +5734,7 @@
           <div class="p-form-group"><label class="p-form-label">Due Date</label><input class="p-form-control"
               id="admin_s_due" placeholder="14-May-2026" /></div>
         </div>
-      </div>
+      </form>
       <div class="p-modal-footer">
         <button class="p-btn p-btn-ghost" onclick="CK.closeModal('adminStudentModal')">Cancel</button>
         <button class="p-btn p-btn-gold" onclick="CK.admin.saveStudent()">Confirm Enrollment</button>
@@ -5448,7 +5749,7 @@
         <div class="p-modal-title" id="adminCoachModalTitle">Add New Coach</div>
         <button class="p-modal-close" onclick="CK.closeModal('adminCoachModal')">✕</button>
       </div>
-      <div class="p-modal-body" style="max-height: 70vh; overflow-y: auto;">
+      <form class="p-modal-body" style="max-height: 70vh; overflow-y: auto;" onsubmit="return false" autocomplete="off">
         <input type="hidden" id="admin_c_id" />
         <div class="p-form-row">
           <div class="p-form-group"><label class="p-form-label">Coach Name</label><input class="p-form-control"
@@ -5503,7 +5804,7 @@
           <textarea class="p-form-control" id="admin_c_bio" rows="3"
             placeholder="FIDE Master with 10+ years coaching..."></textarea>
         </div>
-      </div>
+      </form>
       <div class="p-modal-footer">
         <button class="p-btn p-btn-ghost" onclick="CK.closeModal('adminCoachModal')">Cancel</button>
         <button class="p-btn p-btn-gold" onclick="CK.admin.saveCoach()">Save Coach</button>
@@ -5933,7 +6234,7 @@
           <span class="p-badge p-badge-blue" style="margin-bottom: 4px;">Interactive Replay Session</span>
           <h2 id="vaultModalTitle" style="font-size: 1.6rem; color: #fff; font-family: var(--font-display);">Class
             Replay</h2>
-          <div id="vaultModalCoach" style="font-size: 0.9rem; color: var(--p-text-muted);">Coach: Sarah Chess</div>
+          <div id="vaultModalCoach" style="font-size: 0.9rem; color: var(--p-text-muted);">Coach: —</div>
         </div>
         <button class="btn btn-ghost" onclick="CK.closeVaultModal()" style="font-size: 1.5rem; color:#fff;">✕</button>
       </div>
@@ -6038,6 +6339,10 @@
   <script src="assets/js/notifications.js"></script>
   <script src="assets/js/game-tracker.js"></script>
   <script src="assets/js/opening-trainer.js"></script>
+  <script src="assets/js/gamification.js"></script>
+  <script src="assets/js/tournament-engine.js"></script>
+  <script src="assets/js/ai-analysis.js"></script>
+  <script src="assets/js/anti-cheat.js"></script>
   <script src="assets/js/main.js"></script>
   <script src="assets/js/admin.js"></script>
   <script src="assets/js/student.js"></script>
@@ -6060,8 +6365,10 @@
   <script>
     // Vault helper functions
     CK.openVaultSession = (title, coach) => {
-      document.getElementById('vaultModalTitle').textContent = title;
-      document.getElementById('vaultModalCoach').textContent = 'Coach: ' + coach;
+      const t = document.getElementById('vaultModalTitle');
+      const c = document.getElementById('vaultModalCoach');
+      if (t) t.textContent = title;
+      if (c) c.textContent = 'Coach: ' + coach;
       CK.openModal('vaultModal');
       CK.renderVaultBoard();
     };
@@ -6069,9 +6376,12 @@
       CK.closeModal('vaultModal');
     };
     CK.seekVaultMove = (time, moveText, analysis) => {
-      document.getElementById('vaultVideoTimestamp').textContent = time + ' / 45:20';
-      document.getElementById('vaultMoveBadge').textContent = 'Move: ' + moveText;
-      document.getElementById('vaultHumanAnalysis').innerHTML = '💡 <strong>Humanized GM Coach Note:</strong> ' + analysis;
+      const ts = document.getElementById('vaultVideoTimestamp');
+      const mb = document.getElementById('vaultMoveBadge');
+      const ha = document.getElementById('vaultHumanAnalysis');
+      if (ts) ts.textContent = time + ' / 45:20';
+      if (mb) mb.textContent = 'Move: ' + moveText;
+      if (ha) ha.innerHTML = '💡 <strong>Humanized GM Coach Note:</strong> ' + (CK.esc ? CK.esc(analysis) : analysis);
       CK.showToast('Seeked video to ' + time, 'info');
       CK.renderVaultBoard();
     };
@@ -6154,7 +6464,7 @@
               const num = parseFloat(text.replace(/[^0-9.]/g, ''));
               const suffix = text.includes('+') ? '+' : '';
               el.dataset.suffix = suffix;
-              if (!isNaN(num)) animateCounter(el, num, 300);
+              if (!isNaN(num)) animateCounter(el, num, 1800);
             });
             counterObs.unobserve(entry.target);
           }
@@ -6278,6 +6588,28 @@
     </div>
   </div>
   <div id="notifBackdrop" class="notif-backdrop" onclick="CK.notifs&&CK.notifs.toggleDrawer()"></div>
+
+  <!-- PWA Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' })
+          .then(reg => {
+            console.log('[ChessKidoo] SW registered, scope:', reg.scope);
+            // Prompt to update when a new SW is waiting
+            reg.addEventListener('updatefound', () => {
+              const nw = reg.installing;
+              nw.addEventListener('statechange', () => {
+                if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                  CK.showToast && CK.showToast('Update available — refresh to get the latest version.', 'info');
+                }
+              });
+            });
+          })
+          .catch(e => console.warn('[ChessKidoo] SW registration failed:', e));
+      });
+    }
+  </script>
 
 </body>
 

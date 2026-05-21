@@ -20,11 +20,10 @@ CK.student = {
   ],
 
   async init() {
-    console.log("Student Portal Initializing...");
     
     // 1. Fetch current user profile dynamically from DB layer
     const currentUser = CK.currentUser || JSON.parse(localStorage.getItem('ck_user'));
-    if (!currentUser) {
+    if (!currentUser || currentUser.role !== 'student') {
       CK.showToast("Session expired. Please log in again.", "error");
       CK.showPage('login-page');
       return;
@@ -58,6 +57,8 @@ CK.student = {
     this.renderPuzzlesList();
     this.renderCoachReviews();
     this.renderAchievementsTab();
+    // Gamification: render RPG rank card on dashboard
+    if (CK.rpg) CK.rpg.renderRankCard('studentRankCard', this.userProfile);
     this.renderFeesGateway();
     this.renderReportCard();
     this.initCharts();
@@ -109,11 +110,14 @@ CK.student = {
 
     // Re-render dynamic panels when navigated to
     if (panelId === 'achievements') this.renderAchievementsTab();
+    if (panelId === 'myrank') this.renderMyRank();
+    if (panelId === 'studyplan') this.renderStudyPlan();
     if (panelId === 'progress') { this.renderRealProgress(); this.initCharts(); }
     if (panelId === 'report') this.renderReportCard();
     if (panelId === 'fees') this.renderFeesGateway();
     if (panelId === 'reviews') this.renderCoachReviews();
     if (panelId === 'resources') this.renderResources();
+    if (panelId === 'linked') this.renderLinkedAccounts();
     if (panelId === 'schedule' && CK.schedulePro) CK.schedulePro.renderStudentSchedule('studentScheduleList', this.userProfile);
     if (panelId === 'puzzles' && CK.puzzlesPro) CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', this.userProfile?.id, this.userProfile?.full_name);
     if (panelId === 'classroom' && window.CK && CK.classroom) {
@@ -136,9 +140,12 @@ CK.student = {
       vault: 'The Replay Vault',
       fees: 'Fee Payment Gateway',
       report: 'Official Student Report Card',
+      linked: 'Linked Accounts',
       resources: 'Learning Resources',
       lab: 'PGN Stockfish Lab',
       tournaments: 'Tournaments',
+      myrank: 'My Rank & XP',
+      studyplan: 'AI Study Plan',
       classroom: 'My Classroom'
     };
     const titleEl = document.getElementById('studentPanelTitle');
@@ -257,16 +264,17 @@ CK.student = {
     // 1. Pending Puzzles table in dashboard home
     const pTable = document.getElementById('studentPendingPuzzles');
     if (pTable) {
+      const _e = CK.esc || (s => s);
       const unsolved = this.puzzlesDb.filter(px => !this._solvedPuzzles.has(px.id)).slice(0, 2);
       const rows = unsolved.length ? unsolved : this.puzzlesDb.slice(0, 2);
       pTable.innerHTML = rows.map(px => `
         <tr>
-          <td style="font-weight:600">${px.title}</td>
-          <td>${px.type}</td>
-          <td><span class="p-badge ${px.diff==='Easy'?'p-badge-green':px.diff==='Medium'?'p-badge-yellow':'p-badge-red'}">${px.diff}</span></td>
-          <td>${px.coach}</td>
-          <td style="color:var(--p-danger)">${px.due}</td>
-          <td><button class="p-btn p-btn-blue p-btn-sm" onclick="CK.student.loadAndGoToPuzzle('${px.id}')">Solve</button></td>
+          <td style="font-weight:600">${_e(px.title)}</td>
+          <td>${_e(px.type)}</td>
+          <td><span class="p-badge ${px.diff==='Easy'?'p-badge-green':px.diff==='Medium'?'p-badge-yellow':'p-badge-red'}">${_e(px.diff)}</span></td>
+          <td>${_e(px.coach)}</td>
+          <td style="color:var(--p-danger)">${_e(px.due)}</td>
+          <td><button class="p-btn p-btn-blue p-btn-sm" onclick="CK.student.loadAndGoToPuzzle(${JSON.stringify(px.id)})">Solve</button></td>
         </tr>
       `).join('');
     }
@@ -301,14 +309,15 @@ CK.student = {
         .slice(0, 4);
 
       if (meetings.length) {
+        const _e = CK.esc || (s => s);
         sTable.innerHTML = meetings.map(m => {
           const isToday = m.date === todayStr;
           const displayDate = isToday ? 'Today' : new Date(m.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
           return `<tr>
             <td>${displayDate}</td>
-            <td style="font-weight:600">${m.title || m.type || 'Class'}</td>
-            <td>${m.coach || p.coach || 'Coach'}</td>
-            <td>${m.time || ''}</td>
+            <td style="font-weight:600">${_e(m.title || m.type || 'Class')}</td>
+            <td>${_e(m.coach || p.coach || 'Coach')}</td>
+            <td>${_e(m.time || '')}</td>
             <td>${m.duration ? m.duration + 'm' : '60m'}</td>
             <td><span class="p-badge ${isToday ? 'p-badge-green' : 'p-badge-blue'}">${isToday ? 'Upcoming' : 'Scheduled'}</span></td>
           </tr>`;
@@ -379,11 +388,12 @@ CK.student = {
       return;
     }
 
+    const _e = CK.esc || (s => s);
     tbody.innerHTML = tournaments.map(t => `
       <tr>
-        <td style="font-weight:600">${t.name}</td>
-        <td>${t.result}</td>
-        <td style="font-weight:700; color:${t.change?.startsWith('+') ? 'var(--p-teal)' : 'var(--p-danger)'}">${t.change ?? '—'} ELO</td>
+        <td style="font-weight:600">${_e(t.name)}</td>
+        <td>${_e(t.result)}</td>
+        <td style="font-weight:700; color:${t.change?.startsWith('+') ? 'var(--p-teal)' : 'var(--p-danger)'}">${_e(t.change ?? '—')} ELO</td>
       </tr>
     `).join('');
   },
@@ -503,6 +513,7 @@ CK.student = {
   async renderPuzzleLeaderboard() {
     const container = document.getElementById('pzLeaderboardBody');
     if (!container) return;
+    const _e = CK.esc || (s => s);
     const students = (await CK.db.getProfiles('student')) || [];
     const myId = this.userProfile ? this.userProfile.id : null;
     const sorted = [...students].sort((a, b) => (b.puzzle || 0) - (a.puzzle || 0)).slice(0, 8);
@@ -515,7 +526,7 @@ CK.student = {
       const isMe = s.id === myId;
       return `<div class="pz-lb-row${isMe ? ' pz-lb-row--me' : ''}">
         <span class="pz-lb-rank">${medal}</span>
-        <span class="pz-lb-name">${s.full_name || 'Unknown'}</span>
+        <span class="pz-lb-name">${_e(s.full_name || 'Unknown')}</span>
         <span class="pz-lb-val">⭐ ${s.star || 0}</span>
         <span class="pz-lb-val">🧩 ${s.puzzle || 0}</span>
       </div>`;
@@ -602,8 +613,8 @@ CK.student = {
 
     const setup = this._PUZZLE_SETUPS[id] || {};
     const files = ['a','b','c','d','e','f','g','h'];
-    const SQ_DARK  = '#4a7c40';  // green (dark squares)
-    const SQ_LIGHT = '#ffffff';  // white (light squares)
+    const SQ_DARK  = '#4a7a2e';  // deeper forest green (dark squares)
+    const SQ_LIGHT = '#d4d4a8';  // warm off-white (light squares)
     const COORD_DARK  = 'rgba(255,255,255,0.5)';
     const COORD_LIGHT = 'rgba(74,124,64,0.5)';
     const BLACK_PIECES = new Set(['♚','♜','♝','♛','♞','♟']);
@@ -662,7 +673,9 @@ CK.student = {
     if (!fb) return;
     fb.style.display = 'block';
     fb.className = 'pz-feedback hint';
-    fb.innerHTML = `👁 <strong>Solution:</strong> Click square <strong>${p.solution.toUpperCase()}</strong>. ${p.desc}`;
+     fb.innerHTML = `<strong>Solution:</strong> Click square <strong>${p?.solution?.toUpperCase() || p.solution}</strong>. ` + (CK.esc ? CK.esc(p.desc || '') : (p.desc || ''));
+
+
   },
 
   nextPuzzle() {
@@ -695,7 +708,7 @@ CK.student = {
       if (fb) {
         fb.style.display = 'block';
         fb.className = 'pz-feedback success';
-        fb.innerHTML = `✅ <strong>Correct! ${p.title} solved!</strong><br><span style="font-size:0.85rem;opacity:0.85;">${p.desc}</span>`;
+        fb.innerHTML = `✅ <strong>${CK.esc ? CK.esc(p.title || '') : (p.title || '')} solved!</strong><br><span style="font-size:0.85rem;opacity:0.85;">${CK.esc ? CK.esc(p.desc || '') : (p.desc || '')}</span>`;
       }
 
       // Flash the solution square with olive-gold glow
@@ -829,6 +842,64 @@ CK.student = {
         if (hasCert) downloadBtn.onclick = () => CK.certs?.claimCert();
       }
     }
+  },
+
+  /* ── My Rank & XP Panel ── */
+  renderMyRank() {
+    const p = this.userProfile;
+    if (!p) return;
+    if (CK.rpg) {
+      CK.rpg.renderRankCard('studentRankCardFull', p);
+      CK.rpg.renderXPFeed('studentXPFeed', p.id);
+      CK.rpg.renderLeaderboard('studentLeaderboard');
+      CK.rpg.renderBadgeGrid('studentBadgeGrid', p.id);
+    }
+  },
+
+  /* ── AI Study Plan Panel ── */
+  async renderStudyPlan() {
+    const p = this.userProfile;
+    if (!p || !CK.ai) return;
+
+    try {
+      // Run analysis first
+      const analysis = await CK.ai.analyzeStudent(p.id);
+      if (!analysis) return;
+
+      // Weakness radar chart — ensure canvas exists
+      const chartEl = document.getElementById('studentWeaknessChart');
+      if (chartEl && !chartEl.querySelector('canvas')) {
+        chartEl.innerHTML = '<canvas id="studentWeaknessCanvas" style="max-height:280px;"></canvas>';
+      }
+      CK.ai.renderWeaknessChart('studentWeaknessCanvas', analysis);
+
+      // Study plan
+      const plan = CK.ai.generateStudyPlan(analysis);
+      CK.ai.renderStudyPlan('studentStudyPlan', plan);
+
+      // ELO prediction
+      const predEl = document.getElementById('studentELOPrediction');
+      if (predEl) {
+        const pred = await CK.ai.predictELO(p.id, 12);
+        const p6 = pred.predictions && pred.predictions[5] ? pred.predictions[5].predictedELO : '—';
+        const p12 = pred.predictions && pred.predictions[11] ? pred.predictions[11].predictedELO : '—';
+        predEl.innerHTML = `
+          <div style="text-align:center;">
+            <div style="font-size:0.8rem; color:var(--p-text-muted); margin-bottom:8px;">Current ELO</div>
+            <div style="font-size:2rem; font-weight:900; color:var(--p-gold);">${p.rating || 800}</div>
+            <div style="margin:16px 0; font-size:1.4rem; color:var(--p-teal);">→</div>
+            <div style="font-size:0.8rem; color:var(--p-text-muted); margin-bottom:8px;">Predicted in 6 Months</div>
+            <div style="font-size:2rem; font-weight:900; color:var(--p-teal);">${p6}</div>
+            <div style="font-size:0.75rem; color:var(--p-text-muted); margin-top:12px;">12-month prediction: <strong>${p12}</strong></div>
+            <div style="font-size:0.72rem; color:var(--p-text-muted); margin-top:4px;">Confidence: ${pred.confidence || 'medium'}</div>
+          </div>`;
+      }
+    } catch(e) { console.warn('Study plan render error:', e); }
+  },
+
+  regenerateStudyPlan() {
+    CK.showToast('Regenerating your AI study plan...', 'info');
+    setTimeout(() => this.renderStudyPlan(), 300);
   },
 
   /* ── Streak System ── */
@@ -1369,6 +1440,7 @@ CK.student = {
   },
 
   renderReportCard() {
+    const _e = CK.esc || (s => s);
     const p = this.userProfile || {};
     const rc = p.report_card || {
       opening: 84,
@@ -1403,18 +1475,18 @@ CK.student = {
           <!-- Student Profile Block -->
           <div class="rc-student-block">
             <div class="rc-student-info">
-              <div class="rc-info-item">
-                <span class="rc-info-label">Student Name</span>
-                <span class="rc-info-val">${p.full_name || '—'}</span>
-              </div>
-              <div class="rc-info-item">
-                <span class="rc-info-label">Current Level</span>
-                <span class="rc-info-val">${p.level || 'Intermediate'}</span>
-              </div>
-              <div class="rc-info-item">
-                <span class="rc-info-label">Assigned Coach</span>
-                <span class="rc-info-val">${p.coach || '—'}</span>
-              </div>
+               <div class="rc-info-item">
+                 <span class="rc-info-label">Student Name</span>
+                 <span class="rc-info-val">${_e(p.full_name || '—')}</span>
+               </div>
+               <div class="rc-info-item">
+                 <span class="rc-info-label">Current Level</span>
+                 <span class="rc-info-val">${_e(p.level || 'Intermediate')}</span>
+               </div>
+               <div class="rc-info-item">
+                 <span class="rc-info-label">Assigned Coach</span>
+                 <span class="rc-info-val">${_e(p.coach || '—')}</span>
+               </div>
               <div class="rc-info-item">
                 <span class="rc-info-label">Academic Term</span>
                 <span class="rc-info-val">Summer Term 2026</span>
@@ -1480,19 +1552,19 @@ CK.student = {
           <!-- Coach's Remarks -->
           <div class="rc-section-title">Coach's Diagnostic Remarks</div>
           <div class="rc-remarks-box">
-            <div class="rc-remarks-content">"${rc.remarks}"</div>
+            <div class="rc-remarks-content">"${_e(rc.remarks || '')}"</div>
           </div>
 
           <!-- Next Term Goals -->
           <div class="rc-section-title">Goals for Next Term</div>
           <div class="rc-goals-grid">
-            ${rc.goals.map(g => `<div class="rc-goal-item"><span class="rc-goal-check">✓</span><span>${g}</span></div>`).join('')}
+            ${rc.goals.map(g => `<div class="rc-goal-item"><span class="rc-goal-check">✓</span><span>${_e(g)}</span></div>`).join('')}
           </div>
 
           <!-- Signatures -->
           <div class="rc-signatures">
             <div class="rc-sig-box">
-              <div class="rc-sig-line">${p.coach || '—'}</div>
+              <div class="rc-sig-line">${_e(p.coach || '—')}</div>
               <div class="rc-sig-title">Master Coach Signature</div>
             </div>
             <div class="rc-sig-box">
@@ -1546,11 +1618,12 @@ CK.student = {
         const box = document.getElementById('payReceiptBox');
         if (box && !box.dataset.filled) {
           box.dataset.filled = '1';
-          box.innerHTML = `
-            <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Txn ID</span><span>${p.last_txn_id || 'CK_TXN_—'}</span></div>
+          const _e = CK.esc || (s => s);
+           box.innerHTML = `
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Txn ID</span><span>${_e(p.last_txn_id || 'CK_TXN_—')}</span></div>
             <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Amount</span><span>${fmt(total)}</span></div>
-            <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Date</span><span>${p.paid_date || new Date().toLocaleDateString('en-GB')}</span></div>
-            <div style="display:flex;justify-content:space-between;"><span>Method</span><span>${p.pay_method || 'Razorpay'}</span></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Date</span><span>${_e(p.paid_date || new Date().toLocaleDateString('en-GB'))}</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Method</span><span>${_e(p.pay_method || 'Razorpay')}</span></div>
           `;
         }
       }
@@ -1609,18 +1682,41 @@ CK.student = {
       const tuition = parseInt(p.fee) || 4000;
       const gst = Math.round(tuition * 0.18);
       const total = tuition + gst;
+
+      // Create server-side order for tamper-proof amount verification
+      let orderId = null;
+      try {
+        const session = await window.supabaseClient?.auth.getSession();
+        const token = session?.data?.session?.access_token;
+        if (token && window.APP_CONFIG?.SUPABASE_URL) {
+          CK.showToast('Creating secure payment order…', 'info');
+          const res = await fetch(
+            `${window.APP_CONFIG.SUPABASE_URL}/functions/v1/razorpay-order`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ amount_inr: total, student_id: p.id, batch: p.batch || 'Chess Training' }),
+            }
+          );
+          if (res.ok) { const data = await res.json(); orderId = data.order_id; }
+        }
+      } catch (e) {
+        console.warn('[ChessKidoo] Server-side order creation failed, proceeding in fallback mode:', e);
+      }
+
       const options = {
-        key: window.CK_RAZORPAY_KEY || 'rzp_test_PLACEHOLDER',
-        amount: total * 100,
-        currency: 'INR',
-        name: 'ChessKidoo Academy',
+        key:         window.CK_RAZORPAY_KEY || 'rzp_test_PLACEHOLDER',
+        amount:      total * 100,
+        currency:    'INR',
+        name:        'ChessKidoo Academy',
         description: (p.batch || 'Chess Training') + ' — ' + (p.level || 'Intermediate') + ' Batch',
-        handler: response => CK.student.onPaymentSuccess(response),
-        prefill: { name: p.full_name || '', email: p.email || '', contact: p.phone_number || p.phone || '' },
-        notes:   { student_id: p.id || '', batch: p.batch || '' },
-        theme:   { color: '#D97706' },
-        modal:   { ondismiss: () => CK.showToast('Payment cancelled.', 'warning') }
+        handler:     response => CK.student.onPaymentSuccess(response),
+        prefill:     { name: p.full_name || '', email: p.email || '', contact: p.phone_number || p.phone || '' },
+        notes:       { student_id: p.id || '', batch: p.batch || '' },
+        theme:       { color: '#D97706' },
+        modal:       { ondismiss: () => CK.showToast('Payment cancelled.', 'warning') },
       };
+      if (orderId) options.order_id = orderId;
       try {
         const rzp = new window.Razorpay(options);
         rzp.on('payment.failed', err => {
@@ -1836,10 +1932,11 @@ CK.student = {
 
   downloadReceipt() {
     const p = this.userProfile || {};
-    const name = (p.full_name || 'STUDENT').toUpperCase();
-    const level = p.level || 'Beginner';
-    const rating = p.rating || 800;
-    const coach = (p.coach || 'COACH').toUpperCase();
+    const _eR = CK.esc || (s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'));
+    const name = _eR((p.full_name || 'STUDENT').toUpperCase());
+    const level = _eR(p.level || 'Beginner');
+    const rating = Number(p.rating || 800);
+    const coach = _eR((p.coach || 'COACH').toUpperCase());
     const feeAmount = p.fee || 1600;
     const dateStr = new Date().toLocaleDateString('en-GB');
 
@@ -2007,7 +2104,7 @@ CK.student = {
             </div>
             <div class="r-subhead">OFFICIAL RECEIPT</div>
             <div class="r-meta">
-              <div>Receipt No: <strong>CK-${(p.last_txn_id || Date.now().toString(36)).slice(-8).toUpperCase()}</strong></div>
+              <div>Receipt No: <strong>CK-${_eR((p.last_txn_id || Date.now().toString(36)).slice(-8).toUpperCase())}</strong></div>
               <div>Date: <strong>${dateStr}</strong></div>
             </div>
             <div class="r-body">
@@ -2063,6 +2160,7 @@ CK.student = {
     // Fallback to static mock certificate window
     const certWindow = window.open("", "_blank");
     if (!certWindow) { CK.showToast('Please allow popups to view the certificate.', 'warning'); return; }
+    const _eCert = CK.esc || (s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'));
     certWindow.document.write(`
       <html>
         <head>
@@ -2083,12 +2181,12 @@ CK.student = {
             <h1>♛ ChessKidoo Academy ♛</h1>
             <h2>Certificate of Excellence</h2>
             <p>This is proudly presented to</p>
-            <div class="name">${this.userProfile.full_name}</div>
-            <p class="desc">for successfully completing the rigorous <strong>${this.userProfile.level || 'Chess'} Curriculum</strong>, demonstrating mastery of strategic thinking, endgame principles, and core tournament tactics. ELO Rating: <strong>${this.userProfile.rating || 800}</strong></p>
+            <div class="name">${_eCert(this.userProfile.full_name)}</div>
+            <p class="desc">for successfully completing the rigorous <strong>${_eCert(this.userProfile.level || 'Chess')} Curriculum</strong>, demonstrating mastery of strategic thinking, endgame principles, and core tournament tactics. ELO Rating: <strong>${this.userProfile.rating || 800}</strong></p>
             <p style="color:#94a3b8; font-size:0.9rem;">Issued on ${new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' })}</p>
             <div class="signatures">
               <div>
-                <div class="sig">${this.userProfile.coach || '—'}</div>
+                <div class="sig">${_eCert(this.userProfile.coach || '—')}</div>
                 <div style="font-size:0.8rem; margin-top:5px; opacity:0.6;">Assigned Coach</div>
               </div>
               <div>
@@ -2101,5 +2199,214 @@ CK.student = {
         </body>
       </html>
     `);
+  },
+
+  async renderLinkedAccounts() {
+    const el = document.getElementById('linkedAccountsContent');
+    if (!el) return;
+    const p = this.userProfile || {};
+    const _e = CK.esc || (s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'));
+
+    el.innerHTML = `
+      <div class="p-card" style="border-color:rgba(91,156,246,0.3);margin-bottom:20px;">
+        <div class="p-card-header">
+          <div>
+            <div class="p-card-title">🔗 Lichess Account</div>
+            <div style="font-size:0.83rem;color:var(--p-text-muted);">Import your ratings and recent games from Lichess.org</div>
+          </div>
+          ${p.lichess_username ? `<span style="background:rgba(91,156,246,0.15);color:var(--p-blue);padding:4px 12px;border-radius:20px;font-size:0.82rem;font-weight:600;">✓ Linked</span>` : ''}
+        </div>
+        <div class="p-card-body" style="padding:20px 25px;">
+          ${p.lichess_username ? `
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px;flex-wrap:wrap;">
+              <div style="background:rgba(91,156,246,0.08);border-radius:10px;padding:12px 18px;">
+                <div style="font-size:0.78rem;color:var(--p-text-muted);margin-bottom:4px;">Username</div>
+                <div style="font-weight:700;color:var(--p-blue);">${_e(p.lichess_username)}</div>
+              </div>
+              ${p.rating ? `<div style="background:rgba(91,156,246,0.08);border-radius:10px;padding:12px 18px;">
+                <div style="font-size:0.78rem;color:var(--p-text-muted);margin-bottom:4px;">Rapid Rating</div>
+                <div style="font-weight:700;color:var(--p-blue);">${_e(String(p.rating))}</div>
+              </div>` : ''}
+              ${p.lichess_blitz ? `<div style="background:rgba(91,156,246,0.08);border-radius:10px;padding:12px 18px;">
+                <div style="font-size:0.78rem;color:var(--p-text-muted);margin-bottom:4px;">Blitz Rating</div>
+                <div style="font-weight:700;color:var(--p-blue);">${_e(String(p.lichess_blitz))}</div>
+              </div>` : ''}
+              ${p.lichess_games ? `<div style="background:rgba(91,156,246,0.08);border-radius:10px;padding:12px 18px;">
+                <div style="font-size:0.78rem;color:var(--p-text-muted);margin-bottom:4px;">Total Games</div>
+                <div style="font-weight:700;color:var(--p-blue);">${_e(String(p.lichess_games))}</div>
+              </div>` : ''}
+              ${p.lichess_title ? `<div style="background:rgba(232,184,75,0.12);border-radius:10px;padding:12px 18px;">
+                <div style="font-size:0.78rem;color:var(--p-text-muted);margin-bottom:4px;">Title</div>
+                <div style="font-weight:700;color:var(--p-gold);">${_e(p.lichess_title)}</div>
+              </div>` : ''}
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn-primary" data-uname="${_e(p.lichess_username)}" onclick="CK.student.linkLichess(this.dataset.uname)">↻ Refresh</button>
+              <button class="btn-secondary" data-uname="${_e(p.lichess_username)}" onclick="CK.gameTracker&&CK.gameTracker.importFromLichess(CK.currentUser?.id,this.dataset.uname)">📥 Import Recent Games</button>
+            </div>
+          ` : `
+            <p style="color:var(--p-text-muted);margin-bottom:16px;">Link your Lichess account to automatically sync your rating and import games.</p>
+            <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+              <div style="flex:1;min-width:200px;">
+                <label style="font-size:0.82rem;color:var(--p-text-muted);display:block;margin-bottom:6px;">Lichess Username</label>
+                <input id="lichessUsernameInput" type="text" placeholder="e.g. Magnus2024" style="width:100%;background:var(--p-bg-card);border:1px solid var(--p-border);color:var(--p-text);border-radius:8px;padding:9px 12px;font-size:0.92rem;box-sizing:border-box;" />
+              </div>
+              <button class="btn-primary" onclick="CK.student.linkLichess(document.getElementById('lichessUsernameInput').value.trim())">🔗 Link Account</button>
+            </div>
+          `}
+        </div>
+      </div>
+
+      <div class="p-card" style="border-color:rgba(232,184,75,0.3);">
+        <div class="p-card-header">
+          <div>
+            <div class="p-card-title">🏅 FIDE Profile</div>
+            <div style="font-size:0.83rem;color:var(--p-text-muted);">Link your official FIDE ID to display your international rating</div>
+          </div>
+          ${p.fide_id ? `<span style="background:rgba(232,184,75,0.15);color:var(--p-gold);padding:4px 12px;border-radius:20px;font-size:0.82rem;font-weight:600;">✓ Linked</span>` : ''}
+        </div>
+        <div class="p-card-body" style="padding:20px 25px;">
+          ${p.fide_id ? `
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px;flex-wrap:wrap;">
+              <div style="background:rgba(232,184,75,0.08);border-radius:10px;padding:12px 18px;">
+                <div style="font-size:0.78rem;color:var(--p-text-muted);margin-bottom:4px;">FIDE ID</div>
+                <div style="font-weight:700;color:var(--p-gold);">${_e(String(p.fide_id))}</div>
+              </div>
+              ${p.fide_rating ? `<div style="background:rgba(232,184,75,0.08);border-radius:10px;padding:12px 18px;">
+                <div style="font-size:0.78rem;color:var(--p-text-muted);margin-bottom:4px;">Standard</div>
+                <div style="font-weight:700;color:var(--p-gold);">${_e(String(p.fide_rating))}</div>
+              </div>` : ''}
+              ${p.fide_rapid ? `<div style="background:rgba(232,184,75,0.08);border-radius:10px;padding:12px 18px;">
+                <div style="font-size:0.78rem;color:var(--p-text-muted);margin-bottom:4px;">Rapid</div>
+                <div style="font-weight:700;color:var(--p-gold);">${_e(String(p.fide_rapid))}</div>
+              </div>` : ''}
+              ${p.fide_blitz ? `<div style="background:rgba(232,184,75,0.08);border-radius:10px;padding:12px 18px;">
+                <div style="font-size:0.78rem;color:var(--p-text-muted);margin-bottom:4px;">Blitz</div>
+                <div style="font-weight:700;color:var(--p-gold);">${_e(String(p.fide_blitz))}</div>
+              </div>` : ''}
+              ${p.fide_title ? `<div style="background:rgba(232,184,75,0.08);border-radius:10px;padding:12px 18px;">
+                <div style="font-size:0.78rem;color:var(--p-text-muted);margin-bottom:4px;">Title</div>
+                <div style="font-weight:700;color:var(--p-gold);">${_e(p.fide_title)}</div>
+              </div>` : ''}
+              ${p.fide_federation ? `<div style="background:rgba(232,184,75,0.08);border-radius:10px;padding:12px 18px;">
+                <div style="font-size:0.78rem;color:var(--p-text-muted);margin-bottom:4px;">Federation</div>
+                <div style="font-weight:700;color:var(--p-gold);">${_e(p.fide_federation)}</div>
+              </div>` : ''}
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn-secondary" data-fide="${_e(String(p.fide_id))}" onclick="CK.student.linkFide(this.dataset.fide)">↻ Refresh</button>
+              <a href="https://ratings.fide.com/profile/${_e(String(p.fide_id))}" target="_blank" rel="noopener" class="btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;">🏅 View on FIDE ↗</a>
+            </div>
+          ` : `
+            <p style="color:var(--p-text-muted);margin-bottom:16px;">Enter your FIDE ID to display your official international rating. Find it at <strong style="color:var(--p-gold);">ratings.fide.com</strong>.</p>
+            <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+              <div style="flex:1;min-width:200px;">
+                <label style="font-size:0.82rem;color:var(--p-text-muted);display:block;margin-bottom:6px;">FIDE ID</label>
+                <input id="fideIdInput" type="text" placeholder="e.g. 35027789" style="width:100%;background:var(--p-bg-card);border:1px solid var(--p-border);color:var(--p-text);border-radius:8px;padding:9px 12px;font-size:0.92rem;box-sizing:border-box;" />
+              </div>
+              <button class="btn-primary" onclick="CK.student.linkFide(document.getElementById('fideIdInput').value.trim())" style="background:var(--p-gold);color:#000;">🏅 Link FIDE</button>
+            </div>
+          `}
+        </div>
+      </div>
+    `;
+  },
+
+  async linkLichess(username) {
+    if (!username) { CK.showToast('Please enter your Lichess username.', 'warning'); return; }
+    if (!/^[a-zA-Z0-9_-]{1,20}$/.test(username)) {
+      CK.showToast('Invalid Lichess username format.', 'error');
+      return;
+    }
+    CK.showToast('Fetching Lichess profile…', 'info');
+    try {
+      const res = await fetch(`https://lichess.org/api/user/${encodeURIComponent(username)}`);
+      if (!res.ok) {
+        if (res.status === 404) { CK.showToast('Lichess user not found. Check the username.', 'error'); return; }
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      const perfs = data.perfs || {};
+      const rapidRating  = perfs.rapid?.rating  || perfs.classical?.rating || null;
+      const blitzRating  = perfs.blitz?.rating  || null;
+      const bulletRating = perfs.bullet?.rating || null;
+      const totalGames   = data.count?.all || 0;
+      const title        = data.title   || null;
+      const fideFromLichess = data.profile?.fideRating || null;
+
+      const updates = { lichess_username: data.username || username, lichess_games: totalGames };
+      if (rapidRating)     updates.rating         = rapidRating;
+      if (blitzRating)     updates.lichess_blitz   = blitzRating;
+      if (bulletRating)    updates.lichess_bullet  = bulletRating;
+      if (title)           updates.lichess_title   = title;
+      if (fideFromLichess && !this.userProfile?.fide_rating) updates.fide_rating = fideFromLichess;
+
+      const merged = { ...this.userProfile, ...updates };
+      await CK.db.saveProfile(merged);
+      this.userProfile = merged;
+      CK.showToast(`Lichess linked: ${data.username}${rapidRating ? ' · Rapid ' + rapidRating : ''}`, 'success');
+      this.renderLinkedAccounts();
+      this.updateProfile();
+    } catch (err) {
+      console.error('[ChessKidoo] Lichess link failed:', err);
+      CK.showToast('Could not reach Lichess. Check username or try again.', 'error');
+    }
+  },
+
+  async linkFide(fideId) {
+    if (!fideId) { CK.showToast('Please enter your FIDE ID.', 'warning'); return; }
+    const idStr = String(fideId).trim();
+    if (!/^\d{1,10}$/.test(idStr)) {
+      CK.showToast('FIDE ID must be a number (e.g. 35027789).', 'error');
+      return;
+    }
+    CK.showToast('Fetching FIDE profile…', 'info');
+    const updates = { fide_id: idStr };
+
+    // Try server-side edge function first (no CORS issues)
+    try {
+      const session = await window.supabaseClient?.auth.getSession();
+      const token = session?.data?.session?.access_token;
+      const baseUrl = window.APP_CONFIG?.SUPABASE_URL;
+      if (token && baseUrl) {
+        const res = await fetch(
+          `${baseUrl}/functions/v1/fide-profile?id=${encodeURIComponent(idStr)}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (res.ok) {
+          const d = await res.json();
+          if (d.standard)   updates.fide_rating  = String(d.standard);
+          if (d.rapid)      updates.fide_rapid   = String(d.rapid);
+          if (d.blitz)      updates.fide_blitz   = String(d.blitz);
+          if (d.title)      updates.fide_title       = d.title;
+          if (d.federation) updates.fide_federation  = d.federation;
+          if (d.name && !this.userProfile?.full_name) updates.full_name = d.name;
+        }
+      }
+    } catch (_) { /* fall through to direct fetch */ }
+
+    // Direct browser fetch fallback (may be blocked by CORS)
+    if (!updates.fide_rating) {
+      try {
+        const res = await fetch(`https://app.fide.com/api/v1/client/profile/${encodeURIComponent(idStr)}`, {
+          headers: { Accept: 'application/json' }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.rating || data.standard_rating) updates.fide_rating = String(data.rating || data.standard_rating);
+          if (data.title)                           updates.fide_title  = data.title;
+          if (data.federation || data.country)      updates.fide_federation = data.federation || data.country;
+          if (data.name && !this.userProfile?.full_name) updates.full_name = data.name;
+        }
+      } catch (_) {
+        if (!updates.fide_title) CK.showToast('FIDE API unreachable — ID saved. Deploy fide-profile edge function for live data.', 'info');
+      }
+    }
+
+    const merged = { ...this.userProfile, ...updates };
+    await CK.db.saveProfile(merged);
+    this.userProfile = merged;
+    CK.showToast(`FIDE ${idStr} saved!${updates.fide_rating ? ' Rating: ' + updates.fide_rating : ''}`, 'success');
+    this.renderLinkedAccounts();
   }
 };

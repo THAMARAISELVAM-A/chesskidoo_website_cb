@@ -87,6 +87,43 @@ CK.parents = (() => {
     if (panelId === 'schedule')   renderSchedule();
     if (panelId === 'reports')    renderReports();
     if (panelId === 'feedback')   renderFeedbackList();
+    if (panelId === 'aiweekly')  renderAIWeekly();
+  }
+
+  /* ── AI Weekly Report ── */
+  async function renderAIWeekly() {
+    if (!_childProfile || !CK.ai) return;
+    try {
+      const report = await CK.ai.generateWeeklyReport(_childProfile.id);
+      CK.ai.renderWeeklyReport('parAIWeeklyReport', report);
+
+      // Engagement score
+      const engEl = document.getElementById('parEngagementScore');
+      if (engEl) {
+        const result = await CK.ai.getEngagementScore(_childProfile.id);
+        const score = result?.score || 0;
+        const color = score >= 70 ? '#22c55e' : score >= 40 ? '#f59e0b' : '#ef4444';
+        engEl.innerHTML = `
+          <div style="text-align:center;">
+            <div style="font-size:3rem; font-weight:900; color:${color};">${score}%</div>
+            <div style="font-size:0.85rem; color:var(--p-text-muted); margin-top:8px;">Overall Engagement Score</div>
+            <div style="margin-top:16px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; font-size:0.78rem;">
+              <div style="padding:10px; border-radius:8px; background:rgba(255,255,255,0.03);">
+                <div style="font-weight:700;">${_childProfile.puzzle || 0}</div>
+                <div style="color:var(--p-text-muted);">Puzzles</div>
+              </div>
+              <div style="padding:10px; border-radius:8px; background:rgba(255,255,255,0.03);">
+                <div style="font-weight:700;">${_childProfile.game || 0}</div>
+                <div style="color:var(--p-text-muted);">Games</div>
+              </div>
+              <div style="padding:10px; border-radius:8px; background:rgba(255,255,255,0.03);">
+                <div style="font-weight:700;">${_childProfile.streak || 0}</div>
+                <div style="color:var(--p-text-muted);">Streak</div>
+              </div>
+            </div>
+          </div>`;
+      }
+    } catch(e) { console.warn('AI weekly report error:', e); }
   }
 
   /* ═══════════════════════════════════════════════════════
@@ -108,7 +145,7 @@ CK.parents = (() => {
         <div class="par-child-meta">${_e(c.level || 'Beginner')} · Coach: ${_e(c.coach || '—')} · ${_e(c.batch || 'Group')}</div>
         <div class="par-child-stats">
           <div class="par-stat"><span class="par-stat-val">${_e(String(c.rating || 800))}</span><span class="par-stat-lbl">ELO Rating</span></div>
-          <div class="par-stat"><span class="par-stat-val">${safeSummary.pct}%</span><span class="par-stat-lbl">Attendance</span></div>
+          <div class="par-stat"><span class="par-stat-val">${attnSummary.pct}%</span><span class="par-stat-lbl">Attendance</span></div>
           <div class="par-stat"><span class="par-stat-val">${_e(String(puzzlesSolved))}</span><span class="par-stat-lbl">Puzzles Solved</span></div>
           <div class="par-stat"><span class="par-stat-val">${_e(String(c.game || 0))}</span><span class="par-stat-lbl">Games Played</span></div>
         </div>
@@ -180,11 +217,11 @@ CK.parents = (() => {
     const progress = Math.round(
       safeSummary.pct * 0.30 +
       Math.min(100, puzzlesSolved * 2.5) * 0.25 +
-      Math.min(100, (c.rating - 800) / 4) * 0.25 +
+      Math.min(100, ((parseInt(c.rating) || 800) - 800) / 4) * 0.25 +
       Math.min(100, (c.game || 0) * 5) * 0.10 +
       (hwTotal > 0 ? (hwDone / hwTotal * 100) : 100) * 0.10
     );
-    const ratingHistory = ratings.map(r => ({ date: r.date?.slice(0,7), rating: r.online }));
+    const ratingHistory = ratings.map(r => ({ date: r.date?.slice(0,7) || '—', rating: r.online }));
     el.innerHTML = `
       <div class="par-progress-header">
         <div class="par-progress-score">
@@ -198,7 +235,7 @@ CK.parents = (() => {
           ${[
             { label: 'Attendance', val: Math.round(safeSummary.pct), color: 'var(--p-teal)' },
             { label: 'Puzzles', val: Math.min(100, puzzlesSolved * 2.5), color: 'var(--p-blue)' },
-            { label: 'Rating Gain', val: Math.min(100, (c.rating - 800) / 4), color: 'var(--p-gold)' },
+            { label: 'Rating Gain', val: Math.min(100, ((parseInt(c.rating) || 800) - 800) / 4), color: 'var(--p-gold)' },
             { label: 'Games Played', val: Math.min(100, (c.game||0)*5), color: 'var(--p-online)' },
             { label: 'Homework', val: hwTotal > 0 ? Math.round(hwDone/hwTotal*100) : 100, color: '#a78bfa' }
           ].map(item => `
@@ -366,6 +403,7 @@ CK.parents = (() => {
   return {
     init, nav, renderChildProfile, renderAttendance, renderProgress,
     renderSchedule, renderReports, renderFeedbackList, submitFeedback,
-    renderAllFeedback, replyFeedback
+    renderAllFeedback, replyFeedback,
+    generateAIReport: renderAIWeekly
   };
 })();

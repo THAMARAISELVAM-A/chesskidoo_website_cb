@@ -37,7 +37,8 @@
   /* Game layout: stack board + side panel */
   .arena-game-layout,
   .game-layout {
-    flex-direction: column;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
     align-items: center;
     gap: 16px;
   }
@@ -116,7 +117,8 @@
   /* ── Game layout stacked ── */
   .arena-game-layout,
   .game-layout {
-    flex-direction: column;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
     align-items: center;
     gap: 14px;
     padding: 12px 10px;
@@ -498,8 +500,10 @@
   }
   .arena-game-layout,
   .game-layout {
-    flex-direction: row;
+    display: grid !important;
+    grid-template-columns: min(240px, 45vw) 1fr !important;
     align-items: flex-start;
+    gap: 16px;
   }
   .arena-side-panel,
   .game-side-panel {

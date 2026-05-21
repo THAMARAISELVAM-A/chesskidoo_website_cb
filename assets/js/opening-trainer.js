@@ -271,18 +271,23 @@ CK.openingTrainer = (() => {
         document.getElementById('otDrillStatus').textContent = 'Board library not loaded.';
         return;
       }
-      const Chess = window.Chess || (() => {})();
-      const game = new Chess();
+      if (!window.Chess) {
+        document.getElementById('otDrillStatus').textContent = 'Chess library not loaded. Please refresh.';
+        return;
+      }
+      const game = new window.Chess();
       _drillState.game = game;
 
       const board = Chessboard('otDrillBoard', {
+        pieceTheme: function (piece) {
+          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+        },
         draggable: true,
         position: 'start',
         orientation: opening.side,
         onDragStart: (source, piece) => {
           if (game.game_over()) return false;
-          const isWhitePiece = piece.startsWith('w');
-          return (opening.side === 'white') === isWhitePiece || _drillState.step % 2 !== 0;
+          return (opening.side === 'white' && game.turn() === 'w') || (opening.side === 'black' && game.turn() === 'b');
         },
         onDrop: (source, target) => _drillHandleDrop(source, target, board),
         onSnapEnd: () => board.position(game.fen())
@@ -316,7 +321,7 @@ CK.openingTrainer = (() => {
   function _drillHandleDrop(source, target, board) {
     const { opening, game } = _drillState;
     const expected = opening.moves[_drillState.step];
-    if (!expected) return;
+    if (!expected) return 'snapback';
 
     const move = game.move({ from: source, to: target, promotion: 'q' });
     if (!move) return 'snapback';
@@ -343,7 +348,7 @@ CK.openingTrainer = (() => {
     } else {
       game.undo();
       _drillState.totalPrompts++;
-      _setStatus(`❌ Not quite — try again! Expected: ${expected}`, 'var(--p-danger)');
+      _setStatus('❌ Not quite — try again!', 'var(--p-danger)');
       return 'snapback';
     }
   }

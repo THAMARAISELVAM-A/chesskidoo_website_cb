@@ -10,7 +10,6 @@ CK.admin = {
   classesDb: [],
 
   async init() {
-    console.log("Admin Portal Initializing...");
     
     // Load class lists from DB
     this.classesDb = await CK.db.getClasses();
@@ -118,6 +117,7 @@ CK.admin = {
   async renderActivity() {
     const tbody = document.getElementById('adminActivityTable');
     if (!tbody) return;
+    const _e = CK.esc || (s => s);
 
     const _ago = (dateStr) => {
       if (!dateStr) return 'recently';
@@ -168,7 +168,7 @@ CK.admin = {
         <td>
           <div style="display:flex; align-items:center; gap:10px;">
             <div class="p-activity-icon" style="background:rgba(255,255,255,0.05);">${a.icon}</div>
-            <span style="font-weight:600; font-size:0.9rem;">${a.event}</span>
+            <span style="font-weight:600; font-size:0.9rem;">${_e(a.event)}</span>
           </div>
         </td>
         <td style="color:var(--p-text-muted); font-size:0.88rem;">${a.user}</td>
@@ -207,7 +207,10 @@ CK.admin = {
       access: 'User Access Management',
       feedback: 'Feedback & Reviews',
       schedule: 'Academy Schedule',
-      coachattendance: 'Coach Attendance'
+      coachattendance: 'Coach Attendance',
+      analytics: 'AI Analytics & Insights',
+      leaderboard: 'Leaderboard & XP',
+      audit: 'Security & Audit Logs'
     };
     const titleEl = document.getElementById('adminPanelTitle');
     if (titleEl) titleEl.innerText = titles[panelId] || 'Admin';
@@ -223,20 +226,26 @@ CK.admin = {
       else { btn.style.display = 'none'; btn.onclick = null; }
     }
 
-    if (panelId === 'live')           this.renderLive();
-    if (panelId === 'dashboard')      this.renderCoachScorecards();
-    if (panelId === 'expenses')       this.loadExpenses();
-    if (panelId === 'reports')        this.renderReports();
-    if (panelId === 'students')       this.loadStudents();
-    if (panelId === 'coaches')        this.loadCoaches();
-    if (panelId === 'classes')        { this.loadClasses(); if (CK.classSystem) await CK.classSystem.renderAdminClasses('adminAllClasses'); }
-    if (panelId === 'attendance')     this.loadAttendance();
-    if (panelId === 'files')          this.loadFiles();
+    if (panelId === 'live')           await this.renderLive();
+    if (panelId === 'dashboard')      await this.renderCoachScorecards();
+    if (panelId === 'expenses')       await this.loadExpenses();
+    if (panelId === 'reports')        await this.renderReports();
+    if (panelId === 'students')       await this.loadStudents();
+    if (panelId === 'coaches')        await this.loadCoaches();
+    if (panelId === 'classes')        { await this.loadClasses(); if (CK.classSystem) await CK.classSystem.renderAdminClasses('adminAllClasses'); }
+    if (panelId === 'attendance')     await this.loadAttendance();
+    if (panelId === 'files')          await this.loadFiles();
     if (panelId === 'feedback')       await CK.parents?.renderAllFeedback('adminFeedbackList');
     if (panelId === 'access')         CK.accessManager?.renderAccessTable('adminAccessTable');
     if (panelId === 'schedule')       if (CK.schedulePro) await CK.schedulePro.renderAdminSchedule('adminAllSchedule');
     if (panelId === 'coachattendance') if (CK.classSystem) await CK.classSystem.renderCoachAttendanceReport('adminCoachAttnReport');
-    if (panelId === 'tournaments') this.loadTournaments();
+    if (panelId === 'tournaments') {
+      this.loadTournaments();
+      if (CK.tournament) CK.tournament.renderTournamentList('adminTournamentList');
+    }
+    if (panelId === 'analytics') this.renderAIAnalytics();
+    if (panelId === 'leaderboard') this.renderLeaderboardPanel();
+    if (panelId === 'audit') this.renderAuditPanel();
     if (panelId === 'settings') this.loadSettings();
   },
 
@@ -375,6 +384,7 @@ CK.admin = {
       return;
     }
 
+    const _e = CK.esc || (s => s);
     el.innerHTML = coaches.map(c => {
       const myStudents   = students.filter(s => s.coach === c.full_name);
       // Count unique students that received a coach note this month
@@ -395,10 +405,10 @@ CK.admin = {
       const scoreColor = reportsPct >= 80 ? 'var(--p-teal)' : reportsPct >= 50 ? 'var(--p-gold)' : 'var(--p-danger)';
 
       return `<div class="adm-coach-card">
-        <div class="adm-coach-avatar">${(c.full_name || 'C').charAt(0).toUpperCase()}</div>
+        <div class="adm-coach-avatar">${_e((c.full_name || 'C').charAt(0).toUpperCase())}</div>
         <div class="adm-coach-info">
-          <div class="adm-coach-name">${c.full_name || 'Coach'}</div>
-          <div class="adm-coach-sub">${myStudents.length} students · ${c.level || 'All levels'}</div>
+          <div class="adm-coach-name">${_e(c.full_name || 'Coach')}</div>
+          <div class="adm-coach-sub">${myStudents.length} students · ${_e(c.level || 'All levels')}</div>
         </div>
         <div class="adm-coach-stats">
           <div class="adm-coach-stat">
@@ -445,28 +455,28 @@ CK.admin = {
       if (status === 'Waiting List') statusBadge = 'p-badge-blue';
 
       let actionBtns = '';
-      const escName = s.full_name ? s.full_name.replace(/'/g, "\\'") : 'Student';
+      const sid = _e(String(s.id));
       if (status === 'Paid') {
         actionBtns = `
-          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.informStudent('${s.id}', '${escName}')">📢 Inform</button>
-          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.viewStudentInfo('${s.id}')">View</button>
-          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.editStudent('${s.id}')">Edit</button>
-          <button class="p-btn p-btn-ghost p-btn-sm" style="color:var(--p-danger)" onclick="CK.admin.deleteStudent('${s.id}')">Delete</button>
-          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.toggleFeeStatus('${s.id}', 'Pending')">🔁 Mark Unpaid</button>
+          <button class="p-btn p-btn-ghost p-btn-sm" data-sid="${sid}" data-sname="${_e(s.full_name || 'Student')}" onclick="CK.admin.informStudent(this.dataset.sid,this.dataset.sname)">📢 Inform</button>
+          <button class="p-btn p-btn-ghost p-btn-sm" data-sid="${sid}" onclick="CK.admin.viewStudentInfo(this.dataset.sid)">View</button>
+          <button class="p-btn p-btn-ghost p-btn-sm" data-sid="${sid}" onclick="CK.admin.editStudent(this.dataset.sid)">Edit</button>
+          <button class="p-btn p-btn-ghost p-btn-sm" style="color:var(--p-danger)" data-sid="${sid}" onclick="CK.admin.deleteStudent(this.dataset.sid)">Delete</button>
+          <button class="p-btn p-btn-ghost p-btn-sm" data-sid="${sid}" onclick="CK.admin.toggleFeeStatus(this.dataset.sid,'Pending')">🔁 Mark Unpaid</button>
         `;
       } else if (status === 'Waiting List') {
         actionBtns = `
-          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.viewStudentInfo('${s.id}')">View</button>
-          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.editStudent('${s.id}')">Edit</button>
-          <button class="p-btn p-btn-ghost p-btn-sm" style="color:var(--p-danger)" onclick="CK.admin.deleteStudent('${s.id}')">Delete</button>
+          <button class="p-btn p-btn-ghost p-btn-sm" data-sid="${sid}" onclick="CK.admin.viewStudentInfo(this.dataset.sid)">View</button>
+          <button class="p-btn p-btn-ghost p-btn-sm" data-sid="${sid}" onclick="CK.admin.editStudent(this.dataset.sid)">Edit</button>
+          <button class="p-btn p-btn-ghost p-btn-sm" style="color:var(--p-danger)" data-sid="${sid}" onclick="CK.admin.deleteStudent(this.dataset.sid)">Delete</button>
         `;
       } else {
         actionBtns = `
-          <button class="p-btn p-btn-teal p-btn-sm" onclick="CK.admin.toggleFeeStatus('${s.id}', 'Paid')">✅ Mark as Paid</button>
-          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.viewStudentInfo('${s.id}')">View</button>
-          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.editStudent('${s.id}')">Edit</button>
-          <button class="p-btn p-btn-ghost p-btn-sm" style="color:var(--p-danger)" onclick="CK.admin.deleteStudent('${s.id}')">Delete</button>
-          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.informStudent('${s.id}', '${escName}')">📢 Inform</button>
+          <button class="p-btn p-btn-teal p-btn-sm" data-sid="${sid}" onclick="CK.admin.toggleFeeStatus(this.dataset.sid,'Paid')">✅ Mark as Paid</button>
+          <button class="p-btn p-btn-ghost p-btn-sm" data-sid="${sid}" onclick="CK.admin.viewStudentInfo(this.dataset.sid)">View</button>
+          <button class="p-btn p-btn-ghost p-btn-sm" data-sid="${sid}" onclick="CK.admin.editStudent(this.dataset.sid)">Edit</button>
+          <button class="p-btn p-btn-ghost p-btn-sm" style="color:var(--p-danger)" data-sid="${sid}" onclick="CK.admin.deleteStudent(this.dataset.sid)">Delete</button>
+          <button class="p-btn p-btn-ghost p-btn-sm" data-sid="${sid}" data-sname="${_e(s.full_name || 'Student')}" onclick="CK.admin.informStudent(this.dataset.sid,this.dataset.sname)">📢 Inform</button>
         `;
       }
 
@@ -672,7 +682,7 @@ CK.admin = {
 
       const _e = CK.esc || (s => s);
       return `
-        <tr style="cursor:pointer;" onclick="CK.admin.viewCoachDetails('${c.id}')">
+        <tr style="cursor:pointer;" onclick="CK.admin.viewCoachDetails(${JSON.stringify(c.id)})">
           <td>#${_e(c.userid || 'C01')}</td>
           <td style="font-weight:600; color:#fff;">${_e(c.full_name)}</td>
           <td style="font-weight:700; color:var(--p-teal)">${_e(fide)}</td>
@@ -682,158 +692,10 @@ CK.admin = {
           <td style="font-weight:700; color:var(--p-gold)">${revenue}</td>
           <td>${classesCount}</td>
           <td>
-            <button class="p-btn p-btn-ghost p-btn-sm" onclick="event.stopPropagation(); CK.admin.editCoach('${c.id}')">Edit</button>
-            <button class="p-btn p-btn-teal p-btn-sm" onclick="event.stopPropagation(); CK.admin.viewCoachDetails('${c.id}')">View Details</button>
+            <button class="p-btn p-btn-ghost p-btn-sm" onclick="event.stopPropagation(); CK.admin.editCoach(${JSON.stringify(c.id)})">Edit</button>
+            <button class="p-btn p-btn-teal p-btn-sm" onclick="event.stopPropagation(); CK.admin.viewCoachDetails(${JSON.stringify(c.id)})">View Details</button>
           </td>
-        </tr>
-      `;
-    }).join('');
-  },
-
-  async viewCoachDetails(id) {
-    const c = await CK.db.getProfile(id);
-    if (!c) return;
-    const allStudents = (await CK.db.getProfiles('student')) || [];
-    const myStudents = allStudents.filter(s => s.coach === c.full_name);
-    const revenue = myStudents.reduce((sum, s) => {
-      const fee = parseInt((s.fee || '0').toString().replace(/[^0-9]/g, '')) || 0;
-      return sum + (s.status === 'Paid' ? fee : 0);
-    }, 0);
-    const statusBadge = c.status === 'Active' ? 'Active ✅' : c.status || 'Active';
-    const setEl = (elId, val) => { const el = document.getElementById(elId); if (el) el.innerText = val; };
-    setEl('detailCoachTitle', `Coach Profile: ${c.full_name}`);
-    setEl('detailCoachSpec', `Specialty: ${c.puzzle || 'Chess Strategy & Tactics'} · ${statusBadge}`);
-    setEl('detailCoachBatches', `Assigned Students: ${myStudents.length} · Availability: ${c.availability || 'Weekends'}`);
-    setEl('detailCoachTimetable', `Contact: ${c.phone_number || '—'} · ${c.email || '—'}`);
-    setEl('detailCoachRevenue', `Monthly Revenue (Paid students): ₹${revenue.toLocaleString('en-IN') || '0'}`);
-    setEl('detailCoachClasses', `Bio: ${c.bio || 'FIDE-certified chess coach with expertise in tactical training and tournament preparation.'}`);
-    CK.openModal('adminCoachDetailsModal');
-  },
-
-  async loadExpenses() {
-    const tbody = document.getElementById('adminExpensesTable');
-    if (!tbody) return;
-
-    const setExp = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
-
-    // Always calculate and display income/profit stats, regardless of expense count
-    const [expenses, students] = await Promise.all([
-      CK.db.getExpenses(),
-      CK.db.getProfiles('student')
-    ]);
-    const expList = expenses || [];
-    const stuList = students || [];
-
-    let totalExp = 0;
-    expList.forEach(e => {
-      totalExp += parseInt((e.amount || '0').replace(/[^0-9]/g, '')) || 0;
-    });
-
-    let totalIncome = 0;
-    stuList.forEach(s => {
-      const fee = parseInt((s.fee || '0').toString().replace(/[^0-9]/g, '')) || 0;
-      if (s.status === 'Paid') totalIncome += fee;
-    });
-    // No fallback — show real 0 if no paid students yet
-
-    setExp('adminExpTotalMonth', '₹' + totalExp.toLocaleString());
-    setExp('adminExpTotalIncome', '₹' + totalIncome.toLocaleString());
-    setExp('adminExpNetProfit', '₹' + Math.max(0, totalIncome - totalExp).toLocaleString());
-
-    if (expList.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7"><div class="cls-empty">💸 No expenditures recorded yet.</div></td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = expenses.map(e => `
-      <tr>
-        <td style="color:var(--p-text-muted)">${e.date}</td>
-        <td><span class="p-badge p-badge-blue">${e.category}</span></td>
-        <td style="font-weight:600">${e.description}</td>
-        <td style="font-weight:700; color:var(--p-danger)">${e.amount}</td>
-        <td><span class="p-badge p-badge-ghost">${e.mode}</span></td>
-        <td style="color:var(--p-text-muted)">${e.bill || '—'}</td>
-        <td>
-          <button class="p-icon-btn p-btn-sm" onclick="CK.admin.editExpense('${e.id}')" title="Edit">✏️</button>
-          <button class="p-icon-btn p-btn-sm" style="color:var(--p-danger)" onclick="CK.admin.deleteExpense('${e.id}')" title="Delete">🗑️</button>
-        </td>
-      </tr>
-    `).join('');
-  },
-
-  async openExpenseModal(expId = null) {
-    const setE = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
-    setE('admin_exp_id', expId || '');
-    if (expId) {
-      const list = await CK.db.getExpenses();
-      const e = list.find(x => x.id.toString() === expId.toString());
-      if (e) {
-        setE('admin_exp_cat',    e.category);
-        setE('admin_exp_desc',   e.description);
-        setE('admin_exp_amount', (e.amount || '').replace(/[^0-9]/g, ''));
-        setE('admin_exp_mode',   e.mode);
-      }
-    } else {
-      setE('admin_exp_desc',   '');
-      setE('admin_exp_amount', '');
-    }
-    CK.openModal('adminExpenseModal');
-  },
-
-  async saveExpense() {
-    const getV = id => { const el = document.getElementById(id); return el ? el.value : ''; };
-    const desc   = getV('admin_exp_desc');
-    const amount = getV('admin_exp_amount');
-    if (!desc || !amount) return CK.showToast('Description and Amount required', 'error');
-
-    const id = getV('admin_exp_id') || Date.now();
-    await CK.db.saveExpense({
-      id: id,
-      date: new Date().toLocaleDateString('en-GB'),
-      category:    getV('admin_exp_cat') || 'Other',
-      description: desc,
-      amount: '₹' + parseInt(amount).toLocaleString(),
-      mode: getV('admin_exp_mode') || 'UPI',
-      bill: '—'
-    });
-
-    await this.loadExpenses();
-    CK.closeModal('adminExpenseModal');
-    CK.showToast('Expenditure record saved successfully!', 'success');
-  },
-
-  async deleteExpense(id) {
-    if (confirm('Permanently delete this expenditure record?')) {
-      await CK.db.deleteExpense(id);
-      await this.loadExpenses();
-      CK.showToast('Expense record deleted', 'success');
-    }
-  },
-
-  editExpense(id) { this.openExpenseModal(id); },
-
-  async loadClasses() {
-    const tbody = document.getElementById('adminClassesTable');
-    if (!tbody) return;
-    
-    this.classesDb = await CK.db.getClasses();
-    const _e = CK.esc || (v => v);
-    tbody.innerHTML = this.classesDb.map(cl => {
-      const enrolled = (cl.studentIds || []).length;
-      const cap      = cl.maxStudents || cl.max || '—';
-      const pct      = cap && cap !== '—' ? Math.min(100, Math.round(enrolled / cap * 100)) : 0;
-      const coachName = cl.coachName || cl.coach || '—';
-      const schedule  = cl.time || cl.schedule || '—';
-      return `<tr>
-        <td>#${_e(cl.id)}</td>
-        <td style="font-weight:600">${_e(cl.title)}</td>
-        <td><span class="p-badge p-badge-blue">${_e(cl.level || '—')}</span></td>
-        <td>${_e(coachName)}</td>
-        <td>${_e(schedule)}</td>
-        <td>${enrolled} / ${cap}</td>
-        <td><div class="p-progress-bar"><div class="p-progress-fill" style="width:${pct}%"></div></div></td>
-        <td><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.openClassModal('${_e(cl.id)}')">Manage</button></td>
-      </tr>`;
+        </tr>`;
     }).join('');
   },
 
@@ -954,30 +816,30 @@ CK.admin = {
     const coachesHtml = coaches.length ? `
       <div class="live-section-title">👨‍🏫 Coach Status (${coaches.length})</div>
       <div class="live-coach-grid">
-        ${coaches.map(c => {
-          const _e = CK.esc || (s => s);
-          const attendedToday = coachAttn.some(a => a.coachId === c.id && a.date === todayStr);
-          const presAge = _presAge(c.id);
-          const isOnline = presAge === 'Active now' || presAge?.includes('m ago') && parseInt(presAge) < 10;
-          const initial = c.full_name?.[0]?.toUpperCase() || 'C';
-          const myStudents = students.filter(s => s.coach === c.full_name).length;
-          return `
-            <div class="p-live-card ${attendedToday ? 'online' : 'offline'}">
-              <div class="p-live-avatar" style="background:var(--p-surface3);color:var(--p-blue);position:relative;">
-                ${initial}
-                ${isOnline ? '<span style="position:absolute;bottom:0;right:0;width:9px;height:9px;background:var(--p-teal);border-radius:50%;border:2px solid var(--p-surface2);"></span>' : ''}
-              </div>
-              <div class="p-live-info">
-                <div class="p-live-name">${_e(c.full_name)}</div>
-                <div class="p-live-sub">${myStudents} students · ${_e(String(c.puzzle || 'Coach'))}${presAge ? ' · ' + _e(presAge) : ''}</div>
-                <div class="p-live-status">
-                  <span class="p-status-dot ${attendedToday ? 'online' : 'offline'}"></span>
-                  ${attendedToday ? 'Active Today' : 'No Class Today'}
-                </div>
-              </div>
-              <button class="p-icon-btn" title="View Coach Details" onclick="CK.admin.viewCoachDetails && CK.admin.viewCoachDetails('${c.id}')">📊</button>
-            </div>`;
-        }).join('')}
+         ${coaches.map(c => {
+           const _e = CK.esc || (s => s);
+           const attendedToday = coachAttn.some(a => a.coachId === c.id && a.date === todayStr);
+           const presAge = _presAge(c.id);
+           const isOnline = presAge === 'Active now' || presAge?.includes('m ago') && parseInt(presAge) < 10;
+           const initial = c.full_name?.[0]?.toUpperCase() || 'C';
+           const myStudents = students.filter(s => s.coach === c.full_name).length;
+           return `
+             <div class="p-live-card ${attendedToday ? 'online' : 'offline'}">
+               <div class="p-live-avatar" style="background:var(--p-surface3);color:var(--p-blue);position:relative;">
+                 ${initial}
+                 ${isOnline ? '<span style="position:absolute;bottom:0;right:0;width:9px;height:9px;background:var(--p-teal);border-radius:50%;border:2px solid var(--p-surface2);"></span>' : ''}
+               </div>
+               <div class="p-live-info">
+                 <div class="p-live-name">${_e(c.full_name)}</div>
+                 <div class="p-live-sub">${myStudents} students · ${_e(String(c.puzzle || 'Coach'))}${presAge ? ' · ' + _e(presAge) : ''}</div>
+                 <div class="p-live-status">
+                   <span class="p-status-dot ${attendedToday ? 'online' : 'offline'}"></span>
+                   ${attendedToday ? 'Active Today' : 'No Class Today'}
+                 </div>
+               </div>
+               <button class="p-icon-btn" title="View Coach Details" onclick="CK.admin.viewCoachDetails && CK.admin.viewCoachDetails(${JSON.stringify(c.id)})">📊</button>
+             </div>`;
+         }).join('')}
       </div>` : '';
 
     // Students section — grouped by fee status
@@ -1000,8 +862,8 @@ CK.admin = {
             <div class="p-live-status"><span class="p-status-dot ${dotClass}"></span> ${_e(presAge)}</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
-            <button class="p-icon-btn" title="View Profile" onclick="CK.admin.viewStudentInfo('${s.id}')">👁️</button>
-            <button class="p-icon-btn" title="Quick Info" onclick="CK.admin.informStudent('${s.id}','${s.full_name?.replace(/'/g,"\\'")||''}')">💬</button>
+            <button class="p-icon-btn" title="View Profile" data-sid="${s.id}" onclick="CK.admin.viewStudentInfo(this.dataset.sid)">👁️</button>
+            <button class="p-icon-btn" title="Quick Info" onclick="CK.admin.informStudent(${String(s.id)})">💬</button>
           </div>
         </div>`;
     };
@@ -1373,14 +1235,15 @@ CK.admin = {
         return;
       }
 
+      const _e = CK.esc || (s => s);
       tbody.innerHTML = files.map(f => `
         <tr>
-          <td style="font-weight:600">${f.name}</td>
-          <td><span class="p-badge p-badge-blue">${f.level}</span></td>
-          <td>${f.batch || 'All'}</td>
-          <td><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.downloadFile('${f.file_name}')">📎 View</button></td>
+          <td style="font-weight:600">${_e(f.name)}</td>
+          <td><span class="p-badge p-badge-blue">${_e(f.level)}</span></td>
+          <td>${_e(f.batch || 'All')}</td>
+          <td><button class="p-btn p-btn-ghost p-btn-sm" data-fname="${_e(f.file_name)}" onclick="CK.admin.downloadFile(this.dataset.fname)">📎 View</button></td>
           <td style="color:var(--p-text-muted)">${new Date(f.created_at).toLocaleDateString()}</td>
-          <td><button class="p-icon-btn" style="color:var(--p-danger)" onclick="CK.admin.deleteFile('${f.id}', '${f.file_name}')">🗑️</button></td>
+          <td><button class="p-icon-btn" style="color:var(--p-danger)" data-fid="${_e(String(f.id))}" data-fname="${_e(f.file_name)}" onclick="CK.admin.deleteFile(this.dataset.fid, this.dataset.fname)">🗑️</button></td>
         </tr>
       `).join('');
     } catch (e) {
@@ -1410,6 +1273,83 @@ CK.admin = {
       await this.loadFiles();
     } catch (e) { 
       CK.showToast('Delete failed.', 'error'); 
+    }
+  },
+
+  /* ─── Expense Management ─── */
+  async loadExpenses() {
+    const tbody = document.getElementById('adminExpensesTable');
+    if (!tbody) return;
+    try {
+      const expenses = (await CK.db.getExpenses()) || [];
+      if (!expenses.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;opacity:0.5;padding:20px;">No expenses recorded yet.</td></tr>';
+        return;
+      }
+      const _e = CK.esc || (s => s);
+      const fmt = n => '₹' + Number(n || 0).toLocaleString('en-IN');
+      tbody.innerHTML = expenses.map(exp => `
+        <tr>
+          <td style="font-weight:600">${_e(exp.category || 'General')}</td>
+          <td>${_e(exp.description || '—')}</td>
+          <td style="font-weight:700;color:var(--p-danger)">${fmt(exp.amount)}</td>
+          <td>${_e(exp.mode || 'Cash')}</td>
+          <td style="color:var(--p-text-muted)">${new Date(exp.date || exp.created_at).toLocaleDateString('en-IN')}</td>
+          <td><button class="p-icon-btn" style="color:var(--p-danger)" data-eid="${_e(String(exp.id))}" onclick="CK.admin.deleteExpense(this.dataset.eid)">🗑️</button></td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;opacity:0.5;">Error loading expenses.</td></tr>';
+    }
+  },
+
+  openExpenseModal() {
+    ['admin_exp_cat', 'admin_exp_desc', 'admin_exp_amount', 'admin_exp_mode'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = el.tagName === 'SELECT' ? el.options[0].value : '';
+    });
+    CK.openModal('adminExpenseModal');
+  },
+
+  async saveExpense() {
+    const getV = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    const category = getV('admin_exp_cat');
+    const description = getV('admin_exp_desc');
+    const amount = parseFloat(getV('admin_exp_amount'));
+    const mode = getV('admin_exp_mode');
+
+    if (!description || !amount || isNaN(amount)) {
+      CK.showToast('Please fill in all expense fields.', 'warning');
+      return;
+    }
+
+    try {
+      await CK.db.saveExpense({
+        category: category || 'Miscellaneous',
+        description,
+        amount,
+        mode: mode || 'Cash',
+        date: new Date().toISOString(),
+        created_at: new Date().toISOString()
+      });
+      CK.closeModal('adminExpenseModal');
+      CK.showToast('Expense recorded successfully!', 'success');
+      await this.loadExpenses();
+    } catch (e) {
+      CK.showToast('Failed to save expense.', 'error');
+    }
+  },
+
+  async deleteExpense(id) {
+    if (!confirm('Delete this expense record?')) return;
+    try {
+      const expenses = (await CK.db.getExpenses()) || [];
+      const filtered = expenses.filter(e => String(e.id) !== String(id));
+      localStorage.setItem('ck_expenses', JSON.stringify(filtered));
+      CK.showToast('Expense deleted.', 'success');
+      await this.loadExpenses();
+    } catch (e) {
+      CK.showToast('Delete failed.', 'error');
     }
   },
 
@@ -1504,6 +1444,31 @@ CK.admin = {
 
   editCoach(id) { this.openCoachModal(id); },
 
+  async viewCoachDetails(id) {
+    const c = await CK.db.getProfile(id);
+    if (!c) return CK.showToast('Coach not found.', 'error');
+    const _e = CK.esc || (s => s);
+    const students = (await CK.db.getProfiles('student')) || [];
+    const myStudents = students.filter(s => s.coach === c.full_name);
+    const paidRevenue = myStudents.reduce((sum, s) => {
+      if (s.status !== 'Paid') return sum;
+      return sum + (parseInt((s.fee || '0').toString().replace(/[^0-9]/g, '')) || 0);
+    }, 0);
+    const titleEl = document.getElementById('detailCoachTitle');
+    if (titleEl) titleEl.textContent = _e(c.full_name) + ' — Coach Profile';
+    const specEl = document.getElementById('detailCoachSpec');
+    if (specEl) specEl.textContent = 'Specialty: ' + _e(c.puzzle || c.specialty || 'Chess Strategy');
+    const batchEl = document.getElementById('detailCoachBatches');
+    if (batchEl) batchEl.textContent = 'Assigned Batches: ' + _e(c.batches || c.schedule || 'All');
+    const ttEl = document.getElementById('detailCoachTimetable');
+    if (ttEl) ttEl.textContent = 'Timetable: ' + _e(c.timetable || c.availability || 'As scheduled');
+    const revEl = document.getElementById('detailCoachRevenue');
+    if (revEl) revEl.textContent = 'Monthly Revenue: ₹' + paidRevenue.toLocaleString('en-IN');
+    const clsEl = document.getElementById('detailCoachClasses');
+    if (clsEl) clsEl.textContent = 'Students Assigned: ' + myStudents.length;
+    CK.openModal('adminCoachDetailsModal');
+  },
+
   async openClassModal(classId = null) {
     await this.populateCoachSelects();
     const setF = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
@@ -1512,7 +1477,7 @@ CK.admin = {
       if (cls) {
         setF('admin_cl_title', cls.title);
         setF('admin_cl_level', cls.level);
-        setF('admin_cl_coach', cls.coach);
+        setF('admin_cl_coach', cls.coachName || cls.coach);
         const parts = (cls.schedule || '').split(' ');
         setF('admin_cl_day', parts[0] || '');
         setF('admin_cl_time', parts[1] || '');
@@ -1641,6 +1606,7 @@ CK.admin = {
   loadTournaments() {
     const tbody = document.getElementById('adminTournamentsTable');
     if (!tbody) return;
+    const _e = CK.esc || (s => s);
     const list = this.getTournaments();
     if (!list.length) {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;opacity:0.5;padding:20px;">No tournaments created yet.</td></tr>';
@@ -1649,14 +1615,14 @@ CK.admin = {
     const statusBadge = { Active: 'p-badge-green', Upcoming: 'p-badge-blue', Completed: 'p-badge-ghost', Cancelled: 'p-badge-red' };
     tbody.innerHTML = list.map(t => `
       <tr>
-        <td style="font-weight:600">${t.name}</td>
-        <td>${t.date}</td>
-        <td><span class="p-badge p-badge-teal" style="font-size:.72rem">${t.format}</span></td>
-        <td style="font-weight:700">${t.participants}</td>
-        <td><span class="p-badge ${statusBadge[t.status] || 'p-badge-ghost'}">${t.status}</span></td>
+        <td style="font-weight:600">${_e(t.name)}</td>
+        <td>${_e(t.date)}</td>
+        <td><span class="p-badge p-badge-teal" style="font-size:.72rem">${_e(t.format)}</span></td>
+        <td style="font-weight:700">${_e(String(t.participants ?? ''))}</td>
+        <td><span class="p-badge ${statusBadge[t.status] || 'p-badge-ghost'}">${_e(t.status)}</span></td>
         <td>
-          <button class="p-icon-btn p-btn-sm" onclick="CK.admin.openTournamentModal('${t.id}')" title="Edit">✏️</button>
-          <button class="p-icon-btn p-btn-sm" style="color:var(--p-danger)" onclick="CK.admin.deleteTournament('${t.id}')" title="Delete">🗑️</button>
+          <button class="p-icon-btn p-btn-sm" data-tid="${_e(String(t.id))}" onclick="CK.admin.openTournamentModal(this.dataset.tid)" title="Edit">✏️</button>
+          <button class="p-icon-btn p-btn-sm" style="color:var(--p-danger)" data-tid="${_e(String(t.id))}" onclick="CK.admin.deleteTournament(this.dataset.tid)" title="Delete">🗑️</button>
         </td>
       </tr>
     `).join('');
@@ -1819,5 +1785,174 @@ CK.admin = {
         el.textContent = Math.round(current);
       }
     }, duration / steps);
+  },
+
+  /* ─── AI Analytics Panel ─── */
+  async renderAIAnalytics() {
+    const students = (await CK.db.getProfiles('student')) || [];
+    const _e = CK.esc || (s => s);
+
+    // Engagement Overview
+    const engEl = document.getElementById('adminEngagementOverview');
+    if (engEl && CK.ai) {
+      let highEng = 0, medEng = 0, lowEng = 0;
+      for (const s of students) {
+        try {
+          const result = await CK.ai.getEngagementScore(s.id);
+          const score = result?.score || 0;
+          if (score >= 70) highEng++;
+          else if (score >= 40) medEng++;
+          else lowEng++;
+        } catch(e) { lowEng++; }
+      }
+      engEl.innerHTML = `
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; text-align:center;">
+          <div style="padding:20px; border-radius:12px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2);">
+            <div style="font-size:2rem; font-weight:900; color:#22c55e;">${highEng}</div>
+            <div style="font-size:0.8rem; color:var(--p-text-muted);">High Engagement</div>
+          </div>
+          <div style="padding:20px; border-radius:12px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2);">
+            <div style="font-size:2rem; font-weight:900; color:#f59e0b;">${medEng}</div>
+            <div style="font-size:0.8rem; color:var(--p-text-muted);">Medium Engagement</div>
+          </div>
+          <div style="padding:20px; border-radius:12px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2);">
+            <div style="font-size:2rem; font-weight:900; color:#ef4444;">${lowEng}</div>
+            <div style="font-size:0.8rem; color:var(--p-text-muted);">Low Engagement</div>
+          </div>
+        </div>`;
+    }
+
+    // Dropout Risk
+    const drEl = document.getElementById('adminDropoutRisk');
+    if (drEl && CK.ai) {
+      const atRisk = [];
+      for (const s of students) {
+        try {
+          const result = await CK.ai.getEngagementScore(s.id);
+          if (result && (result.dropoutRisk === 'high' || result.dropoutRisk === 'medium')) {
+            atRisk.push({ name: s.full_name || 'Unknown', risk: result.dropoutRisk, engagement: result.score });
+          }
+        } catch(e) {}
+      }
+      atRisk.sort((a, b) => (a.risk === 'high' ? 0 : 1) - (b.risk === 'high' ? 0 : 1));
+      drEl.innerHTML = atRisk.length ? atRisk.slice(0, 10).map(r => `
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-radius:8px; margin-bottom:6px; background:${r.risk==='high'?'rgba(239,68,68,0.08)':'rgba(245,158,11,0.08)'}; border:1px solid ${r.risk==='high'?'rgba(239,68,68,0.2)':'rgba(245,158,11,0.2)'};">
+          <div>
+            <div style="font-weight:600;">${_e(r.name)}</div>
+            <div style="font-size:0.75rem; color:var(--p-text-muted);">Engagement: ${r.engagement}%</div>
+          </div>
+          <span style="color:${r.risk==='high'?'#ef4444':'#f59e0b'}; font-weight:700; font-size:0.8rem; text-transform:uppercase;">${r.risk} RISK</span>
+        </div>`).join('') : '<div style="text-align:center;opacity:.4;padding:20px;">No at-risk students detected</div>';
+    }
+
+    // Coach Effectiveness
+    const ceEl = document.getElementById('adminCoachEffectiveness');
+    if (ceEl && CK.ai) {
+      const coaches = (await CK.db.getProfiles('coach')) || [];
+      const coachData = [];
+      for (const c of coaches) {
+        try {
+          const eff = await CK.ai.getCoachEffectiveness(c.full_name);
+          if (eff) coachData.push({ name: c.full_name, ...eff });
+        } catch(e) {}
+      }
+      ceEl.innerHTML = coachData.length ? `
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px;">
+        ${coachData.map(c => `
+          <div style="padding:16px; border-radius:12px; background:var(--p-surface3); border:1px solid rgba(255,255,255,0.06);">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+              <div style="width:40px;height:40px;border-radius:50%;background:var(--p-gold);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.1rem;">${c.grade}</div>
+              <div>
+                <div style="font-weight:700;">${_e(c.name || 'Unknown')}</div>
+                <div style="font-size:0.75rem;color:var(--p-text-muted);">${c.studentCount} students</div>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.78rem;">
+              <div>Avg ELO Gain: <strong style="color:var(--p-teal);">+${c.avgELOImprovement}</strong></div>
+              <div>Retention: <strong>${c.retentionRate}%</strong></div>
+              <div>Attendance: <strong>${c.avgAttendance}%</strong></div>
+              <div>Score: <strong style="color:var(--p-gold);">${c.effectiveness}</strong></div>
+            </div>
+          </div>`).join('')}
+        </div>` : '<div style="text-align:center;opacity:.4;padding:20px;">No coaches found</div>';
+    }
+
+    // Student Weakness Selector
+    const selEl = document.getElementById('adminWeaknessStudentSelect');
+    if (selEl && students.length) {
+      selEl.innerHTML = '<option value="">Select a student...</option>' +
+        students.map(s => `<option value="${_e(s.id)}">${_e(s.full_name || 'Unknown')}</option>`).join('');
+    }
+  },
+
+  async renderStudentWeakness(studentId) {
+    if (!studentId || !CK.ai) return;
+    try {
+      const analysis = await CK.ai.analyzeStudent(studentId);
+      if (!analysis) { CK.showToast('Could not analyze this student', 'info'); return; }
+
+      // Ensure canvas exists for Chart.js radar
+      const chartEl = document.getElementById('adminWeaknessChart');
+      if (chartEl && !chartEl.querySelector('canvas')) {
+        chartEl.innerHTML = '<canvas id="adminWeaknessCanvas" style="max-height:280px;"></canvas>';
+      }
+      CK.ai.renderWeaknessChart('adminWeaknessCanvas', analysis);
+
+      const plan = CK.ai.generateStudyPlan(analysis);
+      CK.ai.renderStudyPlan('adminStudyPlan', plan);
+    } catch(e) { console.warn('Student weakness analysis error:', e); }
+  },
+
+  /* ─── Leaderboard & XP Panel ─── */
+  async renderLeaderboardPanel() {
+    if (CK.rpg) {
+      CK.rpg.renderLeaderboard('adminLeaderboard');
+      CK.rpg.renderXPFeed('adminXPFeed');
+      CK.rpg.renderBadgeGrid('adminBadgeShowcase');
+    }
+  },
+
+  /* ─── Audit Logs Panel ─── */
+  renderAuditPanel() {
+    if (CK.security) {
+      CK.security.renderAuditLog('adminAuditLogTable');
+    }
+
+    // RBAC overview
+    const rbacEl = document.getElementById('adminRBACOverview');
+    if (rbacEl && CK.security) {
+      const perms = CK.security.RBAC.permissions;
+      const _e = CK.esc || (s => s);
+      rbacEl.innerHTML = Object.entries(perms).map(([role, permsArr]) => `
+        <div style="margin-bottom:14px;">
+          <div style="font-weight:700; text-transform:capitalize; margin-bottom:6px; color:var(--p-gold);">${_e(role)}</div>
+          <div style="display:flex; flex-wrap:wrap; gap:6px;">
+            ${permsArr.map(p => `<span style="font-size:0.72rem; padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);">${_e(p)}</span>`).join('')}
+          </div>
+        </div>`).join('');
+    }
+
+    // Fair play reports
+    const fpEl = document.getElementById('adminFairPlayReports');
+    if (fpEl) {
+      const logs = CK.security ? CK.security.getAuditLogsFiltered({ action: 'game_end' }) : [];
+      if (logs.length) {
+        const _e = CK.esc || (s => s);
+        fpEl.innerHTML = logs.slice(0, 10).map(l => {
+          const d = l.details || {};
+          const score = d.fairPlayScore || 100;
+          const color = score >= 85 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#ef4444';
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;margin-bottom:6px;background:rgba(255,255,255,0.03);">
+            <div>
+              <div style="font-weight:600;font-size:0.85rem;">${_e(l.userName)}</div>
+              <div style="font-size:0.72rem;color:var(--p-text-muted);">Tab switches: ${d.tabSwitches||0} · Flags: ${(d.flags||[]).length}</div>
+            </div>
+            <div style="font-weight:900;color:${color};">${score}/100</div>
+          </div>`;
+        }).join('');
+      } else {
+        fpEl.innerHTML = '<div style="text-align:center;opacity:.4;padding:20px;">No game reports yet. Reports appear after students complete games.</div>';
+      }
+    }
   }
 };

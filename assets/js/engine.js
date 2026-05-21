@@ -27,8 +27,8 @@ CK.engine = (() => {
       const pv = data.pvs && data.pvs[0];
       if (!pv) return null;
       const result = {
-        cp:    pv.cp   != null ? pv.cp   : null,
-        mate:  pv.mate != null ? pv.mate : null,
+        cp:    pv.cp   ?? null,
+        mate:  pv.mate ?? null,
         depth: data.depth  || 0,
         knodes: data.knodes || 0,
         pv:    pv.moves || ''
@@ -44,21 +44,21 @@ CK.engine = (() => {
   }
 
   function formatScore(cp, mate) {
-    if (mate != null) return mate > 0 ? `#${mate}` : `#-${Math.abs(mate)}`;
-    if (cp == null) return '±0.00';
+    if (mate !== null) return mate > 0 ? `#${mate}` : `#-${Math.abs(mate)}`;
+    if (cp === null) return '±0.00';
     return (cp >= 0 ? '+' : '') + (cp / 100).toFixed(2);
   }
 
   // Map centipawns → 0-100 bar percent
   function cpToBar(cp, mate) {
-    if (mate != null) return mate > 0 ? 97 : 3;
-    if (cp == null) return 50;
+    if (mate !== null) return mate > 0 ? 97 : 3;
+    if (cp === null) return 50;
     const pct = 50 + (cp / 600) * 44;
     return Math.min(97, Math.max(3, pct));
   }
 
   function cpColor(cp, mate) {
-    const v = mate != null ? (mate > 0 ? 9999 : -9999) : (cp || 0);
+    const v = mate !== null ? (mate > 0 ? 9999 : -9999) : (cp || 0);
     return v > 80 ? 'var(--p-teal)' : v < -80 ? '#ef4444' : 'var(--p-blue)';
   }
 

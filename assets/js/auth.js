@@ -6,11 +6,35 @@
 (() => {
   const CK = window.CK = window.CK || {};
 
-  /* Check per-user credential */
+  async function _hashPassword(plain) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(plain));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  /* Check per-user credential — SHA-256 hashed passwords only */
   async function _checkPerUserCred(email, password) {
+    if (!CK.accessManager) throw new Error('System not ready. Please reload the page.');
     const creds = await CK.accessManager.getCreds();
     const stored = creds[email.toLowerCase()];
-    return stored ? stored === password : false;
+    if (!stored) return false;
+    const hashed = await _hashPassword(password);
+    return stored === hashed;
+  }
+
+  /* Simple brute-force rate limiter — 5 attempts per email per 15 min */
+  const _failMap = {};
+  function _recordFail(email) {
+    const now = Date.now();
+    const entry = _failMap[email] || { count: 0, since: now };
+    if (now - entry.since > 900000) { entry.count = 0; entry.since = now; }
+    entry.count++;
+    _failMap[email] = entry;
+  }
+  function _isLockedOut(email) {
+    const entry = _failMap[email];
+    if (!entry) return false;
+    if (Date.now() - entry.since > 900000) { delete _failMap[email]; return false; }
+    return entry.count >= 5;
   }
 
   CK.handleLogin = async (e) => {
@@ -24,10 +48,12 @@
     btn.disabled = true;
 
     try {
+      if (_isLockedOut(email)) {
+        throw new Error('Too many failed attempts. Please wait 15 minutes or reset your password.');
+      }
       CK.showToast('Authenticating...', 'info');
 
       let profile = null;
-      let session = null;
       let isOfflineMode = false;
 
       // 1. Attempt Supabase Auth login if online and configured
@@ -35,7 +61,6 @@
         try {
           const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
           if (!error && data && data.user) {
-            session = data.session;
             // Fetch profile via our DB layer (which handles Supabase query or fallback)
             profile = await CK.db.getProfile(data.user.id);
             if (!profile) {
@@ -61,7 +86,10 @@
               }
             }
           } else {
-            console.warn("[ChessKidoo Auth] Supabase sign-in failed or returned empty. Error:", error);
+            // Supabase Auth rejected — fall through to per-user credential check.
+            // Users managed via Access Manager use SHA-256 credentials, not Supabase Auth.
+            console.info("[ChessKidoo Auth] Supabase Auth did not authenticate. Falling through to per-user credentials.", error?.message);
+            isOfflineMode = true;
           }
         } catch (supaErr) {
           console.warn("[ChessKidoo Auth] Supabase connection error. Proceeding to offline mode check.", supaErr);
@@ -71,42 +99,26 @@
         isOfflineMode = true;
       }
 
-      // 2. Offline / Demo Fallback Check
+      // 2. Offline credential fallback — only per-user passwords set by admin
       if (!profile) {
-        // Fetch profiles from our local DB layer
-        const profiles = await CK.db.getProfiles();
-        const found = profiles.find(p => p && p.email && (p.email.toLowerCase() === email || (email.includes('@ck') && p.email.toLowerCase().startsWith(email.split('@')[0]))));
-        
-        if (found) {
-          // Check per-user credential first (admin-set individual passwords)
-          const role = (found.role || 'student').toLowerCase();
-          const perUserMatch = await _checkPerUserCred(email, password);
-          // Demo-mode passwords (only the ones shown in the UI login hints)
-          const roleMatch =
-            (role === 'admin'  && password === 'Admin123$') ||
-            (role === 'coach'  && password === 'Coach123')  ||
-            (role === 'parent' && password === 'Parent123') ||
-            (role === 'student'&& password === 'Student123');
-          const isValidPass = perUserMatch || roleMatch;
-
-          if (isValidPass) {
-            profile = found;
-            session = { access_token: "mock-jwt-token-" + Date.now(), user: { id: found.id, email: found.email } };
-            if (isOfflineMode) {
-              console.log("[ChessKidoo Auth] Successful login in Resilient Offline Demo Mode ✓");
-            }
-          } else {
-            throw new Error('Incorrect password for ' + found.full_name + '.');
-          }
-        } else {
-          throw new Error('Account not found. Please contact the academy admin.');
+        if (!isOfflineMode) {
+          // Supabase was online but returned no profile — credentials wrong
+          throw new Error('Incorrect email or password.');
         }
+        // Offline: check admin-managed per-user credentials
+        const profiles = await CK.db.getProfiles();
+        const found = profiles.find(p => p?.email?.toLowerCase() === email);
+        if (!found) throw new Error('Account not found. Please contact the academy admin.');
+
+        const perUserMatch = await _checkPerUserCred(email, password);
+        if (!perUserMatch) throw new Error('Incorrect password. Contact the academy admin if you forgot it.');
+
+        profile = found;
       }
 
-      // 3. Save session and redirect
+      // 3. Save profile (never store JWT — Supabase manages its own sb-* keys)
       CK.currentUser = profile;
       localStorage.setItem('ck_user', JSON.stringify(profile));
-      if (session) localStorage.setItem('ck_session', JSON.stringify(session));
 
       const role = (profile.role || 'student').toLowerCase();
       CK.showToast(`Welcome back, ${profile.full_name || 'Champion'}! ♟`, 'success');
@@ -121,7 +133,7 @@
       }, 500);
 
     } catch (err) {
-      console.error('Login error:', err);
+      _recordFail(email);
       CK.showToast(err.message || 'Invalid credentials. Please try again.', 'error');
     } finally {
       btn.textContent = 'Enter the Arena →';
@@ -129,12 +141,27 @@
     }
   };
 
+  CK.forgotPassword = async (email) => {
+    if (!email) { CK.showToast('Enter your email first.', 'error'); return; }
+    if (!window.supabaseClient) { CK.showToast('Password reset requires an internet connection.', 'error'); return; }
+    try {
+      const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: window.location.origin
+      });
+      if (error) throw error;
+      CK.showToast('Password reset link sent! Check your email.', 'success');
+    } catch (err) {
+      CK.showToast(err.message || 'Could not send reset email.', 'error');
+    }
+  };
+
   CK.logout = async () => {
     try {
       if (window.supabaseClient) await window.supabaseClient.auth.signOut();
     } catch(e) {}
-    localStorage.removeItem('ck_user');
-    localStorage.removeItem('ck_session');
+    ['ck_user', 'ck_live_presence', 'ck_meetings', 'ck_notifications'].forEach(k => localStorage.removeItem(k));
+    // Clear daily-notification guards so they regenerate on next login
+    Object.keys(localStorage).filter(k => k.startsWith('ck_notifs_generated_')).forEach(k => localStorage.removeItem(k));
     CK.currentUser = null;
     CK.showToast('Logged out successfully.', 'success');
     setTimeout(() => {

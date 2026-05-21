@@ -78,7 +78,6 @@ window.CK.esc = function(str) {
             }
           }
         );
-        console.log("[ChessKidoo] Supabase connected ✓");
       } catch (e) {
         console.error("[ChessKidoo] Supabase init failed:", e);
       }

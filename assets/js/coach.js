@@ -9,7 +9,6 @@ CK.coach = {
   classesDb: [],
 
   async init() {
-    console.log("Coach Portal Initializing...");
 
     // 1. Fetch current coach profile dynamically
     const currentUser = CK.currentUser || JSON.parse(localStorage.getItem('ck_user'));
@@ -125,8 +124,8 @@ CK.coach = {
             <div class="p-live-status"><span class="p-status-dot ${statusDot}"></span> ${statusLabel}</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;">
-            <button class="p-icon-btn" onclick="CK.coach.viewStudentMetrics('${s.id}')" title="View Progress">📊</button>
-            <button class="p-icon-btn" onclick="CK.coach.quickNoteFor('${s.id}','${s.full_name?.replace(/'/g,"\\'")||''}')" title="Quick Note">📝</button>
+            <button class="p-icon-btn" data-sid="${_e(String(s.id))}" onclick="CK.coach.viewStudentMetrics(this.dataset.sid)" title="View Progress">📊</button>
+            <button class="p-icon-btn" data-sid="${_e(String(s.id))}" data-sname="${_e(s.full_name || '')}" onclick="CK.coach.quickNoteFor(this.dataset.sid,this.dataset.sname)" title="Quick Note">📝</button>
           </div>
         </div>`;
     }).join('');
@@ -191,6 +190,7 @@ CK.coach = {
       lab: 'PGN Teaching Studio',
       classroom: 'Classroom Manager',
       classes: 'My Classes',
+      effectiveness: 'My Effectiveness',
       reports: 'Student Reports'
     };
     const titleEl = document.getElementById('coachPanelTitle');
@@ -200,11 +200,13 @@ CK.coach = {
     if (topBtn) topBtn.style.display = (panelId === 'notes') ? 'block' : 'none';
     if (panelId === 'resources')  this.renderResources();
     if (panelId === 'schedule')   this.renderSchedulePro();
-    if (panelId === 'notes')      this.initReportEditor();
+    if (panelId === 'notes')      { this.initReportEditor(); this.loadCoachNotes(); }
     if (panelId === 'attendance') { this.loadAttendance(); this.loadAttendanceAdvanced(); }
     if (panelId === 'classes')    this.renderClassesPanel();
     if (panelId === 'reports')    this.renderReportsPanel();
+    if (panelId === 'effectiveness') this.renderEffectivenessPanel();
     if (panelId === 'classroom' && window.CK && CK.classroom) CK.classroom.coachTab('assign');
+    if (panelId === 'lab' && window.CK && CK.lab) setTimeout(() => CK.lab.initBoard('coachLabBoard'), 100);
   },
 
   /* ── Class Management Panel ── */
@@ -254,10 +256,11 @@ CK.coach = {
     const links = window.CK && CK.batchManager ? await CK.batchManager.getLinks() : {};
     const tbody = document.querySelector('#coach-panel-schedule tbody');
     if (tbody) {
+      const _e = CK.esc || (s => s);
       tbody.innerHTML = `
-        <tr><td>Monday</td><td>4:00 PM - 5:00 PM</td><td>Intermediate Strategy</td><td><span class="p-badge p-badge-blue">Intermediate</span></td><td><div style="font-family:monospace; margin-bottom:4px; color:var(--p-teal);">${links['Intermediate'] || 'https://meet.google.com/int-strategy-abc'}</div><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.coach.editBatchLink('Intermediate')">✏️ Edit Room Link</button></td></tr>
-        <tr><td>Tuesday</td><td>5:00 PM - 6:00 PM</td><td>Advanced Endgames</td><td><span class="p-badge p-badge-gold">Advanced</span></td><td><div style="font-family:monospace; margin-bottom:4px; color:var(--p-gold);">${links['Advanced'] || 'https://meet.google.com/adv-endgames-xyz'}</div><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.coach.editBatchLink('Advanced')">✏️ Edit Room Link</button></td></tr>
-        <tr><td>Friday</td><td>6:30 PM - 8:00 PM</td><td>Beginner Fundamentals</td><td><span class="p-badge p-badge-green">Beginner</span></td><td><div style="font-family:monospace; margin-bottom:4px; color:var(--p-online);">${links['Beginner'] || 'https://meet.google.com/beg-inner-room'}</div><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.coach.editBatchLink('Beginner')">✏️ Edit Room Link</button></td></tr>
+        <tr><td>Monday</td><td>4:00 PM - 5:00 PM</td><td>Intermediate Strategy</td><td><span class="p-badge p-badge-blue">Intermediate</span></td><td><div style="font-family:monospace; margin-bottom:4px; color:var(--p-teal);">${_e(links['Intermediate'] || 'https://meet.google.com/int-strategy-abc')}</div><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.coach.editBatchLink('Intermediate')">✏️ Edit Room Link</button></td></tr>
+        <tr><td>Tuesday</td><td>5:00 PM - 6:00 PM</td><td>Advanced Endgames</td><td><span class="p-badge p-badge-gold">Advanced</span></td><td><div style="font-family:monospace; margin-bottom:4px; color:var(--p-gold);">${_e(links['Advanced'] || 'https://meet.google.com/adv-endgames-xyz')}</div><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.coach.editBatchLink('Advanced')">✏️ Edit Room Link</button></td></tr>
+        <tr><td>Friday</td><td>6:30 PM - 8:00 PM</td><td>Beginner Fundamentals</td><td><span class="p-badge p-badge-green">Beginner</span></td><td><div style="font-family:monospace; margin-bottom:4px; color:var(--p-online);">${_e(links['Beginner'] || 'https://meet.google.com/beg-inner-room')}</div><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.coach.editBatchLink('Beginner')">✏️ Edit Room Link</button></td></tr>
       `;
     }
   },
@@ -279,7 +282,7 @@ CK.coach = {
     const elName = document.getElementById('coachSidebarName');
     const elSub = document.getElementById('coachSidebarSub');
     const elAvatar = document.getElementById('coachSidebarAvatar');
-    if (elName) elName.innerText = cp.full_name || 'Sarah Chess';
+    if (elName) elName.innerText = cp.full_name || '—';
     if (elSub) elSub.innerText = `${cp.puzzle || 'Tactics Specialist'} · FIDE 2100`;
     if (elAvatar) elAvatar.innerText = initial;
 
@@ -330,7 +333,7 @@ CK.coach = {
     const container = document.getElementById('coachResourcesContainer');
     if (!container) return;
 
-    const resources = await CK.db.getResources();
+    const resources = await CK.db.getDocuments();
 
     if (resources.length === 0) {
       container.innerHTML = '<div class="cls-empty">📚 No resources uploaded yet. Use the Admin panel to upload learning materials.</div>';
@@ -356,17 +359,24 @@ CK.coach = {
           <div style="display: flex; flex-direction: column; gap: 10px;">
       `;
       
+      const _e = CK.esc || (s => s);
       files.forEach(f => {
         const typeBadge = f.type === 'Homework' ? 'p-badge-rose' : 'p-badge-blue';
+        const publicUrl = f.file_name && window.supabaseClient
+          ? (window.supabaseClient.storage.from('documents').getPublicUrl(f.file_name).data?.publicUrl || '')
+          : '';
+        const dlAttr = publicUrl
+          ? `onclick="window.open('${_e(publicUrl)}','_blank')"`
+          : `onclick="CK.showToast('File not available yet.','error')"`;
         html += `
             <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; background:var(--p-surface3); border-radius:8px;">
               <div>
                 <div style="font-weight:600; color:var(--p-text); display:flex; align-items:center; gap:8px;">
-                  📄 ${f.name} <span class="p-badge ${typeBadge}" style="font-size:0.7rem; padding: 2px 6px;">${f.type || 'Material'}</span>
+                  📄 ${_e(f.name)} <span class="p-badge ${typeBadge}" style="font-size:0.7rem; padding: 2px 6px;">${_e(f.type || 'Material')}</span>
                 </div>
-                <div style="font-size:0.85rem; color:var(--p-text-muted); margin-top:4px;">📝 Note: ${(CK.esc||((s)=>s))(f.notes)}</div>
+                <div style="font-size:0.85rem; color:var(--p-text-muted); margin-top:4px;">📝 ${_e(f.notes || '')}</div>
               </div>
-              <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.showToast('Downloading...', 'success')">Download</button>
+              <button class="p-btn p-btn-ghost p-btn-sm" ${dlAttr}>Download</button>
             </div>
         `;
       });
@@ -463,7 +473,7 @@ CK.coach = {
           <td><span class="p-badge p-badge-blue" style="font-size:0.75rem;">${_e(s.level || 'Beginner')}</span></td>
           <td style="font-size:0.85rem; color:var(--p-text-muted);">${levelBatch}</td>
           <td style="font-size:0.85rem; color:var(--p-text-muted);">${selectedDate}</td>
-          <td><span class="p-badge ${badgeCls}" id="coach_att_badge_${s.id}">${currentStatus === 'present' ? '✅ Present' : currentStatus === 'absent' ? '❌ Absent' : '⏳ Pending'}</span></td>
+          <td><span class="p-badge ${badgeCls}" id="${_e('coach_att_badge_' + s.id)}">${currentStatus === 'present' ? '✅ Present' : currentStatus === 'absent' ? '❌ Absent' : '⏳ Pending'}</span></td>
           <td style="display:flex;gap:6px;align-items:center;">
             <button class="p-btn p-btn-teal p-btn-sm" onclick="CK.coach.markAttendance('${s.id}','${selectedDate}','present')"
                     style="${currentStatus === 'present' ? 'opacity:1;' : 'opacity:0.4;'}">✅</button>
@@ -545,20 +555,41 @@ CK.coach = {
     return 'D';
   },
 
-  startSession(classId) {
+  async startSession(classId) {
     const c = this.classesDb.find(x => x.id === classId);
     if (!c) return;
+
+    // Persist live status so students can detect the active session
+    try {
+      const meetings = await CK.db.getMeetings();
+      const match = meetings.find(m => m.id === classId || m.title === c.class || m.title === c.title);
+      if (match) {
+        match.status = 'live';
+        match.liveStartedAt = new Date().toISOString();
+        await CK.db.saveMeeting(match);
+      }
+    } catch(e) {}
 
     this.nav('session');
     const nameEl = document.getElementById('coachSessionName');
     const subEl = document.getElementById('coachSessionSub');
     const cmdEl = document.getElementById('coachCommandCenter');
-    if (nameEl) nameEl.innerText = c.class;
-    if (subEl) subEl.innerText = `${c.level} · ${c.students} Students Connected`;
+    if (nameEl) nameEl.innerText = c.class || c.title;
+    if (subEl) subEl.innerText = `${c.level} · ${c.students || 0} Students Connected`;
     if (cmdEl) cmdEl.style.display = 'grid';
     if (CK.renderVaultBoard) CK.renderVaultBoard();
     this.startSessionTimer();
+    this._liveClassId = classId;
     CK.showToast("Live session started — timer running!", "success");
+  },
+
+  _updatePresenceCount() {
+    const el = document.querySelector('#coachCommandCenter [data-presence]');
+    try {
+      const presence = JSON.parse(localStorage.getItem('ck_live_presence') || '{}');
+      const active = Object.values(presence).filter(u => u.role === 'student' && Date.now() - (u.lastSeen || 0) < 300000).length;
+      if (el) el.textContent = active + ' Active';
+    } catch (_) { console.warn('[CK] presence data parse error', _); }
   },
 
   toggleSession() {
@@ -572,17 +603,34 @@ CK.coach = {
       if (cmdEl) cmdEl.style.display = 'grid';
       if (CK.renderVaultBoard) CK.renderVaultBoard();
       this.startSessionTimer();
+      this._updatePresenceCount();
+      clearInterval(this._presenceInterval);
+      this._presenceInterval = setInterval(() => this._updatePresenceCount(), 30000);
       CK.showToast("Triple-Pane Command Center started!", "success");
     } else {
       btn.innerText = '▶ Resume Command Center';
       btn.classList.remove('p-btn-ghost');
       btn.classList.add('p-btn-teal');
       this.stopSessionTimer();
+      clearInterval(this._presenceInterval);
       CK.showToast("Command Center paused", "info");
     }
   },
 
-  endSession() {
+  async endSession() {
+    // Clear live status in DB
+    if (this._liveClassId) {
+      try {
+        const meetings = await CK.db.getMeetings();
+        const match = meetings.find(m => m.id === this._liveClassId);
+        if (match) {
+          match.status = 'ended';
+          match.liveStartedAt = null;
+          await CK.db.saveMeeting(match);
+        }
+      } catch(e) {}
+      this._liveClassId = null;
+    }
     const cmdEl = document.getElementById('coachCommandCenter');
     if (cmdEl) cmdEl.style.display = 'none';
     const btn = document.getElementById('coachStartBtn');
@@ -592,6 +640,7 @@ CK.coach = {
       btn.classList.add('p-btn-teal');
     }
     this.stopSessionTimer();
+    clearInterval(this._presenceInterval);
     CK.showToast("Live session ended successfully", "info");
   },
 
@@ -614,15 +663,21 @@ CK.coach = {
     const text   = textEl ? textEl.value : '';
     if (!text) return CK.showToast('Note content is required', 'error');
 
+    const deltaEl = document.getElementById('coach_note_rating_delta');
+    const ratingDelta = Math.max(-500, Math.min(500, parseInt(deltaEl?.value || '0') || 0));
+
     await CK.tracker.addReview({
       student: name,
       text: text,
-      coach: this.coachProfile?.full_name || ''
+      coach: this.coachProfile?.full_name || '',
+      ratingDelta
     });
 
-    CK.showToast('Game assessment note saved successfully! ELO accuracy updated.', 'success');
+    const deltaMsg = ratingDelta !== 0 ? ` (Rating ${ratingDelta > 0 ? '+' : ''}${ratingDelta} ELO)` : '';
+    CK.showToast(`Game note saved${deltaMsg}!`, 'success');
     CK.closeModal('coachNoteModal');
     if (textEl) textEl.value = '';
+    if (deltaEl) deltaEl.value = '0';
   },
 
   async initReportEditor() {
@@ -636,6 +691,39 @@ CK.coach = {
     if (myStudents.length > 0) {
       this.loadStudentReport(myStudents[0].full_name);
     }
+  },
+
+  async loadCoachNotes() {
+    const el = document.getElementById('coachNotesContainer');
+    if (!el) return;
+    const _e = CK.esc || (s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+    const coachName = this.coachProfile?.full_name || CK.currentUser?.full_name || '';
+    const all = (await CK.db.getFeedback()) || [];
+    const mine = coachName
+      ? all.filter(f => !f.coach || f.coach === coachName)
+      : all;
+    if (!mine.length) {
+      el.innerHTML = '<div style="text-align:center;opacity:.45;padding:30px;">No notes yet — add an assessment above.</div>';
+      return;
+    }
+    const fmt = ts => ts ? new Date(ts).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+    el.innerHTML = mine.slice(0, 20).map(f => `
+      <div class="p-review-note" style="position:relative;">
+        <div class="p-review-note-header">
+          <span class="p-review-note-coach">🧑‍🎓 ${_e(f.student || f.studentName || '—')}</span>
+          <span class="p-review-note-date">${_e(fmt(f.created_at || f.date))}</span>
+        </div>
+        <p class="p-review-note-text">"${_e(f.note || f.text || f.body || '')}"</p>
+        <button style="position:absolute;top:10px;right:10px;background:none;border:none;color:var(--p-text-muted);cursor:pointer;font-size:0.8rem;" data-fbid="${_e(f.id)}" onclick="CK.coach._deleteFeedback(this.dataset.fbid)">✕</button>
+      </div>
+    `).join('');
+  },
+
+  async _deleteFeedback(id) {
+    if (!id) return;
+    await CK.db.deleteFeedback(id);
+    this.loadCoachNotes();
+    CK.showToast('Note deleted.', 'success');
   },
 
   async loadStudentReport(studentName) {
@@ -734,5 +822,92 @@ CK.coach = {
     });
     this.closePuzzleCreator();
     CK.showToast(`Puzzle "${title}" created and saved to library!`, 'success');
+  },
+
+  /* ── Effectiveness Panel ── */
+  async renderEffectivenessPanel() {
+    const coachName = CK.currentUser?.full_name || 'Coach';
+    const _e = CK.esc || (s => s);
+    const allStudents = (await CK.db.getProfiles('student')) || [];
+
+    // Effectiveness scorecard
+    const cardEl = document.getElementById('coachEffectivenessCard');
+    if (cardEl && CK.ai) {
+      const eff = await CK.ai.getCoachEffectiveness(coachName);
+      if (!eff) { cardEl.innerHTML = '<div style="text-align:center;opacity:.4;padding:30px;">No students assigned yet</div>'; return; }
+      const gradeColors = { 'A+': '#22c55e', A: '#22c55e', B: '#3b82f6', C: '#f59e0b', D: '#ef4444', F: '#ef4444' };
+      const gc = gradeColors[eff.grade] || '#3b82f6';
+      cardEl.innerHTML = `
+        <div style="display:flex; align-items:center; gap:30px; flex-wrap:wrap;">
+          <div style="width:100px;height:100px;border-radius:50%;background:${gc}22;border:3px solid ${gc};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <div style="font-size:2.5rem;font-weight:900;color:${gc};">${eff.grade}</div>
+          </div>
+          <div style="flex:1; display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:16px;">
+            <div style="text-align:center;padding:12px;border-radius:10px;background:rgba(255,255,255,0.03);">
+              <div style="font-size:1.5rem;font-weight:900;color:var(--p-gold);">${eff.effectiveness}</div>
+              <div style="font-size:0.75rem;color:var(--p-text-muted);">Overall Score</div>
+            </div>
+            <div style="text-align:center;padding:12px;border-radius:10px;background:rgba(255,255,255,0.03);">
+              <div style="font-size:1.5rem;font-weight:900;color:var(--p-teal);">+${eff.avgELOImprovement}</div>
+              <div style="font-size:0.75rem;color:var(--p-text-muted);">Avg ELO Gain</div>
+            </div>
+            <div style="text-align:center;padding:12px;border-radius:10px;background:rgba(255,255,255,0.03);">
+              <div style="font-size:1.5rem;font-weight:900;">${eff.retentionRate}%</div>
+              <div style="font-size:0.75rem;color:var(--p-text-muted);">Retention Rate</div>
+            </div>
+            <div style="text-align:center;padding:12px;border-radius:10px;background:rgba(255,255,255,0.03);">
+              <div style="font-size:1.5rem;font-weight:900;">${eff.studentCount}</div>
+              <div style="font-size:0.75rem;color:var(--p-text-muted);">Students</div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // Student progress under this coach
+    const progEl = document.getElementById('coachStudentProgress');
+    if (progEl) {
+      const myStudents = allStudents.filter(s => (s.coach || '').toLowerCase() === coachName.toLowerCase());
+      if (myStudents.length) {
+        progEl.innerHTML = myStudents.slice(0, 15).map(s => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;margin-bottom:6px;background:rgba(255,255,255,0.03);">
+            <div style="font-weight:600;font-size:0.85rem;">${_e(s.full_name || 'Unknown')}</div>
+            <div style="display:flex;gap:12px;font-size:0.78rem;">
+              <span style="color:var(--p-gold);">ELO: ${s.rating || 800}</span>
+              <span style="color:var(--p-teal);">XP: ${s.xp || 0}</span>
+            </div>
+          </div>`).join('');
+      } else {
+        progEl.innerHTML = '<div style="text-align:center;opacity:.4;padding:20px;">No students assigned yet</div>';
+      }
+    }
+
+    // Weakness overview
+    const weakEl = document.getElementById('coachWeaknessOverview');
+    if (weakEl && CK.ai) {
+      const myStudents = allStudents.filter(s => (s.coach || '').toLowerCase() === coachName.toLowerCase());
+      if (myStudents.length) {
+        const weaknessCounts = {};
+        for (const s of myStudents) {
+          try {
+            const analysis = await CK.ai.analyzeStudent(s.id);
+            if (analysis && analysis.weaknesses) {
+              analysis.weaknesses.forEach(w => {
+                // weaknesses is an array of category key strings like 'opening', 'tactics'
+                const catName = CK.ai.CATEGORIES?.[w]?.name || w;
+                weaknessCounts[catName] = (weaknessCounts[catName] || 0) + 1;
+              });
+            }
+          } catch(e) {}
+        }
+        const sorted = Object.entries(weaknessCounts).sort((a, b) => b[1] - a[1]);
+        weakEl.innerHTML = sorted.length ? sorted.map(([cat, count]) => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;margin-bottom:6px;background:rgba(255,255,255,0.03);">
+            <div style="font-weight:600;font-size:0.85rem;">${_e(cat)}</div>
+            <span style="color:var(--p-gold);font-weight:700;">${count} students need work</span>
+          </div>`).join('') : '<div style="text-align:center;opacity:.4;padding:20px;">No weakness data available</div>';
+      } else {
+        weakEl.innerHTML = '<div style="text-align:center;opacity:.4;padding:20px;">No students assigned yet</div>';
+      }
+    }
   }
 };

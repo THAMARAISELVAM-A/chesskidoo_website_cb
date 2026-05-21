@@ -134,7 +134,9 @@ CK.classroom = (() => {
     /* Init board after DOM has painted (avoids zero-width init in hidden div) */
     if (_hwBoard) { _hwBoard.destroy(); _hwBoard = null; }
     const cfg = {
-      pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
+      pieceTheme: function (piece) {
+        return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+      },
       position: 'start',
       orientation: 'white',
       draggable: false
@@ -291,7 +293,9 @@ CK.classroom = (() => {
       _lastLiveFen = session.fen;
       if (!_liveBoard) {
         _liveBoard = Chessboard('scLiveBoard', {
-          pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
+          pieceTheme: function (piece) {
+            return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+          },
           position:    session.fen,
           orientation: session.orientation || 'white',
           draggable:   false
@@ -417,7 +421,9 @@ CK.classroom = (() => {
     const liveFen = g.fen();
     requestAnimationFrame(() => {
       _ccLiveBoard = Chessboard('ccLiveBoard', {
-        pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
+        pieceTheme: function (piece) {
+          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+        },
         position:    liveFen,
         orientation: 'white',
         draggable:   false

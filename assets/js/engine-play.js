@@ -125,24 +125,17 @@ CK.enginePlay = (() => {
   /* ─── Public: get best move ─── */
   function getBestMove(game, depth = 3) {
     if (game.game_over()) return null;
-    const isWhite = game.turn() === 'w';
     const moves = _orderMoves(game.moves({ verbose: true }));
     let bestMove = null, bestScore = -Infinity;
 
-    for (const move of moves) {
-      game.move(move);
-      const raw = evaluate(game);
-      const score = isWhite ? raw : -raw;
-      game.undo();
-
-      if (score > bestScore || bestMove === null) {
-        bestScore = score;
-        bestMove = move;
+    if (depth === 1) {
+      for (const move of moves) {
+        game.move(move);
+        const score = -evaluate(game);
+        game.undo();
+        if (score > bestScore || bestMove === null) { bestScore = score; bestMove = move; }
       }
-    }
-    // Run deeper search on best candidates
-    if (depth > 1) {
-      bestScore = -Infinity;
+    } else {
       for (const move of moves) {
         game.move(move);
         const score = -negamax(game, depth - 1, -Infinity, Infinity);
@@ -202,12 +195,15 @@ CK.enginePlay = (() => {
     _pvStopClock();
     _pvClockActive = color;
     _pvRenderClocks();
+    let _lastTick = Date.now();
     _pvClockInterval = setInterval(() => {
       if (_pvGameOver) { _pvStopClock(); return; }
-      _pvClocks[color]--;
+      const now = Date.now();
+      const elapsed = Math.floor((now - _lastTick) / 1000);
+      _lastTick += elapsed * 1000;
+      _pvClocks[color] = Math.max(0, _pvClocks[color] - elapsed);
       _pvRenderClocks();
       if (_pvClocks[color] <= 0) {
-        _pvClocks[color] = 0;
         _pvStopClock();
         _pvGameOver = true;
         const won = color !== _pvPlayerColor;
@@ -257,7 +253,9 @@ CK.enginePlay = (() => {
 
     if (_pvBoard) { try { _pvBoard.destroy(); } catch(e) {} _pvBoard = null; }
     _pvBoard = Chessboard(boardId, {
-      pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+      pieceTheme: function (piece) {
+        return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+      },
       position: 'start',
       orientation: playerColor,
       draggable: true,
@@ -334,9 +332,13 @@ CK.enginePlay = (() => {
     let msg = '';
     if (_pvGame.in_checkmate()) {
       msg = _pvGame.turn() === _pvPlayerColor ? '😔 Checkmate — Computer wins! Keep practicing.' : '🎉 Checkmate — YOU WIN! Brilliant!';
-    } else if (_pvGame.in_draw()) msg = '🤝 Game drawn — well played!';
-    else if (_pvGame.in_stalemate()) msg = '🤝 Stalemate — almost had it!';
-    else msg = '⚔️ Game over!';
+    } else if (_pvGame.in_stalemate()) {
+      msg = '🤝 Stalemate — almost had it!';
+    } else if (_pvGame.in_draw()) {
+      msg = '🤝 Game drawn — well played!';
+    } else {
+      msg = '⚔️ Game over!';
+    }
     _pvUpdateStatus(statusId || 'pvStatus', msg);
     if (typeof CK !== 'undefined' && CK.showToast) CK.showToast(msg, msg.includes('WIN') ? 'success' : 'info');
   }

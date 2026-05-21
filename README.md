@@ -1,113 +1,78 @@
-# ChessKidoo Website
+# ChessKidoo Academy
 
-A complete full-stack chess academy website built with vanilla HTML/CSS/JavaScript frontend and Node.js/Express backend.
+Online management platform for ChessKidoo — Chennai's premier chess academy.
+Three portals: Admin, Coach, Student/Parent. Built with Vite + Supabase.
 
-## Features
+## Stack
 
-- **Landing Page**: Professional marketing site with features, curriculum, coaches, and pricing
-- **Authentication**: JWT-based login system with role-based access
-- **Admin Portal**: Manage students, coaches, and classes
-- **Student Portal**: View progress, schedule, and game reviews
-- **Coach Portal**: Manage classes and student progress
-- **Responsive Design**: Mobile-friendly interface
-- **Mock API**: Works without backend for development
+- **Frontend**: Vite (multi-page), vanilla JS modules, CSS custom properties
+- **Backend**: Supabase (Postgres + Auth + Realtime + Edge Functions)
+- **Auth**: Supabase Auth (email/password) with row-level security
+- **Deploy**: Vercel (static) + Supabase (backend)
 
-## Demo Credentials
+## Quick start
 
-- **Admin**: `admin@ck` / `Admin123$`
-- **Student**: `student@ck` / `Student123`
-- **Coach**: `coach@ck` / `Coach123`
-
-## Local Development
-
-### Frontend Only (Recommended for Vercel)
 ```bash
-# Serve static files
-python -m http.server 8080
-# or
-npx serve .
-```
-
-### Full Stack Development
-```bash
-# Install dependencies
+cp .env.example .env.local   # fill in your Supabase credentials
 npm install
-
-# Start backend server
-npm run dev
-# Server runs on http://localhost:5000
-
-# In another terminal, serve frontend
-python -m http.server 8080
+npm run dev                  # http://localhost:5173
 ```
 
-### Database Setup (PostgreSQL)
+## Environment variables
+
+See `.env.example`. All client-side vars are prefixed `VITE_`.
+Server-side secrets (Resend API key, service role key) live only in
+Supabase Edge Function secrets — never in `.env.local` or source code.
+
+## Database setup
+
+1. Create a Supabase project at https://supabase.com
+2. Run `supabase_setup.sql` in the SQL Editor to create all tables
+3. Run `supabase/rls.sql` to enable row-level security on every table
+4. Verify: every table in Table Editor → RLS should show **RLS enabled**
+5. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env.local`
+
+## Project structure
+
+```
+src/
+  lib/          Core utilities (auth, db, router, toast, sanitize)
+  pages/        One folder per portal (admin, student, coach, arena, landing)
+  components/   Reusable UI components
+  styles/       CSS design tokens + per-page stylesheets
+  i18n/         Translation files (en, ta)
+supabase/
+  migrations/   SQL DDL migrations (source of truth)
+  rls.sql       Row-level security policies
+  functions/    Edge Functions (send-demo-email, etc.)
+assets/         Legacy static JS/CSS (being migrated to src/)
+public/         Static files served as-is (images, favicon)
+```
+
+## Build
+
 ```bash
-# Create database
-createdb chesskidoo
-
-# Run initialization script
-psql -U postgres -d chesskidoo -f mock/db_init.sql
+npm run build    # outputs to dist/
+npm run preview  # preview production build locally
+npm run lint     # ESLint
+npm run format   # Prettier
 ```
 
-## Deployment
+## Portals
 
-### Vercel (Frontend Only)
-1. Push this code to GitHub
-2. Connect repository to Vercel
-3. Deploy - the site will be available at your Vercel domain
+| Portal  | Route      | Guard         |
+|---------|------------|---------------|
+| Admin   | /admin     | role: admin   |
+| Coach   | /coach     | role: coach   |
+| Student | /student   | role: student |
+| Arena   | /arena     | authenticated |
+| Landing | /          | public        |
+| Login   | /login     | public        |
 
-### Backend Deployment (Optional)
-For full functionality, deploy the backend separately:
-- **Railway**: `railway login && railway init`
-- **Render**: Connect GitHub repo
-- **Heroku**: `heroku create && git push heroku master`
+## Edge Functions
 
-## Project Structure
+`supabase/functions/send-demo-email/` — handles demo booking form submissions.
+Replaces the client-side EmailJS integration (keys stayed server-side).
 
-```
-/ (project root)
-├── index.html          # Landing page
-├── login.html          # Login page
-├── admin.html          # Admin dashboard
-├── student.html        # Student dashboard
-├── coach.html          # Coach dashboard
-├── assets/
-│   ├── css/style.css   # Main styles
-│   ├── css/dashboard.css # Dashboard styles
-│   └── js/             # JavaScript files
-├── mock/               # Mock data and API
-├── routes/             # Backend API routes
-├── server.js           # Express server
-├── db.js               # Database connection
-└── package.json        # Dependencies
-```
-
-## Technologies Used
-
-- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
-- **Backend**: Node.js, Express.js
-- **Database**: PostgreSQL
-- **Authentication**: JWT (JSON Web Tokens)
-- **Charts**: Chart.js
-- **Deployment**: Vercel (frontend), various options for backend
-
-## API Endpoints
-
-- `POST /api/auth/login` - User authentication
-- `GET /api/students` - Get all students (admin)
-- `GET /api/students/:id` - Get specific student
-- `GET /api/coaches` - Get all coaches
-- `GET /api/classes` - Get all classes
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License.
+Deploy: `supabase functions deploy send-demo-email`
+Secrets: `supabase secrets set RESEND_API_KEY=re_... ACADEMY_EMAIL=...`

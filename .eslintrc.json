@@ -1,0 +1,34 @@
+{
+  "env": {
+    "browser": true,
+    "es2022": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module"
+  },
+  "extends": [
+    "eslint:recommended",
+    "prettier"
+  ],
+  "globals": {
+    "Chess":      "readonly",
+    "Chessboard": "readonly",
+    "CK":         "writable"
+  },
+  "rules": {
+    "no-unused-vars":        ["warn", { "argsIgnorePattern": "^_" }],
+    "no-console":            ["warn", { "allow": ["warn", "error"] }],
+    "no-undef":              "error",
+    "eqeqeq":                ["error", "always"],
+    "no-eval":               "error",
+    "no-implied-eval":       "error",
+    "no-new-func":           "error",
+    "no-script-url":         "error",
+    "no-param-reassign":     "warn",
+    "prefer-const":          "warn",
+    "no-var":                "error",
+    "no-empty":              ["error", { "allowEmptyCatch": true }],
+    "no-inner-declarations": "off"
+  }
+}

@@ -79,13 +79,9 @@
   CK.navigate = (section) => {
     // Route to arena page first (before landing section check)
     if (section === 'arena') {
-      console.log('Main: Navigating to arena page');
       CK.showPage('arena-page');
-      console.log('Main: Arena page shown, initializing...');
       setTimeout(() => {
-        console.log('Main: Checking if CK.arena exists:', !!CK.arena);
         if (CK.arena) {
-          console.log('Main: Calling arena.init()');
           CK.arena.init();
         } else {
           console.error('Main: CK.arena is not defined!');
@@ -145,30 +141,51 @@
   };
 
   /* ─── Modal System ─── */
+  let _modalPreviousFocus = null;
+  const _focusableSelectors = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
   CK.openModal = (id) => {
     const m = document.getElementById(id);
-    if (m) {
-      m.classList.add('active');
-      m.classList.add('open'); // For new portals
-      m.style.display = 'flex';
-      if (m.classList.contains('p-modal-overlay')) m.style.display = 'grid';
-    }
+    if (!m) return;
+    _modalPreviousFocus = document.activeElement;
+    m.classList.add('active', 'open');
+    m.style.display = m.classList.contains('p-modal-overlay') ? 'grid' : 'flex';
+    m.removeAttribute('aria-hidden');
+    document.body.setAttribute('aria-hidden', 'true');
+    // Focus first focusable element inside modal
+    requestAnimationFrame(() => {
+      const first = m.querySelector(_focusableSelectors);
+      if (first) first.focus();
+    });
+    // Trap focus inside modal
+    m._trapFocus = (e) => {
+      if (e.key !== 'Tab') return;
+      const focusable = [...m.querySelectorAll(_focusableSelectors)];
+      if (!focusable.length) return;
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    m.addEventListener('keydown', m._trapFocus);
   };
 
   CK.closeModal = (id) => {
+    const closeOne = (m) => {
+      m.classList.remove('active', 'open');
+      m.style.display = 'none';
+      m.setAttribute('aria-hidden', 'true');
+      if (m._trapFocus) { m.removeEventListener('keydown', m._trapFocus); m._trapFocus = null; }
+    };
     if (id) {
       const m = document.getElementById(id);
-      if (m) {
-        m.classList.remove('active');
-        m.classList.remove('open');
-        m.style.display = 'none';
-      }
+      if (m) closeOne(m);
     } else {
-      document.querySelectorAll('.modal-overlay, .p-modal-overlay').forEach(m => {
-        m.classList.remove('active');
-        m.classList.remove('open');
-        m.style.display = 'none';
-      });
+      document.querySelectorAll('.modal-overlay, .p-modal-overlay').forEach(closeOne);
+    }
+    document.body.removeAttribute('aria-hidden');
+    if (_modalPreviousFocus && typeof _modalPreviousFocus.focus === 'function') {
+      _modalPreviousFocus.focus();
+      _modalPreviousFocus = null;
     }
   };
 
@@ -254,20 +271,40 @@
     input.value = '';
     msgs.scrollTop = msgs.scrollHeight;
 
-    const replies = {
-      fee: "Our fees range from ₹800 to ₹5,200/month depending on the session type. Group sessions start at ₹800! 💰",
-      schedule: "We offer WEEKDAY (17:00) and WEEKEND sessions. Group and 1-on-1 options available! 📅",
-      coach: "We have 8 FIDE-certified coaches: Ranjith, Vishnu, Rohith Selvaraj, Gyansurya, Saran, Yogesh, Haris, and Arivuselvam! ♞",
-      beginner: "Beginners start with piece movements, basic tactics, and fun puzzles. Your child will love it! 🎯",
-      demo: "Click 'Book Free Demo' in the menu to schedule a free trial class with one of our expert coaches! 🎉",
-      default: "Great question! Our FIDE-certified coaches are here to guide you. Want to book a free demo class? 🏆"
-    };
+    const replies = [
+      { keys: ['fee', 'price', 'cost', 'how much'],     text: "Our fees range from ₹800 to ₹5,200/month depending on the session type. Group sessions start at ₹800! 💰" },
+      { keys: ['schedule', 'timing', 'when', 'time'],    text: "We offer WEEKDAY (17:00) and WEEKEND sessions. Group and 1-on-1 options available! 📅" },
+      { keys: ['coach', 'teacher', 'instructor'],         text: "We have 8 FIDE-certified coaches: Ranjith, Vishnu, Rohith Selvaraj, Gyansurya, Saran, Yogesh, Haris, and Arivuselvam! ♞" },
+      { keys: ['beginner', 'start', 'new to chess'],      text: "Beginners start with piece movements, basic tactics, and fun puzzles. Your child will love it! 🎯" },
+      { keys: ['demo', 'trial', 'free class', 'try'],     text: "Click 'Book Free Demo' in the menu to schedule a free trial class with one of our expert coaches! 🎉" },
+      { keys: ['rating', 'elo', 'level'],                 text: "Our students progress through ELO milestones: 800 → 1000 → 1200 → 1400 → 1600 → 1800+. Track your progress in the Student Portal! 📈" },
+      { keys: ['tournament', 'compete', 'championship'],  text: "We organize monthly tournaments and prepare students for FIDE-rated events. Check the Tournaments section! 🏆" },
+      { keys: ['puzzle', 'tactic', 'practice'],            text: "Practice puzzles daily to sharpen your tactics! Our portal has 60+ curated puzzles with spaced repetition. 🧩" },
+      { keys: ['opening', 'sicilian', 'gambit'],           text: "We teach all major openings: Italian, Sicilian, French, Caro-Kann, Queen's Gambit, and more. Use the Opening Trainer! 📖" },
+      { keys: ['endgame', 'rook ending', 'king pawn'],     text: "Endgame mastery is crucial! We cover K+P, Rook endgames, Lucena, Philidor defense, and opposition. ♔" },
+      { keys: ['arena', 'play ai', 'computer', 'stockfish'], text: "The Chess Arena uses Stockfish — one of the strongest engines in the world — with 4 difficulty levels! ⚡" },
+      { keys: ['age', 'old', 'young', 'child'],            text: "We teach children ages 5-17. Our curriculum adapts to each age group and skill level. 👶" },
+      { keys: ['online', 'remote', 'google meet'],         text: "All classes are held online via Google Meet. Students can join from anywhere in the world! 🌍" },
+      { keys: ['certificate', 'cert'],                     text: "Students earn certificates upon completing each level. Download yours from the Student Portal! 🎓" },
+      { keys: ['parent', 'mom', 'dad', 'guardian'],        text: "Parents can track their child's progress, attendance, and reports through the Parent Portal. 👨‍👩‍👧" },
+      { keys: ['attendance'],                              text: "Attendance is tracked automatically. View the calendar in your portal to see your record. 📅" },
+      { keys: ['whatsapp', 'contact', 'phone', 'call'],    text: "WhatsApp: +91 90258 46663 | Email: chesskidoo37@gmail.com | We respond within 24 hours! 📩" },
+      { keys: ['hello', 'hi', 'hey', 'hola'],              text: "Hello! Welcome to ChessKidoo. Ask me about classes, coaches, fees, or anything chess-related! ♟" },
+      { keys: ['thank', 'thanks', 'thx'],                  text: "You're welcome! Feel free to ask anything else about chess or our academy. 🙏" },
+      { keys: ['bye', 'goodbye', 'see you'],               text: "Goodbye! Keep playing chess and improving. See you at ChessKidoo! ♔" },
+      { keys: ['pay', 'razorpay', 'upi', 'payment'],       text: "We accept UPI (Google Pay, PhonePe, Paytm) and cards via Razorpay. Pay from the Fee Gateway in your portal! 💳" },
+      { keys: ['report', 'progress'],                      text: "Your coach submits monthly progress reports covering tactics, endgame, openings, and sportsmanship. Check Reports in your portal! 📊" },
+      { keys: ['game', 'play'],                            text: "Play against our AI in the Arena, or try fun mini-games like Memory Chess, Speed Moves, and Puzzle Rush! 🎮" },
+      { keys: ['login', 'sign in', 'account'],             text: "Click 'Login' in the top menu. Your credentials are set by the academy admin. Contact us if you need access! 🔑" },
+    ];
 
-    const key = Object.keys(replies).find(k => msg.toLowerCase().includes(k)) || 'default';
+    const lower = msg.toLowerCase();
+    const match = replies.find(r => r.keys.some(k => lower.includes(k)));
+    const reply = match ? match.text : "Great question! Our FIDE-certified coaches are here to guide you. Want to book a free demo class? 🏆";
     setTimeout(() => {
-      msgs.innerHTML += `<div class="bot-msg bot-msg--bot">${replies[key]}</div>`;
+      msgs.innerHTML += `<div class="bot-msg bot-msg--bot">${reply}</div>`;
       msgs.scrollTop = msgs.scrollHeight;
-    }, 800);
+    }, 600 + Math.random() * 400);
   };
 
   CK.handleDemoSubmit = async (e) => {
@@ -388,18 +425,40 @@
     });
   }
 
+  let _scrollRaf = null;
   window.addEventListener('scroll', () => {
-    if (header) header.classList.toggle('scrolled', window.scrollY > 50);
-    const progress = document.getElementById('scrollProgress');
-    if (progress) {
-      const pct = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
-      progress.style.width = pct + '%';
-    }
-    updateActiveNav();
-  });
+    if (_scrollRaf) return;
+    _scrollRaf = requestAnimationFrame(() => {
+      _scrollRaf = null;
+      if (header) header.classList.toggle('scrolled', window.scrollY > 50);
+      const progress = document.getElementById('scrollProgress');
+      if (progress) {
+        const pct = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+        progress.style.width = pct + '%';
+      }
+      updateActiveNav();
+    });
+  }, { passive: true });
 
   // Run once on load
   window.addEventListener('load', updateActiveNav);
+
+  /* ─── Offline Indicator ─── */
+  const _offlineBanner = document.getElementById('offlineBanner');
+  const _setOfflineUI = (isOffline) => {
+    if (_offlineBanner) _offlineBanner.style.display = isOffline ? 'block' : 'none';
+  };
+  window.addEventListener('offline', () => { _setOfflineUI(true); CK.showToast('You are offline. Some features may be limited.', 'warning'); });
+  window.addEventListener('online',  () => { _setOfflineUI(false); CK.showToast('Back online!', 'success'); });
+  _setOfflineUI(!navigator.onLine);
+
+  /* ─── Global Error Handler ─── */
+  window.addEventListener('error', (e) => {
+    console.error('[ChessKidoo] Uncaught error:', e.message, e.filename, e.lineno);
+  });
+  window.addEventListener('unhandledrejection', (e) => {
+    console.error('[ChessKidoo] Unhandled promise rejection:', e.reason);
+  });
 
   /* ─── Intersection Observer (Reveal Animations) ─── */
   const observer = new IntersectionObserver((entries) => {
@@ -424,13 +483,15 @@
 
     // Restore session — re-validate via Supabase, fall back to cached profile if offline
     (async () => {
+      let restoredUser = null;
+
       if (window.supabaseClient) {
         try {
           const { data: { session } } = await window.supabaseClient.auth.getSession();
           if (session?.user) {
             const cached = localStorage.getItem('ck_user');
             if (cached) {
-              try { CK.currentUser = JSON.parse(cached); } catch(e) { localStorage.removeItem('ck_user'); }
+              try { restoredUser = JSON.parse(cached); CK.currentUser = restoredUser; } catch(e) { localStorage.removeItem('ck_user'); }
             }
           } else {
             localStorage.removeItem('ck_user');
@@ -439,55 +500,29 @@
         } catch(e) {
           const cached = localStorage.getItem('ck_user');
           if (cached) {
-            try { CK.currentUser = JSON.parse(cached); } catch(e2) { localStorage.removeItem('ck_user'); }
+            try { restoredUser = JSON.parse(cached); CK.currentUser = restoredUser; } catch(e2) { localStorage.removeItem('ck_user'); }
           }
         }
       } else {
         const cached = localStorage.getItem('ck_user');
         if (cached) {
-          try { CK.currentUser = JSON.parse(cached); } catch(e) { localStorage.removeItem('ck_user'); }
+          try { restoredUser = JSON.parse(cached); CK.currentUser = restoredUser; } catch(e) { localStorage.removeItem('ck_user'); }
         }
       }
-    })();
-    
-    // ALWAYS start on landing page as requested by user
-    CK.showPage('landing-page');
 
-    // Counter animations (supports both integers and float decimals)
-    document.querySelectorAll('.hero-stat-num').forEach(el => {
-      const text = el.textContent;
-      const hasDecimal = text.includes('.');
-      
-      if (hasDecimal) {
-        const numPart = parseFloat(text.replace(/[^\d.]/g, ''));
-        if (isNaN(numPart)) return;
-        let count = 0.0;
-        const suffix = text.replace(/[\d.]/g, '');
-        const step = numPart / 12;
-        const timer = setInterval(() => {
-          count = Math.min(count + step, numPart);
-          el.textContent = count.toFixed(1) + suffix;
-          if (count >= numPart) {
-            el.textContent = numPart.toFixed(1) + suffix;
-            clearInterval(timer);
-          }
-        }, 25);
+      if (restoredUser?.role) {
+        const role = restoredUser.role.toLowerCase();
+        CK.showPage(`${role}-page`);
+        setTimeout(() => {
+          if (role === 'admin'   && CK.admin)   CK.admin.init();
+          if (role === 'student' && CK.student) CK.student.init();
+          if (role === 'coach'   && CK.coach)   CK.coach.init();
+          if (role === 'parent'  && CK.parents) CK.parents.init();
+        }, 50);
       } else {
-        const target = parseInt(text.replace(/\D/g,''), 10);
-        if (isNaN(target)) return;
-        let count = 0;
-        const suffix = text.replace(/[0-9]/g,'');
-        const step = Math.ceil(target / 12);
-        const timer = setInterval(() => {
-          count = Math.min(count + step, target);
-          el.textContent = count + suffix;
-          if (count >= target) {
-            el.textContent = target + suffix;
-            clearInterval(timer);
-          }
-        }, 25);
+        CK.showPage('landing-page');
       }
-    });
+    })();
   });
 
   CK.toggleFaq = (button) => {
@@ -803,7 +838,9 @@ ta: {
       if (this.board) { this.board.destroy(); this.board = null; }
       this.game = new Chess();
       this.board = Chessboard(containerId, {
-        pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
+        pieceTheme: function (piece) {
+          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+        },
         position: 'start',
         orientation: this.orientation
       });
@@ -850,7 +887,9 @@ ta: {
 
       if (this.board) { this.board.destroy(); this.board = null; }
       this.board = Chessboard(boardId, {
-        pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
+        pieceTheme: function (piece) {
+          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+        },
         position: this.game.fen(),
         orientation: this.orientation
       });
@@ -947,7 +986,9 @@ ta: {
         this._setBanner(null, '');
         if (this.board) { this.board.destroy(); this.board = null; }
         this.board = Chessboard(this._activeBoardId, {
-          pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
+          pieceTheme: function (piece) {
+            return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+          },
           position: 'start',
           orientation: this.orientation
         });
@@ -1051,18 +1092,25 @@ ta: {
       // Real engine evaluation — async overlay from Lichess Cloud Analysis
       if (fen && window.CK && CK.engine) {
         document.querySelectorAll('.labEvalText').forEach(el => el.style.opacity = '0.5');
-        CK.engine.evaluate(fen).then(result => {
-          if (result) CK.engine.applyToUI(result);
-          else document.querySelectorAll('.labEvalText').forEach(el => el.style.opacity = '1');
-        });
+        CK.engine.evaluate(fen)
+          .then(result => {
+            if (result) CK.engine.applyToUI(result);
+            else document.querySelectorAll('.labEvalText').forEach(el => el.style.opacity = '1');
+          })
+          .catch(() => document.querySelectorAll('.labEvalText').forEach(el => el.style.opacity = '1'));
       }
     },
 
     _resetModeBtns() {
-      ['labModeAnalysis','labModeGuess','labModeSpar','labModePlay'].forEach(id => {
+      ['labModeAnalysis','labModeGuess','labModeSpar','labModePlay','labModeLichess'].forEach(id => {
         const b = document.getElementById(id);
         if (b) { b.classList.remove('active','active-guess','active-spar'); }
       });
+      // Restore main lab grid; hide Lichess panel
+      const grid = document.getElementById('studentLabMainGrid');
+      if (grid) grid.style.display = '';
+      const lp = document.getElementById('labLichessPanel');
+      if (lp) lp.style.display = 'none';
     },
 
     _setBanner(text, type) {
@@ -1110,6 +1158,14 @@ ta: {
         if (b) b.classList.add('active');
         this._initPlayMode();
         this._setBanner('♟ <strong>Play vs Computer:</strong> Choose your difficulty and start playing! The engine adapts to your level.', 'spar');
+      } else if (mode === 'lichess') {
+        const b = document.getElementById('labModeLichess');
+        if (b) b.classList.add('active');
+        const grid = document.getElementById('studentLabMainGrid');
+        if (grid) grid.style.display = 'none';
+        const lp = document.getElementById('labLichessPanel');
+        if (lp) lp.style.display = 'block';
+        this._setBanner('🌐 <strong>Lichess Viewer:</strong> Paste a game, study, or puzzle URL and click Embed.', 'analysis');
       } else {
         const b = document.getElementById('labModeAnalysis');
         if (b) b.classList.add('active');
@@ -1149,7 +1205,9 @@ ta: {
       for (let i = 0; i < this.currentMove; i++) g.move(this.history[i]);
       if (this.board) { this.board.destroy(); this.board = null; }
       this.board = Chessboard(this._activeBoardId, {
-        pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
+        pieceTheme: function (piece) {
+          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+        },
         position: g.fen(),
         orientation: this.orientation
       });
@@ -1161,7 +1219,9 @@ ta: {
       const g = new Chess();
       if (this.board) { this.board.destroy(); this.board = null; }
       this.board = Chessboard(this._activeBoardId, {
-        pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
+        pieceTheme: function (piece) {
+          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+        },
         position: g.fen(),
         orientation: 'white',
         draggable: false,
@@ -1212,7 +1272,7 @@ ta: {
           this._setBanner('🏆 <strong>Brilliant!</strong> You guessed all moves in this game!', 'guess');
         } else {
           const next = this.history[this.currentMove];
-          this._setBanner(`✓ <strong>${expected.san}</strong> — now guess ${next.color === 'w' ? 'White' : 'Black'}\'s next move!`, 'guess');
+          this._setBanner(`✓ <strong>${expected.san}</strong> — now guess ${next.color === 'w' ? 'White' : 'Black'}'s next move!`, 'guess');
         }
       } else {
         CK.showToast('✗ Not quite — try again!', 'warning');
@@ -1233,7 +1293,9 @@ ta: {
       if (this.board) { this.board.destroy(); this.board = null; }
       const self = this;
       this.board = Chessboard(this._activeBoardId, {
-        pieceTheme: 'https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
+        pieceTheme: function (piece) {
+          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+        },
         position: 'start',
         orientation: 'white',
         draggable: true,
@@ -1290,26 +1352,40 @@ ta: {
       }
       const fen = this._sparGame.fen();
       if (window.CK && CK.engine) {
-        CK.engine.evaluate(fen).then(result => {
-          if (!this._sparGame || this._sparGame.game_over()) return;
-          if (result && result.pv) {
-            const uci = result.pv.split(' ')[0];
-            const move = this._sparGame.move({ from: uci.slice(0,2), to: uci.slice(2,4), promotion: uci[4] || 'q' });
-            if (move) {
-              if (this.board) this.board.position(this._sparGame.fen(), true);
-              if (!_checkGameOver()) this._setBanner(`🤖 <strong>Bot played:</strong> ${move.san} (Stockfish d${result.depth}). Your turn!`, 'spar');
-              this.updateAnalysis(this._sparGame.fen(), move);
-              return;
+        CK.engine.evaluate(fen)
+          .then(result => {
+            if (!this._sparGame || this._sparGame.game_over()) return;
+            if (result && result.pv) {
+              const uci = result.pv.split(' ')[0];
+              const move = this._sparGame.move({ from: uci.slice(0,2), to: uci.slice(2,4), promotion: uci[4] || 'q' });
+              if (move) {
+                if (this.board) this.board.position(this._sparGame.fen(), true);
+                if (!_checkGameOver()) this._setBanner(`🤖 <strong>Bot played:</strong> ${move.san} (Stockfish d${result.depth}). Your turn!`, 'spar');
+                this.updateAnalysis(this._sparGame.fen(), move);
+                return;
+              }
             }
-          }
-          const moves = this._sparGame.moves({ verbose: true });
-          if (moves.length) {
-            const m = moves[Math.floor(Math.random() * moves.length)];
-            const move = this._sparGame.move(m);
-            if (move && this.board) this.board.position(this._sparGame.fen(), true);
-            if (!_checkGameOver()) this._setBanner(`🤖 <strong>Bot played:</strong> ${move ? move.san : '?'}. Your turn!`, 'spar');
-          }
-        });
+            // Fall back to random move when engine result unusable
+            if (!this._sparGame || this._sparGame.game_over()) return;
+            const moves = this._sparGame.moves({ verbose: true });
+            if (moves.length) {
+              const m = moves[Math.floor(Math.random() * moves.length)];
+              const move = this._sparGame.move(m);
+              if (move && this.board) this.board.position(this._sparGame.fen(), true);
+              if (!_checkGameOver()) this._setBanner(`🤖 <strong>Bot played:</strong> ${move ? move.san : '?'}. Your turn!`, 'spar');
+            }
+          })
+          .catch(() => {
+            // Engine unavailable — fall back to random move
+            if (!this._sparGame || this._sparGame.game_over()) return;
+            const moves = this._sparGame.moves({ verbose: true });
+            if (moves.length) {
+              const m = moves[Math.floor(Math.random() * moves.length)];
+              const move = this._sparGame.move(m);
+              if (move && this.board) this.board.position(this._sparGame.fen(), true);
+              if (!_checkGameOver()) this._setBanner('🤖 <strong>Bot played</strong> (random). Your turn!', 'spar');
+            }
+          });
       }
     },
 
@@ -1354,6 +1430,49 @@ ta: {
       }
       const active = Object.values(JSON.parse(localStorage.getItem('ck_live_presence') || '{}')).filter(u => u.role === 'student' && Date.now() - u.lastSeen < 300000).length;
       CK.showToast(`📢 Position broadcasted to ${active} active student${active !== 1 ? 's' : ''}!`, 'success');
+    },
+
+    lichessEmbed(inputId, frameId) {
+      const raw = (typeof inputId === 'string' && inputId.startsWith('http'))
+        ? inputId
+        : document.getElementById(inputId)?.value?.trim();
+      if (!raw) { CK.showToast('Enter a Lichess URL', 'warning'); return; }
+
+      let embedUrl = null;
+      // Study with chapter: lichess.org/study/{id}/{chapterId}
+      const sc = raw.match(/lichess\.org\/study\/([a-zA-Z0-9]+)\/([a-zA-Z0-9]+)/);
+      // Study without chapter: lichess.org/study/{id}
+      const s  = raw.match(/lichess\.org\/study\/([a-zA-Z0-9]+)/);
+      // Game: lichess.org/{8-char-id}
+      const g  = raw.match(/lichess\.org\/(?:embed\/game\/)?([a-zA-Z0-9]{8})(?:[^a-zA-Z0-9]|$)/);
+
+      if (sc)     embedUrl = `https://lichess.org/study/embed/${sc[1]}/${sc[2]}?bg=dark&theme=brown`;
+      else if (s) embedUrl = `https://lichess.org/study/embed/${s[1]}?bg=dark&theme=brown`;
+      else if (g) embedUrl = `https://lichess.org/embed/game/${g[1]}?bg=dark&theme=brown`;
+
+      if (!embedUrl) {
+        CK.showToast('Unrecognised URL. Supported: lichess.org/abcd1234 (game) or lichess.org/study/… (study).', 'error');
+        return;
+      }
+      const frame = document.getElementById(frameId);
+      if (!frame) return;
+      frame.innerHTML = `<iframe src="${embedUrl}" style="width:100%;height:600px;border:0;border-radius:10px;display:block;" allowfullscreen loading="lazy"></iframe>`;
+      // Show wrapper card for coach lab
+      if (frameId === 'coachLichessEmbedFrame') {
+        const card = document.getElementById('coachLichessEmbedCard');
+        if (card) card.style.display = 'block';
+      }
+    },
+
+    lichessMyGames(frameId) {
+      const username = CK.student?.userProfile?.lichess_username;
+      if (!username) {
+        CK.showToast('Link your Lichess account first — go to Linked Accounts.', 'warning');
+        return;
+      }
+      const frame = document.getElementById(frameId);
+      if (!frame) return;
+      frame.innerHTML = `<iframe src="https://lichess.org/@/${encodeURIComponent(username)}/tv?bg=dark" style="width:100%;height:600px;border:0;border-radius:10px;display:block;" allowfullscreen loading="lazy"></iframe>`;
     },
 
     handleFileUpload(event, boardId) {
@@ -1449,5 +1568,72 @@ ta: {
     const modal = document.getElementById('vaultModal');
     if (modal) modal.style.display = 'none';
   };
+
+  /* ─── Global Keyboard Shortcuts ─── */
+  document.addEventListener('keydown', (e) => {
+    // Don't trigger shortcuts when typing in inputs/textareas
+    const tag = document.activeElement?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+    // Ctrl/Cmd + K — Quick search / navigate
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      // Focus admin search if on admin page, else show toast hint
+      const searchEl = document.getElementById('adminGlobalSearch');
+      if (searchEl && document.getElementById('admin-page')?.classList.contains('active')) {
+        searchEl.focus();
+      } else {
+        CK.showToast('Ctrl+K: Quick Search (available in Admin portal)', 'info');
+      }
+    }
+
+    // Escape — Close modals/drawers
+    if (e.key === 'Escape') {
+      CK.closeModal();
+      const drawer = document.getElementById('notifDrawer');
+      if (drawer?.classList.contains('notif-open')) CK.notifs?.toggleDrawer();
+    }
+
+    // Alt+H — Go to home/dashboard
+    if (e.altKey && e.key === 'h') {
+      e.preventDefault();
+      const user = CK.currentUser;
+      if (user) {
+        const role = user.role.toLowerCase();
+        if (role === 'admin' && CK.admin)     CK.admin.showPanel('dashboard');
+        if (role === 'student' && CK.student) CK.student.nav('home');
+        if (role === 'coach' && CK.coach)     CK.coach.nav('home');
+      } else {
+        CK.showPage('landing-page');
+      }
+    }
+
+    // Alt+N — Toggle notifications
+    if (e.altKey && e.key === 'n') {
+      e.preventDefault();
+      if (CK.notifs) CK.notifs.toggleDrawer();
+    }
+
+    // Alt+A — Quick navigate to Arena
+    if (e.altKey && e.key === 'a') {
+      e.preventDefault();
+      CK.navigate('arena');
+    }
+  });
+
+  /* ─── Performance: Lazy-load images with IntersectionObserver ─── */
+  const lazyImgObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const img = entry.target;
+        if (img.dataset.src) {
+          img.src = img.dataset.src;
+          img.removeAttribute('data-src');
+        }
+        lazyImgObs.unobserve(img);
+      }
+    });
+  }, { rootMargin: '200px' });
+  document.querySelectorAll('img[data-src]').forEach(img => lazyImgObs.observe(img));
 
 })();

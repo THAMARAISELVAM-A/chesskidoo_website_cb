@@ -523,6 +523,37 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
+   FIXED DUAL-COLUMN LAYOUTS — base + responsive
+   ═══════════════════════════════════════════════════════════ */
+/* Classroom live board + controls */
+.cc-live-layout {
+  display: grid;
+  grid-template-columns: 1fr 270px;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .cc-live-layout { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STUDENT DASHBOARD — MAIN + SIDEBAR LAYOUT
+   ═══════════════════════════════════════════════════════════ */
+.st-dash-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 1024px) {
+  .st-dash-layout { grid-template-columns: 1fr 280px; }
+}
+@media (max-width: 860px) {
+  .st-dash-layout { grid-template-columns: 1fr; }
+  .st-dash-sidebar { width: 100%; }
+}
+
+/* ═══════════════════════════════════════════════════════════
    TOUCH DEVICE — DISABLE HOVER ANIMATIONS
    ═══════════════════════════════════════════════════════════ */
 @media (hover: none) and (pointer: coarse) {

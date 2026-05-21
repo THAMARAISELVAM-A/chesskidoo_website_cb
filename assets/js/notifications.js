@@ -21,6 +21,13 @@ CK.notifs = (() => {
     puzzle_streak:   { icon: '🔥', color: '#f97316',        label: 'Puzzle Streak' },
     new_report:      { icon: '📋', color: 'var(--p-blue)',  label: 'Monthly Report' },
     cert_earned:     { icon: '🎓', color: 'var(--p-gold)',  label: 'Certificate Earned' },
+    xp_earned:       { icon: '⚡', color: '#a78bfa',        label: 'XP Earned' },
+    rank_up:         { icon: '⚔️', color: 'var(--p-gold)',   label: 'Rank Up!' },
+    badge_earned:    { icon: '🎖️', color: '#f59e0b',        label: 'Badge Earned' },
+    tournament:      { icon: '🏅', color: 'var(--p-teal)',  label: 'Tournament' },
+    ai_report:       { icon: '🧠', color: '#8b5cf6',        label: 'AI Report' },
+    study_plan:      { icon: '📋', color: 'var(--p-blue)',  label: 'Study Plan' },
+    fair_play:       { icon: '🛡️', color: '#22c55e',        label: 'Fair Play' },
     general:         { icon: '📢', color: 'rgba(255,255,255,.5)', label: 'Notice' },
   };
 
@@ -30,10 +37,11 @@ CK.notifs = (() => {
 
   /* ── Push a notification ── */
   function push(type, title, body, targetId = null, targetRole = null) {
-    if (!TYPES[type]) type = 'general';
+    if (!title || !body) return;
+    const effectiveType = TYPES[type] ? type : 'general';
     const all = getAll();
     all.unshift({
-      id: uid(), type, title, body,
+      id: uid(), type: effectiveType, title, body,
       targetId, targetRole,
       read: false, date: now()
     });
@@ -83,17 +91,18 @@ CK.notifs = (() => {
     el.innerHTML = `
       <div class="notif-panel-header">
         <span>${unread > 0 ? `<b>${unread} unread</b>` : 'All caught up!'}</span>
-        <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.notifs.markAllRead('${userId}','${role}'); CK.notifs.renderPanel('${containerId}','${userId}','${role}')">Mark all read</button>
+        <button class="p-btn p-btn-ghost p-btn-sm" data-uid="${userId}" data-role="${role}" data-cid="${containerId}" onclick="CK.notifs.markAllRead(this.dataset.uid,this.dataset.role); CK.notifs.renderPanel(this.dataset.cid,this.dataset.uid,this.dataset.role)">Mark all read</button>
       </div>
       ${items.map(n => {
         const t = TYPES[n.type] || TYPES.general;
         const age = _timeAgo(n.date);
+        const _esc = CK.esc || (s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'));
         return `
-          <div class="notif-item${n.read ? '' : ' notif-unread'}" onclick="CK.notifs.markRead('${n.id}'); this.classList.remove('notif-unread')">
+          <div class="notif-item${n.read ? '' : ' notif-unread'}" data-nid="${_esc(String(n.id))}" onclick="CK.notifs.markRead(this.dataset.nid); this.classList.remove('notif-unread')">
             <div class="notif-icon" style="color:${t.color}">${t.icon}</div>
             <div class="notif-body">
-              <div class="notif-title">${CK.esc ? CK.esc(n.title) : n.title}</div>
-              <div class="notif-text">${CK.esc ? CK.esc(n.body) : n.body}</div>
+              <div class="notif-title">${_esc(n.title)}</div>
+              <div class="notif-text">${_esc(n.body)}</div>
               <div class="notif-age">${age}</div>
             </div>
             ${!n.read ? '<div class="notif-dot"></div>' : ''}
@@ -126,9 +135,8 @@ CK.notifs = (() => {
   }
 
   /* ── Auto-generate system notifications on login ── */
-  function generateSystemNotifs(user) {
+  async function generateSystemNotifs(user) {
     if (!user) return;
-    const existing = getAll();
     const todayStr = new Date().toISOString().split('T')[0];
 
     // Don't spam — only once per day per user
@@ -137,9 +145,10 @@ CK.notifs = (() => {
     localStorage.setItem(todayKey, '1');
 
     const role = user.role;
-    const meetings = JSON.parse(localStorage.getItem('ck_meetings') || '[]');
+    const _db = (typeof CK !== 'undefined') ? CK.db : null;
+    const meetings = _db ? (await _db.getMeetings().catch(() => [])) : JSON.parse(localStorage.getItem('ck_meetings') || '[]');
     const reports  = JSON.parse(localStorage.getItem('ck_monthly_reports') || '[]');
-    const classes  = JSON.parse(localStorage.getItem('ck_classes') || '[]');
+    const classes  = _db?.getClasses ? (await _db.getClasses().catch(() => [])) : JSON.parse(localStorage.getItem('ck_classes') || '[]');
 
     if (role === 'student' || role === 'parent') {
       // Fee reminder (if no paid status)
@@ -161,9 +170,10 @@ CK.notifs = (() => {
         push('new_report', 'Monthly Report Available', `Your coach has published your report for ${new Date().toLocaleString('en-US',{month:'long'})}. Check My Progress.`, user.id, role);
       }
 
-      // Puzzle streak nudge
+      // Puzzle streak nudge — only fire if user solved at least one puzzle today
       const scores = JSON.parse(localStorage.getItem('ck_puzzle_scores') || '[]').filter(s => s.userId === user.id);
-      if (scores.length > 0 && scores.length % 10 === 0) {
+      const todayScores = scores.filter(s => s.date?.startsWith(todayStr));
+      if (todayScores.length > 0 && scores.length % 10 === 0) {
         push('puzzle_streak', `🔥 ${scores.length} Puzzles Solved!`, 'You\'re on fire! Keep solving to climb the leaderboard.', user.id, role);
       }
     }
@@ -175,7 +185,8 @@ CK.notifs = (() => {
         push('class_reminder', 'Classes Scheduled Today', `You have ${todayClasses.length} class(es) today. Remember to mark attendance in the Attendance panel.`, user.id, role);
       }
       // Remind about pending reports
-      const students = JSON.parse(localStorage.getItem('ck_db_users') || '[]').filter(u => u.role === 'student' && u.coach && u.coach === user.full_name);
+      const allStudents = _db ? (await _db.getProfiles('student').catch(() => [])) : JSON.parse(localStorage.getItem('ck_db_users') || '[]').filter(u => u.role === 'student');
+      const students = allStudents.filter(u => u.coach && u.coach === user.full_name);
       const thisMonth = new Date().getMonth() + 1;
       const thisYear  = new Date().getFullYear();
       const doneReports = reports.filter(r => r.coachId === user.id && r.month === thisMonth && r.year === thisYear);
@@ -186,7 +197,7 @@ CK.notifs = (() => {
     }
 
     if (role === 'admin') {
-      const students = JSON.parse(localStorage.getItem('ck_db_users') || '[]').filter(u => u.role === 'student');
+      const students = _db ? (await _db.getProfiles('student').catch(() => [])) : JSON.parse(localStorage.getItem('ck_db_users') || '[]').filter(u => u.role === 'student');
       const unpaid = students.filter(s => s.status !== 'Paid');
       if (unpaid.length) {
         push('fee_due', `${unpaid.length} Students Unpaid`, `${unpaid.length} student${unpaid.length > 1 ? 's' : ''} ha${unpaid.length === 1 ? 's' : 've'} not paid this month. Check Expenditure panel.`, user.id, role);
@@ -220,9 +231,60 @@ CK.notifs = (() => {
     _refreshBells();
   }
 
+  /* ── Email Notification via EmailJS ── */
+  async function sendEmail(toEmail, subject, bodyHtml) {
+    if (!toEmail || !subject) return false;
+    // Requires EmailJS SDK loaded and configured
+    if (typeof emailjs === 'undefined') {
+      console.warn('EmailJS SDK not loaded — skipping email notification');
+      return false;
+    }
+    try {
+      const serviceId  = localStorage.getItem('ck_emailjs_service')  || 'service_chesskidoo';
+      const templateId = localStorage.getItem('ck_emailjs_template') || 'template_notification';
+      await emailjs.send(serviceId, templateId, {
+        to_email: toEmail,
+        subject: subject,
+        message: bodyHtml
+      });
+      return true;
+    } catch (e) {
+      console.warn('EmailJS send failed:', e);
+      return false;
+    }
+  }
+
+  /* ── Push + Email combined ── */
+  async function pushMultiChannel(type, title, body, opts = {}) {
+    // In-app notification
+    push(type, title, body, opts.targetId || null, opts.targetRole || null);
+
+    // Email notification (if email provided)
+    if (opts.email) {
+      await sendEmail(opts.email, `[ChessKidoo] ${title}`, body);
+    }
+
+    // Browser push notification (if permission granted)
+    if (opts.browserPush && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        const t = TYPES[type] || TYPES.general;
+        new Notification(title, { body, icon: '/assets/img/logo.png', badge: t.icon });
+      } catch(e) {}
+    }
+  }
+
+  /* ── Request browser notification permission ── */
+  function requestBrowserPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }
+
   return {
-    push, getFor, getUnread, markRead, markAllRead,
+    push, pushMultiChannel, sendEmail,
+    getFor, getUnread, markRead, markAllRead,
     renderPanel, toggleDrawer, init,
+    requestBrowserPermission,
     TYPES,
     refresh: _refreshBells
   };

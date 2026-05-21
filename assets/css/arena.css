@@ -27,10 +27,10 @@
   --arena-indigo: #6366f1;
   --arena-text: #f1f5f9;
   --arena-text-muted: #94a3b8;
-  --arena-board-light: #ffffff;
-  --arena-board-dark: #4a7c40;
-  --arcade-board-light: #ffffff;
-  --arcade-board-dark: #4a7c40;
+  --arena-board-light: #d4d4a8;
+  --arena-board-dark: #4a7a2e;
+  --arcade-board-light: #d4d4a8;
+  --arcade-board-dark: #4a7a2e;
   --arena-shadow: rgba(0, 0, 0, 0.4);
   --arena-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   --card-puzzle: #f59e0b;
@@ -742,7 +742,7 @@
 .engine-eval-value {
   font-size: 2.2rem;
   font-weight: 800;
-  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-family: 'Poppins', monospace;
   color: var(--arena-green);
   line-height: 1;
   transition: color 0.3s;
@@ -757,7 +757,7 @@
   font-size: 0.75rem;
   color: var(--arena-text-muted);
   margin-top: 8px;
-  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-family: 'Poppins', monospace;
   word-break: break-all;
 }
 
@@ -790,7 +790,7 @@
 .amove-san {
   font-size: 0.8rem;
   font-weight: 500;
-  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-family: 'Poppins', monospace;
   padding: 4px 8px;
   border-radius: 4px;
   cursor: pointer;
@@ -839,7 +839,7 @@
   align-items: center;
 }
 .clock-time {
-  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-family: 'Poppins', monospace;
   font-size: 1.4rem;
   font-weight: 700;
   color: var(--arena-text);
@@ -1143,7 +1143,7 @@
 .key-moment-item:hover { background: var(--arena-border); }
 .km-move {
   font-weight: 700;
-  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-family: 'Poppins', monospace;
   min-width: 50px;
 }
 .km-type {
@@ -1406,7 +1406,7 @@
 .cert-id {
   font-size: 0.7rem;
   color: #aaa;
-  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-family: 'Poppins', monospace;
   margin-top: 16px;
 }
 .cert-date {
@@ -1671,10 +1671,10 @@
   transition: filter 0.12s ease, outline 0.1s ease;
 }
 .arcade-sq.light {
-  background-color: var(--arcade-board-light, #f5f5e8);
+  background-color: var(--arcade-board-light, #d4d4a8);
 }
 .arcade-sq.dark {
-  background-color: var(--arcade-board-dark, #556b2f);
+  background-color: var(--arcade-board-dark, #4a7a2e);
 }
 .arcade-sq:hover {
   filter: brightness(1.15);
