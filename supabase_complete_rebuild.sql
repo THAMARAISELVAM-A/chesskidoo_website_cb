@@ -33,8 +33,11 @@ DROP TABLE IF EXISTS public.broadcasts CASCADE;
 */
 
 -- ── 1. USERS TABLE ────────────────────────────────────────────────────────────
+-- NOTE: If your Supabase instance already has this table with `id UUID`,
+-- this CREATE TABLE IF NOT EXISTS will be skipped (table already exists).
+-- If creating fresh, use UUID to match Supabase Auth conventions.
 CREATE TABLE IF NOT EXISTS public.users (
-    id TEXT PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     userid TEXT,
     email TEXT,
     full_name TEXT,
@@ -338,11 +341,11 @@ CREATE TABLE IF NOT EXISTS public.broadcasts (
 INSERT INTO public.users (id, userid, email, full_name, role, rating, classes, created_at)
 VALUES
   ('a007b0b0-9b30-478f-a147-1af18dff20ce', 'admin-root', 'admin@chesskidoo.com', 'Academy Admin', 'admin', NULL, 0, NOW()),
-  ('c1', 'c_arivuselevam', 'arivuselvam@chesskidoo.com', 'ARIVUSELVAM', 'coach', 1500, 0, NOW()),
-  ('c2', 'c_vishnu',      'vishnu@chesskidoo.com',      'VISHNU',       'coach', 1600, 0, NOW()),
-  ('c3', 'c_gyanasurya',  'gyanasurya@chesskidoo.com',  'GYANASURYA',   'coach', 1550, 0, NOW()),
-  ('c4', 'c_yogesh',      'yogesh@chesskidoo.com',      'YOGESH',       'coach', 1620, 0, NOW()),
-  ('c5', 'c_rohit',       'rohit@chesskidoo.com',       'ROHIT',        'coach', 1500, 0, NOW())
+  ('c0c0c0c0-0001-4000-8000-000000000001', 'c_arivuselevam', 'arivuselvam@chesskidoo.com', 'ARIVUSELVAM', 'coach', 1500, 0, NOW()),
+  ('c0c0c0c0-0002-4000-8000-000000000002', 'c_vishnu',      'vishnu@chesskidoo.com',      'VISHNU',       'coach', 1600, 0, NOW()),
+  ('c0c0c0c0-0003-4000-8000-000000000003', 'c_gyanasurya',  'gyanasurya@chesskidoo.com',  'GYANASURYA',   'coach', 1550, 0, NOW()),
+  ('c0c0c0c0-0004-4000-8000-000000000004', 'c_yogesh',      'yogesh@chesskidoo.com',      'YOGESH',       'coach', 1620, 0, NOW()),
+  ('c0c0c0c0-0005-4000-8000-000000000005', 'c_rohit',       'rohit@chesskidoo.com',       'ROHIT',        'coach', 1500, 0, NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- ── Default Offline Credentials for Login Fallback (Pre-hashed SHA-256) ────────
@@ -361,10 +364,10 @@ ON CONFLICT (email) DO NOTHING;
 INSERT INTO public.users 
   (id, email, full_name, role, level, rating, coach, batch, session, schedule, fee, status, due_date, join_date)
 VALUES
-  ('s1',  'aadhavan@chesskidoo.com', 'AADHAVAN - SINGAPORE', 'student', 'Beginner',     850, 'ARIVUSELVAM',  'Evening',  'Group', '17:00',           '2200',  'Paid',    '04-May-2026', '2026-04-20'),
-  ('s2',  'aarav@chesskidoo.com',    'AARA V',               'student', 'Beginner',     800, 'GYANASURYA',   'Weekend',  'Group', 'WEEKEND',         '1800',  'Paid',    '14-May-2026', '2026-04-24'),
-  ('s3',  'anfal@chesskidoo.com',    'ANFAL',                'student', 'Intermediate', 800, 'VISHNU',       'Evening',  'Group', 'FRI & SAT',       '3300',  'Paid',    '20-May-2026', '2026-04-24'),
-  ('s4',  'anushya@chesskidoo.com',  'ANUSHYA',              'student', 'Beginner',     800, 'ARIVUSELVAM',  'Evening',  'Group', '17:00',           '1800',  'Pending', '18-May-2026', '2026-04-23')
+  ('a1a1a1a1-0001-4000-8000-000000000001',  'aadhavan@chesskidoo.com', 'AADHAVAN - SINGAPORE', 'student', 'Beginner',     850, 'ARIVUSELVAM',  'Evening',  'Group', '17:00',           '2200',  'Paid',    '04-May-2026', '2026-04-20'),
+  ('a1a1a1a1-0002-4000-8000-000000000002',  'aarav@chesskidoo.com',    'AARA V',               'student', 'Beginner',     800, 'GYANASURYA',   'Weekend',  'Group', 'WEEKEND',         '1800',  'Paid',    '14-May-2026', '2026-04-24'),
+  ('a1a1a1a1-0003-4000-8000-000000000003',  'anfal@chesskidoo.com',    'ANFAL',                'student', 'Intermediate', 800, 'VISHNU',       'Evening',  'Group', 'FRI & SAT',       '3300',  'Paid',    '20-May-2026', '2026-04-24'),
+  ('a1a1a1a1-0004-4000-8000-000000000004',  'anushya@chesskidoo.com',  'ANUSHYA',              'student', 'Beginner',     800, 'ARIVUSELVAM',  'Evening',  'Group', '17:00',           '1800',  'Pending', '18-May-2026', '2026-04-23')
 ON CONFLICT (id) DO NOTHING;
 
 -- ==============================================================================

@@ -7,7 +7,7 @@
 -- 1. USERS TABLE
 -- Stores students, coaches, admins, and parents.
 CREATE TABLE IF NOT EXISTS public.users (
-    id TEXT PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     userid TEXT,
     email TEXT,
     full_name TEXT,
