@@ -4632,7 +4632,7 @@
    RESPONSIVE ADDITIONS
    ════════════════════════════════════════════════════════════════ */
 @media (max-width:768px) {
-  .notif-drawer { width: 100vw; right: -100vw; }
+  .notif-drawer { width: 100%; right: -100%; }
   .ot-grid { grid-template-columns: 1fr 1fr; }
   .gt-form-grid { grid-template-columns: 1fr; }
   .adm-coach-stats { gap: 12px; }

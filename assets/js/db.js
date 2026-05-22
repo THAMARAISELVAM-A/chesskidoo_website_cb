@@ -864,42 +864,37 @@
      ACCESS MANAGEMENT — Admin sets per-user credentials
   ───────────────────────────────────────────────────────── */
   CK.accessManager = {
-    CREDS_KEY: 'ck_user_credentials',
-    async getCreds() {
-      if (canUseSupabase()) {
-        try {
-          const { data, error } = await window.supabaseClient.from('credentials').select('*');
-          if (!error && data) {
-            const map = {};
-            data.forEach(item => { map[item.email.toLowerCase()] = item.password; });
-            localStorage.setItem(this.CREDS_KEY, JSON.stringify(map));
-            return map;
-          }
-        } catch(e) {}
+    _getAdminAuth() {
+      if (!window.APP_CONFIG?.SUPABASE_URL || !window.APP_CONFIG?.SUPABASE_KEY) return null;
+      if (!this._tempClient && window.supabase) {
+        // Create a temporary, non-persisting client so creating users doesn't log the admin out!
+        this._tempClient = window.supabase.createClient(
+          window.APP_CONFIG.SUPABASE_URL, 
+          window.APP_CONFIG.SUPABASE_KEY, 
+          { auth: { persistSession: false, autoRefreshToken: false } }
+        );
       }
-      return JSON.parse(localStorage.getItem(this.CREDS_KEY) || '{}');
+      return this._tempClient ? this._tempClient.auth : null;
+    },
+
+    async getCreds() {
+      console.warn("getCreds() is deprecated. Passwords are securely managed by Supabase Auth and cannot be extracted.");
+      return {};
     },
 
     async setCredential(email, password) {
-      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
-      const hashed = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-      if (canUseSupabase()) {
+      const auth = this._getAdminAuth();
+      if (auth) {
         try {
-          await window.supabaseClient.from('credentials').upsert({ email: email.toLowerCase(), password: hashed });
-        } catch(e) {}
+          await auth.signUp({ email: email.toLowerCase(), password });
+        } catch(e) {
+          console.error("Supabase Auth Error:", e);
+        }
       }
-      const c = JSON.parse(localStorage.getItem(this.CREDS_KEY) || '{}');
-      c[email.toLowerCase()] = hashed;
-      localStorage.setItem(this.CREDS_KEY, JSON.stringify(c));
     },
 
     async removeCredential(email) {
-      if (canUseSupabase()) {
-        try { await window.supabaseClient.from('credentials').delete().eq('email', email.toLowerCase()); } catch(e) {}
-      }
-      const c = JSON.parse(localStorage.getItem(this.CREDS_KEY) || '{}');
-      delete c[email.toLowerCase()];
-      localStorage.setItem(this.CREDS_KEY, JSON.stringify(c));
+      console.warn("User deletion must be performed securely in the Supabase Auth Dashboard.");
     },
 
     /* Give all students/coaches their own access using their email + a shared password */

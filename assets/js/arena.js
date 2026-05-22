@@ -14,6 +14,8 @@
   let selectedSq = null;
   let legalMoves = [];
   let currentDifficulty = 'Intermediate';
+  let currentStyle = 'Balanced';
+  let coachMode = false;
   let isPlayerTurn = true;
   let isGameOver = false;
   let isThinking = false;
@@ -24,7 +26,6 @@
   let capturedBlack = [];
   let stockfish = null;
   let engineReady = false;
-  let useWasm = false;
   const playerColor = 'w';
   let gameStartTime = null;
   let selectedTimeControl = 600; // in seconds, or 'untimed'
@@ -123,6 +124,7 @@
       updateClockDisplay();
     }
     initEvalChart();
+    A.updateMinimaxAnalysis = () => {};
     A.updateMinimaxAnalysis();
   };
 
@@ -211,7 +213,6 @@
       if (_polls >= 6) {
         clearInterval(_timer);
         engineReady = true;
-        useWasm = false;
         if (statusEl) statusEl.textContent = 'Engine ready (built-in)';
       }
     }, 500);
@@ -227,7 +228,6 @@
     }
     if (line === 'readyok') {
       engineReady = true;
-      useWasm = true;
       const statusEl = document.getElementById('arena-engine-status');
       if (statusEl) statusEl.textContent = 'Engine ready (Stockfish WASM)';
       return;
@@ -461,37 +461,37 @@
   }
 
 /* ─── Execute Player Move ─── */
-function executePlayerMove(move) {
-  if (puzzleMode) {
-    if (!A.checkPuzzleSolution(move.san)) return;
-  }
-  
-  if (quickMoveState && !quickMoveState.solved) {
-    if (move.san !== quickMoveState.goal) {
-      CK.showToast('Wrong move! Try again.', 'error');
+  async function executePlayerMove(move) {
+    if (isGameOver || isThinking || !isPlayerTurn) return;
+
+    if (puzzleMode) {
+      if (!A.checkPuzzleSolution(move.san)) return;
+    }
+    
+    if (quickMoveState && !quickMoveState.solved) {
+      if (move.san !== quickMoveState.goal) {
+        CK.showToast('Wrong move! Try again.', 'error');
+        return;
+      }
+      quickMoveState.solved = true;
+      game.move(move);
+      renderBoard();
+      CK.showToast('Correct!', 'success');
+      if (gameTimer) clearInterval(gameTimer);
+      setTimeout(() => A.startQuickMove(), 2000);
       return;
     }
-    quickMoveState.solved = true;
-    game.move(move);
-    renderBoard();
-    CK.showToast('Correct!', 'success');
-    if (gameTimer) clearInterval(gameTimer);
-    setTimeout(() => A.startQuickMove(), 2000);
-    return;
-  }
-  
-  const fenBefore = game.fen();
-  const moveResult = game.move(move);
-  if (!moveResult) return;
 
-    // Track captured pieces
-    if (moveResult.captured) {
-      if (moveResult.color === 'w') {
-        capturedBlack.push(moveResult.captured);
-      } else {
-        capturedWhite.push(moveResult.captured);
-      }
+    const fenBefore = game.fen();
+    let moveResult;
+    try {
+      moveResult = game.move(move);
+    } catch (e) {
+      return; // Invalid move
     }
+
+    if (moveResult.captured && moveResult.color === 'w') capturedBlack.push(moveResult.captured);
+    if (moveResult.captured && moveResult.color === 'b') capturedWhite.push(moveResult.captured);
 
     moveHistory.push({
       from: moveResult.from,
@@ -502,10 +502,34 @@ function executePlayerMove(move) {
       captured: moveResult.captured || null
     });
 
-    // Get engine eval for classification
-    getEvalForPosition(fenBefore, moveResult.san);
-
     renderBoard();
+    isPlayerTurn = false;
+    isThinking = true;
+    updateStatus('Coach is analyzing...', 'info');
+
+    // Await engine eval for classification
+    const evalObj = await getEvalForPosition(fenBefore, moveResult.san);
+
+    // COACH MODE CHECK
+    if (coachMode && evalObj && evalObj.classification === 'blunder') {
+      const confirmTakeback = window.confirm(`⚠️ COACH WARNING\n\nThat move was a blunder (dropped evaluation by ${(evalObj.diff/100).toFixed(1)} pawns).\nStockfish recommends: ${evalObj.bestMove}\n\nDo you want to take it back?`);
+      if (confirmTakeback) {
+        game.undo();
+        moveHistory.pop();
+        classificationHistory.pop();
+        evalHistory.pop();
+        if (moveResult.captured && moveResult.color === 'w') capturedBlack.pop();
+        if (moveResult.captured && moveResult.color === 'b') capturedWhite.pop();
+        renderBoard();
+        renderAnalysisPanel();
+        isPlayerTurn = true;
+        isThinking = false;
+        updateStatus('Your turn');
+        updateEvalChart(moveHistory.length, evalHistory[evalHistory.length - 1] || 0);
+        return; // Halt AI turn
+      }
+    }
+
     renderAnalysisPanel();
     activeClock = 'b';
     aiStartTime = Date.now();
@@ -516,53 +540,139 @@ function executePlayerMove(move) {
       return;
     }
     if (game.in_threefold_repetition()) {
-      CK.showToast('Draw by threefold repetition — position repeated 3 times', 'warning');
+      CK.showToast('Draw by threefold repetition', 'warning');
       handleGameOver();
       return;
     }
 
-    isPlayerTurn = false;
     updateStatus('AI is thinking...');
-    isThinking = true;
-
+    
     setTimeout(() => {
       requestAIMove();
-    }, 500 + Math.random() * 1000);
+    }, 100);
   }
 
   /* ─── AI Move ─── */
-  function requestAIMove() {
+  async function requestAIMove() {
     if (isGameOver) return;
 
     const fen = game.fen();
-    if (OPENING_BOOK[fen] && Math.random() < 0.3) {
-      const bookMove = OPENING_BOOK[fen];
-      makeAIMove(bookMove);
-      return;
+    awaitingAIMove = true;
+
+    // 1. Check Endgame Tablebases (if 7 or fewer pieces remain)
+    const pieceCount = fen.split(' ')[0].replace(/[^a-zA-Z]/g, '').length;
+    if (pieceCount <= 7) {
+      updateStatus('🤖 Consulting Endgame Tablebases…');
+      try {
+        const res = await fetch(`https://tablebase.lichess.ovh/standard?fen=${encodeURIComponent(fen)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.moves && data.moves.length > 0) {
+            makeAIMove(data.moves[0].uci);
+            return;
+          }
+        }
+      } catch(e) {} // Silent fallback to engine
     }
 
-    if (useWasm && engineReady && stockfish) {
-      awaitingAIMove = true;
-      stockfish.postMessage(`position fen ${fen}`);
-      stockfish.postMessage(`go depth ${DIFFICULTY_DEPTH[currentDifficulty] || 2}`);
-    } else {
-      const depth = DIFFICULTY_DEPTH[currentDifficulty] || 2;
-      const bestMove = getBestMoveMinimax(depth);
-      if (bestMove) {
-        makeAIMove(bestMove.from + bestMove.to + (bestMove.promotion || ''));
-      } else {
-        const moves = game.moves({ verbose: true });
-        if (moves.length > 0) {
-          const random = moves[Math.floor(Math.random() * moves.length)];
-          makeAIMove(random.from + random.to + (random.promotion || ''));
-        } else {
-          console.error('Arena: No moves available!');
+    // 2. Check Opening Book (first 10 moves)
+    const fullMoves = parseInt(fen.split(' ')[5]) || 0;
+    if (fullMoves <= 10) {
+      updateStatus('🤖 Checking Master Openings…');
+      try {
+        const res = await fetch(`https://explorer.lichess.ovh/masters?fen=${encodeURIComponent(fen)}&moves=4`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.moves && data.moves.length > 0) {
+            // Pick randomly from the top 2 master moves
+            const topMoves = data.moves.slice(0, 2);
+            const choice = topMoves[Math.floor(Math.random() * topMoves.length)];
+            makeAIMove(choice.uci);
+            return;
+          }
         }
+      } catch(e) {} // Silent fallback
+    }
+
+    updateStatus('🤖 Computer is thinking…');
+
+    const depthLevels = { Beginner: 1, Intermediate: 5, Advanced: 10, Expert: 18 };
+    const engineDepth = depthLevels[currentDifficulty] || 5;
+
+    CK.engine.setDepth(engineDepth);
+    const result = await CK.engine.evaluateLocal(fen);
+
+    if (result && result.pvs && result.pvs.length > 0) {
+      let chosenMoveStr = result.pvs[0].pv.split(' ')[0]; // Balanced default
+
+      // AI Personality Logic (Aggressive / Defensive)
+      if (currentStyle !== 'Balanced' && result.pvs.length > 1) {
+        const topCp = result.pvs[0].cp !== null ? result.pvs[0].cp : (result.pvs[0].mate ? result.pvs[0].mate * 1000 : 0);
+        let bestCandidate = result.pvs[0];
+        let bestScore = -Infinity;
+
+        for (let i = 0; i < result.pvs.length; i++) {
+          const pvObj = result.pvs[i];
+          const cp = pvObj.cp !== null ? pvObj.cp : (pvObj.mate ? pvObj.mate * 1000 : 0);
+          
+          // Only consider moves within 80 centipawns of the absolute best move to prevent blundering
+          if (Math.abs(topCp - cp) <= 80) {
+            const firstMove = pvObj.pv.split(' ')[0];
+            
+            const testGame = new Chess(fen);
+            const legalMoves = testGame.moves({ verbose: true });
+            const moveData = legalMoves.find(m => (m.from + m.to + (m.promotion || '')) === firstMove);
+            
+            if (moveData) {
+              let styleScore = 0;
+              if (currentStyle === 'Aggressive') {
+                if (moveData.captured) styleScore += 50;
+                if (moveData.flags.includes('p')) styleScore += 30; // promotion
+                testGame.move(moveData);
+                if (testGame.in_check()) styleScore += 40;
+                testGame.undo();
+                
+                const isWhite = testGame.turn() === 'w';
+                const rankFrom = parseInt(moveData.from[1]);
+                const rankTo = parseInt(moveData.to[1]);
+                if (isWhite && rankTo > rankFrom) styleScore += 10;
+                if (!isWhite && rankTo < rankFrom) styleScore += 10;
+              } else if (currentStyle === 'Defensive') {
+                if (!moveData.captured) styleScore += 20;
+                if (moveData.flags.includes('c') || moveData.flags.includes('k') || moveData.flags.includes('q')) styleScore += 50; // castling
+                
+                const isWhite = testGame.turn() === 'w';
+                const rankFrom = parseInt(moveData.from[1]);
+                const rankTo = parseInt(moveData.to[1]);
+                if (isWhite && rankTo <= rankFrom) styleScore += 20;
+                if (!isWhite && rankTo >= rankFrom) styleScore += 20;
+              }
+              
+              if (styleScore > bestScore) {
+                bestScore = styleScore;
+                bestCandidate = pvObj;
+              }
+            }
+          }
+        }
+        chosenMoveStr = bestCandidate.pv.split(' ')[0];
+      }
+
+      makeAIMove(chosenMoveStr);
+    } else if (result && result.bestmove) {
+      makeAIMove(result.bestmove);
+    } else {
+      const moves = game.moves({ verbose: true });
+      if (moves.length > 0) {
+        const random = moves[Math.floor(Math.random() * moves.length)];
+        makeAIMove(random.from + random.to + (random.promotion || ''));
+      } else {
+        console.error('Arena: No moves available!');
       }
     }
   }
 
-  function makeAIMove(moveStr) {
+  async function makeAIMove(moveStr) {
     if (isGameOver) return;
     isThinking = false;
 
@@ -577,11 +687,6 @@ function executePlayerMove(move) {
       const moves = game.moves({ verbose: true });
       if (moves.length > 0) {
         move = game.move(moves[Math.floor(Math.random() * moves.length)]);
-      }
-    }
-
-    if (!move) {
-      handleGameOver();
       return;
     }
 
@@ -632,139 +737,57 @@ function executePlayerMove(move) {
 
     isPlayerTurn = true;
     updateStatus('Your turn');
-    A.updateMinimaxAnalysis();
   }
 
-  /* ─── Minimax Fallback ─── */
-  function getBestMoveMinimax(maxDepth) {
-    const moves = game.moves({ verbose: true });
-    if (moves.length === 0) {
-      return null;
-    }
+  /* ─── Move Classification (Using Stockfish via CK.engine) ─── */
+  async function getEvalForPosition(fenBefore, playerSan) {
+    const testGame = new Chess(fenBefore);
+    const isWhite = testGame.turn() === 'w';
 
+    // 1. Evaluate before move (relative to player)
+    const resultBefore = await CK.engine.evaluate(fenBefore);
+    const evalBefore = resultBefore ? (resultBefore.cp !== null ? resultBefore.cp : (resultBefore.mate ? resultBefore.mate * 10000 : 0)) : 0;
 
-    let bestMove = null;
-    let bestEval = game.turn() === 'w' ? -Infinity : Infinity;
-    const isMaximizing = game.turn() === 'w';
+    // 2. Evaluate after move (relative to opponent, so negate it for player's perspective)
+    testGame.move(playerSan);
+    const fenAfter = testGame.fen();
+    const resultAfter = await CK.engine.evaluate(fenAfter);
+    let cpOpponent = resultAfter ? (resultAfter.cp !== null ? resultAfter.cp : (resultAfter.mate ? resultAfter.mate * 10000 : 0)) : 0;
+    
+    let playerEvalAfter = -cpOpponent;
+    let absoluteCp = isWhite ? playerEvalAfter : -playerEvalAfter;
 
-    for (const move of moves) {
-      game.move(move);
-      const eval_ = minimax(maxDepth - 1, -Infinity, Infinity, !isMaximizing);
-      game.undo();
-
-      if (isMaximizing) {
-        if (eval_ > bestEval) {
-          bestEval = eval_;
-          bestMove = move;
-        }
-      } else {
-        if (eval_ < bestEval) {
-          bestEval = eval_;
-          bestMove = move;
-        }
-      }
-    }
-
-    return bestMove || moves[0];
-  }
-
-  function minimax(depth, alpha, beta, isMaximizing) {
-    if (depth === 0) return evaluateBoard();
-    const moves = game.moves({ verbose: true });
-    if (moves.length === 0) {
-      if (game.in_check()) return isMaximizing ? -9999 + depth : 9999 - depth;
-      return 0;
-    }
-
-    if (isMaximizing) {
-      let maxEval = -Infinity;
-      for (const move of moves) {
-        game.move(move);
-        const eval_ = minimax(depth - 1, alpha, beta, false);
-        game.undo();
-        maxEval = Math.max(maxEval, eval_);
-        alpha = Math.max(alpha, eval_);
-        if (beta <= alpha) break; // Beta cut-off (Pruning)
-      }
-      return maxEval;
-    } else {
-      let minEval = Infinity;
-      for (const move of moves) {
-        game.move(move);
-        const eval_ = minimax(depth - 1, alpha, beta, true);
-        game.undo();
-        minEval = Math.min(minEval, eval_);
-        beta = Math.min(beta, eval_);
-        if (beta <= alpha) break; // Alpha cut-off (Pruning)
-      }
-      return minEval;
-    }
-  }
-
-  function evaluateBoard() {
-    const board = game.board();
-    let score = 0;
-    for (let r = 0; r < 8; r++) {
-      for (let c = 0; c < 8; c++) {
-        const p = board[r][c];
-        if (!p) continue;
-        const val = PIECE_VALUES[p.type] * 10;
-        score += p.color === 'w' ? val : -val;
-      }
-    }
-    if (game.in_check()) {
-      score += game.turn() === 'w' ? -50 : 50;
-    }
-    return score;
-  }
-
-  /* ─── Move Classification (always uses minimax to avoid racing Stockfish AI requests) ─── */
-  function getEvalForPosition(fenBefore, playerSan) {
-    const depth = DIFFICULTY_DEPTH[currentDifficulty] || 2;
-    const savedGame = game;
-    game = new Chess(fenBefore);
-    const moves = game.moves({ verbose: true });
-    let bestEval = game.turn() === 'w' ? -Infinity : Infinity;
-    let bestMove = null;
-    const isMax = game.turn() === 'w';
-
-    for (const m of moves) {
-      game.move(m);
-      const ev = minimax(depth - 1, -Infinity, Infinity, !isMax);
-      game.undo();
-      if (isMax && ev > bestEval) { bestEval = ev; bestMove = m; }
-      if (!isMax && ev < bestEval) { bestEval = ev; bestMove = m; }
-    }
-
-    const playerMove = moves.find(m => m.san === playerSan);
-    let playerEval = 0;
-    if (playerMove) {
-      game.move(playerMove);
-      playerEval = minimax(depth - 1, -Infinity, Infinity, !isMax);
-      game.undo();
-    }
-    game = savedGame;
-
-    const diff = isMax ? (bestEval - playerEval) : (playerEval - bestEval);
-    const classification = classifyFromDiff(diff, playerMove, bestMove);
-    classificationHistory.push({ san: playerSan, classification, eval: playerEval });
-    evalHistory.push(playerEval);
-    updateEvalChart(moveHistory.length, playerEval);
+    // 3. Centipawn loss
+    const diff = evalBefore - playerEvalAfter;
+    const classification = classifyFromDiff(diff, playerSan, resultBefore ? resultBefore.pv : null);
+    
+    const obj = { 
+      san: playerSan, 
+      classification, 
+      eval: absoluteCp,
+      diff: diff,
+      bestMove: resultBefore && resultBefore.pv ? resultBefore.pv.split(' ')[0] : '-'
+    };
+    classificationHistory.push(obj);
+    evalHistory.push(absoluteCp);
+    updateEvalChart(moveHistory.length, absoluteCp);
     renderAnalysisPanel();
 
-    const displayEval = playerEval / 10;
-    updateEngineDisplay(displayEval, depth, bestMove ? [bestMove.san] : []);
+    const displayEval = absoluteCp / 100;
+    updateEngineDisplay(displayEval, resultAfter ? resultAfter.depth : 0, resultAfter ? [resultAfter.pv] : []);
+    
+    return obj;
   }
 
-  function classifyFromDiff(diff, playerMove, bestMove) {
-    if (diff <= 0.05) {
-      if (playerMove && playerMove.captured && bestMove && !bestMove.captured) return 'brilliant';
+  function classifyFromDiff(cpl, playerSan, bestPv) {
+    if (cpl <= 15) {
+      if (playerSan.includes('x') && bestPv && !bestPv.includes('x')) return 'brilliant';
       return 'best';
     }
-    if (diff <= 0.2) return 'excellent';
-    if (diff <= 0.5) return 'good';
-    if (diff <= 1.0) return 'inaccuracy';
-    if (diff <= 2.0) return 'mistake';
+    if (cpl <= 40) return 'excellent';
+    if (cpl <= 90) return 'good';
+    if (cpl <= 150) return 'inaccuracy';
+    if (cpl <= 300) return 'mistake';
     return 'blunder';
   }
 
@@ -1214,16 +1237,28 @@ function executePlayerMove(move) {
     `;
     
     for (let i = 0; i < moveHistory.length; i++) {
-      const classification = classificationHistory[i]?.classification || 'good';
+      const hist = classificationHistory[i] || {};
+      const classification = hist.classification || 'good';
       const san = moveHistory[i]?.san || '';
-      const diff = getMoveDiff(i);
-      const diffColor = diff < 0.1 ? '#10b981' : diff < 0.5 ? '#f59e0b' : '#ef4444';
+      const diff = hist.diff !== undefined ? hist.diff / 100 : 0; // Convert to Pawns
+      const bestMoveSan = hist.bestMove || '-';
+      
+      const getMarker = (c) => {
+        if(c === 'brilliant') return '<span style="color:#0ea5e9;font-weight:bold;margin-left:2px;">!!</span>';
+        if(c === 'excellent') return '<span style="color:#10b981;font-weight:bold;margin-left:2px;">!</span>';
+        if(c === 'inaccuracy') return '<span style="color:#f59e0b;font-weight:bold;margin-left:2px;">?!</span>';
+        if(c === 'mistake') return '<span style="color:#ef4444;font-weight:bold;margin-left:2px;">?</span>';
+        if(c === 'blunder') return '<span style="color:#b91c1c;font-weight:bold;margin-left:2px;">??</span>';
+        return '';
+      };
+      
+      const diffColor = diff <= 0.15 ? '#10b981' : diff <= 0.5 ? '#f59e0b' : '#ef4444';
       
       html += `
         <tr style="border-bottom: 1px solid var(--arena-border);">
           <td style="padding: 6px; color: var(--arena-text-muted);">${Math.floor(i/2)+1}</td>
-          <td style="padding: 6px; font-family: monospace; color: ${getClassificationColor(classification)};">${san}</td>
-          <td style="padding: 6px; font-family: monospace; opacity: 0.6;">${getBestMoveForTurn(i) || '-'}</td>
+          <td style="padding: 6px; font-family: monospace; color: ${getClassificationColor(classification)};">${san}${getMarker(classification)}</td>
+          <td style="padding: 6px; font-family: monospace; opacity: 0.6;">${bestMoveSan}</td>
           <td style="padding: 6px; font-weight: 600; color: ${diffColor};">${diff.toFixed(2)}</td>
         </tr>
       `;
@@ -1238,36 +1273,7 @@ function executePlayerMove(move) {
     return colors[c] || '#f1f5f9';
   }
 
-  function getMoveDiff(moveIndex) {
-    if (!classificationHistory[moveIndex]) return 0;
-    const c = classificationHistory[moveIndex].classification;
-    const diffs = { brilliant: 0, best: 0, excellent: 0.1, good: 0.3, inaccuracy: 0.5, mistake: 1.0, blunder: 2.0 };
-    return diffs[c] || 0.5;
-  }
-
-  function getBestMoveForTurn(moveIndex) {
-    // Use depth 1 only — this is a post-game display table, not actual AI play.
-    // Running full-depth minimax for every move in history freezes the UI thread.
-    const fenBefore = moveIndex === 0
-      ? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-      : (moveHistory[moveIndex - 1]?.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
-    const savedGame = game;
-    game = new Chess(fenBefore);
-    const moves = game.moves({ verbose: true });
-    if (moves.length === 0) { game = savedGame; return null; }
-    let bestMove = null;
-    let bestEval = game.turn() === 'w' ? -Infinity : Infinity;
-    const isMax = game.turn() === 'w';
-    for (const m of moves) {
-      game.move(m);
-      const ev = evaluateBoard();
-      game.undo();
-      if (isMax && ev > bestEval) { bestEval = ev; bestMove = m; }
-      if (!isMax && ev < bestEval) { bestEval = ev; bestMove = m; }
-    }
-    game = savedGame;
-    return bestMove ? bestMove.san : null;
-  }
+  // Engine logic completely replaces the old mock diff and synchronous evaluateBoard 
 
 
 
@@ -1603,12 +1609,23 @@ A.newGame = () => {
   A.init();
 };
 
-A.setDifficulty = (level) => {
-  currentDifficulty = level;
-  document.querySelectorAll('.diff-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.level === level);
-  });
-};
+  A.setDifficulty = (level) => {
+    currentDifficulty = level;
+    document.querySelectorAll('.diff-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.level === level);
+    });
+  };
+
+  A.setStyle = (style) => {
+    currentStyle = style;
+    document.querySelectorAll('.style-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.style === style);
+    });
+  };
+
+  A.toggleCoach = (enabled) => {
+    coachMode = enabled;
+  };
 
 A.setTimeControl = (timeVal) => {
   selectedTimeControl = timeVal;
@@ -1842,27 +1859,7 @@ A.showToast = (msg, type = 'info') => {
   }, 3000);
 };
   A.updateMinimaxAnalysis = () => {
-    if (useWasm) return;
-    const depth = DIFFICULTY_DEPTH[currentDifficulty] || 2;
-    const moves = game.moves({ verbose: true });
-    if (moves.length === 0) return;
-
-    let bestMove = null;
-    let bestEval = game.turn() === 'w' ? -Infinity : Infinity;
-    const isMax = game.turn() === 'w';
-
-    for (const m of moves) {
-      game.move(m);
-      const ev = minimax(depth - 1, -Infinity, Infinity, !isMax);
-      game.undo();
-      if (isMax && ev > bestEval) { bestEval = ev; bestMove = m; }
-      if (!isMax && ev < bestEval) { bestEval = ev; bestMove = m; }
-    }
-
-    if (bestMove) {
-      const displayEval = bestEval / 10;
-      updateEngineDisplay(displayEval, depth, [bestMove.san]);
-    }
+    // Deprecated: analysis is now continuously updated by async getEvalForPosition
   };
 
   A.goHome = () => {

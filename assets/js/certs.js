@@ -65,122 +65,157 @@ CK.certs = (() => {
     const W = 297, H = 210;
     const lvl = LEVELS[cert.level] || LEVELS.Beginner;
 
-    // Background
-    doc.setFillColor(10, 15, 30);
+    // Background - Dark Navy
+    doc.setFillColor(15, 23, 42);
     doc.rect(0, 0, W, H, 'F');
 
-    // Gold border — outer
-    doc.setDrawColor(232, 184, 75);
-    doc.setLineWidth(3);
-    doc.rect(8, 8, W - 16, H - 16);
+    // Rich Gold Color
+    const GOLD = [212, 175, 55];
+    const GOLD_RGB = '212, 175, 55';
 
-    // Inner border
-    doc.setDrawColor(232, 184, 75, 0.4);
+    // ─── Intricate Borders ───
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(2);
+    doc.rect(10, 10, W - 20, H - 20); // Outer heavy frame
+    
     doc.setLineWidth(0.5);
-    doc.rect(12, 12, W - 24, H - 24);
+    doc.rect(13, 13, W - 26, H - 26); // Inner frame 1
+    doc.rect(15, 15, W - 30, H - 30); // Inner frame 2
 
-    // Chess pattern corners (decorative)
-    const corners = [[15,15],[W-35,15],[15,H-35],[W-35,H-35]];
-    corners.forEach(([x,y]) => {
-      doc.setFillColor(232, 184, 75, 0.15);
-      doc.rect(x, y, 20, 20, 'F');
+    // ─── Ornamental Corner Blocks ───
+    const cornerSize = 24;
+    const corners = [
+      [15, 15], [W - 15 - cornerSize, 15], 
+      [15, H - 15 - cornerSize], [W - 15 - cornerSize, H - 15 - cornerSize]
+    ];
+    corners.forEach(([x, y]) => {
+      // Solid gold block
+      doc.setFillColor(...GOLD);
+      doc.rect(x, y, cornerSize, cornerSize, 'F');
+      // Inner cut-out circle
+      doc.setFillColor(15, 23, 42);
+      doc.circle(x + cornerSize/2, y + cornerSize/2, 10, 'F');
+      // Inner thin gold ring
+      doc.setDrawColor(...GOLD);
+      doc.setLineWidth(0.3);
+      doc.circle(x + cornerSize/2, y + cornerSize/2, 8, 'S');
+      // Center icon
+      doc.setFont('times', 'normal');
       doc.setFontSize(14);
-      doc.setTextColor(232, 184, 75);
-      doc.text('♚', x + 5, y + 14);
+      doc.setTextColor(...GOLD);
+      doc.text('♛', x + cornerSize/2, y + cornerSize/2 + 4, { align: 'center' });
     });
 
-    // Academy name
-    doc.setFontSize(11);
-    doc.setTextColor(200, 200, 200);
-    doc.text('CHESSKIDOO ACADEMY', W/2, 28, { align: 'center' });
-    doc.setFontSize(8);
-    doc.text('India\'s Premier Chess Education Platform', W/2, 34, { align: 'center' });
-
-    // Certificate of Completion
-    doc.setFontSize(9);
-    doc.setTextColor(232, 184, 75);
-    doc.text('CERTIFICATE OF COMPLETION', W/2, 46, { align: 'center' });
-
-    // Divider
-    doc.setDrawColor(232, 184, 75);
-    doc.setLineWidth(0.8);
-    doc.line(60, 49, W - 60, 49);
-
-    // "This is to certify that"
-    doc.setFontSize(11);
-    doc.setTextColor(180, 190, 210);
-    doc.text('This is to certify that', W/2, 62, { align: 'center' });
-
-    // Student Name
+    // ─── Typography & Content ───
+    doc.setFont('times', 'bold');
     doc.setFontSize(26);
-    doc.setTextColor(255, 255, 255);
-    doc.setFont(undefined, 'bold');
-    doc.text(cert.studentName.toUpperCase(), W/2, 80, { align: 'center' });
-    doc.setFont(undefined, 'normal');
-
-    // Name underline
-    const nameWidth = doc.getTextWidth(cert.studentName.toUpperCase());
-    doc.setDrawColor(232, 184, 75);
-    doc.setLineWidth(0.5);
-    doc.line(W/2 - nameWidth/2, 83, W/2 + nameWidth/2, 83);
-
-    // "has successfully completed"
+    doc.setTextColor(...GOLD);
+    // JS PDF charSpace workaround using spacing in string
+    doc.text('C H E S S K I D O O   A C A D E M Y', W/2, 45, { align: 'center' });
+    
+    doc.setFont('times', 'italic');
     doc.setFontSize(11);
+    doc.setTextColor(200, 200, 200);
+    doc.text('India\'s Premier Chess Education Platform', W/2, 53, { align: 'center' });
+
+    // Certificate Ribbon/Title
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.5);
+    doc.line(W/2 - 40, 68, W/2 + 40, 68);
+    doc.setFont('times', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(...GOLD);
+    doc.text('CERTIFICATE OF MASTERY', W/2, 65, { align: 'center' });
+    
+    doc.setFont('times', 'italic');
+    doc.setFontSize(14);
     doc.setTextColor(180, 190, 210);
-    doc.text('has successfully completed the', W/2, 93, { align: 'center' });
+    doc.text('This is to proudly certify that', W/2, 82, { align: 'center' });
 
-    // Level name
-    doc.setFontSize(20);
-    doc.setTextColor(232, 184, 75);
-    doc.setFont(undefined, 'bold');
-    doc.text(`${cert.level.toUpperCase()} LEVEL PROGRAM`, W/2, 106, { align: 'center' });
-    doc.setFont(undefined, 'normal');
+    // Student Name (Elegant Serif)
+    doc.setFont('times', 'bolditalic');
+    doc.setFontSize(42);
+    doc.setTextColor(255, 255, 255);
+    doc.text(cert.studentName, W/2, 105, { align: 'center' });
 
-    // Description
-    doc.setFontSize(9);
-    doc.setTextColor(150, 160, 185);
-    doc.text(lvl.desc, W/2, 114, { align: 'center' });
-    doc.text(lvl.requirements, W/2, 120, { align: 'center', maxWidth: 200 });
+    // Elegant underline
+    const nameWidth = doc.getTextWidth(cert.studentName);
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.8);
+    doc.line(W/2 - nameWidth/2 - 10, 110, W/2 + nameWidth/2 + 10, 110);
 
-    // Signature section
-    const sigY = 155;
+    doc.setFont('times', 'italic');
+    doc.setFontSize(14);
+    doc.setTextColor(180, 190, 210);
+    doc.text('has successfully completed the rigorous requirements of the', W/2, 122, { align: 'center' });
+
+    doc.setFont('times', 'bold');
+    doc.setFontSize(22);
+    doc.setTextColor(...GOLD);
+    doc.text(`${cert.level.toUpperCase()} LEVEL PROGRAM`, W/2, 136, { align: 'center' });
+
+    doc.setFont('times', 'italic');
+    doc.setFontSize(11);
+    doc.setTextColor(160, 170, 190);
+    doc.text(lvl.desc, W/2, 145, { align: 'center' });
+    doc.text(lvl.requirements, W/2, 151, { align: 'center', maxWidth: 200 });
+
+    // ─── Signatures & Seal ───
+    const sigY = 175;
+    
+    // Left Signature
     doc.setDrawColor(120, 130, 150);
-    doc.setLineWidth(0.4);
-    // Left signature - Coach
-    doc.line(50, sigY, 110, sigY);
-    doc.setFontSize(9);
+    doc.setLineWidth(0.5);
+    doc.line(40, sigY, 100, sigY);
+    doc.setFont('times', 'italic');
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255);
+    // Pseudo-script signature
+    doc.text(cert.coachName, 70, sigY - 5, { align: 'center' });
+    doc.setFont('times', 'normal');
+    doc.setFontSize(10);
     doc.setTextColor(200, 200, 200);
-    doc.text(cert.coachName, 80, sigY + 5, { align: 'center' });
-    doc.setFontSize(7);
-    doc.setTextColor(130, 140, 160);
-    doc.text('Chess Coach', 80, sigY + 10, { align: 'center' });
+    doc.text('Official Chess Coach', 70, sigY + 6, { align: 'center' });
 
-    // Center - Academy seal
-    doc.setFontSize(30);
-    doc.setTextColor(232, 184, 75, 0.3);
-    doc.text('♛', W/2 - 5, sigY + 8);
-    doc.setFontSize(7);
-    doc.setTextColor(130, 140, 160);
-    doc.text('ChessKidoo Academy', W/2, sigY + 14, { align: 'center' });
-    doc.text('Official Seal', W/2, sigY + 18, { align: 'center' });
+    // Center Gold Seal
+    const sealX = W/2, sealY = sigY - 5;
+    // Outer badge ripples (approximate with a thick dashed circle)
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(3);
+    doc.setLineDashPattern([2, 2], 0);
+    doc.circle(sealX, sealY, 15, 'S');
+    doc.setLineDashPattern([], 0); // reset
+    // Solid seal body
+    doc.setFillColor(212, 175, 55);
+    doc.circle(sealX, sealY, 13, 'F');
+    doc.setFillColor(15, 23, 42);
+    doc.circle(sealX, sealY, 11, 'F');
+    doc.setFont('times', 'bold');
+    doc.setFontSize(24);
+    doc.setTextColor(...GOLD);
+    doc.text('♚', sealX, sealY + 8, { align: 'center' });
 
-    // Right signature - Director
+    // Right Signature
     doc.setDrawColor(120, 130, 150);
-    doc.line(W - 110, sigY, W - 50, sigY);
-    doc.setFontSize(9);
+    doc.setLineWidth(0.5);
+    doc.line(W - 100, sigY, W - 40, sigY);
+    doc.setFont('times', 'italic');
+    doc.setFontSize(18);
+    doc.setTextColor(255, 255, 255);
+    doc.text('Ranjith A S', W - 70, sigY - 4, { align: 'center' });
+    doc.setFont('times', 'normal');
+    doc.setFontSize(10);
     doc.setTextColor(200, 200, 200);
-    doc.text('RANJITH A S', W - 80, sigY + 5, { align: 'center' });
-    doc.setFontSize(7);
-    doc.setTextColor(130, 140, 160);
-    doc.text('Academy Director', W - 80, sigY + 10, { align: 'center' });
+    doc.text('Academy Director', W - 70, sigY + 6, { align: 'center' });
 
-    // Date and cert number
+    // ─── Footer ───
     const dateStr = new Date(cert.issuedAt).toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
+    doc.setFont('helvetica', 'normal'); // standard font for fine print
     doc.setFontSize(8);
     doc.setTextColor(100, 110, 130);
-    doc.text(`Issued: ${dateStr}`, 20, H - 18);
-    doc.text(`Certificate No: ${cert.certNumber}`, W - 20, H - 18, { align: 'right' });
-    doc.text('ChessKidoo Academy · Chennai, Tamil Nadu · chesskidoo37@gmail.com', W/2, H - 18, { align: 'center' });
+    doc.text(`Issued: ${dateStr}`, 20, H - 10);
+    doc.text(`Certificate No: ${cert.certNumber}`, W - 20, H - 10, { align: 'right' });
+    doc.text('ChessKidoo Academy · Chennai, Tamil Nadu · chesskidoo37@gmail.com', W/2, H - 10, { align: 'center' });
 
     doc.save(`ChessKidoo_Certificate_${cert.studentName.replace(/\s+/g,'_')}_${cert.level}.pdf`);
     CK.showToast('🎓 Certificate downloaded!', 'success');

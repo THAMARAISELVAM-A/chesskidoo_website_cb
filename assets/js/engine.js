@@ -62,12 +62,24 @@ CK.engine = (() => {
       const mateMatch  = line.match(/score mate (-?\d+)/);
       const pvMatch    = line.match(/ pv (.+)/);
       const nodesMatch = line.match(/nodes (\d+)/);
+      const multiMatch = line.match(/multipv (\d+)/);
+
+      const mIdx = multiMatch ? parseInt(multiMatch[1]) - 1 : 0;
+      _sfResolve.pvs = _sfResolve.pvs || [];
+      _sfResolve.pvs[mIdx] = _sfResolve.pvs[mIdx] || {};
 
       if (depthMatch) _sfResolve.depth  = parseInt(depthMatch[1]);
-      if (cpMatch)    _sfResolve.cp     = parseInt(cpMatch[1]);
-      if (mateMatch)  _sfResolve.mate   = parseInt(mateMatch[1]);
-      if (pvMatch)    _sfResolve.pv     = pvMatch[1].trim();
       if (nodesMatch) _sfResolve.knodes = Math.round(parseInt(nodesMatch[1]) / 1000);
+      
+      if (cpMatch)    _sfResolve.pvs[mIdx].cp   = parseInt(cpMatch[1]);
+      if (mateMatch)  _sfResolve.pvs[mIdx].mate = parseInt(mateMatch[1]);
+      if (pvMatch)    _sfResolve.pvs[mIdx].pv   = pvMatch[1].trim();
+
+      if (mIdx === 0) {
+        if (cpMatch)    _sfResolve.cp     = parseInt(cpMatch[1]);
+        if (mateMatch)  _sfResolve.mate   = parseInt(mateMatch[1]);
+        if (pvMatch)    _sfResolve.pv     = pvMatch[1].trim();
+      }
     }
   }
 
@@ -79,6 +91,7 @@ CK.engine = (() => {
       depth:  _sfResolve.depth || 0,
       knodes: _sfResolve.knodes || 0,
       pv:     _sfResolve.pv   || _sfResolve.bestmove || '',
+      pvs:    _sfResolve.pvs  || [],
       source: 'local'
     };
     _sfResolve.resolve(r);
@@ -93,8 +106,9 @@ CK.engine = (() => {
         _sfResolve.resolve(null);
         _sfResolve = null;
       }
-      _sfResolve = { resolve, cp: null, mate: null, depth: 0, knodes: 0, pv: '', bestmove: '' };
+      _sfResolve = { resolve, cp: null, mate: null, depth: 0, knodes: 0, pv: '', bestmove: '', pvs: [] };
       _sfWorker.postMessage('stop');
+      _sfWorker.postMessage('setoption name MultiPV value 3');
       _sfWorker.postMessage('ucinewgame');
       _sfWorker.postMessage(`position fen ${fen}`);
       _sfWorker.postMessage(`go depth ${_sfDepth}`);
@@ -109,7 +123,7 @@ CK.engine = (() => {
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), 5000);
       const r = await fetch(
-        `https://lichess.org/api/cloud-eval?fen=${encodeURIComponent(fen)}&multiPv=1`,
+        `https://lichess.org/api/cloud-eval?fen=${encodeURIComponent(fen)}&multiPv=3`,
         { signal: ctrl.signal }
       );
       clearTimeout(timer);
@@ -123,6 +137,7 @@ CK.engine = (() => {
         depth:  data.depth  || 0,
         knodes: data.knodes || 0,
         pv:     pv.moves || '',
+        pvs:    data.pvs.map(p => ({ cp: p.cp ?? null, mate: p.mate ?? null, pv: p.moves || '' })),
         source: 'cloud'
       };
     } catch (e) {

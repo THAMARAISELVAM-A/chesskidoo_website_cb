@@ -493,12 +493,14 @@
 /* ─── Game Layout ─── */
 .arena-game-layout {
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 24px;
-  padding: 24px;
-  max-width: 1400px;
+  grid-template-columns: auto 350px;
+  justify-content: center;
+  gap: 48px;
+  padding: 32px 24px;
+  max-width: 1500px;
   margin: 0 auto;
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - 80px);
+  align-items: center;
 }
 
 .arena-board-col {
@@ -541,8 +543,9 @@
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
-  width: min(560px, 65vh);
-  height: min(560px, 65vh);
+  width: min(72vh, 100%);
+  aspect-ratio: 1 / 1;
+  height: auto;
   border: 4px solid #7A5530;
   border-radius: 4px;
   overflow: hidden;
@@ -644,13 +647,13 @@
   flex-direction: column;
   justify-content: space-around;
   padding-right: 4px;
-  height: min(560px, 65vh);
+  height: min(72vh, 100vw);
 }
 .arena-coords-bottom {
   display: flex;
   justify-content: space-around;
   padding-top: 4px;
-  width: min(560px, 65vh);
+  width: min(72vh, 100vw);
 }
 .arena-coord {
   font-size: 10px;
@@ -670,7 +673,7 @@
 /* ─── Evaluation Bar ─── */
 .eval-bar-container {
   width: 24px;
-  height: min(560px, 65vh);
+  height: min(72vh, 100vw);
   margin-right: 6px;
   border-radius: 3px;
   overflow: hidden;

@@ -6,20 +6,6 @@
 (() => {
   const CK = window.CK = window.CK || {};
 
-  async function _hashPassword(plain) {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(plain));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  /* Check per-user credential — SHA-256 hashed passwords only */
-  async function _checkPerUserCred(email, password) {
-    if (!CK.accessManager) throw new Error('System not ready. Please reload the page.');
-    const creds = await CK.accessManager.getCreds();
-    const stored = creds[email.toLowerCase()];
-    if (!stored) return false;
-    const hashed = await _hashPassword(password);
-    return stored === hashed;
-  }
 
   /* Simple brute-force rate limiter — 5 attempts per email per 15 min */
   const _failMap = {};
@@ -99,21 +85,8 @@
         isOfflineMode = true;
       }
 
-      // 2. Offline credential fallback — only per-user passwords set by admin
       if (!profile) {
-        if (!isOfflineMode) {
-          // Supabase was online but returned no profile — credentials wrong
-          throw new Error('Incorrect email or password.');
-        }
-        // Offline: check admin-managed per-user credentials
-        const profiles = await CK.db.getProfiles();
-        const found = profiles.find(p => p?.email?.toLowerCase() === email);
-        if (!found) throw new Error('Account not found. Please contact the academy admin.');
-
-        const perUserMatch = await _checkPerUserCred(email, password);
-        if (!perUserMatch) throw new Error('Incorrect password. Contact the academy admin if you forgot it.');
-
-        profile = found;
+        throw new Error('Incorrect email or password. Please try again.');
       }
 
       // 3. Save profile (never store JWT — Supabase manages its own sb-* keys)

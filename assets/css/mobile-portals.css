@@ -266,8 +266,8 @@
 
   /* ── Notification drawer ── */
   .notif-drawer {
-    width: 100vw;
-    right: -100vw;
+    width: 100%;
+    right: -100%;
   }
   .notif-drawer.open {
     right: 0;

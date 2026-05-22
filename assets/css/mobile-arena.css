@@ -1,6 +1,5 @@
 /* mobile-arena.css — ChessKidoo Arena Mobile Optimization
-   Breakpoints: 900px → 768px → 600px → 480px → 390px
-   Covers: board sizing, eval bar, side panels, game cards, modals
+   Modern Fluid Layout for Tablets & Mobile
    ─────────────────────────────────────────────────────────── */
 
 /* ═══════════════════════════════════════════════════════════
@@ -16,510 +15,112 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   900px — TABLETS LANDSCAPE
+   900px — TABLETS & MOBILE FLUID STACKING
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 900px) {
   /* Arena header compact */
   .arena-header {
-    padding: 12px 18px;
+    padding: 12px 14px;
+    flex-wrap: wrap;
+    gap: 12px;
   }
-  .arena-header-title {
-    font-size: 1.1rem;
-  }
-
-  /* Game cards grid: 2 columns */
-  .arena-cards-grid,
-  .game-cards-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 14px;
+  .arena-header-left { width: 100%; justify-content: space-between; }
+  .arena-header-right { width: 100%; justify-content: space-between; }
+  .arena-header-settings { width: 100%; overflow-x: auto; padding-bottom: 4px; }
+  
+  .difficulty-selector, .timer-selector, .personality-selector {
+    flex-shrink: 0;
   }
 
   /* Game layout: stack board + side panel */
-  .arena-game-layout,
-  .game-layout {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
+  .arena-game-layout {
+    display: flex !important;
+    flex-direction: column;
     align-items: center;
-    gap: 16px;
-  }
-  .arena-side-panel,
-  .game-side-panel {
-    width: 100%;
-    max-width: 520px;
-  }
-
-  /* Chess board sizing */
-  .chess-board-wrap,
-  .chessboard-container,
-  #chessboard,
-  #puzzleBoard,
-  #engineBoard {
-    width: min(460px, 90vw) !important;
-    height: min(460px, 90vw) !important;
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   768px — TABLETS PORTRAIT
-   ═══════════════════════════════════════════════════════════ */
-@media (max-width: 768px) {
-  /* ── Header ── */
-  .arena-header {
-    padding: 10px 14px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .arena-header-title {
-    font-size: 1rem;
-  }
-  .arena-header-back {
-    min-height: 40px;
-    padding: 8px 14px;
-  }
-
-  /* ── Main container: no side padding ── */
-  .arena-container,
-  #arena-page .container {
-    padding: 12px 12px;
-  }
-
-  /* ── Game cards: 2-col ── */
-  .arena-cards-grid,
-  .game-cards-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-  }
-
-  /* ── Game card ── */
-  .game-card {
+    gap: 24px;
     padding: 16px 12px;
   }
-  .game-card-icon {
-    font-size: 2rem;
-  }
-  .game-card-title {
-    font-size: 1rem;
-  }
-  .game-card-desc {
-    font-size: 0.8rem;
-  }
 
-  /* ── Board ── */
-  .chess-board-wrap,
-  .chessboard-container,
-  #chessboard,
-  #puzzleBoard,
-  #engineBoard {
-    width: min(380px, 92vw) !important;
-    height: min(380px, 92vw) !important;
-  }
-
-  /* ── Game layout stacked ── */
-  .arena-game-layout,
-  .game-layout {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    align-items: center;
-    gap: 14px;
-    padding: 12px 10px;
-  }
-  .arena-side-panel,
-  .game-side-panel {
+  .arena-side-panel {
     width: 100%;
-    max-width: 100%;
+    max-width: 500px; /* Match board max-width visually */
   }
 
-  /* ── Eval bar: horizontal when board is on top ── */
-  .eval-bar-container,
-  .eval-bar-wrap {
-    flex-direction: row !important;
-    width: min(380px, 92vw) !important;
-    height: 10px !important;
-    margin: 0 auto 8px !important;
-  }
-  .eval-bar,
-  .eval-bar-inner {
-    height: 10px !important;
-    width: auto !important;
+  /* Chessboard Fluid Sizing */
+  .arena-board-container {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    /* Ensure the container sizes relative to width */
+    height: auto;
   }
 
-  /* ── Move list panel ── */
-  .move-list-panel,
-  .moves-panel {
+  .arena-board-wrapper {
+    flex-grow: 1;
+    width: 100%;
+  }
+
+  .arena-board {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1; /* Perfect square */
+  }
+
+  /* Coords and Eval Bar — Match Board Height Dynamically */
+  .arena-coords-left {
+    height: auto; 
+    aspect-ratio: 16 / 500; /* Approximate vertical height constraint */
+  }
+  .eval-bar-container {
+    height: auto;
+    /* Let the browser stretch it via flexbox stretch */
+    align-self: stretch;
+    width: 14px; /* Thinner on mobile */
+    margin-right: 4px;
+  }
+  
+  /* Analysis Panel Compact */
+  .arena-panel {
+    border-radius: 16px;
+  }
+  .arena-move-list {
     max-height: 200px;
-    overflow-y: auto;
   }
-
-  /* ── Analysis / info panel ── */
-  .arena-info-panel {
-    padding: 12px 14px;
-  }
-  .eval-score {
-    font-size: 1.4rem;
-  }
-
-  /* ── Post-game report: single column ── */
-  .pgr-grid,
-  .post-game-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  /* ── Modal: full screen bottom sheet ── */
-  .arena-modal-overlay {
-    align-items: flex-end;
-    padding: 0;
-  }
-  .arena-modal {
-    width: 100% !important;
-    max-width: 100% !important;
-    border-radius: 20px 20px 0 0 !important;
-    max-height: 90dvh;
-    overflow-y: auto;
-    margin: 0;
-  }
-  .arena-modal-header {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background: var(--arena-surface, #111418);
-    border-radius: 20px 20px 0 0;
-    padding: 16px 20px 12px;
-  }
-
-  /* ── Puzzle controls ── */
-  .puzzle-controls,
-  .pz-controls {
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-  }
-  .puzzle-controls button,
-  .pz-btn {
-    min-height: 44px;
-    flex: 1;
-    min-width: 100px;
-    font-size: 0.82rem;
-  }
-
-  /* ── Player clocks ── */
-  .pv-clock-row {
-    padding: 6px 10px;
-  }
-  .pv-clock {
-    font-size: 1.1rem;
-    padding: 4px 12px;
-    min-width: 70px;
-  }
-
-  /* ── Time control buttons ── */
-  .pv-tc-btn {
-    padding: 6px 10px;
-    min-height: 36px;
-  }
-
-  /* ── Stats banner ── */
-  .gt-stats-banner {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-  .gt-stat-card {
-    padding: 12px 10px;
-  }
-
-  /* ── Commentary feed ── */
-  .commentary-line {
-    padding: 10px 12px;
-  }
-  .commentary-text {
-    font-size: 0.8rem;
+  .engine-eval-value {
+    font-size: 1.8rem;
   }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   600px — PHONES LANDSCAPE / STANDARD
-   ═══════════════════════════════════════════════════════════ */
-@media (max-width: 600px) {
-  /* ── Game cards: 2-col compact ── */
-  .arena-cards-grid,
-  .game-cards-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-  .game-card {
-    padding: 14px 10px;
-  }
-  .game-card-icon {
-    font-size: 1.7rem;
-  }
-  .game-card-title {
-    font-size: 0.9rem;
-  }
-  .game-card-desc {
-    font-size: 0.75rem;
-  }
-
-  /* ── Board ── */
-  #chessboard,
-  #puzzleBoard,
-  #engineBoard,
-  .chess-board-wrap,
-  .chessboard-container {
-    width: min(320px, 94vw) !important;
-    height: min(320px, 94vw) !important;
-  }
-
-  /* ── Eval bar ── */
-  .eval-bar-container,
-  .eval-bar-wrap {
-    width: min(320px, 94vw) !important;
-  }
-
-  /* ── Move list ── */
-  .move-list-panel,
-  .moves-panel {
-    max-height: 160px;
-  }
-  .move-entry {
-    font-size: 0.8rem;
-    padding: 3px 6px;
-  }
-
-  /* ── Opening trainer grid ── */
-  .ot-grid {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  /* ── Stats banner ── */
-  .gt-stats-banner {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   480px — STANDARD PHONES
+   480px — SMALL PHONES (Tighter Paddings)
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 480px) {
-  /* ── Header ── */
-  .arena-header {
-    padding: 8px 12px;
-  }
-  .arena-header-title {
-    font-size: 0.9rem;
-  }
-
-  /* ── Container ── */
-  .arena-container,
-  #arena-page .container {
-    padding: 10px 8px;
-  }
-
-  /* ── Board ── */
-  #chessboard,
-  #puzzleBoard,
-  #engineBoard,
-  .chess-board-wrap,
-  .chessboard-container {
-    width: min(288px, 96vw) !important;
-    height: min(288px, 96vw) !important;
-  }
-  .eval-bar-container,
-  .eval-bar-wrap {
-    width: min(288px, 96vw) !important;
-  }
-
-  /* ── Game cards: 2-col very compact ── */
-  .game-card {
+  .arena-game-layout {
     padding: 12px 8px;
-    gap: 8px;
+    gap: 16px;
   }
-  .game-card-icon {
-    font-size: 1.5rem;
-  }
-  .game-card-title {
-    font-size: 0.85rem;
-  }
-  .game-card-desc {
-    display: none;
-  }
-
-  /* ── Puzzle controls ── */
-  .puzzle-controls button,
-  .pz-btn {
-    font-size: 0.78rem;
-    padding: 8px 12px;
-    min-width: 80px;
-  }
-
-  /* ── Post-game sections ── */
-  .pgr-section-title {
-    font-size: 0.9rem;
-  }
-  .pgr-stat-val {
-    font-size: 1.2rem;
-  }
-
-  /* ── Timer ── */
-  .pv-clock {
-    font-size: 1rem;
-    min-width: 60px;
-    padding: 3px 8px;
-  }
-
-  /* ── Commentary ── */
-  .commentary-line {
-    padding: 8px 10px;
-    gap: 8px;
-  }
-  .commentary-icon {
-    font-size: 0.95rem;
-  }
-  .commentary-text {
-    font-size: 0.77rem;
-  }
-
-  /* ── Stats banner: 2-col ── */
-  .gt-stats-banner {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
-  }
-  .gt-stat-card {
-    padding: 10px 8px;
-  }
-  .gt-stat-val {
-    font-size: 1.1rem;
-  }
-
-  /* ── Move game form ── */
-  .gt-form-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   390px — SMALL PHONES
-   ═══════════════════════════════════════════════════════════ */
-@media (max-width: 390px) {
-  #chessboard,
-  #puzzleBoard,
-  #engineBoard,
-  .chess-board-wrap,
-  .chessboard-container {
-    width: min(270px, 98vw) !important;
-    height: min(270px, 98vw) !important;
-  }
-  .eval-bar-container,
-  .eval-bar-wrap {
-    width: min(270px, 98vw) !important;
-  }
-  .arena-cards-grid,
-  .game-cards-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-  }
-  .game-card {
-    padding: 10px 6px;
-  }
-  .game-card-icon {
-    font-size: 1.3rem;
-  }
-  .game-card-title {
-    font-size: 0.78rem;
-  }
-  .arena-header-title {
-    font-size: 0.82rem;
-  }
-  .gt-stats-banner {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 4px;
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   iOS SAFE AREA
-   ═══════════════════════════════════════════════════════════ */
-@supports (padding: max(0px)) {
-  .arena-header {
-    padding-top: max(10px, env(safe-area-inset-top));
-    padding-left: max(14px, env(safe-area-inset-left));
-    padding-right: max(14px, env(safe-area-inset-right));
-  }
-  #arena-page {
-    padding-bottom: max(0px, env(safe-area-inset-bottom));
-  }
-  @media (max-width: 768px) {
-    .arena-modal {
-      padding-bottom: max(16px, env(safe-area-inset-bottom));
-    }
-  }
+  
+  .btn-more-games { padding: 8px 12px; font-size: 0.75rem; }
+  .arena-player-info { padding: 4px 8px; }
+  .arena-player-avatar { width: 28px; height: 28px; font-size: 0.7rem; }
+  
+  .arena-coord { display: none; } /* Hide coords on very small screens to maximize board */
+  .arena-coords-left, .arena-coords-bottom { display: none; }
+  
+  .eval-bar-container { width: 10px; margin-right: 4px; }
 }
 
 /* ═══════════════════════════════════════════════════════════
    TOUCH DEVICE — DISABLE HOVER EFFECTS
    ═══════════════════════════════════════════════════════════ */
 @media (hover: none) and (pointer: coarse) {
-  .game-card:hover,
-  .arena-header-back:hover,
-  .puzzle-controls button:hover,
-  .pz-btn:hover,
-  .pv-tc-btn:hover,
-  .move-entry:hover,
-  .commentary-line:hover {
-    transform: none !important;
-    box-shadow: none !important;
-    background: unset;
+  .diff-btn:hover,
+  .timer-btn:hover,
+  .style-btn:hover,
+  .amove-san:hover {
+    background: transparent;
   }
-  .game-card:active {
-    transform: scale(0.97);
-    opacity: 0.88;
-    transition: transform 0.1s, opacity 0.1s;
-  }
-  .puzzle-controls button:active,
-  .pz-btn:active {
-    transform: scale(0.96);
-    opacity: 0.8;
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   LANDSCAPE PHONE (short viewport)
-   ═══════════════════════════════════════════════════════════ */
-@media (max-height: 500px) and (orientation: landscape) {
-  .arena-header {
-    padding: 6px 12px;
-  }
-  #chessboard,
-  #puzzleBoard,
-  #engineBoard,
-  .chess-board-wrap,
-  .chessboard-container {
-    width: min(240px, 45vw) !important;
-    height: min(240px, 45vw) !important;
-  }
-  .arena-game-layout,
-  .game-layout {
-    display: grid !important;
-    grid-template-columns: min(240px, 45vw) 1fr !important;
-    align-items: flex-start;
-    gap: 16px;
-  }
-  .arena-side-panel,
-  .game-side-panel {
-    width: calc(100% - min(240px, 45vw) - 16px);
-    max-height: calc(100dvh - 60px);
-    overflow-y: auto;
-  }
-  .eval-bar-container,
-  .eval-bar-wrap {
-    flex-direction: column !important;
-    width: 10px !important;
-    height: min(240px, 45vw) !important;
-    margin: 0 8px 0 0 !important;
-  }
-  .move-list-panel,
-  .moves-panel {
-    max-height: 150px;
+  .diff-btn.active, .timer-btn.active, .style-btn.active {
+    background: rgba(255,255,255,0.1);
   }
 }
