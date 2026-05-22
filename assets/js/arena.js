@@ -27,6 +27,7 @@
   let useWasm = false;
   const playerColor = 'w';
   let gameStartTime = null;
+  let selectedTimeControl = 600; // in seconds, or 'untimed'
   let whiteClock = 600;
   let blackClock = 600;
   let clockInterval = null;
@@ -103,8 +104,8 @@
     isGameOver = false;
     isThinking = false;
     gameStartTime = Date.now();
-    whiteClock = 600;
-    blackClock = 600;
+    whiteClock = selectedTimeControl === 'untimed' ? 0 : selectedTimeControl;
+    blackClock = selectedTimeControl === 'untimed' ? 0 : selectedTimeControl;
     activeClock = 'w';
     aiStartTime = null;
     lastTickTime = Date.now();
@@ -115,7 +116,12 @@
     renderAnalysisPanel();
     updateStatus('Your turn — play as White');
     initEngine();
-    startClock();
+    if (selectedTimeControl !== 'untimed') {
+      startClock();
+    } else {
+      if (clockInterval) clearInterval(clockInterval);
+      updateClockDisplay();
+    }
     initEvalChart();
     A.updateMinimaxAnalysis();
   };
@@ -164,15 +170,16 @@
   function updateClockDisplay() {
     const wEl = document.getElementById('arena-clock-white');
     const bEl = document.getElementById('arena-clock-black');
-    if (wEl) wEl.textContent = formatTime(whiteClock);
-    if (bEl) bEl.textContent = formatTime(blackClock);
+    if (wEl) wEl.textContent = selectedTimeControl === 'untimed' ? '∞' : formatTime(whiteClock);
+    if (bEl) bEl.textContent = selectedTimeControl === 'untimed' ? '∞' : formatTime(blackClock);
     const wWrap = document.getElementById('arena-clock-white-wrap');
     const bWrap = document.getElementById('arena-clock-black-wrap');
-    if (wWrap) wWrap.classList.toggle('active', activeClock === 'w');
-    if (bWrap) bWrap.classList.toggle('active', activeClock === 'b');
+    if (wWrap) wWrap.classList.toggle('active', selectedTimeControl !== 'untimed' && activeClock === 'w');
+    if (bWrap) bWrap.classList.toggle('active', selectedTimeControl !== 'untimed' && activeClock === 'b');
   }
 
   function formatTime(sec) {
+    if (sec === 'untimed') return '∞';
     const m = Math.floor(sec / 60);
     const s = sec % 60;
     return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
@@ -1603,6 +1610,14 @@ A.setDifficulty = (level) => {
   });
 };
 
+A.setTimeControl = (timeVal) => {
+  selectedTimeControl = timeVal;
+  document.querySelectorAll('.timer-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.time === String(timeVal));
+  });
+  A.newGame();
+};
+
 /* ─── Hint System ─── */
 A.showHint = () => {
   if (isGameOver || isThinking || !isPlayerTurn) return;
@@ -1639,6 +1654,7 @@ let currentPuzzle = null;
 /* ─── Puzzle Mode ─── */
 A.startPuzzle = (puzzleId = null) => {
   puzzleMode = true;
+  if (clockInterval) { clearInterval(clockInterval); clockInterval = null; }
   if (puzzleId) {
     currentPuzzle = PUZZLES.find(p => p.id === puzzleId);
   } else {
@@ -1656,8 +1672,8 @@ A.startPuzzle = (puzzleId = null) => {
   isGameOver = false;
   isThinking = false;
   gameStartTime = Date.now();
-  whiteClock = 600;
-  blackClock = 600;
+  whiteClock = 0;
+  blackClock = 0;
   activeClock = 'w';
   achievements = JSON.parse(localStorage.getItem('ck_achievements') || '[]');
   engineReady = true;
@@ -1666,6 +1682,16 @@ A.startPuzzle = (puzzleId = null) => {
   renderBoard();
   renderAnalysisPanel();
   updateStatus(`Puzzle: ${currentPuzzle.name} — Find the best move!`);
+  
+  const wEl = document.getElementById('arena-clock-white');
+  const bEl = document.getElementById('arena-clock-black');
+  if (wEl) wEl.textContent = '∞';
+  if (bEl) bEl.textContent = '∞';
+  const wWrap = document.getElementById('arena-clock-white-wrap');
+  const bWrap = document.getElementById('arena-clock-black-wrap');
+  if (wWrap) wWrap.classList.remove('active');
+  if (bWrap) bWrap.classList.remove('active');
+
   initEvalChart();
 };
 

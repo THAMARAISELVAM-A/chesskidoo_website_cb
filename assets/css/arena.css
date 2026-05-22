@@ -1510,7 +1510,14 @@
 @media (max-width: 768px) {
   .arena-header { flex-wrap: wrap; gap: 10px; padding: 10px 16px; }
   .arena-title-text { display: none; }
-  .difficulty-selector { order: 3; width: 100%; justify-content: center; }
+  .arena-header-settings {
+    order: 3;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
   .arena-board { width: min(380px, 90vw); height: min(380px, 90vw); }
   .eval-bar-container { height: min(380px, 90vw); }
   .arena-coords-left { height: min(380px, 90vw); }
@@ -2032,20 +2039,62 @@
   display: none !important; /* Hide old img logo inside arena */
 }
 
-.difficulty-selector {
+.arena-header-settings {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.difficulty-selector,
+.timer-selector {
+  display: flex;
+  gap: 4px;
   background: rgba(0, 0, 0, 0.3) !important;
   border: 1.5px solid rgba(255, 255, 255, 0.06) !important;
   padding: 4px !important;
   border-radius: 14px !important;
 }
-.diff-btn {
+
+.diff-btn,
+.timer-btn {
   padding: 8px 16px !important;
   font-size: 0.8rem !important;
   border-radius: 10px !important;
+  border: none;
+  background: transparent;
+  color: var(--arena-text-muted);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: inherit;
+  position: relative;
+  overflow: hidden;
 }
-.diff-btn.active {
+
+.diff-btn:hover,
+.timer-btn:hover {
+  color: var(--arena-text);
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.diff-btn.active,
+.timer-btn.active {
   background: linear-gradient(135deg, #eab308 0%, #d97706 100%) !important;
+  color: #0a0c0f !important;
   box-shadow: 0 4px 15px rgba(217, 119, 6, 0.35) !important;
+}
+
+.diff-btn.active::after,
+.timer-btn.active::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 1px solid var(--arena-gold);
+  border-radius: 11px;
+  animation: pulseGlow 2s infinite;
 }
 
 /* Glassmorphism Panels */

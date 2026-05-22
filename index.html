@@ -5358,12 +5358,21 @@
           </a>
           <span class="arena-title-text">AI Challenge Arena</span>
         </div>
-        <div class="difficulty-selector">
-          <button class="diff-btn" data-level="Beginner" onclick="CK.arena.setDifficulty('Beginner')">Beginner</button>
-          <button class="diff-btn active" data-level="Intermediate"
-            onclick="CK.arena.setDifficulty('Intermediate')">Intermediate</button>
-          <button class="diff-btn" data-level="Advanced" onclick="CK.arena.setDifficulty('Advanced')">Advanced</button>
-          <button class="diff-btn" data-level="Expert" onclick="CK.arena.setDifficulty('Expert')">Expert</button>
+        <div class="arena-header-settings">
+          <div class="difficulty-selector">
+            <button class="diff-btn" data-level="Beginner" onclick="CK.arena.setDifficulty('Beginner')">Beginner</button>
+            <button class="diff-btn active" data-level="Intermediate"
+              onclick="CK.arena.setDifficulty('Intermediate')">Intermediate</button>
+            <button class="diff-btn" data-level="Advanced" onclick="CK.arena.setDifficulty('Advanced')">Advanced</button>
+            <button class="diff-btn" data-level="Expert" onclick="CK.arena.setDifficulty('Expert')">Expert</button>
+          </div>
+          <div class="timer-selector">
+            <button class="timer-btn" data-time="180" onclick="CK.arena.setTimeControl(180)">3 Min</button>
+            <button class="timer-btn" data-time="300" onclick="CK.arena.setTimeControl(300)">5 Min</button>
+            <button class="timer-btn active" data-time="600" onclick="CK.arena.setTimeControl(600)">10 Min</button>
+            <button class="timer-btn" data-time="1800" onclick="CK.arena.setTimeControl(1800)">30 Min</button>
+            <button class="timer-btn" data-time="untimed" onclick="CK.arena.setTimeControl('untimed')">Untimed</button>
+          </div>
         </div>
         <div class="arena-header-right">
           <button class="btn-more-games" onclick="CK.navigate('more-games')">🎮 More Games</button>
