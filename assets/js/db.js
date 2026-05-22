@@ -865,12 +865,12 @@
   ───────────────────────────────────────────────────────── */
   CK.accessManager = {
     _getAdminAuth() {
-      if (!window.APP_CONFIG?.SUPABASE_URL || !window.APP_CONFIG?.SUPABASE_KEY) return null;
+      if (!window.APP_CONFIG?.SUPABASE_URL || !window.APP_CONFIG?.SUPABASE_ANON_KEY) return null;
       if (!this._tempClient && window.supabase) {
         // Create a temporary, non-persisting client so creating users doesn't log the admin out!
         this._tempClient = window.supabase.createClient(
           window.APP_CONFIG.SUPABASE_URL, 
-          window.APP_CONFIG.SUPABASE_KEY, 
+          window.APP_CONFIG.SUPABASE_ANON_KEY, 
           { auth: { persistSession: false, autoRefreshToken: false } }
         );
       }
