@@ -227,6 +227,8 @@ CK.notifs = (() => {
   /* ── Init (call after login) ── */
   function init(user) {
     if (!user) return;
+    // Request browser push permission on first login (non-blocking)
+    setTimeout(() => requestBrowserPermission(), 3000);
     generateSystemNotifs(user);
     _refreshBells();
   }
@@ -240,8 +242,9 @@ CK.notifs = (() => {
       return false;
     }
     try {
-      const serviceId  = localStorage.getItem('ck_emailjs_service')  || 'service_chesskidoo';
-      const templateId = localStorage.getItem('ck_emailjs_template') || 'template_notification';
+      const cfg = window.APP_CONFIG || {};
+      const serviceId  = cfg.EMAILJS_SERVICE  || localStorage.getItem('ck_emailjs_service')  || 'service_chesskidoo';
+      const templateId = cfg.EMAILJS_TEMPLATE || localStorage.getItem('ck_emailjs_template') || 'template_notification';
       await emailjs.send(serviceId, templateId, {
         to_email: toEmail,
         subject: subject,

@@ -4018,6 +4018,11 @@
   transform: translateY(-3px);
   box-shadow: 0 10px 30px rgba(0,0,0,.3);
 }
+.pgn-lib-card.active {
+  border-color: var(--p-gold);
+  background: rgba(232,184,75,0.08);
+  box-shadow: inset 0 0 0 1px var(--p-gold), 0 0 15px rgba(232,184,75,0.25);
+}
 .pgn-lib-card-icon {
   font-size: 1.8rem; line-height: 1;
 }
@@ -4929,4 +4934,94 @@ textarea.p-input { resize: vertical; min-height: 72px; }
   .p-sidebar, .p-header, .p-nav-item, .p-btn, .notif-drawer, .notif-backdrop { display: none !important; }
   .page, .p-panel { opacity: 1 !important; display: block !important; }
   .report-card-wrapper { background: #fff !important; color: #000 !important; }
+}
+
+/* PGN Database Explorer styling */
+.lab-db-explorer {
+  background: var(--p-surface3, #1e2530);
+  border: 1px dashed var(--p-gold-dim, rgba(232,184,75,0.3));
+  border-radius: 8px;
+  padding: 12px;
+  max-height: 250px;
+  overflow-y: auto;
+  margin-top: 10px;
+}
+.lab-db-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: 6px;
+}
+.lab-db-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--p-gold, #e8b84b);
+}
+.lab-db-search {
+  width: 100%;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #fff;
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 0.78rem;
+  margin-bottom: 8px;
+  box-sizing: border-box;
+}
+.lab-db-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lab-db-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.04);
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.lab-db-item:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(232,184,75,0.2);
+}
+.lab-db-item-info {
+  flex: 1;
+  min-width: 0;
+  margin-right: 8px;
+}
+.lab-db-item-players {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.lab-db-item-details {
+  font-size: 0.68rem;
+  color: var(--p-text-muted, #94a3b8);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.lab-db-item-btn {
+  flex-shrink: 0;
+  background: var(--p-gold, #e8b84b);
+  color: #000;
+  border: none;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.lab-db-item-btn:hover {
+  opacity: 0.9;
 }

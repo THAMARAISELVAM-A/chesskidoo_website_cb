@@ -51,6 +51,7 @@
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>if(typeof emailjs!=='undefined')emailjs.init('1EuHvvzi2H9RnaBF6');</script>
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/portals.css">
   <link rel="stylesheet" href="assets/css/arena.css">
@@ -59,8 +60,8 @@
   <link rel="stylesheet" href="assets/css/mobile-portals.css">
   <link rel="stylesheet" href="assets/css/mobile-arena.css">
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <!-- Backend: Supabase JS SDK -->
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
 
@@ -79,10 +80,13 @@
         "email": "chesskidoo37@gmail.com",
         "address": {
           "@type": "PostalAddress",
-          "addressLocality": "Chennai",
+          "streetAddress": "K K Nagar, Kalingarayanpalayam",
+          "addressLocality": "Bhavani, Erode",
           "addressRegion": "Tamil Nadu",
+          "postalCode": "638316",
           "addressCountry": "IN"
         },
+        "hasMap": "https://maps.app.goo.gl/DzQGp2NTkXnEJtBeA",
         "sameAs": ["https://wa.me/919025846663"],
         "priceRange": "₹₹",
         "openingHours": "Mo-Su 09:00-21:00"
@@ -1520,6 +1524,10 @@
                 <a href="mailto:Chesskidoo37@gmail.com" class="footer-contact-item">
                   <span class="contact-icon">✉️</span> Chesskidoo37@gmail.com
                 </a>
+                <a href="https://maps.app.goo.gl/DzQGp2NTkXnEJtBeA" target="_blank" rel="noopener"
+                  class="footer-contact-item">
+                  <span class="contact-icon">📍</span> K K Nagar, Kalingarayanpalayam, Bhavani, Erode, Tamil Nadu 638316
+                </a>
 
                 <!-- CTA buttons matching mockup exactly -->
                 <button class="footer-cta-btn footer-demo-btn" onclick="CK.openDemoModal()">Get Free Demo</button>
@@ -1629,7 +1637,7 @@
             </div>
 
             <button type="button" class="login-card-v2-google"
-              onclick="CK.showToast('Google login coming soon!','info')">
+              onclick="CK.handleGoogleLogin()">
               <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -2119,7 +2127,7 @@
                 <div class="p-card-header">
                   <div class="p-card-title">⭐ Awards & Certificates</div>
                   <button class="p-btn p-btn-blue p-btn-sm"
-                    onclick="CK.showToast('Certificate generation coming soon!', 'info')">+ Issue Certificate</button>
+                    onclick="CK.admin.openIssueCertModal()">+ Issue Certificate</button>
                 </div>
                 <div class="p-card-body"
                   style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:20px;">
@@ -2153,6 +2161,15 @@
                     <button class="p-btn p-btn-teal p-btn-sm" style="width:100%"
                       onclick="CK.admin.showPanel('tournaments')">View Championships</button>
                   </div>
+                </div>
+              </div>
+              <!-- Issued Certificates List -->
+              <div class="p-card" style="margin-top:16px;">
+                <div class="p-card-header">
+                  <div class="p-card-title">📜 Issued Certificates</div>
+                </div>
+                <div class="p-card-body" id="adminIssuedCertsList">
+                  <div style="text-align:center;opacity:.4;padding:20px;">Loading certificates...</div>
                 </div>
               </div>
             </div>
@@ -3821,6 +3838,7 @@
                       <button class="p-btn p-btn-blue" style="width:100%;margin-bottom:14px;"
                         onclick="CK.lab.analyzePgn(document.getElementById('labPgnInput').value,'studentLabBoard')">🔬
                         Analyze PGN</button>
+                      <div id="studentPgnDbExplorer" class="lab-db-explorer" style="display:none;margin-bottom:14px;"></div>
                       <div class="lab-eval-panel">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
                           <span style="font-size:0.87rem;font-weight:700;color:#fff;">Engine Eval</span>
@@ -3855,8 +3873,8 @@
                   <div class="pgn-lib-section">
                     <div class="pgn-lib-header">
                       <div>
-                        <div class="pgn-lib-header-title">📚 Famous Games Library</div>
-                        <div class="pgn-lib-header-sub">8 historically verified games — click any card to load instantly
+                        <div class="pgn-lib-header-title">📚 Famous Games Library & Live APIs</div>
+                        <div class="pgn-lib-header-sub">30+ curated master games + live Lichess & Chess.com import — load any game with Stockfish 18
                         </div>
                       </div>
                     </div>
@@ -4792,12 +4810,20 @@
 
                     <!-- RIGHT: PGN Input + Eval + Move List -->
                     <div class="lab-side-panel">
+                      <input type="file" id="coachPgnFileUpload" accept=".pgn,.txt" style="display:none"
+                        onchange="CK.lab.handleFileUpload(event,'coachLabBoard')">
+                      <div class="lab-upload-strip" onclick="document.getElementById('coachPgnFileUpload').click()" style="margin-bottom:11px;">
+                        <span class="lab-upload-strip-icon">📁</span>
+                        <span class="lab-upload-strip-text">Drop .pgn or click to browse</span>
+                        <button class="p-btn p-btn-ghost p-btn-sm" style="pointer-events:none;">Browse</button>
+                      </div>
                       <textarea id="coachLabPgnInput" class="p-form-control"
                         style="height:108px;font-family:monospace;font-size:0.82rem;margin-bottom:11px;background:var(--p-surface3);color:#fff;border:1px solid rgba(255,255,255,0.1);resize:vertical;"
                         placeholder="Paste lesson PGN here…"></textarea>
                       <button class="p-btn p-btn-teal" style="width:100%;margin-bottom:14px;"
                         onclick="CK.lab.analyzePgn(document.getElementById('coachLabPgnInput').value,'coachLabBoard')">🔬
                         Evaluate &amp; Sync</button>
+                      <div id="coachPgnDbExplorer" class="lab-db-explorer" style="display:none;margin-bottom:14px;"></div>
                       <div class="lab-eval-panel" style="border-color:rgba(45,212,191,0.2);">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
                           <span style="font-size:0.87rem;font-weight:700;color:#fff;">Engine Eval</span>
@@ -4833,9 +4859,8 @@
                   <div class="pgn-lib-section">
                     <div class="pgn-lib-header">
                       <div>
-                        <div class="pgn-lib-header-title">📚 Famous Games Library</div>
-                        <div class="pgn-lib-header-sub">Load any game instantly to teach patterns, openings, and tactics
-                          to your class</div>
+                        <div class="pgn-lib-header-title">📚 Famous Games Library & Live APIs</div>
+                        <div class="pgn-lib-header-sub">30+ curated games + live Lichess & Chess.com import — load any game with Stockfish 18 analysis for your class</div>
                       </div>
                     </div>
                     <div id="coachPgnLibStrip" class="pgn-lib-strip"></div>
@@ -5108,6 +5133,8 @@
                 class="icon">📅</span><span>Schedule</span></button>
             <button class="p-nav-item par-nav-btn" data-panel="reports" onclick="CK.parents.nav('reports')"><span
                 class="icon">📋</span><span>Reports</span></button>
+            <button class="p-nav-item par-nav-btn" data-panel="fees" onclick="CK.parents.nav('fees')"><span
+                class="icon">💳</span><span>Fee Payment</span></button>
             <button class="p-nav-item par-nav-btn" data-panel="aiweekly" onclick="CK.parents.nav('aiweekly')"><span
                 class="icon">🧠</span><span>AI Weekly Report</span></button>
             <div class="p-nav-section-label">Communication</div>
@@ -5295,6 +5322,17 @@
                 </div>
                 <div class="p-card-body" id="parFeedbackContent" style="padding:20px;">
                   <div style="text-align:center;opacity:.45;padding:30px;">Loading feedback form…</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-panel par-panel" id="par-panel-fees">
+              <div class="p-card">
+                <div class="p-card-header">
+                  <div class="p-card-title">💳 Fee Payment</div>
+                </div>
+                <div class="p-card-body" id="parFeesContent" style="padding:20px;">
+                  <div style="text-align:center;opacity:.45;padding:30px;">Loading fee details…</div>
                 </div>
               </div>
             </div>
@@ -5667,6 +5705,34 @@
               onclick="CK.admin.broadcastLiveTip()"><span class="icon">💡</span>Send Live Coach Tip</button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Issue Certificate Modal -->
+  <div class="p-modal-overlay" id="adminCertModal">
+    <div class="p-modal" style="max-width: 500px;">
+      <div class="p-modal-header">
+        <div class="p-modal-title">🎓 Issue Certificate</div>
+        <button class="p-modal-close" onclick="CK.closeModal('adminCertModal')">✕</button>
+      </div>
+      <div class="p-modal-body">
+        <div class="p-form-group"><label class="p-label">Select Student</label>
+          <select class="p-form-control" id="certStudentSelect">
+            <option value="">Loading students...</option>
+          </select></div>
+        <div class="p-form-group"><label class="p-label">Certificate Level</label>
+          <select class="p-form-control" id="certLevelSelect">
+            <option value="Beginner">🥉 Beginner Level</option>
+            <option value="Intermediate">🥈 Intermediate Level</option>
+            <option value="Advanced">🥇 Advanced Level</option>
+          </select></div>
+        <div class="p-form-group"><label class="p-label">Coach Name (Signing)</label>
+          <input class="p-form-control" id="certCoachName" placeholder="Coach name for signature"></div>
+      </div>
+      <div class="p-modal-footer">
+        <button class="p-btn p-btn-ghost" onclick="CK.closeModal('adminCertModal')">Cancel</button>
+        <button class="p-btn p-btn-gold" onclick="CK.admin.issueCertificate()">🎓 Generate & Download</button>
       </div>
     </div>
   </div>
@@ -6310,17 +6376,30 @@
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chess.js@0.10.3/chess.min.js"></script>
-  <!-- Stockfish WASM — real engine for Arena AI (loaded here, used lazily) -->
+  <!-- Stockfish 18 WASM — Web Worker for Arena AI -->
   <script>
     (function() {
-      var s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js';
-      s.onload = function() { if (typeof Stockfish !== 'undefined') window.Stockfish = Stockfish; };
-      s.onerror = function() { console.warn('Stockfish WASM not available — Arena uses built-in engine'); };
-      document.head.appendChild(s);
+      var SF_URL = 'https://cdn.jsdelivr.net/npm/stockfish@18.0.0/stockfish-18-lite-single.js';
+      window.Stockfish = function() {
+        try {
+          var worker = new Worker(SF_URL);
+          var self = { onmessage: null };
+          worker.addEventListener('message', function(e) {
+            if (self.onmessage) self.onmessage(e.data);
+          });
+          self.postMessage = function(msg) { worker.postMessage(msg); };
+          self.terminate = function() { worker.terminate(); };
+          return self;
+        } catch(e) {
+          console.warn('Stockfish 18 WASM not available — Arena uses built-in engine');
+          return null;
+        }
+      };
     })();
   </script>
+
   <!-- Core Framework & DB (Load First) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/config.js"></script>
   <script src="assets/js/db.js"></script>
   <script src="assets/js/auth.js"></script>

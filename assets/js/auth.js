@@ -155,6 +155,91 @@
     }
   };
 
+  /* ── Google OAuth Login ── */
+  CK.handleGoogleLogin = async () => {
+    if (!window.supabaseClient) {
+      CK.showToast('Google login requires an internet connection.', 'error');
+      return;
+    }
+    try {
+      CK.showToast('Redirecting to Google...', 'info');
+      const { data, error } = await window.supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+          queryParams: { prompt: 'select_account' }
+        }
+      });
+      if (error) throw error;
+      // The browser will redirect to Google — on return, _handleAuthCallback picks up
+    } catch (err) {
+      CK.showToast(err.message || 'Google login failed. Please try again.', 'error');
+    }
+  };
+
+  /* ── Handle OAuth Callback (runs on page load) ── */
+  CK._handleAuthCallback = async () => {
+    if (!window.supabaseClient) return;
+    try {
+      const { data: { session }, error } = await window.supabaseClient.auth.getSession();
+      if (error || !session || !session.user) return;
+
+      // Already logged in via ck_user? Skip
+      if (CK.currentUser) return;
+
+      const user = session.user;
+      const email = user.email?.toLowerCase();
+
+      // Check if a profile already exists for this user
+      let profile = await CK.db.getProfile(user.id);
+
+      if (!profile) {
+        // Check if there's an existing profile by email (admin-created)
+        const allProfiles = await CK.db.getProfiles();
+        profile = allProfiles.find(p => p?.email?.toLowerCase() === email);
+
+        if (profile) {
+          // Link the Supabase auth ID to the existing profile
+          profile.auth_id = user.id;
+          await CK.db.saveProfile(profile);
+        } else {
+          // Brand new user via Google — create student profile
+          profile = {
+            id: user.id,
+            full_name: user.user_metadata?.full_name || user.user_metadata?.name || email.split('@')[0],
+            email: email,
+            role: 'student',
+            userid: Math.floor(100 + Math.random() * 900).toString(),
+            photo: user.user_metadata?.avatar_url || '',
+            rating: 800,
+            level: 'Beginner',
+            status: 'Pending',
+            join_date: new Date().toISOString().split('T')[0]
+          };
+          await CK.db.saveProfile(profile);
+        }
+      }
+
+      // Log in
+      CK.currentUser = profile;
+      localStorage.setItem('ck_user', JSON.stringify(profile));
+
+      const role = (profile.role || 'student').toLowerCase();
+      CK.showToast(`Welcome, ${profile.full_name || 'Champion'}! ♟`, 'success');
+
+      setTimeout(() => {
+        CK.showPage(`${role}-page`);
+        if (CK.notifs) CK.notifs.init(profile);
+        if (role === 'admin'   && CK.admin)   CK.admin.init();
+        if (role === 'student' && CK.student) CK.student.init();
+        if (role === 'coach'   && CK.coach)   CK.coach.init();
+        if (role === 'parent'  && CK.parents) CK.parents.init();
+      }, 500);
+    } catch (err) {
+      console.warn('[ChessKidoo Auth] OAuth callback error:', err);
+    }
+  };
+
   CK.logout = async () => {
     try {
       if (window.supabaseClient) await window.supabaseClient.auth.signOut();

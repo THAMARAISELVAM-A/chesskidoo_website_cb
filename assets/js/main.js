@@ -481,32 +481,23 @@
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
 
-    // Restore session — re-validate via Supabase, fall back to cached profile if offline
+    // Restore session — trust the cached profile.
+    // The app supports TWO login paths: Supabase Auth AND the per-user
+    // credentials table. Credential-login users (admin, coaches, students)
+    // have NO Supabase Auth session, so we must NOT clear ck_user just
+    // because auth.getSession() is empty — that would log them out on every
+    // refresh. A cached ck_user means "logged in"; logout() clears it.
     (async () => {
       let restoredUser = null;
 
-      if (window.supabaseClient) {
+      const cached = localStorage.getItem('ck_user');
+      if (cached) {
         try {
-          const { data: { session } } = await window.supabaseClient.auth.getSession();
-          if (session?.user) {
-            const cached = localStorage.getItem('ck_user');
-            if (cached) {
-              try { restoredUser = JSON.parse(cached); CK.currentUser = restoredUser; } catch(e) { localStorage.removeItem('ck_user'); }
-            }
-          } else {
-            localStorage.removeItem('ck_user');
-            CK.currentUser = null;
-          }
-        } catch(e) {
-          const cached = localStorage.getItem('ck_user');
-          if (cached) {
-            try { restoredUser = JSON.parse(cached); CK.currentUser = restoredUser; } catch(e2) { localStorage.removeItem('ck_user'); }
-          }
-        }
-      } else {
-        const cached = localStorage.getItem('ck_user');
-        if (cached) {
-          try { restoredUser = JSON.parse(cached); CK.currentUser = restoredUser; } catch(e) { localStorage.removeItem('ck_user'); }
+          restoredUser = JSON.parse(cached);
+          CK.currentUser = restoredUser;
+        } catch (e) {
+          localStorage.removeItem('ck_user');
+          restoredUser = null;
         }
       }
 
@@ -520,7 +511,11 @@
           if (role === 'parent'  && CK.parents) CK.parents.init();
         }, 50);
       } else {
-        CK.showPage('landing-page');
+        // Check for OAuth callback (returning from Google login)
+        if (CK._handleAuthCallback) {
+          await CK._handleAuthCallback();
+        }
+        if (!CK.currentUser) CK.showPage('landing-page');
       }
     })();
   });
@@ -872,8 +867,37 @@ ta: {
       if (ba) ba.classList.add('active');
       this._setBanner(null, '');
 
+      // Pre-process and clean the PGN to handle CRLF line endings
+      let cleanPgn = (pgnText || '').trim();
+      cleanPgn = cleanPgn.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
       if (!this.game) this.game = new Chess();
-      const success = this.game.load_pgn(pgnText);
+      let success = this.game.load_pgn(cleanPgn);
+      if (!success) {
+        // Fallback 1: Strip comments and RAVs
+        let stripped = cleanPgn.replace(/;.*$/gm, '').replace(/\{[^}]*\}/g, '');
+        let prevLen;
+        do {
+          prevLen = stripped.length;
+          stripped = stripped.replace(/\([^()]*\)/g, '');
+        } while (stripped.length < prevLen);
+        
+        // Ensure empty line between headers and moves
+        const headerEnd = stripped.lastIndexOf(']');
+        if (headerEnd !== -1) {
+          const headers = stripped.slice(0, headerEnd + 1);
+          const moves = stripped.slice(headerEnd + 1).trim();
+          stripped = headers + '\n\n' + moves;
+        }
+
+        success = this.game.load_pgn(stripped.trim());
+        if (!success && headerEnd !== -1) {
+          // Fallback 2: Try moves only (completely strip headers)
+          const movesOnly = stripped.slice(headerEnd + 1).trim();
+          success = this.game.load_pgn(movesOnly);
+        }
+      }
+
       if (!success) {
         CK.showToast('Invalid PGN format — check the notation and try again.', 'warning');
         this.game.reset();
@@ -949,8 +973,17 @@ ta: {
       }
       container.innerHTML = html;
 
+      // Fix: scroll ONLY the move container, avoiding body scrolling/jumping
       const activeEl = container.querySelector('.lab-move-san.active');
-      if (activeEl) activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      if (activeEl) {
+        const row = activeEl.closest('.lab-move-row');
+        if (row) {
+          const containerHeight = container.clientHeight;
+          const rowTop = row.offsetTop;
+          const rowHeight = row.offsetHeight;
+          container.scrollTop = rowTop - (containerHeight / 2) + (rowHeight / 2);
+        }
+      }
       this._updateMoveCounter();
     },
 
@@ -1475,6 +1508,117 @@ ta: {
       frame.innerHTML = `<iframe src="https://lichess.org/@/${encodeURIComponent(username)}/tv?bg=dark" style="width:100%;height:600px;border:0;border-radius:10px;display:block;" allowfullscreen loading="lazy"></iframe>`;
     },
 
+    _uploadedGames: [],
+    _filteredGames: [],
+
+    parseMultiPgn(pgnText) {
+      const games = [];
+      const content = pgnText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      // Split by tags matching [Event "..."
+      const rawGames = content.split(/(?=\[Event\s)/i);
+      
+      rawGames.forEach((rawGame, index) => {
+        if (!rawGame.trim()) return;
+        
+        const headers = {};
+        const headerRegex = /\[([A-Za-z0-9_]+)\s+"([^"]*)"\]/g;
+        let match;
+        while ((match = headerRegex.exec(rawGame)) !== null) {
+          headers[match[1]] = match[2];
+        }
+        
+        const lastTagIndex = rawGame.lastIndexOf(']');
+        const game = {
+          id: 'uploaded_' + index + '_' + Date.now(),
+          title: headers.Event || 'Game ' + (games.length + 1),
+          white: headers.White || 'Unknown White',
+          black: headers.Black || 'Unknown Black',
+          year: headers.Date ? headers.Date.split('.')[0] : '?',
+          result: headers.Result || '*',
+          pgn: rawGame.trim()
+        };
+        games.push(game);
+      });
+      return games;
+    },
+
+    renderPgnDbExplorer(boardId) {
+      const isCoach = (boardId || '').startsWith('coach');
+      const explorerId = isCoach ? 'coachPgnDbExplorer' : 'studentPgnDbExplorer';
+      const explorer = document.getElementById(explorerId);
+      if (!explorer) return;
+
+      if (!this._uploadedGames.length) {
+        explorer.style.display = 'none';
+        return;
+      }
+
+      explorer.style.display = 'block';
+      explorer.innerHTML = `
+        <div class="lab-db-header">
+          <span class="lab-db-title">📁 PGN Database (${this._uploadedGames.length} games)</span>
+          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.lab.clearUploadedGames('${boardId}')" style="font-size: 0.65rem; padding: 2px 6px; border: 1px solid rgba(255,255,255,0.15);">Clear</button>
+        </div>
+        <input type="text" class="lab-db-search" placeholder="Search by player, event, year..." oninput="CK.lab.filterUploadedGames(this.value, '${boardId}')" />
+        <div class="lab-db-list">
+          ${this._renderGameListItems(this._filteredGames, boardId)}
+        </div>
+      `;
+    },
+
+    _renderGameListItems(gamesList, boardId) {
+      if (!gamesList.length) {
+        return '<div style="color:var(--p-text-muted);font-size:0.75rem;text-align:center;padding:10px;">No games match search</div>';
+      }
+      const showGames = gamesList.slice(0, 100);
+      return showGames.map(g => `
+        <div class="lab-db-item" onclick="CK.lab.loadUploadedGame('${g.id}', '${boardId}')">
+          <div class="lab-db-item-info">
+            <div class="lab-db-item-players">${g.white} vs ${g.black}</div>
+            <div class="lab-db-item-details">${g.title} (${g.year}) · Result: ${g.result}</div>
+          </div>
+          <button class="lab-db-item-btn">Load</button>
+        </div>
+      `).join('');
+    },
+
+    filterUploadedGames(query, boardId) {
+      const q = query.toLowerCase().trim();
+      if (!q) {
+        this._filteredGames = [...this._uploadedGames];
+      } else {
+        this._filteredGames = this._uploadedGames.filter(g => 
+          g.white.toLowerCase().includes(q) ||
+          g.black.toLowerCase().includes(q) ||
+          g.title.toLowerCase().includes(q) ||
+          g.year.toString().includes(q)
+        );
+      }
+      const isCoach = (boardId || '').startsWith('coach');
+      const explorerId = isCoach ? 'coachPgnDbExplorer' : 'studentPgnDbExplorer';
+      const listEl = document.querySelector(`#${explorerId} .lab-db-list`);
+      if (listEl) {
+        listEl.innerHTML = this._renderGameListItems(this._filteredGames, boardId);
+      }
+    },
+
+    loadUploadedGame(gameId, boardId) {
+      const g = this._uploadedGames.find(x => x.id === gameId);
+      if (!g) return;
+      const isCoach = (boardId || '').startsWith('coach');
+      const inputId = isCoach ? 'coachLabPgnInput' : 'labPgnInput';
+      const input = document.getElementById(inputId);
+      if (input) input.value = g.pgn;
+      this.analyzePgn(g.pgn, boardId);
+      CK.showToast(`Loaded: ${g.white} vs ${g.black}`, 'success');
+    },
+
+    clearUploadedGames(boardId) {
+      this._uploadedGames = [];
+      this._filteredGames = [];
+      this.renderPgnDbExplorer(boardId);
+    },
+
     handleFileUpload(event, boardId) {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
@@ -1487,12 +1631,24 @@ ta: {
       const reader = new FileReader();
       reader.onload = (e) => {
         const pgnText = e.target.result;
-        const isCoach = (boardId || '').startsWith('coach');
-        const inputId = isCoach ? 'coachLabPgnInput' : 'labPgnInput';
-        const input = document.getElementById(inputId);
-        if (input) input.value = pgnText.trim();
-        this.analyzePgn(pgnText.trim(), boardId || 'studentLabBoard');
-        CK.showToast(`📁 "${file.name}" loaded — ${pgnText.match(/\d+\./g)?.length || '?'} moves`, 'success');
+        const parsedGames = this.parseMultiPgn(pgnText);
+        if (parsedGames.length > 1) {
+          this._uploadedGames = parsedGames;
+          this._filteredGames = [...parsedGames];
+          this.renderPgnDbExplorer(boardId);
+          this.loadUploadedGame(parsedGames[0].id, boardId);
+          CK.showToast(`📁 "${file.name}" loaded: ${parsedGames.length} games found in database!`, 'success');
+        } else {
+          this._uploadedGames = [];
+          this._filteredGames = [];
+          this.renderPgnDbExplorer(boardId);
+          const isCoach = (boardId || '').startsWith('coach');
+          const inputId = isCoach ? 'coachLabPgnInput' : 'labPgnInput';
+          const input = document.getElementById(inputId);
+          if (input) input.value = pgnText.trim();
+          this.analyzePgn(pgnText.trim(), boardId || 'studentLabBoard');
+          CK.showToast(`📁 "${file.name}" loaded — ${pgnText.match(/\d+\./g)?.length || '?'} moves`, 'success');
+        }
       };
       reader.readAsText(file);
       event.target.value = '';

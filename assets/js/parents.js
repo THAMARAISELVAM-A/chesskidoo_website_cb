@@ -54,6 +54,7 @@ CK.parents = (() => {
       await renderProgress();
       renderSchedule();
       renderReports();
+      renderFees();
       renderFeedbackList();
     } else {
       const content = document.getElementById('parentMainContent');
@@ -86,8 +87,9 @@ CK.parents = (() => {
     if (panelId === 'progress')   await renderProgress();
     if (panelId === 'schedule')   renderSchedule();
     if (panelId === 'reports')    renderReports();
+    if (panelId === 'fees')       renderFees();
     if (panelId === 'feedback')   renderFeedbackList();
-    if (panelId === 'aiweekly')  renderAIWeekly();
+    if (panelId === 'aiweekly')  await renderAIWeekly();
   }
 
   /* ── AI Weekly Report ── */
@@ -400,10 +402,153 @@ CK.parents = (() => {
     else await renderFeedbackList();
   }
 
+  /* ═══════════════════════════════════════════════════════
+     FEE PAYMENT (parent pays the child's fees via UPI)
+  ═════════════════════════════════════════════════════════ */
+
+  let _parFeeLinks = {};
+  let _parFeeTotal = 0;
+
+  function renderFees() {
+    const el = document.getElementById('parFeesContent');
+    if (!el) return;
+    if (!_childProfile) {
+      el.innerHTML = '<div class="cls-empty">👶 No linked child account. Please contact the academy to link your child before making a payment.</div>';
+      return;
+    }
+    const cfg     = window.APP_CONFIG || {};
+    const c       = _childProfile;
+    const _e      = CK.esc || (s => s);
+    const tuition = parseInt(c.fee) || 4000;
+    const gst     = Math.round(tuition * 0.18);
+    const total   = tuition + gst;
+    const upiId   = cfg.ACADEMY_UPI_ID   || 'saminathanranjith73@okaxis';
+    const upiName = cfg.ACADEMY_UPI_NAME || 'Ranjith A S';
+    const status  = c.status || 'Pending';
+    const isPaid  = /paid/i.test(status);
+    const enc     = s => encodeURIComponent(s);
+    const note    = enc('ChessKidoo Fee - ' + (c.full_name || 'Student'));
+    const params  = `pa=${enc(upiId)}&pn=${enc(upiName)}&am=${total}&cu=INR&tn=${note}`;
+
+    _parFeeTotal = total;
+    _parFeeLinks = {
+      upi:     `upi://pay?${params}`,
+      gpay:    `tez://upi/pay?${params}`,
+      phonepe: `phonepe://pay?${params}`,
+      paytm:   `paytmmp://pay?${params}`
+    };
+
+    el.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px;">
+        <div>
+          <div style="font-weight:700;font-size:1.05rem;">${_e(c.full_name || 'Student')}</div>
+          <div style="color:var(--p-text-muted);font-size:0.85rem;">${_e(c.level || 'Beginner')} · ${_e(c.batch || 'Group')}</div>
+        </div>
+        <span class="p-badge p-badge-${isPaid ? 'green' : 'red'}">${_e(status)}</span>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:16px;margin-bottom:18px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Tuition Fee</span><span>₹${tuition.toLocaleString('en-IN')}</span></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>GST (18%)</span><span>₹${gst.toLocaleString('en-IN')}</span></div>
+        <div style="display:flex;justify-content:space-between;font-weight:800;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;margin-top:6px;">
+          <span>Total Payable</span><span style="color:var(--p-gold);">₹${total.toLocaleString('en-IN')}</span>
+        </div>
+      </div>
+
+      ${isPaid ? `
+        <div class="par-attn-alert" style="background:rgba(34,197,94,0.12);color:#22c55e;">
+          ✅ Fees are fully paid${c.paid_date ? ' on ' + _e(String(c.paid_date)) : ''}.
+          ${c.last_txn_id ? '<br>Reference: ' + _e(String(c.last_txn_id)) : ''}
+        </div>` : `
+        <div style="margin-bottom:14px;">
+          <div style="font-weight:700;margin-bottom:8px;">Step 1 — Pay ₹${total.toLocaleString('en-IN')} to the academy UPI</div>
+          <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);border-radius:8px;padding:10px;margin-bottom:10px;">
+            <span style="font-family:monospace;font-weight:700;flex:1;word-break:break-all;">${_e(upiId)}</span>
+            <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.parents.copyAcademyUpi()">📋 Copy</button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.parents.payChildFeesApp('gpay')">Google Pay</button>
+            <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.parents.payChildFeesApp('phonepe')">PhonePe</button>
+            <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.parents.payChildFeesApp('paytm')">Paytm</button>
+            <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.parents.payChildFeesApp('upi')">Other UPI App</button>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-weight:700;margin-bottom:8px;">Step 2 — Confirm with your transaction reference</div>
+          <div class="cls-form-row">
+            <label>UTR / Transaction ID</label>
+            <input class="p-input" id="parFeeUtr" placeholder="12-digit UTR from your payment app" maxlength="30">
+          </div>
+          <button class="p-btn p-btn-blue" id="parFeeConfirmBtn" onclick="CK.parents.confirmChildPayment()" style="margin-top:10px;">
+            ✅ Confirm Payment
+          </button>
+          <div style="color:var(--p-text-muted);font-size:0.78rem;margin-top:8px;">
+            After paying, enter the UTR/reference number shown in your UPI app and confirm. The academy will verify it.
+          </div>
+        </div>`}
+    `;
+  }
+
+  function payChildFeesApp(app) {
+    const url = (_parFeeLinks && (_parFeeLinks[app] || _parFeeLinks.upi)) || '';
+    if (!url) { CK.showToast('Payment link unavailable. Please use the Copy button.', 'warning'); return; }
+    window.location.href = url;
+    setTimeout(() => CK.showToast('If the app did not open, copy the UPI ID and pay manually.', 'info'), 1800);
+  }
+
+  function copyAcademyUpi() {
+    const upiId = (window.APP_CONFIG || {}).ACADEMY_UPI_ID || 'saminathanranjith73@okaxis';
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(upiId)
+        .then(() => CK.showToast('UPI ID copied!', 'success'))
+        .catch(() => CK.showToast('UPI ID: ' + upiId, 'info'));
+    } else {
+      CK.showToast('UPI ID: ' + upiId, 'info');
+    }
+  }
+
+  async function confirmChildPayment() {
+    const utrEl = document.getElementById('parFeeUtr');
+    const utr   = utrEl ? utrEl.value.trim() : '';
+    if (!utr || utr.length < 8 || utr.length > 30 || !/^[A-Z0-9]+$/i.test(utr)) {
+      CK.showToast('Please enter a valid UTR / Transaction ID (8–30 letters or numbers).', 'warning');
+      return;
+    }
+    if (!_childProfile) { CK.showToast('No linked child account.', 'error'); return; }
+
+    const btn = document.getElementById('parFeeConfirmBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Confirming…'; }
+
+    try {
+      const c = _childProfile;
+      c.status      = 'Paid';
+      c.last_txn_id = utr;
+      c.pay_method  = 'UPI (Parent)';
+      c.paid_date   = new Date().toLocaleDateString('en-GB');
+      const due = new Date(); due.setMonth(due.getMonth() + 1); due.setDate(14);
+      c.due_date = due.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
+      await CK.db.saveProfile(c);
+
+      CK.showToast('Payment confirmed! The academy will verify your UTR shortly.', 'success');
+      renderFees();
+      if (window.CK && CK.admin && typeof CK.admin.loadStudents === 'function') {
+        CK.admin.loadStudents();
+      }
+    } catch (e) {
+      console.error('[ChessKidoo] Parent payment confirm error:', e);
+      CK.showToast('Payment recorded. Please contact the academy if it is not reflected.', 'warning');
+      renderFees();
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '✅ Confirm Payment'; }
+    }
+  }
+
   return {
     init, nav, renderChildProfile, renderAttendance, renderProgress,
     renderSchedule, renderReports, renderFeedbackList, submitFeedback,
-    renderAllFeedback, replyFeedback,
+    renderAllFeedback, replyFeedback, renderFees, payChildFeesApp,
+    copyAcademyUpi, confirmChildPayment,
     generateAIReport: renderAIWeekly
   };
 })();

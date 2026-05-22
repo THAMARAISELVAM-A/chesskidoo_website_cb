@@ -1,19 +1,110 @@
 /* assets/js/engine.js
-   Real Stockfish analysis via Lichess Cloud Evaluation API
-   Zero server cost · No WASM download · Instant depth-20+ analysis */
+   Stockfish Analysis Engine — Dual-Mode Architecture
+   
+   Mode 1: Lichess Cloud Evaluation API (instant, cached, zero-cost)
+   Mode 2: Local Stockfish 18 WASM (offline-capable, deeper analysis)
+   
+   The engine automatically picks the best available source:
+   - Tries Lichess Cloud first (cached depth 20+)
+   - Falls back to local Stockfish WASM if cloud unavailable
+   - Both results are merged into a unified UI pipeline */
 
 window.CK = window.CK || {};
 
 CK.engine = (() => {
   const _cache = new Map();
   const _inFlight = new Set();
-  const MAX_CACHE = 300;
+  const MAX_CACHE = 500;
+  
+  // ── Local Stockfish WASM Worker ──
+  let _sfWorker = null;
+  let _sfReady  = false;
+  let _sfResolve = null;
+  let _sfDepth   = 18;      // configurable analysis depth
 
-  async function evaluate(fen) {
-    if (!fen || fen === 'start') return null;
-    if (_cache.has(fen)) return _cache.get(fen);
-    if (_inFlight.has(fen)) return null;
-    _inFlight.add(fen);
+  function _initLocalEngine() {
+    if (_sfWorker) return;
+    try {
+      // Stockfish 18 Lite (single-threaded, no COOP/COEP needed)
+      _sfWorker = new Worker(
+        'https://cdn.jsdelivr.net/npm/stockfish@18.0.0/stockfish-18-lite-single.js'
+      );
+      _sfWorker.addEventListener('message', _handleSfMessage);
+      _sfWorker.postMessage('uci');
+      console.log('[Engine] Local Stockfish 18 WASM initializing…');
+    } catch (e) {
+      console.warn('[Engine] Local Stockfish WASM unavailable:', e.message);
+      _sfWorker = null;
+    }
+  }
+
+  function _handleSfMessage(e) {
+    const line = typeof e.data === 'string' ? e.data : '';
+
+    if (line === 'uciok') {
+      _sfWorker.postMessage('setoption name Threads value 1');
+      _sfWorker.postMessage('setoption name Hash value 16');
+      _sfWorker.postMessage('isready');
+    }
+    if (line === 'readyok') {
+      _sfReady = true;
+      console.log('[Engine] Local Stockfish 18 WASM ready');
+    }
+    if (line.startsWith('bestmove') && _sfResolve) {
+      // Parsing complete — extract info from accumulated data
+      _sfResolve.bestmove = line.split(' ')[1] || '';
+      _finalizeSfResult();
+    }
+    // Accumulate info lines for depth/score/pv
+    if (line.startsWith('info') && line.includes(' pv ') && _sfResolve) {
+      const depthMatch = line.match(/depth (\d+)/);
+      const cpMatch    = line.match(/score cp (-?\d+)/);
+      const mateMatch  = line.match(/score mate (-?\d+)/);
+      const pvMatch    = line.match(/ pv (.+)/);
+      const nodesMatch = line.match(/nodes (\d+)/);
+
+      if (depthMatch) _sfResolve.depth  = parseInt(depthMatch[1]);
+      if (cpMatch)    _sfResolve.cp     = parseInt(cpMatch[1]);
+      if (mateMatch)  _sfResolve.mate   = parseInt(mateMatch[1]);
+      if (pvMatch)    _sfResolve.pv     = pvMatch[1].trim();
+      if (nodesMatch) _sfResolve.knodes = Math.round(parseInt(nodesMatch[1]) / 1000);
+    }
+  }
+
+  function _finalizeSfResult() {
+    if (!_sfResolve || !_sfResolve.resolve) return;
+    const r = {
+      cp:     _sfResolve.cp    ?? null,
+      mate:   _sfResolve.mate  ?? null,
+      depth:  _sfResolve.depth || 0,
+      knodes: _sfResolve.knodes || 0,
+      pv:     _sfResolve.pv   || _sfResolve.bestmove || '',
+      source: 'local'
+    };
+    _sfResolve.resolve(r);
+    _sfResolve = null;
+  }
+
+  function _evaluateLocal(fen) {
+    return new Promise((resolve) => {
+      if (!_sfWorker || !_sfReady) { resolve(null); return; }
+      // Cancel any pending eval
+      if (_sfResolve) {
+        _sfResolve.resolve(null);
+        _sfResolve = null;
+      }
+      _sfResolve = { resolve, cp: null, mate: null, depth: 0, knodes: 0, pv: '', bestmove: '' };
+      _sfWorker.postMessage('stop');
+      _sfWorker.postMessage('ucinewgame');
+      _sfWorker.postMessage(`position fen ${fen}`);
+      _sfWorker.postMessage(`go depth ${_sfDepth}`);
+      // Safety timeout: resolve null after 8s
+      setTimeout(() => { if (_sfResolve?.resolve === resolve) { resolve(null); _sfResolve = null; } }, 8000);
+    });
+  }
+
+  // ── Lichess Cloud Evaluation API ──
+  async function _evaluateCloud(fen) {
     try {
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), 5000);
@@ -26,40 +117,89 @@ CK.engine = (() => {
       const data = await r.json();
       const pv = data.pvs && data.pvs[0];
       if (!pv) return null;
-      const result = {
-        cp:    pv.cp   ?? null,
-        mate:  pv.mate ?? null,
-        depth: data.depth  || 0,
+      return {
+        cp:     pv.cp   ?? null,
+        mate:   pv.mate ?? null,
+        depth:  data.depth  || 0,
         knodes: data.knodes || 0,
-        pv:    pv.moves || ''
+        pv:     pv.moves || '',
+        source: 'cloud'
       };
-      if (_cache.size >= MAX_CACHE) _cache.delete(_cache.keys().next().value);
-      _cache.set(fen, result);
-      return result;
     } catch (e) {
       return null;
+    }
+  }
+
+  // ── Unified Evaluate (Cloud → Local fallback) ──
+  async function evaluate(fen) {
+    if (!fen || fen === 'start') return null;
+    if (_cache.has(fen)) return _cache.get(fen);
+    if (_inFlight.has(fen)) return null;
+    _inFlight.add(fen);
+
+    try {
+      // Try cloud first (faster, deeper)
+      let result = await _evaluateCloud(fen);
+
+      // If cloud failed, try local WASM
+      if (!result && _sfWorker && _sfReady) {
+        result = await _evaluateLocal(fen);
+      }
+
+      if (result) {
+        if (_cache.size >= MAX_CACHE) _cache.delete(_cache.keys().next().value);
+        _cache.set(fen, result);
+      }
+      return result;
     } finally {
       _inFlight.delete(fen);
     }
   }
 
+  // Force local evaluation (for offline or deeper analysis)
+  async function evaluateLocal(fen) {
+    if (!fen || fen === 'start') return null;
+    if (!_sfWorker) _initLocalEngine();
+    return _evaluateLocal(fen);
+  }
+
   function formatScore(cp, mate) {
-    if (mate !== null) return mate > 0 ? `#${mate}` : `#-${Math.abs(mate)}`;
-    if (cp === null) return '±0.00';
+    if (mate !== null && mate !== undefined) return mate > 0 ? `#${mate}` : `#-${Math.abs(mate)}`;
+    if (cp === null || cp === undefined) return '±0.00';
     return (cp >= 0 ? '+' : '') + (cp / 100).toFixed(2);
   }
 
   // Map centipawns → 0-100 bar percent
   function cpToBar(cp, mate) {
-    if (mate !== null) return mate > 0 ? 97 : 3;
-    if (cp === null) return 50;
+    if (mate !== null && mate !== undefined) return mate > 0 ? 97 : 3;
+    if (cp === null || cp === undefined) return 50;
     const pct = 50 + (cp / 600) * 44;
     return Math.min(97, Math.max(3, pct));
   }
 
   function cpColor(cp, mate) {
-    const v = mate !== null ? (mate > 0 ? 9999 : -9999) : (cp || 0);
+    const v = (mate !== null && mate !== undefined) ? (mate > 0 ? 9999 : -9999) : (cp || 0);
     return v > 80 ? 'var(--p-teal)' : v < -80 ? '#ef4444' : 'var(--p-blue)';
+  }
+
+  function generateAiInsight(cp, mate) {
+    if (mate !== null && mate !== undefined) {
+      if (mate > 0) return `Forced checkmate! White has a clear path to deliver mate in ${mate}. Look for forcing checks or captures.`;
+      else return `Forced checkmate! Black is completely winning and will mate in ${Math.abs(mate)}.`;
+    }
+    if (cp === null || cp === undefined) return '';
+    
+    if (cp >= 500) return "White is completely winning. The material or positional advantage is overwhelming. Time to convert this into a win.";
+    if (cp <= -500) return "Black is completely winning. The advantage is crushing. Focus on finishing the game without blunders.";
+    if (cp >= 300) return "White has a decisive advantage. The position is highly favorable, likely up a full piece or with a crushing attack.";
+    if (cp <= -300) return "Black has a decisive advantage. The position is dominant. Maintain pressure to secure the victory.";
+    if (cp >= 150) return "White has a clear, strong advantage. There is significant positional pressure or a material edge.";
+    if (cp <= -150) return "Black has a clear, strong advantage. Look to capitalize on the opponent's weaknesses.";
+    if (cp >= 75) return "White is slightly better. The position is comfortable, perhaps with a space advantage or better pawn structure.";
+    if (cp <= -75) return "Black is slightly better. Black has equalized and holds a small initiative or structural edge.";
+    if (cp > 30) return "White has a tiny edge, characteristic of having the first move. Play remains highly balanced.";
+    if (cp < -30) return "Black has a tiny edge, but the position is extremely close to equal. Solid play is required.";
+    return "The position is completely equal. Both sides are solidly matched. Focus on maneuvering and improving piece placement.";
   }
 
   // Push real eval onto the PGN lab UI elements
@@ -68,7 +208,8 @@ CK.engine = (() => {
     const score  = formatScore(result.cp, result.mate);
     const bar    = cpToBar(result.cp, result.mate);
     const color  = cpColor(result.cp, result.mate);
-    const tip    = `Stockfish depth ${result.depth} · ${Math.round(result.knodes / 1000)}Mn nodes`;
+    const src    = result.source === 'local' ? 'WASM' : 'Cloud';
+    const tip    = `Stockfish ${src} depth ${result.depth} · ${Math.round((result.knodes || 0) / 1000)}Mn nodes`;
 
     document.querySelectorAll('.labEvalText').forEach(el => {
       el.textContent = score;
@@ -85,20 +226,48 @@ CK.engine = (() => {
       el.style.height = bar + '%';
       el.style.transition = 'height 0.5s cubic-bezier(.4,0,.2,1)';
     });
-    // Small engine badge on explanation
+    
+    // AI Coach Insights appended to explanation
+    const insight = generateAiInsight(result.cp, result.mate);
     document.querySelectorAll('.labCoachExplanation').forEach(el => {
-      const badge = el.querySelector('.engine-badge');
-      if (!badge) {
-        const b = document.createElement('span');
-        b.className = 'engine-badge';
-        b.style.cssText = 'display:inline-block;margin-left:8px;font-size:.68rem;background:rgba(20,184,166,.18);color:var(--p-teal);padding:2px 7px;border-radius:20px;vertical-align:middle;';
-        b.textContent = `⚡ Stockfish d${result.depth}`;
-        el.appendChild(b);
-      } else {
-        badge.textContent = `⚡ Stockfish d${result.depth}`;
-      }
+      // Clean up previous AI insight if it exists
+      const existingInsight = el.querySelector('.ai-insight-block');
+      if (existingInsight) existingInsight.remove();
+      
+      const badgeText = `⚡ Stockfish d${result.depth} (${src})`;
+      
+      // We wrap the AI insight in a block
+      const insightHtml = `
+        <div class="ai-insight-block" style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <strong style="color:var(--p-teal);"><i class="fas fa-robot"></i> AI Coach Insight</strong>
+            <span class="engine-badge" style="font-size:.68rem;background:rgba(20,184,166,.18);color:var(--p-teal);padding:2px 7px;border-radius:20px;">${badgeText}</span>
+          </div>
+          <div style="color:rgba(255,255,255,0.85); font-size:0.9rem;">${insight}</div>
+        </div>
+      `;
+      el.innerHTML += insightHtml;
     });
   }
 
-  return { evaluate, formatScore, cpToBar, cpColor, applyToUI };
+  // Set analysis depth for local engine
+  function setDepth(d) {
+    _sfDepth = Math.max(1, Math.min(30, d));
+  }
+
+  // Get engine status
+  function getStatus() {
+    return {
+      cloudAvailable: true,
+      localReady:     _sfReady,
+      localLoading:   !!_sfWorker && !_sfReady,
+      cacheSize:      _cache.size,
+      depth:          _sfDepth
+    };
+  }
+
+  // Initialize local engine on module load
+  _initLocalEngine();
+
+  return { evaluate, evaluateLocal, formatScore, cpToBar, cpColor, applyToUI, setDepth, getStatus };
 })();

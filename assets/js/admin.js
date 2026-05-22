@@ -243,6 +243,7 @@ CK.admin = {
       this.loadTournaments();
       if (CK.tournament) CK.tournament.renderTournamentList('adminTournamentList');
     }
+    if (panelId === 'achievements') this.renderIssuedCerts();
     if (panelId === 'analytics') this.renderAIAnalytics();
     if (panelId === 'leaderboard') this.renderLeaderboardPanel();
     if (panelId === 'audit') this.renderAuditPanel();
@@ -426,6 +427,10 @@ CK.admin = {
         </div>
       </div>`;
     }).join('');
+  },
+
+  async loadClasses() {
+    this.classesDb = await CK.db.getClasses();
   },
 
   async loadStudents(data = null) {
@@ -1953,6 +1958,68 @@ CK.admin = {
       } else {
         fpEl.innerHTML = '<div style="text-align:center;opacity:.4;padding:20px;">No game reports yet. Reports appear after students complete games.</div>';
       }
+    }
+  },
+
+  /* ─── Certificate Issuing ─── */
+  async openIssueCertModal() {
+    const students = (await CK.db.getProfiles('student')) || [];
+    const _e = CK.esc || (s => s);
+    const sel = document.getElementById('certStudentSelect');
+    if (sel) {
+      sel.innerHTML = '<option value="">Select a student...</option>' +
+        students.map(s => `<option value="${_e(s.id)}">${_e(s.full_name || 'Unknown')} (${_e(s.level || 'Beginner')})</option>`).join('');
+    }
+    const coachInput = document.getElementById('certCoachName');
+    if (coachInput && !coachInput.value) coachInput.value = 'ChessKidoo Academy';
+    CK.openModal('adminCertModal');
+  },
+
+  async issueCertificate() {
+    const studentId = document.getElementById('certStudentSelect')?.value;
+    const level = document.getElementById('certLevelSelect')?.value || 'Beginner';
+    const coachName = document.getElementById('certCoachName')?.value || 'ChessKidoo Academy';
+    if (!studentId) { CK.showToast('Please select a student', 'error'); return; }
+
+    const profile = await CK.db.getProfile(studentId);
+    if (!profile) { CK.showToast('Student not found', 'error'); return; }
+
+    // Temporarily set the level for cert generation
+    const origLevel = profile.level;
+    profile.level = level;
+    const cert = CK.certs.awardCertificate(profile, coachName);
+    profile.level = origLevel;
+
+    CK.certs.generatePDF(cert);
+    CK.closeModal('adminCertModal');
+    this.renderIssuedCerts();
+
+    // Notify student
+    if (CK.notifs) CK.notifs.push('achievement', `🎓 ${level} Certificate Earned!`,
+      `Congratulations! You've been awarded the ${level} Level Certificate by ${coachName}.`,
+      studentId, 'student');
+  },
+
+  renderIssuedCerts() {
+    const el = document.getElementById('adminIssuedCertsList');
+    if (!el || !CK.certs) return;
+    const allCerts = CK.certs.getEarned();
+    const _e = CK.esc || (s => s);
+    if (allCerts.length) {
+      el.innerHTML = `<table class="p-table" style="width:100%">
+        <thead><tr><th>Student</th><th>Level</th><th>Coach</th><th>Issued</th><th>Cert #</th><th></th></tr></thead>
+        <tbody>${allCerts.map(c => `
+          <tr>
+            <td>${_e(c.studentName)}</td>
+            <td><span style="color:${c.level==='Advanced'?'var(--p-gold)':c.level==='Intermediate'?'var(--p-blue)':'var(--p-teal)'};">${_e(c.level)}</span></td>
+            <td>${_e(c.coachName)}</td>
+            <td>${new Date(c.issuedAt).toLocaleDateString('en-IN',{month:'short',day:'numeric',year:'numeric'})}</td>
+            <td style="font-family:monospace;font-size:0.78rem;">${_e(c.certNumber)}</td>
+            <td><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.certs.downloadCert('${_e(c.id)}')">⬇ PDF</button></td>
+          </tr>`).join('')}
+        </tbody></table>`;
+    } else {
+      el.innerHTML = '<div style="text-align:center;opacity:.4;padding:20px;">No certificates issued yet. Use the "+ Issue Certificate" button above.</div>';
     }
   }
 };

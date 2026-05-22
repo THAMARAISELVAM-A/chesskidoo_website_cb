@@ -1,407 +1,442 @@
--- ==============================================================================
--- ChessKidoo Supabase Complete Schema
--- Copy and paste this entire script into your Supabase SQL Editor and run it.
--- This will create all the necessary tables for the frontend to work perfectly.
--- ==============================================================================
+-- =============================================================================
+-- ChessKidoo — DEFINITIVE Supabase Setup Script  (v4 — reconciled with code)
+-- =============================================================================
+-- WHAT THIS FIXES:
+--   The app's JavaScript sends column names like "maxStudents", "zoomLink",
+--   "coachName", "createdAt". The old schema used max_students / zoomlink /
+--   created_at, so Supabase rejected every write and the app silently fell
+--   back to localStorage demo data. This script rebuilds every table so the
+--   columns EXACTLY match what assets/js/*.js sends — making real persistence
+--   work across all 4 portals.
+--
+-- HOW TO RUN:
+--   1. Open Supabase Dashboard -> your project (hcjuyqicftkgpiyrkscr)
+--   2. Left sidebar -> SQL Editor -> New query
+--   3. Paste this ENTIRE file, click "Run"
+--   4. It is safe to re-run; it rebuilds cleanly each time.
+--
+-- WARNING: The DROP block below WIPES existing table data. That is intended
+--   for a pre-launch clean build. If you already have real data you want to
+--   keep, comment out the DROP block before running.
+-- =============================================================================
 
--- 1. USERS TABLE
--- Stores students, coaches, admins, and parents.
-CREATE TABLE IF NOT EXISTS public.users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    userid TEXT,
-    email TEXT,
-    full_name TEXT,
-    role TEXT,
-    phone_number TEXT,
-    city TEXT,
-    level TEXT,
-    rating INTEGER DEFAULT 800,
-    coach TEXT,
-    batch TEXT,
-    session TEXT,
-    schedule TEXT,
-    fee TEXT,
-    status TEXT,
-    due_date TEXT,
-    join_date TEXT,
-    age INTEGER,
-    grade TEXT,
-    puzzle INTEGER DEFAULT 0,
-    game INTEGER DEFAULT 0,
-    star INTEGER DEFAULT 0,
-    photo TEXT,
-    certificate TEXT,
-    last_note TEXT,
-    childEmail TEXT, -- Used for parent accounts
-    timetable TEXT, -- Used for coaches
-    revenue TEXT,   -- Used for coaches
-    classes INTEGER, -- Used for coaches
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- ── DROP (clean rebuild) ─────────────────────────────────────────────────────
+DROP TABLE IF EXISTS public.users CASCADE;
+DROP TABLE IF EXISTS public.expenses CASCADE;
+DROP TABLE IF EXISTS public.document CASCADE;
+DROP TABLE IF EXISTS public.attendance CASCADE;
+DROP TABLE IF EXISTS public.ratings CASCADE;
+DROP TABLE IF EXISTS public."tourRatings" CASCADE;
+DROP TABLE IF EXISTS public.tourratings CASCADE;
+DROP TABLE IF EXISTS public.resources CASCADE;
+DROP TABLE IF EXISTS public.meetings CASCADE;
+DROP TABLE IF EXISTS public.leads CASCADE;
+DROP TABLE IF EXISTS public.coach_notes CASCADE;
+DROP TABLE IF EXISTS public.credentials CASCADE;
+DROP TABLE IF EXISTS public.batch_links CASCADE;
+DROP TABLE IF EXISTS public.classes CASCADE;
+DROP TABLE IF EXISTS public.monthly_reports CASCADE;
+DROP TABLE IF EXISTS public.puzzle_scores CASCADE;
+DROP TABLE IF EXISTS public.coach_attendance CASCADE;
+DROP TABLE IF EXISTS public.assignments CASCADE;
+DROP TABLE IF EXISTS public.hw_submissions CASCADE;
+DROP TABLE IF EXISTS public.feedback CASCADE;
+DROP TABLE IF EXISTS public.broadcasts CASCADE;
+
+-- ── 1. USERS ─────────────────────────────────────────────────────────────────
+-- id is TEXT (not UUID) so it accepts BOTH Supabase Auth UUIDs AND the
+-- string ids the app generates (e.g. 'student-123', 'par-abc', 's1').
+CREATE TABLE public.users (
+    id              TEXT PRIMARY KEY,
+    userid          TEXT,
+    email           TEXT,
+    full_name       TEXT,
+    role            TEXT,
+    phone_number    TEXT,
+    city            TEXT,
+    level           TEXT,
+    rating          INTEGER DEFAULT 800,
+    coach           TEXT,
+    batch           TEXT,
+    session         TEXT,
+    schedule        TEXT,
+    fee             TEXT,
+    status          TEXT,
+    due_date        TEXT,
+    join_date       TEXT,
+    age             INTEGER,
+    grade           TEXT,
+    puzzle          INTEGER DEFAULT 0,
+    game            INTEGER DEFAULT 0,
+    star            INTEGER DEFAULT 0,
+    photo           TEXT,
+    certificate     TEXT,
+    last_note       TEXT,
+    "childEmail"    TEXT,
+    "childId"       TEXT,
+    child_id        TEXT,
+    timetable       TEXT,
+    revenue         TEXT,
+    classes         INTEGER DEFAULT 0,
+    streak_count    INTEGER DEFAULT 0,
+    streak_last_date TEXT,
+    srs_data        JSONB,
+    auth_id         TEXT,
+    fide_rating     TEXT,
+    session_type    TEXT,
+    payment_status  TEXT,
+    xp              INTEGER DEFAULT 0,
+    created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. EXPENSES TABLE
--- Tracks academy expenditures.
-CREATE TABLE IF NOT EXISTS public.expenses (
-    id BIGINT PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
-    date TEXT,
-    category TEXT,
+-- ── 2. EXPENSES ──────────────────────────────────────────────────────────────
+CREATE TABLE public.expenses (
+    id          BIGINT PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
+    date        TEXT,
+    category    TEXT,
     description TEXT,
-    amount TEXT,
-    mode TEXT,
-    bill TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    amount      TEXT,
+    mode        TEXT,
+    bill        TEXT,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. DOCUMENT TABLE
--- Stores uploaded documents and class files.
-CREATE TABLE IF NOT EXISTS public.document (
-    id BIGINT PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
-    file_name TEXT,
-    name TEXT,
-    level TEXT,
-    coach TEXT,
-    batch TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- ── 3. DOCUMENT (homework / class materials) ─────────────────────────────────
+CREATE TABLE public.document (
+    id          BIGINT PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
+    file_name   TEXT,
+    name        TEXT,
+    level       TEXT,
+    coach       TEXT,
+    link        TEXT,
+    batch       TEXT,
+    user_ids    TEXT,
+    type        TEXT,
+    notes       TEXT,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. ATTENDANCE TABLE
--- Tracks daily attendance for students.
-CREATE TABLE IF NOT EXISTS public.attendance (
-    id BIGINT PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
-    userid TEXT,
-    "studentId" TEXT,
+-- ── 4. ATTENDANCE ────────────────────────────────────────────────────────────
+-- id is TEXT (classes-system.js sends a string id; admin/coach send a number).
+CREATE TABLE public.attendance (
+    id            TEXT PRIMARY KEY DEFAULT (extract(epoch from now())*1000)::bigint::text,
+    userid        TEXT,
+    "studentId"   TEXT,
     "studentName" TEXT,
-    "classId" TEXT,
-    "className" TEXT,
-    "coachId" TEXT,
-    "markedAt" TIMESTAMPTZ,
-    date TEXT,
-    status TEXT,
-    class_title TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    "classId"     TEXT,
+    "className"   TEXT,
+    "coachId"     TEXT,
+    "coachName"   TEXT,
+    "markedAt"    TIMESTAMPTZ,
+    date          TEXT,
+    status        TEXT,
+    class_title   TEXT,
+    created_at    TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT uq_attendance_user_date UNIQUE (userid, date)
 );
--- Add columns to existing attendance table if upgrading
-ALTER TABLE public.attendance ADD COLUMN IF NOT EXISTS "studentId" TEXT;
-ALTER TABLE public.attendance ADD COLUMN IF NOT EXISTS "studentName" TEXT;
-ALTER TABLE public.attendance ADD COLUMN IF NOT EXISTS "classId" TEXT;
-ALTER TABLE public.attendance ADD COLUMN IF NOT EXISTS "className" TEXT;
-ALTER TABLE public.attendance ADD COLUMN IF NOT EXISTS "coachId" TEXT;
-ALTER TABLE public.attendance ADD COLUMN IF NOT EXISTS "markedAt" TIMESTAMPTZ;
-ALTER TABLE public.attendance ADD COLUMN IF NOT EXISTS class_title TEXT;
 
--- 5. RATINGS TABLE
--- Tracks ELO rating history over time for students.
-CREATE TABLE IF NOT EXISTS public.ratings (
-    id BIGINT PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
-    user_id TEXT,
-    online INTEGER,
+-- ── 5. RATINGS ───────────────────────────────────────────────────────────────
+CREATE TABLE public.ratings (
+    id            BIGINT PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
+    user_id       TEXT,
+    online        INTEGER,
     international INTEGER,
-    date TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    date          TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 6. TOUR RATINGS TABLE
--- Tracks tournament results and rating changes.
-CREATE TABLE IF NOT EXISTS public.tourRatings (
-    id BIGINT PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
-    user_id TEXT,
-    name TEXT,
-    result TEXT,
-    change TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- ── 6. TOUR RATINGS ──────────────────────────────────────────────────────────
+-- Quoted name so the code's .from('tourRatings') resolves correctly.
+CREATE TABLE public."tourRatings" (
+    id         BIGINT PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
+    user_id    TEXT,
+    name       TEXT,
+    result     TEXT,
+    change     TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 7. RESOURCES TABLE
--- Tracks homework, class notes, and puzzles.
-CREATE TABLE IF NOT EXISTS public.resources (
-    id TEXT PRIMARY KEY,
-    name TEXT,
-    type TEXT,
-    level TEXT,
-    notes TEXT,
-    link TEXT,
-    coach TEXT,
-    batch TEXT,
-    fen TEXT,
-    solution TEXT,
-    difficulty TEXT,
-    category TEXT,
+-- ── 7. RESOURCES (puzzles / coach uploads) ───────────────────────────────────
+CREATE TABLE public.resources (
+    id          TEXT PRIMARY KEY,
+    name        TEXT,
+    type        TEXT,
+    level       TEXT,
+    notes       TEXT,
+    link        TEXT,
+    coach       TEXT,
+    batch       TEXT,
+    fen         TEXT,
+    solution    TEXT,
+    difficulty  TEXT,
+    category    TEXT,
     explanation TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 8. MEETINGS TABLE
--- Tracks scheduled online classes and Google Meet links.
-CREATE TABLE IF NOT EXISTS public.meetings (
-    id TEXT PRIMARY KEY,
-    date TEXT,
-    time TEXT,
-    coach TEXT,
-    coachId TEXT,
-    coachName TEXT,
-    title TEXT,
-    batch TEXT,
-    duration INTEGER,
-    link TEXT,
-    notes TEXT,
-    type TEXT,
-    studentIds TEXT[], -- ARRAY of student UUIDs
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- ── 8. MEETINGS ──────────────────────────────────────────────────────────────
+CREATE TABLE public.meetings (
+    id           TEXT PRIMARY KEY,
+    date         TEXT,
+    time         TEXT,
+    coach        TEXT,
+    "coachId"    TEXT,
+    "coachName"  TEXT,
+    title        TEXT,
+    batch        TEXT,
+    duration     INTEGER,
+    link         TEXT,
+    notes        TEXT,
+    type         TEXT,
+    "studentIds" TEXT[],
+    created_at   TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 9. LEADS TABLE
--- Tracks "Book a Free Demo" form submissions.
-CREATE TABLE IF NOT EXISTS public.leads (
-    id BIGINT PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
-    name TEXT,
-    phone TEXT,
+-- ── 9. LEADS (demo bookings / contact form) ──────────────────────────────────
+CREATE TABLE public.leads (
+    id          BIGINT PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
+    name        TEXT,
+    phone       TEXT,
     parent_name TEXT,
-    child_age TEXT,
-    city TEXT,
-    status TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    child_age   TEXT,
+    city        TEXT,
+    status      TEXT,
+    email       TEXT,
+    message     TEXT,
+    source      TEXT,
+    full_name   TEXT,
+    age         TEXT,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 10. COACH NOTES TABLE
--- Stores feedback notes from coaches to students.
-CREATE TABLE IF NOT EXISTS public.coach_notes (
-    id BIGINT PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
-    student TEXT,
-    coach TEXT,
-    text TEXT,
-    date TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- ── 10. COACH NOTES (student reviews) ────────────────────────────────────────
+CREATE TABLE public.coach_notes (
+    id         BIGINT PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
+    student    TEXT,
+    coach      TEXT,
+    text       TEXT,
+    date       TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 11. CREDENTIALS TABLE
--- Stores custom passwords for the mock-auth system.
-CREATE TABLE IF NOT EXISTS public.credentials (
-    email TEXT PRIMARY KEY,
-    password TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- ── 11. CREDENTIALS (per-user login passwords, SHA-256) ──────────────────────
+CREATE TABLE public.credentials (
+    email      TEXT PRIMARY KEY,
+    password   TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 12. BATCH LINKS TABLE
--- Stores Google Meet links for each batch level.
-CREATE TABLE IF NOT EXISTS public.batch_links (
+-- ── 12. BATCH LINKS (Google Meet rooms per level) ────────────────────────────
+CREATE TABLE public.batch_links (
     batch_level TEXT PRIMARY KEY,
-    link TEXT,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    link        TEXT,
+    updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 13. CLASSES TABLE
--- Stores structured class schedules.
-CREATE TABLE IF NOT EXISTS public.classes (
-    id TEXT PRIMARY KEY,
-    coachId TEXT,
-    coachName TEXT,
-    title TEXT,
-    level TEXT,
-    batch TEXT,
-    days TEXT[], -- ARRAY of days like ['Mon', 'Thu']
-    time TEXT,
-    duration INTEGER,
-    zoomLink TEXT,
-    max_students INTEGER DEFAULT 10,
-    studentIds TEXT[], -- ARRAY of student IDs
-    active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- ── 13. CLASSES ──────────────────────────────────────────────────────────────
+-- Columns match classes-system.js / admin.js EXACTLY (camelCase quoted).
+CREATE TABLE public.classes (
+    id           TEXT PRIMARY KEY,
+    "coachId"    TEXT,
+    "coachName"  TEXT,
+    title        TEXT,
+    level        TEXT,
+    batch        TEXT,
+    days         TEXT[],
+    time         TEXT,
+    duration     INTEGER,
+    "zoomLink"   TEXT,
+    "maxStudents" INTEGER DEFAULT 10,
+    "studentIds" TEXT[],
+    active       BOOLEAN DEFAULT true,
+    "createdAt"  TEXT,
+    created_at   TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 14. MONTHLY REPORTS TABLE
--- Tracks monthly performance reports for students.
-CREATE TABLE IF NOT EXISTS public.monthly_reports (
-    id TEXT PRIMARY KEY,
-    studentId TEXT,
-    studentName TEXT,
-    coachId TEXT,
-    coachName TEXT,
-    month INTEGER,
-    year INTEGER,
-    attendance INTEGER,
-    puzzles INTEGER,
-    notes TEXT,
+-- ── 14. MONTHLY / WEEKLY REPORTS ─────────────────────────────────────────────
+-- topics is TEXT (the form sends a comma string, not an array).
+CREATE TABLE public.monthly_reports (
+    id             TEXT PRIMARY KEY,
+    "studentId"    TEXT,
+    "studentName"  TEXT,
+    "coachId"      TEXT,
+    "coachName"    TEXT,
+    month          INTEGER,
+    year           INTEGER,
+    attendance     INTEGER,
+    puzzles        INTEGER,
+    notes          TEXT,
     recommendation TEXT,
-    topics TEXT,
-    rating INTEGER,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    topics         TEXT,
+    rating         INTEGER,
+    type           TEXT,
+    data           JSONB,
+    "createdAt"    TEXT,
+    created_at     TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 15. PUZZLE SCORES TABLE
--- Tracks puzzle solving history and XP for leaderboard.
-CREATE TABLE IF NOT EXISTS public.puzzle_scores (
-    id TEXT PRIMARY KEY,
-    userId TEXT,
-    userName TEXT,
-    puzzleId TEXT,
-    solved BOOLEAN,
-    time INTEGER,
-    mistakes INTEGER,
-    xp INTEGER,
-    date TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- ── 15. PUZZLE SCORES ────────────────────────────────────────────────────────
+CREATE TABLE public.puzzle_scores (
+    id          TEXT PRIMARY KEY,
+    "userId"    TEXT,
+    "userName"  TEXT,
+    "puzzleId"  TEXT,
+    solved      BOOLEAN,
+    time        INTEGER,
+    mistakes    INTEGER,
+    xp          INTEGER,
+    date        TEXT,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 16. COACH ATTENDANCE TABLE
--- Tracks when coaches join their own classes.
-CREATE TABLE IF NOT EXISTS public.coach_attendance (
-    id TEXT PRIMARY KEY,
-    coachId TEXT,
-    classId TEXT,
-    date TEXT,
-    joinedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- ── 16. COACH ATTENDANCE ─────────────────────────────────────────────────────
+CREATE TABLE public.coach_attendance (
+    id         TEXT PRIMARY KEY,
+    "coachId"  TEXT,
+    "classId"  TEXT,
+    date       TEXT,
+    "joinedAt" TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 17. ASSIGNMENTS TABLE
--- Stores homework tasks given by coaches to students.
-CREATE TABLE IF NOT EXISTS public.assignments (
-    id TEXT PRIMARY KEY,
-    title TEXT,
-    pgn TEXT,
-    type TEXT, -- 'study', 'guess', 'practice'
-    assignedTo TEXT, -- 'all' or batch name
-    dueDate TEXT,
-    description TEXT,
-    coach TEXT,
-    moves INTEGER,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- ── 17. ASSIGNMENTS (homework) ───────────────────────────────────────────────
+CREATE TABLE public.assignments (
+    id           TEXT PRIMARY KEY,
+    title        TEXT,
+    pgn          TEXT,
+    type         TEXT,
+    "assignedTo" TEXT[],
+    "dueDate"    TEXT,
+    description  TEXT,
+    coach        TEXT,
+    moves        JSONB,
+    created      BIGINT,
+    created_at   TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 18. HW SUBMISSIONS TABLE
--- Tracks student completion of homework assignments.
-CREATE TABLE IF NOT EXISTS public.hw_submissions (
-    id TEXT PRIMARY KEY,
+-- ── 18. HOMEWORK SUBMISSIONS ─────────────────────────────────────────────────
+CREATE TABLE public.hw_submissions (
+    id            TEXT PRIMARY KEY,
     assignment_id TEXT,
-    student_id TEXT,
-    accuracy INTEGER,
-    movesStudied INTEGER,
-    totalMoves INTEGER,
-    note TEXT,
-    completed BOOLEAN DEFAULT true,
-    submittedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    student_id    TEXT,
+    accuracy      INTEGER,
+    "movesStudied" INTEGER,
+    "totalMoves"  INTEGER,
+    note          TEXT,
+    completed     BOOLEAN DEFAULT false,
+    "submittedAt" TIMESTAMPTZ,
+    created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 19. FEEDBACK TABLE
--- Stores feedback from parents to the academy.
-CREATE TABLE IF NOT EXISTS public.feedback (
-    id TEXT PRIMARY KEY,
-    fromId TEXT,
-    fromName TEXT,
-    fromRole TEXT,
-    childId TEXT,
-    childName TEXT,
-    toId TEXT,
-    toName TEXT,
-    message TEXT,
-    rating INTEGER,
-    category TEXT,
-    replied BOOLEAN DEFAULT false,
-    reply TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- ── 19. FEEDBACK (parent + coach) ────────────────────────────────────────────
+-- Superset of both feedback shapes used in the code so no write is rejected.
+CREATE TABLE public.feedback (
+    id            TEXT PRIMARY KEY,
+    "fromId"      TEXT,
+    "fromName"    TEXT,
+    "fromRole"    TEXT,
+    "childId"     TEXT,
+    "childName"   TEXT,
+    "toId"        TEXT,
+    "toName"      TEXT,
+    message       TEXT,
+    rating        INTEGER,
+    category      TEXT,
+    replied       BOOLEAN DEFAULT false,
+    reply         TEXT,
+    parent_name   TEXT,
+    parent_email  TEXT,
+    student_email TEXT,
+    text          TEXT,
+    status        TEXT,
+    created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ==============================================================================
--- SCHEMA ADDITIONS — Run these if you already have the tables created above.
--- These are safe to re-run (uses ADD COLUMN IF NOT EXISTS).
--- ==============================================================================
+-- ── 20. BROADCASTS (live classroom position) ─────────────────────────────────
+CREATE TABLE public.broadcasts (
+    id         TEXT PRIMARY KEY,
+    fen        TEXT,
+    pgn        TEXT,
+    coach      TEXT,
+    ts         BIGINT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
--- Streak tracking columns on users
-ALTER TABLE public.users ADD COLUMN IF NOT EXISTS streak_count INTEGER DEFAULT 0;
-ALTER TABLE public.users ADD COLUMN IF NOT EXISTS streak_last_date TEXT;
+-- =============================================================================
+-- ACCESS — disable RLS + grant the anon/authenticated API roles full access.
+-- The app uses the public anon key directly; RLS is intentionally off here.
+-- (For a hardened post-launch setup, see the note in LAUNCH_CHECKLIST.md.)
+-- =============================================================================
+DO $$
+DECLARE t TEXT;
+BEGIN
+  FOR t IN
+    SELECT tablename FROM pg_tables WHERE schemaname = 'public'
+  LOOP
+    EXECUTE format('ALTER TABLE public.%I DISABLE ROW LEVEL SECURITY;', t);
+    EXECUTE format('GRANT ALL ON public.%I TO anon, authenticated;', t);
+  END LOOP;
+END $$;
 
--- Spaced Repetition System data (JSON string, per student)
-ALTER TABLE public.users ADD COLUMN IF NOT EXISTS srs_data TEXT;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
 
--- ==============================================================================
--- SECURITY & ACCESS POLICIES
--- RLS is ENABLED on all tables. Access is governed by the policies in
--- supabase/rls.sql — run that file in the SQL editor AFTER this one.
--- The authenticated role is granted DML; anon gets only what RLS allows.
--- ==============================================================================
-
--- Enable RLS on all tables
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.document ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.attendance ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.ratings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.tourRatings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.resources ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.meetings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.coach_notes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.credentials ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.batch_links ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.classes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.monthly_reports ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.puzzle_scores ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.coach_attendance ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.assignments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.hw_submissions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.feedback ENABLE ROW LEVEL SECURITY;
-
--- Grant table-level DML to authenticated role (RLS policies restrict further)
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.users TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.expenses TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.document TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.attendance TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.ratings TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.tourRatings TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.resources TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.meetings TO authenticated;
-GRANT SELECT, INSERT, UPDATE ON TABLE public.leads TO anon, authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.coach_notes TO authenticated;
-GRANT SELECT, INSERT, UPDATE ON TABLE public.credentials TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.batch_links TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.classes TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.monthly_reports TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.puzzle_scores TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.coach_attendance TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.assignments TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.hw_submissions TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.feedback TO authenticated;
-
--- Grant sequence usage for auto-increment columns
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
-
--- ==============================================================================
--- DATA INTEGRITY — Unique constraints
--- ==============================================================================
-
--- Prevent duplicate attendance records for the same student on the same date
-ALTER TABLE public.attendance
-  DROP CONSTRAINT IF EXISTS uq_attendance_user_date;
-ALTER TABLE public.attendance
-  ADD CONSTRAINT uq_attendance_user_date UNIQUE (userid, date);
-
--- IMPORTANT: After running this file, run supabase/rls.sql to apply all
--- Row Level Security policies. The two files must both be applied.
-
--- ==============================================================================
--- 10. STORAGE BUCKET: DOCUMENTS
--- The admin portal uploads student certificates to this bucket.
--- ==============================================================================
-
--- Create the 'documents' storage bucket and make it public
-INSERT INTO storage.buckets (id, name, public) 
+-- =============================================================================
+-- STORAGE — bucket for homework / material file uploads
+-- =============================================================================
+INSERT INTO storage.buckets (id, name, public)
 VALUES ('documents', 'documents', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
--- Explicitly drop existing policies to avoid conflict errors when rerunning
-DROP POLICY IF EXISTS "Public Access" ON storage.objects;
-DROP POLICY IF EXISTS "Allow Uploads" ON storage.objects;
-DROP POLICY IF EXISTS "Allow Deletes" ON storage.objects;
+DROP POLICY IF EXISTS "ck_docs_read"   ON storage.objects;
+DROP POLICY IF EXISTS "ck_docs_write"  ON storage.objects;
+DROP POLICY IF EXISTS "ck_docs_delete" ON storage.objects;
+CREATE POLICY "ck_docs_read"   ON storage.objects FOR SELECT USING (bucket_id = 'documents');
+CREATE POLICY "ck_docs_write"  ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'documents');
+CREATE POLICY "ck_docs_delete" ON storage.objects FOR DELETE USING (bucket_id = 'documents');
 
--- Allow public read access to all files in the documents bucket
-CREATE POLICY "Public Access" 
-ON storage.objects FOR SELECT 
-USING (bucket_id = 'documents');
+-- =============================================================================
+-- SEED DATA — admin, coaches, demo logins
+-- =============================================================================
 
--- Allow anon/authenticated users to upload files
-CREATE POLICY "Allow Uploads" 
-ON storage.objects FOR INSERT 
-WITH CHECK (bucket_id = 'documents');
+-- Admin + 8 coaches (emails match the app's default credential list)
+INSERT INTO public.users (id, userid, email, full_name, role, rating, level) VALUES
+  ('a007b0b0-9b30-478f-a147-1af18dff20ce', 'admin', 'admin@gmail.com',       'Academy Admin',   'admin', NULL, NULL),
+  ('c0c0c0c0-0000-4000-8000-000000000001', 'c1', 'arivuselvam@gmail.com', 'ARIVUSELVAM',     'coach', 1500, 'Advanced'),
+  ('c0c0c0c0-0000-4000-8000-000000000002', 'c2', 'gyanasurya@gmail.com',  'GYANASURYA',      'coach', 1450, 'Intermediate'),
+  ('c0c0c0c0-0000-4000-8000-000000000003', 'c3', 'vishnu@gmail.com',      'VISHNU',          'coach', 1600, 'Advanced'),
+  ('c0c0c0c0-0000-4000-8000-000000000004', 'c4', 'haris@gmail.com',       'HARIS',           'coach', 1300, 'Beginner'),
+  ('c0c0c0c0-0000-4000-8000-000000000005', 'c5', 'yogesh@gmail.com',      'YOGESH',          'coach', 1350, 'Beginner'),
+  ('c0c0c0c0-0000-4000-8000-000000000006', 'c6', 'sudhin@gmail.com',      'SUDHIN',          'coach', 1300, 'Beginner'),
+  ('c0c0c0c0-0000-4000-8000-000000000007', 'c7', 'ranjith@gmail.com',     'RANJITH',         'coach', 1700, 'Advanced'),
+  ('c0c0c0c0-0000-4000-8000-000000000008', 'c8', 'rohith@gmail.com',      'ROHITH SELVARAJ', 'coach', 1400, 'Beginner')
+ON CONFLICT (id) DO NOTHING;
 
--- Allow anon/authenticated users to delete files
-CREATE POLICY "Allow Deletes" 
-ON storage.objects FOR DELETE 
-USING (bucket_id = 'documents');
+-- One demo student so the student portal has a working login out of the box
+INSERT INTO public.users (id, userid, email, full_name, role, level, rating, coach, batch, status) VALUES
+  ('student-uuid-emma', '101', 'student@gmail.com', 'Emma Wilson', 'student', 'Intermediate', 800, 'ARIVUSELVAM', 'Evening', 'Paid')
+ON CONFLICT (id) DO NOTHING;
+
+-- Login credentials (SHA-256 hashed).  admin password = admin123 ; others = chess123
+INSERT INTO public.credentials (email, password) VALUES
+  ('admin@gmail.com',       '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9'),
+  ('student@gmail.com',     '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55'),
+  ('arivuselvam@gmail.com', '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55'),
+  ('gyanasurya@gmail.com',  '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55'),
+  ('vishnu@gmail.com',      '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55'),
+  ('haris@gmail.com',       '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55'),
+  ('yogesh@gmail.com',      '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55'),
+  ('sudhin@gmail.com',      '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55'),
+  ('ranjith@gmail.com',     '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55'),
+  ('rohith@gmail.com',      '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55')
+ON CONFLICT (email) DO NOTHING;
+
+-- Default Google Meet links per level
+INSERT INTO public.batch_links (batch_level, link) VALUES
+  ('Beginner',     'https://meet.google.com/beg-inner-room'),
+  ('Intermediate', 'https://meet.google.com/int-strategy-abc'),
+  ('Advanced',     'https://meet.google.com/adv-endgames-xyz')
+ON CONFLICT (batch_level) DO NOTHING;
+
+-- =============================================================================
+-- DONE.  All 20 tables now match the column names the app sends.
+-- Verify: SELECT table_name FROM information_schema.tables WHERE table_schema='public';
+-- =============================================================================

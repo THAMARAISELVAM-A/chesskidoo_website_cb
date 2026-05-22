@@ -28,12 +28,12 @@ window.APP_CONFIG = {
   ACADEMY_NAME:     "ChessKidoo Academy",
   ACADEMY_EMAIL:    "Chesskidoo37@gmail.com",
   ACADEMY_PHONE:    "+91 90258 46663",
-  ACADEMY_CITY:     "Chennai, Tamil Nadu",
+  ACADEMY_CITY:     "Bhavani, Erode, Tamil Nadu",
 
   // UPI Payment — direct bank transfer (no gateway needed)
   // IMPORTANT: Replace ACADEMY_UPI_ID with the actual UPI VPA from your bank app
   // (e.g. ranjithas@okaxis, 9025846663@ybl, etc.)
-  ACADEMY_UPI_ID:     "9025846663@upi",
+  ACADEMY_UPI_ID:     "saminathanranjith73@okaxis",
   ACADEMY_UPI_NAME:   "Ranjith A S",
   ACADEMY_UPI_MOBILE: "9025846663",
 
@@ -84,10 +84,9 @@ window.CK.esc = function(str) {
     } else {
       retries++;
       if (retries < maxRetries) {
-        console.warn(`[ChessKidoo] Supabase SDK not ready, retrying... (${retries}/${maxRetries})`);
         setTimeout(attemptInit, 500);
       } else {
-        console.error("[ChessKidoo] Supabase SDK failed to load after multiple attempts. Check CDN import.");
+        console.error("[ChessKidoo] Supabase SDK failed to load. Check the CDN <script> in index.html.");
       }
     }
   }

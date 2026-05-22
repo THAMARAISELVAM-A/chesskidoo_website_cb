@@ -58,10 +58,15 @@ CK.student = {
     this.renderCoachReviews();
     this.renderAchievementsTab();
     // Gamification: render RPG rank card on dashboard
-    if (CK.rpg) CK.rpg.renderRankCard('studentRankCard', this.userProfile);
+    if (CK.rpg) CK.rpg.renderRankCard('studentRankCard', this.userProfile?.id);
     this.renderFeesGateway();
     this.renderReportCard();
     this.initCharts();
+    this.renderLevelHub();
+    this.applyLevelGating();
+
+    // Auto-sync Lichess data if linked (runs in background)
+    this._autoSyncLichess();
     this.startCountdown();
     this.startAutoRefresh();
   },
@@ -96,6 +101,12 @@ CK.student = {
   },
 
   nav(panelId) {
+    // Level gating — block panels not yet unlocked for this student's level
+    const _need = this.panelUnlockLevel ? this.panelUnlockLevel(panelId) : null;
+    if (_need && !this.hasReached(_need)) {
+      CK.showToast(`🔒 This unlocks at ${_need} level — keep training, you'll get there!`, 'warning');
+      return;
+    }
     document.querySelectorAll('#student-page .p-panel').forEach(p => p.classList.remove('active'));
     
     const target = document.getElementById(`student-panel-${panelId}`);
@@ -150,6 +161,152 @@ CK.student = {
     };
     const titleEl = document.getElementById('studentPanelTitle');
     if (titleEl) titleEl.innerText = titles[panelId] || 'Dashboard';
+  },
+
+  /* ═══════════════════════════════════════════════════════
+     LEVEL SYSTEM — Beginner → Intermediate → Advanced
+     Tier-based focus content + progressive feature unlocking.
+  ═════════════════════════════════════════════════════════ */
+  LEVEL_ORDER: ['Beginner', 'Intermediate', 'Advanced'],
+
+  LEVEL_CONFIG: {
+    Beginner: {
+      icon: '🌱', tag: 'Foundations', color: '#10B981',
+      puzzleDifficulty: 'Easy',
+      focus: [
+        'How every piece moves & setting up the board',
+        'King safety and basic checkmates (King + Queen)',
+        'Piece values — capture safely, avoid blunders',
+        'Opening principle: control the centre & develop pieces'
+      ],
+      goals: ['Solve 20 Easy tactics puzzles', 'Reach a 900 academy rating', 'Play 10 full games'],
+      unlocks: 'Puzzles, Game Tracker, Coach Reviews, Classroom & Resources'
+    },
+    Intermediate: {
+      icon: '⚔️', tag: 'Tactics & Strategy', color: '#3B82F6',
+      puzzleDifficulty: 'Medium',
+      focus: [
+        'Tactical patterns — forks, pins, skewers, discovered attacks',
+        'Building a simple, reliable opening repertoire',
+        'Basic rook & pawn endgames',
+        'Calculating 2–3 moves ahead before committing'
+      ],
+      goals: ['Solve 40 Medium puzzles', 'Reach a 1300 rating', 'Compete in an academy tournament'],
+      unlocks: 'Opening Trainer + Tournaments (on top of all Beginner features)'
+    },
+    Advanced: {
+      icon: '👑', tag: 'Mastery', color: '#e8b84b',
+      puzzleDifficulty: 'Hard',
+      focus: [
+        'Deep calculation & prophylactic thinking',
+        'Advanced endgame theory (Lucena, Philidor positions)',
+        'Engine-assisted opening preparation',
+        'Positional sacrifices & long-term strategic planning'
+      ],
+      goals: ['Solve Hard puzzles daily', 'Reach 1700+ and aim for a FIDE rating', 'Analyse your games in the Stockfish Lab'],
+      unlocks: 'PGN Stockfish Lab + every expert feature'
+    }
+  },
+
+  // panel id -> minimum level required to open it
+  PANEL_LOCKS: { openings: 'Intermediate', tournaments: 'Intermediate', lab: 'Advanced' },
+
+  currentLevelName() {
+    const lvl = (this.userProfile && this.userProfile.level) || 'Beginner';
+    return this.LEVEL_ORDER.includes(lvl) ? lvl : 'Beginner';
+  },
+  levelInfo() {
+    return this.LEVEL_CONFIG[this.currentLevelName()];
+  },
+  hasReached(level) {
+    return this.LEVEL_ORDER.indexOf(this.currentLevelName()) >= this.LEVEL_ORDER.indexOf(level);
+  },
+  panelUnlockLevel(panelId) {
+    return this.PANEL_LOCKS[panelId] || null;
+  },
+
+  /* Mark locked nav items with a 🔒 badge */
+  applyLevelGating() {
+    document.querySelectorAll('#student-page .p-nav-item').forEach(btn => {
+      const m = (btn.getAttribute('onclick') || '').match(/nav\('([^']+)'\)/);
+      if (!m) return;
+      const need = this.panelUnlockLevel(m[1]);
+      const locked = !!(need && !this.hasReached(need));
+      let lk = btn.querySelector('.nav-lock');
+      if (locked && !lk) {
+        lk = document.createElement('span');
+        lk.className = 'nav-lock';
+        lk.textContent = '🔒';
+        lk.style.cssText = 'margin-left:auto;font-size:.78rem;opacity:.65;';
+        btn.appendChild(lk);
+      } else if (!locked && lk) {
+        lk.remove();
+      }
+    });
+  },
+
+  /* Render the "Your Level" hub card at the top of the dashboard */
+  renderLevelHub() {
+    const panel = document.getElementById('student-panel-home');
+    if (!panel) return;
+    const _e = CK.esc || (s => s);
+    const lvlName = this.currentLevelName();
+    const info = this.levelInfo();
+    const idx = this.LEVEL_ORDER.indexOf(lvlName);
+    const next = this.LEVEL_ORDER[idx + 1] || null;
+
+    const track = this.LEVEL_ORDER.map((lv, i) => {
+      const c = this.LEVEL_CONFIG[lv];
+      const state = i === idx ? 'cur' : (i < idx ? 'done' : 'todo');
+      const bg = state === 'cur' ? c.color + '22' : (state === 'done' ? '#10B98118' : '#ffffff08');
+      const bd = state === 'cur' ? c.color : '#252b35';
+      const tc = state === 'cur' ? c.color : (state === 'done' ? '#10B981' : '#8a93a6');
+      return `<div style="flex:1;text-align:center;padding:8px 4px;border-radius:10px;background:${bg};border:1px solid ${bd};">
+        <div style="font-size:1.15rem;">${c.icon}</div>
+        <div style="font-size:.72rem;font-weight:700;color:${tc};">${lv}</div></div>`;
+    }).join('<div style="color:#3a4252;font-weight:700;">→</div>');
+
+    const li = (arr) => arr.map(x => `<li>${_e(x)}</li>`).join('');
+    const nextHtml = next
+      ? `<span style="margin-left:auto;font-size:.82rem;color:#8a93a6;">Next tier: <strong style="color:${this.LEVEL_CONFIG[next].color};">${next}</strong> — unlocks ${_e(this.LEVEL_CONFIG[next].unlocks)}</span>`
+      : `<span style="margin-left:auto;font-size:.82rem;color:#e8b84b;font-weight:700;">👑 Top tier reached — aim for FIDE-rated play!</span>`;
+
+    let hub = document.getElementById('studentLevelHub');
+    if (!hub) {
+      hub = document.createElement('div');
+      hub.id = 'studentLevelHub';
+      panel.insertBefore(hub, panel.firstChild);
+    }
+    hub.innerHTML = `
+      <div style="background:linear-gradient(135deg,#1a1f2e,#0f1320);border:1px solid #252b35;border-radius:16px;padding:22px;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <div style="font-size:2.3rem;">${info.icon}</div>
+          <div>
+            <div style="font-size:.7rem;letter-spacing:1.5px;text-transform:uppercase;color:#8a93a6;">Your Current Level</div>
+            <div style="font-size:1.45rem;font-weight:800;color:#fff;">${_e(lvlName)}
+              <span style="font-size:.78rem;font-weight:600;color:${info.color};">· ${_e(info.tag)}</span></div>
+          </div>
+          <div style="margin-left:auto;text-align:right;">
+            <div style="font-size:.7rem;color:#8a93a6;">Recommended puzzles</div>
+            <div style="font-weight:700;color:${info.color};">${_e(info.puzzleDifficulty)}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin:16px 0;">${track}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div>
+            <div style="font-weight:700;color:#fff;margin-bottom:6px;">🎯 Focus at this level</div>
+            <ul style="margin:0;padding-left:18px;color:#c4ccda;font-size:.85rem;line-height:1.7;">${li(info.focus)}</ul>
+          </div>
+          <div>
+            <div style="font-weight:700;color:#fff;margin-bottom:6px;">🏆 Your goals</div>
+            <ul style="margin:0;padding-left:18px;color:#c4ccda;font-size:.85rem;line-height:1.7;">${li(info.goals)}</ul>
+          </div>
+        </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid #252b35;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:.83rem;color:#c4ccda;">✨ Unlocked for you: <strong style="color:#fff;">${_e(info.unlocks)}</strong></span>
+          ${nextHtml}
+        </div>
+      </div>`;
   },
 
   updateProfile() {
@@ -849,7 +1006,7 @@ CK.student = {
     const p = this.userProfile;
     if (!p) return;
     if (CK.rpg) {
-      CK.rpg.renderRankCard('studentRankCardFull', p);
+      CK.rpg.renderRankCard('studentRankCardFull', p.id);
       CK.rpg.renderXPFeed('studentXPFeed', p.id);
       CK.rpg.renderLeaderboard('studentLeaderboard');
       CK.rpg.renderBadgeGrid('studentBadgeGrid', p.id);
@@ -1600,7 +1757,7 @@ CK.student = {
     // Seed UPI strip with actual UPI ID from config
     const cfg = window.APP_CONFIG || {};
     const upiIdEl = document.getElementById('payUpiIdPreview');
-    if (upiIdEl) upiIdEl.textContent = cfg.ACADEMY_UPI_ID || '9025846663@upi';
+    if (upiIdEl) upiIdEl.textContent = cfg.ACADEMY_UPI_ID || 'saminathanranjith73@okaxis';
 
     const badge = document.getElementById('payStatusBadge');
     if (badge) {
@@ -1676,6 +1833,13 @@ CK.student = {
       // Card / Net Banking / EMI — Razorpay
       if (!window.Razorpay) {
         CK.showToast('Payment gateway is loading. Please try again in a moment.', 'warning');
+        return;
+      }
+      // Guard: if the Razorpay key was never configured, don't open a broken
+      // gateway — route the parent to the working UPI option instead.
+      const _rzpKey = window.CK_RAZORPAY_KEY || '';
+      if (!_rzpKey || /PLACEHOLDER|REPLACE_WITH/i.test(_rzpKey)) {
+        CK.showToast('Card payments aren’t set up yet — please use the UPI / Google Pay option above.', 'warning');
         return;
       }
       const p = this.userProfile || {};
@@ -1756,7 +1920,7 @@ CK.student = {
     const gst     = Math.round(tuition * 0.18);
     const total   = tuition + gst;
 
-    const upiId   = cfg.ACADEMY_UPI_ID   || '9025846663@upi';
+    const upiId   = cfg.ACADEMY_UPI_ID   || 'saminathanranjith73@okaxis';
     const upiName = cfg.ACADEMY_UPI_NAME || 'Ranjith A S';
     const note    = encodeURIComponent('ChessKidoo Fee - ' + (p.full_name || 'Student'));
     const enc     = s => encodeURIComponent(s);
@@ -1829,7 +1993,7 @@ CK.student = {
 
   copyUpiId() {
     const cfg   = window.APP_CONFIG || {};
-    const upiId = cfg.ACADEMY_UPI_ID || '9025846663@upi';
+    const upiId = cfg.ACADEMY_UPI_ID || 'saminathanranjith73@okaxis';
     if (navigator.clipboard) {
       navigator.clipboard.writeText(upiId)
         .then(() => CK.showToast('UPI ID copied!', 'success'))
@@ -2310,6 +2474,52 @@ CK.student = {
         </div>
       </div>
     `;
+  },
+
+  /* ── Auto-sync Lichess data on login (background, no toast spam) ── */
+  async _autoSyncLichess() {
+    const p = this.userProfile;
+    if (!p?.lichess_username || !navigator.onLine) return;
+
+    // Only sync once per session (or once per hour)
+    const syncKey = `ck_lichess_sync_${p.id}`;
+    const lastSync = parseInt(localStorage.getItem(syncKey) || '0');
+    if (Date.now() - lastSync < 3600000) return; // Skip if synced within 1 hour
+
+    try {
+      const res = await fetch(`https://lichess.org/api/user/${encodeURIComponent(p.lichess_username)}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const perfs = data.perfs || {};
+
+      const updates = {};
+      const rapidRating  = perfs.rapid?.rating || perfs.classical?.rating || null;
+      const blitzRating  = perfs.blitz?.rating || null;
+      const bulletRating = perfs.bullet?.rating || null;
+      const totalGames   = data.count?.all || 0;
+
+      if (rapidRating && rapidRating !== p.rating) updates.rating = rapidRating;
+      if (blitzRating)  updates.lichess_blitz  = blitzRating;
+      if (bulletRating) updates.lichess_bullet = bulletRating;
+      if (totalGames > (p.lichess_games || 0)) updates.lichess_games = totalGames;
+      if (data.title && !p.lichess_title)       updates.lichess_title = data.title;
+
+      if (Object.keys(updates).length) {
+        const merged = { ...this.userProfile, ...updates };
+        await CK.db.saveProfile(merged);
+        this.userProfile = merged;
+        this.updateProfile(); // Refresh dashboard stats
+      }
+
+      // Also import recent games silently
+      if (CK.gameTracker && totalGames > (p.lichess_games || 0)) {
+        try { await CK.gameTracker.importFromLichess(p.id, p.lichess_username, true); } catch(e) {}
+      }
+
+      localStorage.setItem(syncKey, String(Date.now()));
+    } catch(e) {
+      // Silent fail — this is a background sync
+    }
   },
 
   async linkLichess(username) {

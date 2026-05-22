@@ -412,12 +412,16 @@
 
     // Save attendance (Insert/Update)
     async saveAttendance(log) {
-      if (!log.id) log.id = Date.now();
+      if (!log.id) log.id = 'att-' + Date.now();
       if (!log.created_at) log.created_at = new Date().toISOString();
 
       if (canUseSupabase()) {
         try {
-          const { error } = await window.supabaseClient.from('attendance').upsert(log);
+          // Upsert on (userid,date) so re-marking a student's attendance
+          // updates the existing row instead of failing the unique constraint.
+          const { error } = await window.supabaseClient
+            .from('attendance')
+            .upsert(log, { onConflict: 'userid,date' });
           if (error) console.warn("[ChessKidoo DB] Attendance save error:", error.message);
         } catch (e) {
           console.warn("[ChessKidoo DB] Attendance save error, local only:", e);
