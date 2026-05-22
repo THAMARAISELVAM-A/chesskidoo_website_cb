@@ -2256,40 +2256,33 @@
 }
 
 /* Arena Multi-Device Auto-Size Layer */
+@media (max-width: 1400px) {
+  .arena-header-settings { gap: 8px !important; }
+  .arena-title-text { display: none !important; }
+  .diff-btn, .timer-btn { padding: 6px 12px !important; font-size: 0.75rem !important; }
+}
+
 @media (min-width: 1600px) {
   .arena-wrapper { max-width: 1550px; margin: 0 auto; width: 100%; }
-  .arena-board { width: 560px !important; height: 560px !important; }
+  .arena-board { width: 620px !important; height: 620px !important; }
 }
+
 @media (max-width: 1024px) and (min-width: 769px) {
-  .arena-grid { grid-template-columns: 1fr !important; gap: 32px; }
-  .arena-board { width: 440px !important; height: 440px !important; margin: 0 auto; }
+  .arena-game-layout { grid-template-columns: 1fr !important; gap: 32px; }
+  .arena-board { width: min(500px, 80vw) !important; height: min(500px, 80vw) !important; margin: 0 auto; }
 }
 
 @media (max-width: 768px) {
-  .arcade-promo-content {
-    flex-direction: column;
-    text-align: center;
-  }
-  .arcade-promo-text {
-    text-align: center;
-  }
-  .arcade-promo-btn {
-    width: 100%;
-  }
+  .arcade-promo-content { flex-direction: column; text-align: center; }
+  .arcade-promo-text { text-align: center; }
+  .arcade-promo-btn { width: 100%; }
   .arena-board {
-    width: min(360px, 92vw) !important;
-    height: min(360px, 92vw) !important;
+    width: min(400px, 92vw) !important;
+    height: min(400px, 92vw) !important;
   }
-  .arena-panel {
-    padding: 16px !important;
-  }
-  .diff-btn {
-    padding: 6px 10px !important;
-    font-size: 0.75rem !important;
-  }
-  .arena-header {
-    padding: 14px 16px !important;
-  }
+  .arena-panel { padding: 16px !important; }
+  .diff-btn, .timer-btn { padding: 6px 8px !important; font-size: 0.7rem !important; }
+  .arena-header { padding: 12px 10px !important; }
 }
 
 /* ─── Arcade Responsive & Production Fixes ─── */
