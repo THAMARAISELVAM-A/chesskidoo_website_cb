@@ -1,40 +1,28 @@
 {
   "name": "ChessKidoo Academy",
   "short_name": "ChessKidoo",
-  "description": "India's Premier Chess Academy — Student & Coach Portal",
+  "description": "FIDE-certified chess coaching, live arena, and progress tracking.",
   "start_url": "/",
-  "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "background_color": "#111827",
   "theme_color": "#D97706",
-  "background_color": "#0f1117",
-  "categories": ["education", "sports"],
-  "lang": "en-IN",
+  "orientation": "portrait-primary",
   "icons": [
+    {
+      "src": "/assets/img/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
     {
       "src": "/assets/img/apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable any"
     },
     {
-      "src": "/public/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
-  ],
-  "screenshots": [],
-  "shortcuts": [
-    {
-      "name": "My Dashboard",
-      "url": "/?panel=home",
-      "description": "Open student dashboard"
-    },
-    {
-      "name": "Game Tracker",
-      "url": "/?panel=games",
-      "description": "Log and review your games"
+      "src": "/assets/img/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ]
 }
