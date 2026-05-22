@@ -86,7 +86,7 @@ CREATE TABLE public.meetings (
     id TEXT PRIMARY KEY,
     date TEXT, time TEXT, coach TEXT, "coachId" TEXT, "coachName" TEXT, title TEXT,
     batch TEXT, duration INTEGER, link TEXT, notes TEXT, type TEXT,
-    "studentIds" TEXT[], created_at TIMESTAMPTZ DEFAULT NOW()
+    "studentIds" TEXT[], status TEXT, "liveStartedAt" TEXT, created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE public.leads (

@@ -122,6 +122,9 @@ CK.coach = {
             <div class="p-live-name">${_e(s.full_name)}</div>
             <div class="p-live-sub">${_e(s.level || 'Beginner')} · ${_e(String(s.rating || 800))} ELO · ${_e(String(s.puzzle || 0))} puzzles</div>
             <div class="p-live-status"><span class="p-status-dot ${statusDot}"></span> ${statusLabel}</div>
+            <div style="margin-top:6px; font-size:0.8rem; color:var(--p-text-muted);">
+              Batch: <input type="text" value="${_e(s.batch || '')}" placeholder="Assign Batch" style="background:var(--p-surface1); border:1px solid rgba(255,255,255,0.1); color:var(--p-text); padding:2px 6px; border-radius:4px; font-size:0.8rem; width:100px;" onchange="CK.coach.updateStudentBatch('${_e(String(s.id))}', this.value)">
+            </div>
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;">
             <button class="p-icon-btn" data-sid="${_e(String(s.id))}" onclick="CK.coach.viewStudentMetrics(this.dataset.sid)" title="View Progress">📊</button>
@@ -129,6 +132,17 @@ CK.coach = {
           </div>
         </div>`;
     }).join('');
+  },
+
+  async updateStudentBatch(studentId, batchStr) {
+    const students = await CK.db.getProfiles('student');
+    const s = students.find(x => x.id === studentId);
+    if (s) {
+      s.batch = batchStr.trim();
+      await CK.db.saveProfile(s);
+      CK.showToast(`Batch updated to "${s.batch}" for ${s.full_name}`, 'success');
+      this._refreshStudentGrid();
+    }
   },
 
   /* ── Session Timer ── */
@@ -197,10 +211,10 @@ CK.coach = {
     if (titleEl) titleEl.innerText = titles[panelId] || 'Dashboard';
 
     const topBtn = document.getElementById('coachTopBtn');
-    if (topBtn) topBtn.style.display = (panelId === 'notes') ? 'block' : 'none';
+    if (topBtn) topBtn.style.display = 'none'; // We use inline form now
     if (panelId === 'resources')  this.renderResources();
     if (panelId === 'schedule')   this.renderSchedulePro();
-    if (panelId === 'notes')      { this.initReportEditor(); this.loadCoachNotes(); }
+    if (panelId === 'notes')      { this.initReportEditor(); this.loadCoachNotes(); this.initInlineNoteForm(); }
     if (panelId === 'attendance') { this.loadAttendance(); this.loadAttendanceAdvanced(); }
     if (panelId === 'classes')    this.renderClassesPanel();
     if (panelId === 'reports')    this.renderReportsPanel();
@@ -570,6 +584,16 @@ CK.coach = {
       }
     } catch(e) {}
 
+    // Auto-record coach attendance
+    try {
+      const coachId = window.CK?.currentUser?.id || window.CK?.currentUser?.userid || 'coach';
+      if (window.CK?.db?.recordCoachAttendance) {
+        await CK.db.recordCoachAttendance(coachId, classId);
+      }
+    } catch (err) {
+      console.warn("[Coach Attendance] Failed to record coach attendance:", err);
+    }
+
     this.nav('session');
     const nameEl = document.getElementById('coachSessionName');
     const subEl = document.getElementById('coachSessionSub');
@@ -580,6 +604,12 @@ CK.coach = {
     if (CK.renderVaultBoard) CK.renderVaultBoard();
     this.startSessionTimer();
     this._liveClassId = classId;
+
+    // Update WebRTC stream controls visibility
+    if (window.CK && CK.webrtc && CK.webrtc.toggleStreamButtons) {
+      CK.webrtc.toggleStreamButtons(CK.webrtc.isBroadcasting());
+    }
+
     CK.showToast("Live session started — timer running!", "success");
   },
 
@@ -606,6 +636,12 @@ CK.coach = {
       this._updatePresenceCount();
       clearInterval(this._presenceInterval);
       this._presenceInterval = setInterval(() => this._updatePresenceCount(), 30000);
+
+      // Update WebRTC stream controls visibility
+      if (window.CK && CK.webrtc && CK.webrtc.toggleStreamButtons) {
+        CK.webrtc.toggleStreamButtons(CK.webrtc.isBroadcasting());
+      }
+
       CK.showToast("Triple-Pane Command Center started!", "success");
     } else {
       btn.innerText = '▶ Resume Command Center';
@@ -613,11 +649,22 @@ CK.coach = {
       btn.classList.add('p-btn-teal');
       this.stopSessionTimer();
       clearInterval(this._presenceInterval);
+
+      // Update WebRTC stream controls visibility (hide CC buttons on pause)
+      if (window.CK && CK.webrtc && CK.webrtc.toggleStreamButtons) {
+        CK.webrtc.toggleStreamButtons(false);
+      }
+
       CK.showToast("Command Center paused", "info");
     }
   },
 
   async endSession() {
+    // Stop WebRTC broadcast
+    if (window.CK && CK.webrtc && CK.webrtc.stopBroadcast) {
+      CK.webrtc.stopBroadcast();
+    }
+
     // Clear live status in DB
     if (this._liveClassId) {
       try {
@@ -629,6 +676,23 @@ CK.coach = {
           await CK.db.saveMeeting(match);
         }
       } catch(e) {}
+
+      // Run attendance sweep for students who did not join
+      try {
+        const coachName = window.CK?.currentUser?.full_name || 'Coach';
+        const classId = this._liveClassId;
+        let className = 'Chess Class';
+        const c = this.classesDb.find(x => x.id === classId);
+        if (c) {
+          className = c.class || c.title || className;
+        }
+        if (window.CK?.db?.runAttendanceSweep) {
+          await CK.db.runAttendanceSweep(coachName, classId, className);
+        }
+      } catch (err) {
+        console.warn("[Attendance Sweep] Failed to run attendance sweep:", err);
+      }
+
       this._liveClassId = null;
     }
     const cmdEl = document.getElementById('coachCommandCenter');
@@ -678,6 +742,42 @@ CK.coach = {
     CK.closeModal('coachNoteModal');
     if (textEl) textEl.value = '';
     if (deltaEl) deltaEl.value = '0';
+  },
+
+  async initInlineNoteForm() {
+    const select = document.getElementById('coach_inline_note_student');
+    if (!select) return;
+    const students = (await CK.db.getProfiles('student')) || [];
+    const coachName = (this.coachProfile?.full_name || '').toLowerCase();
+    const myStudents = students.filter(s => s.coach && s.coach.toLowerCase() === coachName);
+    const _e = CK.esc || (s => s);
+    select.innerHTML = myStudents.map(s => `<option value="${_e(s.full_name)}">${_e(s.full_name)}</option>`).join('');
+  },
+
+  async saveInlineNote() {
+    const nameEl = document.getElementById('coach_inline_note_student');
+    const textEl = document.getElementById('coach_inline_note_text');
+    const deltaEl = document.getElementById('coach_inline_note_rating_delta');
+    
+    const name = nameEl ? nameEl.value : '';
+    const text = textEl ? textEl.value : '';
+    if (!text) return CK.showToast('Note content is required', 'error');
+
+    const ratingDelta = Math.max(-500, Math.min(500, parseInt(deltaEl?.value || '0') || 0));
+
+    await CK.tracker.addReview({
+      student: name,
+      text: text,
+      coach: this.coachProfile?.full_name || '',
+      ratingDelta
+    });
+
+    const deltaMsg = ratingDelta !== 0 ? ` (Rating ${ratingDelta > 0 ? '+' : ''}${ratingDelta} ELO)` : '';
+    CK.showToast(`Personalized Note sent to ${name}'s inbox!${deltaMsg}`, 'success');
+    
+    if (textEl) textEl.value = '';
+    if (deltaEl) deltaEl.value = '0';
+    this.loadCoachNotes();
   },
 
   async initReportEditor() {
@@ -778,6 +878,19 @@ CK.coach = {
   openPuzzleCreator() {
     const modal = document.getElementById('coachPuzzleCreatorModal');
     if (modal) modal.style.display = 'flex';
+  },
+
+  openPuzzleCreatorFromLab() {
+    if (!window.CK || !CK.lab || !CK.lab.board) {
+      CK.showToast("Please open a position on the board first", "error");
+      return;
+    }
+    const currentFen = CK.lab.board.fen();
+    this.openPuzzleCreator();
+    setTimeout(() => {
+      const fenEl = document.getElementById('cpzFen');
+      if (fenEl) fenEl.value = currentFen;
+    }, 100);
   },
 
   closePuzzleCreator() {

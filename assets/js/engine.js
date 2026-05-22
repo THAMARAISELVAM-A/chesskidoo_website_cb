@@ -244,21 +244,39 @@ CK.engine = (() => {
     
     // AI Coach Insights appended to explanation
     const insight = generateAiInsight(result.cp, result.mate);
+    
+    // Generate MultiPV lines
+    let pvHtml = '';
+    if (result.pvs && result.pvs.length > 0) {
+      pvHtml = '<div class="engine-pvs" style="margin-top:12px; font-family:monospace; font-size:0.85rem; border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;">';
+      result.pvs.forEach((p, i) => {
+        if (!p) return;
+        let s = formatScore(p.cp, p.mate);
+        let moves = p.pv ? p.pv.split(' ').slice(0, 5).join(' ') + (p.pv.split(' ').length > 5 ? '...' : '') : '';
+        pvHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:4px; padding:3px 6px; border-radius:4px; background:rgba(255,255,255,0.02);">
+                     <span style="color:${cpColor(p.cp, p.mate)}; width:45px; font-weight:700;">${s}</span>
+                     <span style="color:rgba(255,255,255,0.6); flex:1; margin-left:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${moves}</span>
+                   </div>`;
+      });
+      pvHtml += '</div>';
+    }
+
     document.querySelectorAll('.labCoachExplanation').forEach(el => {
       // Clean up previous AI insight if it exists
       const existingInsight = el.querySelector('.ai-insight-block');
       if (existingInsight) existingInsight.remove();
       
-      const badgeText = `⚡ Stockfish d${result.depth} (${src})`;
+      const badgeText = `⚡ Stockfish 18 d${result.depth} (${src})`;
       
       // We wrap the AI insight in a block
       const insightHtml = `
         <div class="ai-insight-block" style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <strong style="color:var(--p-teal);"><i class="fas fa-robot"></i> AI Coach Insight</strong>
-            <span class="engine-badge" style="font-size:.68rem;background:rgba(20,184,166,.18);color:var(--p-teal);padding:2px 7px;border-radius:20px;">${badgeText}</span>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <strong style="color:var(--p-teal); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.05em;"><i class="fas fa-robot"></i> Engine Output</strong>
+            <span class="engine-badge" style="font-size:.68rem;background:rgba(20,184,166,.18);color:var(--p-teal);padding:2px 7px;border-radius:20px;border:1px solid rgba(20,184,166,.3);">${badgeText}</span>
           </div>
-          <div style="color:rgba(255,255,255,0.85); font-size:0.9rem;">${insight}</div>
+          <div style="color:rgba(255,255,255,0.85); font-size:0.9rem; line-height:1.4;">${insight}</div>
+          ${pvHtml}
         </div>
       `;
       el.innerHTML += insightHtml;

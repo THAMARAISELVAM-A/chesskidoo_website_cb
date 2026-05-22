@@ -72,9 +72,22 @@ CK.schedulePro = (() => {
 
   function createMeeting(coachId, coachName, containerId) {
     openMeetingModal(null, coachId, async (data) => {
-      const m = { id: uid(), coachId, coachName, ...data, studentIds: [] };
-      await CK.db.saveMeeting(m);
-      CK.showToast(`Meeting "${m.title}" scheduled!`, 'success');
+      const baseMeeting = { coachId, coachName, ...data, studentIds: [] };
+      let count = 1;
+      if (data.recurrence === 'weekly_4') count = 4;
+      if (data.recurrence === 'weekly_8') count = 8;
+      
+      const dt = new Date(data.date);
+      for (let i = 0; i < count; i++) {
+        const m = { ...baseMeeting, id: uid() };
+        if (i > 0) {
+          dt.setDate(dt.getDate() + 7);
+          m.date = dt.toISOString().split('T')[0];
+        }
+        await CK.db.saveMeeting(m);
+      }
+      
+      CK.showToast(count > 1 ? `${count} recurring meetings scheduled!` : `Meeting "${baseMeeting.title}" scheduled!`, 'success');
       renderCoachSchedule(containerId, coachId);
     });
   }
@@ -109,11 +122,21 @@ CK.schedulePro = (() => {
         </div>
         <div class="cls-modal-body">
           <div class="cls-form-row"><label>Title</label><input class="p-input" id="mm_title" value="${existing?.title || ''}" placeholder="e.g. Tactics Workshop"></div>
-          <div class="cls-form-row">
-            <label>Type</label>
-            <select class="p-input" id="mm_type">
-              ${['class','oneOnOne','tournament','review'].map(t=>`<option value="${t}" ${existing?.type===t?'selected':''}>${{class:'Group Class',oneOnOne:'1-on-1 Session',tournament:'Tournament Prep',review:'Game Review'}[t]}</option>`).join('')}
-            </select>
+          <div class="cls-form-2col">
+            <div class="cls-form-row">
+              <label>Type</label>
+              <select class="p-input" id="mm_type">
+                ${['class','oneOnOne','tournament','review'].map(t=>`<option value="${t}" ${existing?.type===t?'selected':''}>${{class:'Group Class',oneOnOne:'1-on-1 Session',tournament:'Tournament Prep',review:'Game Review'}[t]}</option>`).join('')}
+              </select>
+            </div>
+            <div class="cls-form-row">
+              <label>Recurrence</label>
+              <select class="p-input" id="mm_recurrence" ${existing ? 'disabled' : ''}>
+                <option value="none">One-time only</option>
+                <option value="weekly_4">Weekly (4 weeks)</option>
+                <option value="weekly_8">Weekly (8 weeks)</option>
+              </select>
+            </div>
           </div>
           <div class="cls-form-row"><label>Batch / Students</label><input class="p-input" id="mm_batch" value="${existing?.batch || ''}" placeholder="e.g. Weekend, Group 17:00"></div>
           <div class="cls-form-2col">
@@ -132,14 +155,15 @@ CK.schedulePro = (() => {
     document.body.appendChild(modal);
     modal.querySelector('#mm_save').addEventListener('click', () => {
       onSave({
-        title:    modal.querySelector('#mm_title').value.trim(),
-        type:     modal.querySelector('#mm_type').value,
-        batch:    modal.querySelector('#mm_batch').value.trim(),
-        date:     modal.querySelector('#mm_date').value,
-        time:     modal.querySelector('#mm_time').value,
-        duration: parseInt(modal.querySelector('#mm_dur').value),
-        link:     modal.querySelector('#mm_link').value.trim(),
-        notes:    modal.querySelector('#mm_notes').value.trim()
+        title:      modal.querySelector('#mm_title').value.trim(),
+        type:       modal.querySelector('#mm_type').value,
+        recurrence: modal.querySelector('#mm_recurrence').value,
+        batch:      modal.querySelector('#mm_batch').value.trim(),
+        date:       modal.querySelector('#mm_date').value,
+        time:       modal.querySelector('#mm_time').value,
+        duration:   parseInt(modal.querySelector('#mm_dur').value),
+        link:       modal.querySelector('#mm_link').value.trim(),
+        notes:      modal.querySelector('#mm_notes').value.trim()
       });
       modal.remove();
     });

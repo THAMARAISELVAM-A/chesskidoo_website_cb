@@ -8,12 +8,7 @@ window.CK = window.CK || {};
 
 CK.tournament = (() => {
   const T = {};
-  const TOURNEY_KEY = 'ck_tournaments';
   const uid = () => 't-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-
-  /* ─── Storage ─── */
-  const getAll = () => { try { return JSON.parse(localStorage.getItem(TOURNEY_KEY) || '[]'); } catch(e) { return []; } };
-  const saveAll = (list) => localStorage.setItem(TOURNEY_KEY, JSON.stringify(list));
 
   /* ─── Tournament Formats ─── */
   const FORMATS = {
@@ -24,7 +19,7 @@ CK.tournament = (() => {
   };
 
   /* ─── Create Tournament ─── */
-  T.create = (config) => {
+  T.create = async (config) => {
     const tournament = {
       id: uid(),
       name: config.name || 'ChessKidoo Tournament',
@@ -42,15 +37,13 @@ CK.tournament = (() => {
       maxPlayers: config.maxPlayers || 64,
       description: config.description || ''
     };
-    const all = getAll();
-    all.unshift(tournament);
-    saveAll(all);
+    await CK.db.saveTournament(tournament);
     return tournament;
   };
 
   /* ─── Register Player ─── */
-  T.registerPlayer = (tournamentId, player) => {
-    const all = getAll();
+  T.registerPlayer = async (tournamentId, player) => {
+    const all = await CK.db.getTournaments();
     const t = all.find(x => x.id === tournamentId);
     if (!t) return { error: 'Tournament not found' };
     if (t.status !== 'registration') return { error: 'Registration is closed' };
@@ -70,23 +63,23 @@ CK.tournament = (() => {
       opponents: [],
       colors: []   // 'w' or 'b' per round
     });
-    saveAll(all);
+    await CK.db.saveTournament(t);
     return { success: true, playerCount: t.players.length };
   };
 
   /* ─── Remove Player ─── */
-  T.removePlayer = (tournamentId, playerId) => {
-    const all = getAll();
+  T.removePlayer = async (tournamentId, playerId) => {
+    const all = await CK.db.getTournaments();
     const t = all.find(x => x.id === tournamentId);
     if (!t || t.status !== 'registration') return false;
     t.players = t.players.filter(p => p.id !== playerId);
-    saveAll(all);
+    await CK.db.saveTournament(t);
     return true;
   };
 
   /* ─── Start Tournament ─── */
-  T.start = (tournamentId) => {
-    const all = getAll();
+  T.start = async (tournamentId) => {
+    const all = await CK.db.getTournaments();
     const t = all.find(x => x.id === tournamentId);
     if (!t) return { error: 'Tournament not found' };
     if (t.players.length < 2) return { error: 'Need at least 2 players' };
@@ -99,7 +92,7 @@ CK.tournament = (() => {
     // Generate first round pairings
     const pairings = _generatePairings(t);
     t.pairings.push(pairings);
-    saveAll(all);
+    await CK.db.saveTournament(t);
     return { success: true, round: 1, pairings };
   };
 
@@ -285,8 +278,8 @@ CK.tournament = (() => {
   }
 
   /* ─── Report Result ─── */
-  T.reportResult = (tournamentId, pairingId, result) => {
-    const all = getAll();
+  T.reportResult = async (tournamentId, pairingId, result) => {
+    const all = await CK.db.getTournaments();
     const t = all.find(x => x.id === tournamentId);
     if (!t) return { error: 'Tournament not found' };
 
@@ -333,13 +326,13 @@ CK.tournament = (() => {
       if (result === '0-1' && blackPlayer) CK.rpg.awardXP(blackPlayer.id, 'game_won');
     }
 
-    saveAll(all);
+    await CK.db.saveTournament(t);
     return { success: true };
   };
 
   /* ─── Next Round ─── */
-  T.nextRound = (tournamentId) => {
-    const all = getAll();
+  T.nextRound = async (tournamentId) => {
+    const all = await CK.db.getTournaments();
     const t = all.find(x => x.id === tournamentId);
     if (!t || t.status !== 'active') return { error: 'Tournament not active' };
 
@@ -368,14 +361,14 @@ CK.tournament = (() => {
         top.forEach(p => CK.rpg.awardXP(p.id, 'tournament_top3'));
       }
 
-      saveAll(all);
+      await CK.db.saveTournament(t);
       return { success: true, completed: true, standings: t.standings };
     }
 
     t.currentRound++;
     const pairings = _generatePairings(t);
     t.pairings.push(pairings);
-    saveAll(all);
+    await CK.db.saveTournament(t);
     return { success: true, round: t.currentRound, pairings };
   };
 
@@ -418,8 +411,8 @@ CK.tournament = (() => {
     ).map((p, i) => ({ ...p, rank: i + 1 }));
   }
 
-  T.getStandings = (tournamentId) => {
-    const all = getAll();
+  T.getStandings = async (tournamentId) => {
+    const all = await CK.db.getTournaments();
     const t = all.find(x => x.id === tournamentId);
     if (!t) return [];
     _calculateTiebreaks(t);
@@ -427,28 +420,37 @@ CK.tournament = (() => {
   };
 
   /* ─── Get Tournament ─── */
-  T.get = (id) => getAll().find(t => t.id === id) || null;
-  T.getAll = () => getAll();
-  T.getActive = () => getAll().filter(t => t.status === 'active');
-  T.getCompleted = () => getAll().filter(t => t.status === 'completed');
+  T.get = async (id) => {
+    const all = await CK.db.getTournaments();
+    return all.find(t => t.id === id) || null;
+  };
+  T.getAll = async () => await CK.db.getTournaments();
+  T.getActive = async () => {
+    const all = await CK.db.getTournaments();
+    return all.filter(t => t.status === 'active');
+  };
+  T.getCompleted = async () => {
+    const all = await CK.db.getTournaments();
+    return all.filter(t => t.status === 'completed');
+  };
   T.FORMATS = FORMATS;
 
   /* ─── Delete Tournament ─── */
-  T.delete = (id) => {
-    const all = getAll().filter(t => t.id !== id);
-    saveAll(all);
+  T.delete = async (id) => {
+    await CK.db.deleteTournament(id);
     return true;
   };
 
   /* ─── Render: Tournament Card ─── */
-  T.renderTournamentList = (containerId, options = {}) => {
+  T.renderTournamentList = async (containerId, options = {}) => {
     const el = document.getElementById(containerId);
     if (!el) return;
-    const tournaments = options.status ? getAll().filter(t => t.status === options.status) : getAll();
+    const all = await CK.db.getTournaments();
+    const tournaments = options.status ? all.filter(t => t.status === options.status) : all;
     const _e = CK.esc || (s => s);
 
     if (!tournaments.length) {
-      el.innerHTML = '<div style="text-align:center;padding:40px;opacity:0.5;">No tournaments yet. Create one!</div>';
+      el.innerHTML = '<div style="text-align:center;padding:40px;opacity:0.5;">No tournaments found.</div>';
       return;
     }
 
@@ -473,10 +475,10 @@ CK.tournament = (() => {
   };
 
   /* ─── Render: Standings Table ─── */
-  T.renderStandings = (containerId, tournamentId) => {
+  T.renderStandings = async (containerId, tournamentId) => {
     const el = document.getElementById(containerId);
     if (!el) return;
-    const standings = T.getStandings(tournamentId);
+    const standings = await T.getStandings(tournamentId);
     const _e = CK.esc || (s => s);
     const medals = ['🥇', '🥈', '🥉'];
 
@@ -498,24 +500,31 @@ CK.tournament = (() => {
   };
 
   /* ─── Render: Pairings for a round ─── */
-  T.renderPairings = (containerId, tournamentId, round = null) => {
+  T.renderPairings = async (containerId, tournamentId, round = null) => {
     const el = document.getElementById(containerId);
     if (!el) return;
-    const t = T.get(tournamentId);
+    const t = await T.get(tournamentId);
     if (!t) return;
     const r = round || t.currentRound;
     const pairings = t.pairings[r - 1] || [];
     const _e = CK.esc || (s => s);
+    const isAdmin = window.location.pathname.includes('admin') || localStorage.getItem('ck_auth_role') === 'admin';
 
     el.innerHTML = `<h4 style="margin-bottom:12px;">Round ${r} Pairings</h4>` +
       pairings.map(p => {
-        const resultBadge = p.result
-          ? `<span class="p-badge ${p.result === '1/2-1/2' ? '' : p.result === '1-0' ? 'p-badge-green' : 'p-badge-red'}">${p.result}</span>`
-          : `<div style="display:flex;gap:4px;">
-              <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.tournament.reportResult('${t.id}','${p.id}','1-0')">1-0</button>
-              <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.tournament.reportResult('${t.id}','${p.id}','1/2-1/2')">½-½</button>
-              <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.tournament.reportResult('${t.id}','${p.id}','0-1')">0-1</button>
+        let resultBadge = '';
+        if (p.result) {
+          resultBadge = `<span class="p-badge ${p.result === '1/2-1/2' ? '' : p.result === '1-0' ? 'p-badge-green' : 'p-badge-red'}">${p.result}</span>`;
+        } else if (isAdmin) {
+          resultBadge = `<div style="display:flex;gap:4px;">
+              <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.tournament._uiReportResult('${t.id}','${p.id}','1-0')">1-0</button>
+              <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.tournament._uiReportResult('${t.id}','${p.id}','1/2-1/2')">½-½</button>
+              <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.tournament._uiReportResult('${t.id}','${p.id}','0-1')">0-1</button>
             </div>`;
+        } else {
+          resultBadge = `<span class="p-badge" style="background:#555">In Progress</span>`;
+        }
+        
         return `
           <div class="p-card" style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
             <div>
@@ -528,11 +537,25 @@ CK.tournament = (() => {
   };
 
   /* ─── Show Detail Modal ─── */
-  T.showDetail = (tournamentId) => {
-    const t = T.get(tournamentId);
+  T.showDetail = async (tournamentId) => {
+    const t = await T.get(tournamentId);
     if (!t) return;
     const _e = CK.esc || (s => s);
     const fmt = FORMATS[t.format] || FORMATS.swiss;
+    const isAdmin = window.location.pathname.includes('admin') || localStorage.getItem('ck_auth_role') === 'admin';
+    const isStudent = localStorage.getItem('ck_auth_role') === 'student';
+    
+    // Determine if student is registered
+    let studentAction = '';
+    if (isStudent && t.status === 'registration') {
+       const user = JSON.parse(localStorage.getItem('ck_auth_user') || '{}');
+       const isReg = t.players.find(p => p.id === user.id);
+       if (isReg) {
+         studentAction = `<button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.tournament._uiStudentLeave('${t.id}')">Leave Tournament</button>`;
+       } else {
+         studentAction = `<button class="p-btn p-btn-gold p-btn-sm" onclick="CK.tournament._uiStudentJoin('${t.id}')">Join Tournament</button>`;
+       }
+    }
 
     // Build modal
     const modal = document.createElement('div');
@@ -550,41 +573,76 @@ CK.tournament = (() => {
             <div class="p-card" style="text-align:center;"><div style="font-size:1.5rem; font-weight:800;">${t.currentRound}/${t.rounds}</div><div style="font-size:0.75rem; opacity:0.6;">Round</div></div>
             <div class="p-card" style="text-align:center;"><div style="font-size:1.5rem; font-weight:800;">${_e(t.timeControl)}</div><div style="font-size:0.75rem; opacity:0.6;">Time Control</div></div>
           </div>
-          <div id="tourneyDetailStandings" style="margin-bottom:20px;"></div>
-          <div id="tourneyDetailPairings"></div>
-          ${t.status === 'active' ? `
+          <div style="margin-bottom: 16px; text-align: center;">${studentAction}</div>
+          
+          <div id="tourneyDetailStandings" style="margin-bottom:20px;">Loading standings...</div>
+          <div id="tourneyDetailPairings">Loading pairings...</div>
+          ${(t.status === 'active' && isAdmin) ? `
             <div style="margin-top:16px; text-align:center;">
               <button class="p-btn p-btn-gold" onclick="CK.tournament._uiNextRound('${t.id}')">▶ Next Round</button>
             </div>` : ''}
-          ${t.status === 'registration' ? `
+          ${(t.status === 'registration' && isAdmin) ? `
             <div style="margin-top:16px; text-align:center;">
               <button class="p-btn p-btn-gold" onclick="CK.tournament._uiStart('${t.id}')">🏁 Start Tournament</button>
             </div>` : ''}
         </div>
       </div>`;
     document.body.appendChild(modal);
-    T.renderStandings('tourneyDetailStandings', tournamentId);
-    T.renderPairings('tourneyDetailPairings', tournamentId);
+    await T.renderStandings('tourneyDetailStandings', tournamentId);
+    await T.renderPairings('tourneyDetailPairings', tournamentId);
   };
 
-  T._uiStart = (id) => {
-    const result = T.start(id);
+  T._uiReportResult = async (tourId, pairingId, res) => {
+    const result = await T.reportResult(tourId, pairingId, res);
     if (result.error) { CK.showToast(result.error, 'error'); return; }
+    await T.renderPairings('tourneyDetailPairings', tourId);
+    await T.renderStandings('tourneyDetailStandings', tourId);
+  };
+
+  T._uiStart = async (id) => {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerText = 'Starting...';
+    const result = await T.start(id);
+    if (result.error) { CK.showToast(result.error, 'error'); btn.disabled = false; btn.innerText = '🏁 Start Tournament'; return; }
     CK.showToast('Tournament started! Round 1 pairings generated.', 'success');
     document.getElementById('tournamentDetailModal')?.remove();
-    T.showDetail(id);
+    await T.showDetail(id);
+    if (document.getElementById('adminTournamentList')) T.renderTournamentList('adminTournamentList');
   };
 
-  T._uiNextRound = (id) => {
-    const result = T.nextRound(id);
-    if (result.error) { CK.showToast(result.error, 'error'); return; }
+  T._uiNextRound = async (id) => {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerText = 'Calculating...';
+    const result = await T.nextRound(id);
+    if (result.error) { CK.showToast(result.error, 'error'); btn.disabled = false; btn.innerText = '▶ Next Round'; return; }
     if (result.completed) {
       CK.showToast('Tournament completed! Final standings are ready.', 'success');
     } else {
       CK.showToast(`Round ${result.round} pairings generated!`, 'success');
     }
     document.getElementById('tournamentDetailModal')?.remove();
-    T.showDetail(id);
+    await T.showDetail(id);
+  };
+  
+  T._uiStudentJoin = async (id) => {
+    const user = JSON.parse(localStorage.getItem('ck_auth_user') || '{}');
+    const res = await T.registerPlayer(id, user);
+    if (res.error) { CK.showToast(res.error, 'error'); return; }
+    CK.showToast('Successfully joined tournament!', 'success');
+    document.getElementById('tournamentDetailModal')?.remove();
+    await T.showDetail(id);
+    if (CK.student && CK.student.renderTournamentsTab) CK.student.renderTournamentsTab();
+  };
+
+  T._uiStudentLeave = async (id) => {
+    const user = JSON.parse(localStorage.getItem('ck_auth_user') || '{}');
+    await T.removePlayer(id, user.id);
+    CK.showToast('Left tournament.', 'success');
+    document.getElementById('tournamentDetailModal')?.remove();
+    await T.showDetail(id);
+    if (CK.student && CK.student.renderTournamentsTab) CK.student.renderTournamentsTab();
   };
 
   /* ─── Create Tournament UI ─── */
@@ -624,24 +682,30 @@ CK.tournament = (() => {
       </div>`;
   };
 
-  T._uiCreate = () => {
+  T._uiCreate = async () => {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerText = 'Creating...';
     const name = document.getElementById('tnName')?.value || 'Tournament';
     const format = document.getElementById('tnFormat')?.value || 'swiss';
     const rounds = parseInt(document.getElementById('tnRounds')?.value) || 5;
     const timeControl = document.getElementById('tnTime')?.value || '10+0';
     const desc = document.getElementById('tnDesc')?.value || '';
 
-    const t = T.create({ name, format, rounds, timeControl, description: desc });
+    const t = await T.create({ name, format, rounds, timeControl, description: desc });
 
     // Register checked players
-    document.querySelectorAll('.tn-player-cb:checked').forEach(cb => {
-      T.registerPlayer(t.id, { id: cb.value, full_name: cb.dataset.name, rating: parseInt(cb.dataset.rating) || 800 });
-    });
+    const cbs = document.querySelectorAll('.tn-player-cb:checked');
+    for (const cb of cbs) {
+      await T.registerPlayer(t.id, { id: cb.value, full_name: cb.dataset.name, rating: parseInt(cb.dataset.rating) || 800 });
+    }
 
-    CK.showToast(`Tournament "${name}" created with ${document.querySelectorAll('.tn-player-cb:checked').length} players!`, 'success');
+    CK.showToast(`Tournament "${name}" created with ${cbs.length} players!`, 'success');
 
     // Refresh any visible tournament lists
-    if (document.getElementById('adminTournamentList')) T.renderTournamentList('adminTournamentList');
+    if (document.getElementById('adminTournamentList')) await T.renderTournamentList('adminTournamentList');
+    btn.disabled = false;
+    btn.innerText = '🏁 Create & Open Registration';
   };
 
   return T;

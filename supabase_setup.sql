@@ -188,6 +188,8 @@ CREATE TABLE public.meetings (
     notes        TEXT,
     type         TEXT,
     "studentIds" TEXT[],
+    status       TEXT,
+    "liveStartedAt" TEXT,
     created_at   TIMESTAMPTZ DEFAULT NOW()
 );
 

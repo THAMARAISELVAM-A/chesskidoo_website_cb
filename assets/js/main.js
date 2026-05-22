@@ -857,6 +857,26 @@ ta: {
       this.analyzePgn(pgnText.trim(), targetBoard);
     },
 
+    loadRandomPuzzle(boardId) {
+      if (window.CK && CK.puzzlesPro && CK.puzzlesPro.PUZZLES) {
+        const puzzles = CK.puzzlesPro.PUZZLES;
+        const p = puzzles[Math.floor(Math.random() * puzzles.length)];
+        const g = new Chess(p.fen);
+        for (const m of p.moves) {
+          g.move({ from: m.slice(0, 2), to: m.slice(2, 4), promotion: m[4] || 'q' });
+        }
+        const pgnText = `[FEN "${p.fen}"]\n\n${g.pgn()}`;
+        const isCoach = (boardId || this._activeBoardId || '').startsWith('coach');
+        const inputId = isCoach ? 'coachLabPgnInput' : 'labPgnInput';
+        const pgnInput = document.getElementById(inputId);
+        if (pgnInput) pgnInput.value = pgnText.trim();
+        this.analyzePgn(pgnText.trim(), boardId);
+        CK.showToast(`Loaded Puzzle: ${p.title} (${p.rating})`, 'success');
+      } else {
+        CK.showToast('Puzzle database not available.', 'error');
+      }
+    },
+
     analyzePgn(pgnText, boardId) {
       this._activeBoardId = boardId;
       this._mode = 'analysis';
@@ -1034,101 +1054,20 @@ ta: {
     },
 
     updateAnalysis(fen, lastMoveObj) {
-      let score, barPct, explanation;
-
-      if (!this.history.length || this.currentMove === 0) {
-        score = '+0.3'; barPct = 53;
-        explanation = 'Starting position. White holds the slight first-move initiative. Classical options: <b>1. e4</b> (Open Game), <b>1. d4</b> (Queen\'s Pawn), <b>1. Nf3</b> (Réti), <b>1. c4</b> (English). Fight for the center from move one.';
-      } else if (lastMoveObj) {
-        const san = lastMoveObj.san;
-        const isW = lastMoveObj.color === 'w';
-        const side = isW ? 'White' : 'Black';
-
-        if (san.includes('#')) {
-          score = isW ? 'M0' : '-M0'; barPct = isW ? 100 : 0;
-          explanation = `<b>Checkmate!</b> ${side} delivers the final decisive blow with <b>${san}</b>. The king has no legal escape — a perfect tactical finish. Game over.`;
-        } else if (san.startsWith('O-O-O')) {
-          score = isW ? '+0.5' : '-0.5'; barPct = isW ? 55 : 45;
-          explanation = `<b>Queenside castling!</b> ${side} connects the rooks and shelters the king behind the queenside pawns. Prepares a central or kingside pawn storm while activating the a-file rook.`;
-        } else if (san.startsWith('O-O')) {
-          score = isW ? '+0.4' : '-0.4'; barPct = isW ? 54 : 46;
-          explanation = `<b>Kingside castling!</b> ${side} tucks the king to safety and activates the h-file rook. A critical milestone — now focus on piece coordination and opening the center.`;
-        } else if (san.includes('x') && san.includes('+')) {
-          score = isW ? '+3.2' : '-3.2'; barPct = isW ? 78 : 22;
-          explanation = `<b>Capture with check: ${san}!</b> ${side} wins material AND forces the king to react — a devastating combination of tempo and material gain. The opponent's position crumbles under dual pressure.`;
-        } else if (san.includes('+')) {
-          score = isW ? '+1.8' : '-1.8'; barPct = isW ? 66 : 34;
-          explanation = `<b>Check: ${san}.</b> The king is forced to respond, burning a critical tempo. ${side} maintains the initiative and keeps the pressure on. Watch for follow-up forcing sequences.`;
-        } else if (san.includes('=')) {
-          score = isW ? '+2.5' : '-2.5'; barPct = isW ? 72 : 28;
-          const promoteTo = san.slice(-1);
-          const pieceNames = { Q: 'Queen', R: 'Rook', B: 'Bishop', N: 'Knight' };
-          explanation = `<b>Pawn promotion!</b> ${side} promotes to a <b>${pieceNames[promoteTo] || promoteTo}</b> — a monumental game-changing moment. The passed pawn finally reaches its destination and transforms into a powerful piece.`;
-        } else if (san.startsWith('R') && san.includes('x')) {
-          score = isW ? '+1.4' : '-1.4'; barPct = isW ? 63 : 37;
-          explanation = `<b>Rook captures: ${san}.</b> ${side} eliminates a key defender or winning material with the rook. Rooks thrive on open files and the 7th rank — this exchange may open critical lines for future pressure.`;
-        } else if (san.startsWith('Q') && san.includes('x')) {
-          score = isW ? '+2.0' : '-2.0'; barPct = isW ? 68 : 32;
-          explanation = `<b>Queen captures: ${san}.</b> ${side} snaps off material with the queen. A powerful forcing move — but be mindful of exposing the queen to counterattack after the exchange.`;
-        } else if (san.includes('x')) {
-          const p = san[0];
-          const names = { N: 'Knight', B: 'Bishop', R: 'Rook', Q: 'Queen', K: 'King' };
-          const pname = names[p] || 'Pawn';
-          score = isW ? '+1.2' : '-1.2'; barPct = isW ? 62 : 38;
-          explanation = `<b>${pname} captures: ${san}.</b> ${side} wins material or opens attacking lines. Evaluate the resulting pawn structure — captures often define the strategic landscape for the next 10-15 moves.`;
-        } else if (san.startsWith('N')) {
-          score = isW ? '+0.6' : '-0.5'; barPct = isW ? 56 : 46;
-          explanation = `<b>Knight maneuver: ${san}.</b> Knights shine in closed positions and on strong outpost squares. ${side} improves piece activity, potentially eyeing a fork or central outpost. Remember: knights need at least 2 moves to switch flanks.`;
-        } else if (san.startsWith('B')) {
-          score = isW ? '+0.5' : '-0.4'; barPct = isW ? 55 : 47;
-          explanation = `<b>Bishop development: ${san}.</b> The bishop opens a powerful diagonal for long-range pressure. ${side} eyes pawn weaknesses and king safety. Bishops reach their full potential in open positions with clear diagonals.`;
-        } else if (san.startsWith('Q')) {
-          score = isW ? '+0.7' : '-0.6'; barPct = isW ? 57 : 45;
-          explanation = `<b>Queen move: ${san}.</b> The queen centralizes or creates threats. Beware — early queen development can invite tempo-gaining attacks. ${side} must ensure the queen has a safe retreat square after this move.`;
-        } else if (san.startsWith('R')) {
-          score = isW ? '+0.8' : '-0.7'; barPct = isW ? 58 : 44;
-          explanation = `<b>Rook activation: ${san}.</b> ${side} improves the rook's placement. Rooks belong on open files and the 7th rank — they need open lines to unleash their full power in the middlegame and endgame.`;
-        } else if (san.startsWith('K')) {
-          score = isW ? '+0.2' : '-0.2'; barPct = isW ? 52 : 48;
-          explanation = `<b>King move: ${san}.</b> In the endgame, the king becomes a powerful attacking piece. ${side} activates the king to support pawn promotion or control key squares. King activity is often the deciding factor in technical endgames.`;
-        } else if (['e4','e5','d4','d5','c4','c5','f4','f5'].includes(san)) {
-          score = isW ? '+0.3' : '-0.2'; barPct = isW ? 53 : 49;
-          explanation = `<b>Central pawn: ${san}.</b> Fighting for the critical central squares (e4, e5, d4, d5) is a fundamental chess principle. This move opens diagonals for the bishops and claims territory in the heart of the board. A strong foundation for piece development.`;
-        } else {
-          score = isW ? '+0.4' : '-0.3'; barPct = isW ? 54 : 48;
-          explanation = `<b>Positional move: ${san}.</b> ${side} improves piece harmony, prepares the next strategic plan, and maintains solid pawn structure. Good chess is often about these subtle improvements that accumulate over many moves.`;
-        }
-      } else {
-        score = '+0.2'; barPct = 52;
-        explanation = 'Equal position. Both sides have symmetrical development and pawn structure. The key battlegrounds are center control and king safety — subtle improvements will decide this game.';
-      }
-
-      const isNeg = score.startsWith('-');
-      const barColor = score.startsWith('+') && parseFloat(score) > 0.5
-        ? 'var(--p-teal)' : isNeg ? '#ef4444' : 'var(--p-blue)';
-
-      document.querySelectorAll('.labEvalText').forEach(el => el.textContent = score);
-      document.querySelectorAll('.labEvalBarFill').forEach(el => {
-        el.style.width = barPct + '%';
-        el.style.backgroundColor = barColor;
-        el.style.transition = 'width 0.45s cubic-bezier(.4,0,.2,1), background-color 0.3s';
-      });
-      document.querySelectorAll('.labVBarFill').forEach(el => {
-        el.style.height = barPct + '%';
-        el.style.transition = 'height 0.5s cubic-bezier(.4,0,.2,1)';
-      });
-      document.querySelectorAll('.labCoachExplanation').forEach(el => {
-        el.innerHTML = `💡 <strong>Analysis:</strong> ${explanation}`;
-      });
       this._updateMoveCounter();
-
-      // Real engine evaluation — async overlay from Lichess Cloud Analysis
+      // Real engine evaluation — async overlay from Lichess Cloud Analysis & Stockfish WASM
       if (fen && window.CK && CK.engine) {
-        document.querySelectorAll('.labEvalText').forEach(el => el.style.opacity = '0.5');
+        document.querySelectorAll('.labEvalText').forEach(el => {
+          el.textContent = '...';
+          el.style.opacity = '0.5';
+        });
         CK.engine.evaluate(fen)
           .then(result => {
-            if (result) CK.engine.applyToUI(result);
-            else document.querySelectorAll('.labEvalText').forEach(el => el.style.opacity = '1');
+            if (result && this.game && this.game.fen() === fen) {
+              CK.engine.applyToUI(result);
+            } else if (!result) {
+              document.querySelectorAll('.labEvalText').forEach(el => el.style.opacity = '1');
+            }
           })
           .catch(() => document.querySelectorAll('.labEvalText').forEach(el => el.style.opacity = '1'));
       }
@@ -1685,7 +1624,7 @@ ta: {
     }).join('');
   };
 
-  CK.openVaultSession = (title, coach) => {
+  CK.openVaultSession = (title, coach, videoUrl = '') => {
     const titleEl = document.getElementById('vaultModalTitle');
     const coachEl = document.getElementById('vaultModalCoach');
     if (titleEl) titleEl.textContent = title || 'Class Replay';
@@ -1697,6 +1636,26 @@ ta: {
     const noteEl = document.getElementById('vaultHumanAnalysis');
     if (noteEl) noteEl.innerHTML = '💡 <strong>GM Coach Note:</strong> Study the opening phase — piece development and center control are the foundation of every great game.';
     CK._renderVaultGrid(CK._vaultPieces);
+
+    const videoSim = document.getElementById('vaultVideoSim');
+    if (videoSim) {
+      if (videoUrl) {
+        videoSim.innerHTML = `
+          <video id="vaultRealVideo" controls autoplay style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px;">
+            <source src="${videoUrl}" type="video/webm">
+            Your browser does not support the video tag.
+          </video>
+        `;
+      } else {
+        videoSim.innerHTML = `
+          <div style="font-size: 4rem; margin-bottom: 12px;">📽️</div>
+          <div>Playing Masterclass Video Stream...</div>
+          <div id="vaultVideoTimestamp"
+            style="color: #d4af37; font-weight: bold; margin-top: 8px; font-size: 1.4rem;">02:15 / 45:20</div>
+        `;
+      }
+    }
+
     const modal = document.getElementById('vaultModal');
     if (modal) modal.style.display = 'flex';
   };
@@ -1721,6 +1680,10 @@ ta: {
   };
 
   CK.closeVaultModal = () => {
+    const video = document.getElementById('vaultRealVideo');
+    if (video) {
+      try { video.pause(); } catch(e){}
+    }
     const modal = document.getElementById('vaultModal');
     if (modal) modal.style.display = 'none';
   };

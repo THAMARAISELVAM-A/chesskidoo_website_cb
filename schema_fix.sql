@@ -86,6 +86,8 @@ CREATE TABLE IF NOT EXISTS meetings (
     date TEXT,
     time TEXT,
     link TEXT,
+    status TEXT,
+    "liveStartedAt" TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

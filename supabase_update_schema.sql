@@ -58,7 +58,7 @@ ALTER TABLE public.attendance ADD COLUMN IF NOT EXISTS "markedAt" TIMESTAMPTZ;
 ALTER TABLE public.attendance ADD COLUMN IF NOT EXISTS class_title TEXT;
 
 -- 5. ALTER TOURRATINGS TABLE
-ALTER TABLE public.tourRatings ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+ALTER TABLE public."tourRatings" ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 
 -- 6. ALTER RESOURCES TABLE
 ALTER TABLE public.resources ADD COLUMN IF NOT EXISTS level TEXT;
@@ -82,6 +82,8 @@ ALTER TABLE public.meetings ADD COLUMN IF NOT EXISTS link TEXT;
 ALTER TABLE public.meetings ADD COLUMN IF NOT EXISTS notes TEXT;
 ALTER TABLE public.meetings ADD COLUMN IF NOT EXISTS type TEXT;
 ALTER TABLE public.meetings ADD COLUMN IF NOT EXISTS "studentIds" TEXT[];
+ALTER TABLE public.meetings ADD COLUMN IF NOT EXISTS status TEXT;
+ALTER TABLE public.meetings ADD COLUMN IF NOT EXISTS "liveStartedAt" TEXT;
 
 -- 8. ALTER COACH_NOTES TABLE
 ALTER TABLE public.coach_notes ADD COLUMN IF NOT EXISTS student TEXT;
@@ -156,7 +158,7 @@ GRANT ALL ON TABLE public.expenses TO anon, authenticated;
 GRANT ALL ON TABLE public.document TO anon, authenticated;
 GRANT ALL ON TABLE public.attendance TO anon, authenticated;
 GRANT ALL ON TABLE public.ratings TO anon, authenticated;
-GRANT ALL ON TABLE public.tourRatings TO anon, authenticated;
+GRANT ALL ON TABLE public."tourRatings" TO anon, authenticated;
 GRANT ALL ON TABLE public.resources TO anon, authenticated;
 GRANT ALL ON TABLE public.meetings TO anon, authenticated;
 GRANT ALL ON TABLE public.leads TO anon, authenticated;
@@ -179,7 +181,7 @@ ALTER TABLE public.expenses DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.document DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.attendance DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ratings DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.tourRatings DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public."tourRatings" DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.resources DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.meetings DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.leads DISABLE ROW LEVEL SECURITY;
@@ -192,5 +194,29 @@ ALTER TABLE public.puzzle_scores DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.coach_attendance DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.assignments DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.hw_submissions DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.feedback DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.broadcasts DISABLE ROW LEVEL SECURITY;
+
+-- 17. CREATE MULTIPLAYER GAMES TABLE (Matchmaking)
+CREATE TABLE IF NOT EXISTS public.multiplayer_games (
+    id TEXT PRIMARY KEY,
+    white_id TEXT,
+    black_id TEXT,
+    white_name TEXT,
+    black_name TEXT,
+    fen TEXT,
+    pgn TEXT,
+    status TEXT DEFAULT 'waiting', -- waiting, active, finished
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+GRANT ALL ON TABLE public.multiplayer_games TO anon, authenticated;
+ALTER TABLE public.multiplayer_games DISABLE ROW LEVEL SECURITY;
+
+-- 18. ENABLE REALTIME ON BROADCASTS AND MULTIPLAYER
+-- This enables WebSockets for these tables in Supabase
+BEGIN;
+  DROP PUBLICATION IF EXISTS supabase_realtime;
+  CREATE PUBLICATION supabase_realtime;
+COMMIT;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.broadcasts;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.multiplayer_games;

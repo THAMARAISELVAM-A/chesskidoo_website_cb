@@ -71,6 +71,17 @@ CK.arcade = (() => {
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
         osc.start(now);
         osc.stop(now + 0.05);
+      } else if (type === 'gameover') {
+        // Cascading sad 8-bit descent
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.setValueAtTime(196, now + 0.15);
+        osc.frequency.setValueAtTime(165, now + 0.3);
+        osc.frequency.linearRampToValueAtTime(110, now + 0.65);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+        osc.start(now);
+        osc.stop(now + 0.7);
       }
     } catch (e) {
       console.warn("AudioContext block/error: ", e);
@@ -1016,9 +1027,9 @@ CK.arcade = (() => {
 
         let entityHTML = '';
         if (isKing) {
-          entityHTML = '<div class="arcade-piece white" style="font-size:3rem;">♔</div>';
+          entityHTML = '<div class="arcade-piece white" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wk.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;"></div>';
         } else if (hasPawn) {
-          entityHTML = '<div class="arcade-piece black" style="font-size:2.8rem; color:#ef5350;">♟</div>';
+          entityHTML = '<div class="arcade-piece black" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/bp.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;"></div>';
         }
 
         boardHTML += `
@@ -1048,7 +1059,7 @@ CK.arcade = (() => {
         <div class="arcade-dashboard">
           <div class="arcade-hud-card">
             <div class="arcade-game-title">Dodge the Raindrops!</div>
-            <p class="arcade-game-desc">Move your King (♔) to any adjacent highlighted square. Dodge the incoming black pawn raindrops (♟) as they pour down!</p>
+            <p class="arcade-game-desc">Move your White King to any adjacent highlighted square. Dodge the incoming Black Pawn raindrops as they cascade down the board!</p>
             
             <div class="arcade-stats-row">
               <div class="arcade-stat-box">
@@ -1195,9 +1206,9 @@ CK.arcade = (() => {
 
         let entityHTML = '';
         if (isQueen) {
-          entityHTML = '<div class="arcade-piece white" style="font-size:3rem;">♕</div>';
+          entityHTML = '<div class="arcade-piece white" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wq.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;"></div>';
         } else if (isTarget) {
-          entityHTML = '<div class="arcade-piece black" style="font-size:2.4rem; color:#10b981;">♜</div>';
+          entityHTML = '<div class="arcade-piece black" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/br.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none; filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.85));"></div>';
         }
 
         boardHTML += `
@@ -1227,7 +1238,7 @@ CK.arcade = (() => {
         <div class="arcade-dashboard">
           <div class="arcade-hud-card">
             <div class="arcade-game-title">Unleash the Queen!</div>
-            <p class="arcade-game-desc">Move your Queen (♕) diagonally, horizontally, or vertically to capture all 5 black target pieces (♜) scattered around.</p>
+            <p class="arcade-game-desc">Move your White Queen diagonally, horizontally, or vertically to capture all 5 glowing Black Rooks scattered around the map.</p>
             
             <div class="arcade-stats-row">
               <div class="arcade-stat-box">
@@ -1320,13 +1331,15 @@ CK.arcade = (() => {
 
   ARC.renderScoreBadges = () => {
     const games = [
-      { id: 'puzzle',     strip: 'score-badge-puzzle',     card: 'score-display-puzzle' },
-      { id: 'gm',         strip: 'score-badge-gm',         card: 'score-display-gm' },
-      { id: 'memory',     strip: 'score-badge-memory',     card: 'score-display-memory' },
-      { id: 'timing',     strip: 'score-badge-timing',     card: 'score-display-timing' },
-      { id: 'opening',    strip: 'score-badge-opening',    card: 'score-display-opening' },
-      { id: 'queenquest', strip: 'score-badge-queenquest', card: 'score-display-queenquest' },
-      { id: 'quiz',       strip: 'score-badge-quiz',       card: 'score-display-quiz' },
+      { id: 'puzzle',      strip: 'score-badge-puzzle',      card: 'score-display-puzzle' },
+      { id: 'gm',          strip: 'score-badge-gm',          card: 'score-display-gm' },
+      { id: 'memory',      strip: 'score-badge-memory',      card: 'score-display-memory' },
+      { id: 'timing',      strip: 'score-badge-timing',      card: 'score-display-timing' },
+      { id: 'opening',     strip: 'score-badge-opening',     card: 'score-display-opening' },
+      { id: 'queenquest',  strip: 'score-badge-queenquest',  card: 'score-display-queenquest' },
+      { id: 'quiz',        strip: 'score-badge-quiz',        card: 'score-display-quiz' },
+      { id: 'coordinates', strip: 'score-badge-coordinates', card: 'score-display-coordinates' },
+      { id: 'recall',      strip: 'score-badge-recall',      card: 'score-display-recall' },
     ];
     const scores = getScores();
     games.forEach(({ id, strip, card }) => {
@@ -1503,6 +1516,514 @@ CK.arcade = (() => {
       state.qIndex++;
       renderQuiz();
     }, 2200);
+  }
+
+  /* ==========================================
+     GAME 8: SPEED COORDINATES TRAINER
+     ========================================== */
+  ARC.startCoordinatesTrainer = () => {
+    currentGameType = 'coordinates';
+    score = 0;
+    level = 1;
+    
+    state = {
+      timeLeft: 30,
+      targetSquare: '',
+      timerInterval: null,
+      gameOver: false
+    };
+
+    showOverlay();
+    selectNextCoordinate();
+    renderCoordinatesTrainer();
+    startCoordinatesTimer();
+  };
+
+  function selectNextCoordinate() {
+    const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    const ranks = ['1', '2', '3', '4', '5', '6', '7', '8'];
+    let nextSq;
+    do {
+      const file = files[Math.floor(Math.random() * files.length)];
+      const rank = ranks[Math.floor(Math.random() * ranks.length)];
+      nextSq = file + rank;
+    } while (nextSq === state.targetSquare);
+
+    state.targetSquare = nextSq;
+  }
+
+  function startCoordinatesTimer() {
+    if (state.timerInterval) clearInterval(state.timerInterval);
+    state.timerInterval = setInterval(() => {
+      state.timeLeft--;
+      if (state.timeLeft <= 0) {
+        state.timeLeft = 0;
+        state.gameOver = true;
+        clearInterval(state.timerInterval);
+        playSFX('gameover');
+        renderCoordinatesComplete();
+      } else {
+        const timerLabel = document.getElementById('coord-timer-label');
+        if (timerLabel) timerLabel.textContent = state.timeLeft + 's';
+        const timerBar = document.getElementById('coord-timer-bar');
+        if (timerBar) timerBar.style.width = (state.timeLeft / 30 * 100) + '%';
+      }
+    }, 1000);
+  }
+
+  function renderCoordinatesTrainer() {
+    const content = document.getElementById('arcade-cabinet-content');
+    if (!content) return;
+
+    const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+
+    let boardHTML = '';
+    ranks.forEach(rank => {
+      files.forEach(file => {
+        const sq = file + rank;
+        const isDark = (files.indexOf(file) + ranks.indexOf(rank)) % 2 !== 0;
+
+        let labelHTML = '';
+        if (rank === '1') {
+          labelHTML += `<span class="board-coord file-coord" style="position:absolute; bottom:2px; right:4px; font-size:0.65rem; font-weight:700; opacity:0.6; color:${isDark ? '#cbd5e1' : '#475569'}; pointer-events:none;">${file}</span>`;
+        }
+        if (file === 'a') {
+          labelHTML += `<span class="board-coord rank-coord" style="position:absolute; top:2px; left:4px; font-size:0.65rem; font-weight:700; opacity:0.6; color:${isDark ? '#cbd5e1' : '#475569'}; pointer-events:none;">${rank}</span>`;
+        }
+
+        boardHTML += `
+          <div class="arcade-sq ${isDark ? 'dark' : 'light'}" data-sq="${sq}" style="position:relative; cursor:pointer;" onclick="CK.arcade.handleCoordinateClick('${sq}')">
+            ${labelHTML}
+          </div>
+        `;
+      });
+    });
+
+    content.innerHTML = `
+      <div class="arcade-header">
+        <div class="arcade-title-area">
+          <span class="arcade-game-icon">🧭</span>
+          <div class="arcade-title">Speed Coordinates <span>Trainer</span></div>
+        </div>
+        <button class="arcade-exit-btn" onclick="CK.arcade.exitGame()">✕ Exit Arcade</button>
+      </div>
+      <div class="arcade-main">
+        <div class="arcade-play-area">
+          <div class="arcade-board-wrap">
+            <div class="arcade-board" id="coordinates-board">
+              ${boardHTML}
+            </div>
+          </div>
+        </div>
+        <div class="arcade-dashboard">
+          <div class="arcade-hud-card">
+            <div class="arcade-game-title" style="color:var(--p-blue); font-size:1.1rem; text-align:center;">Find Square:</div>
+            <div id="coord-target-prompt" style="font-size:2.8rem; font-weight:900; color:#fff; text-shadow:0 0 15px rgba(6,182,212,0.4); margin:8px 0; text-align:center;">
+              ${state.targetSquare}
+            </div>
+            
+            <div class="arcade-stats-row" style="margin-top:15px;">
+              <div class="arcade-stat-box">
+                <div class="arcade-stat-label">Time Remaining</div>
+                <div class="arcade-stat-val" id="coord-timer-label">${state.timeLeft}s</div>
+              </div>
+              <div class="arcade-stat-box">
+                <div class="arcade-stat-label">Score</div>
+                <div class="arcade-stat-val" id="coord-score-val">${score}</div>
+              </div>
+            </div>
+
+            <div class="quiz-timer-track" style="margin-top:15px; background:rgba(255,255,255,0.06);"><div class="quiz-timer-bar" id="coord-timer-bar" style="width:100%; background:var(--p-blue);"></div></div>
+          </div>
+          
+          <div class="arcade-btn-group">
+            <button class="arcade-action-btn primary" onclick="window.CK.arcade.startCoordinatesTrainer()">Restart</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  ARC.handleCoordinateClick = (sq) => {
+    if (state.gameOver) return;
+
+    const correct = sq === state.targetSquare;
+    const sqEl = document.querySelector(`#coordinates-board [data-sq="${sq}"]`);
+
+    if (correct) {
+      playSFX('coin');
+      score += 10;
+      if (sqEl) {
+        sqEl.classList.add('success-glow');
+        setTimeout(() => sqEl.classList.remove('success-glow'), 600);
+      }
+      selectNextCoordinate();
+    } else {
+      playSFX('buzz');
+      state.timeLeft = Math.max(0, state.timeLeft - 2);
+      if (sqEl) {
+        sqEl.classList.add('error-glow');
+        setTimeout(() => sqEl.classList.remove('error-glow'), 600);
+      }
+      selectNextCoordinate();
+    }
+
+    // Update HUD
+    const promptEl = document.getElementById('coord-target-prompt');
+    if (promptEl) promptEl.textContent = state.targetSquare;
+    const scoreValEl = document.getElementById('coord-score-val');
+    if (scoreValEl) scoreValEl.textContent = score;
+    const timerLabel = document.getElementById('coord-timer-label');
+    if (timerLabel) timerLabel.textContent = state.timeLeft + 's';
+    const timerBar = document.getElementById('coord-timer-bar');
+    if (timerBar) timerBar.style.width = (state.timeLeft / 30 * 100) + '%';
+  };
+
+  function renderCoordinatesComplete() {
+    gameComplete('coordinates', score, 'Trainer Time Up!', `Fantastic speed! You successfully identified coordinates under pressure and scored ${score} points. Keep training to build board visualization speed!`, 'CK.arcade.startCoordinatesTrainer()');
+  }
+
+  /* ==========================================
+     GAME 9: FLASHED BOARD RECALL
+     ========================================== */
+  ARC.startRecallGame = () => {
+    currentGameType = 'recall';
+    score = 0;
+    level = 1;
+
+    state = {
+      lives: 3,
+      targetPieces: {}, // sq -> pieceCode
+      userPieces: {},   // sq -> pieceCode
+      selectedPalettePiece: 'wp', // Default selection
+      isMemorizing: true,
+      countdown: 3,
+      timerInterval: null
+    };
+
+    showOverlay();
+    startRecallLevel();
+  };
+
+  function startRecallLevel() {
+    state.isMemorizing = true;
+    state.countdown = 3;
+    state.userPieces = {};
+    
+    // Generate random pieces
+    const numPieces = 2 + level; // Level 1: 3, Level 2: 4, etc.
+    const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    const ranks = ['1', '2', '3', '4', '5', '6', '7', '8'];
+    const squares = [];
+    ranks.forEach(r => files.forEach(f => squares.push(f + r)));
+
+    // Shuffle and pick N
+    const shuffledSquares = [...squares].sort(() => Math.random() - 0.5);
+    const targetSquares = shuffledSquares.slice(0, numPieces);
+
+    const pieceTypes = ['wk', 'wq', 'wr', 'wb', 'wn', 'wp', 'bk', 'bq', 'br', 'bb', 'bn', 'bp'];
+    state.targetPieces = {};
+    targetSquares.forEach(sq => {
+      const piece = pieceTypes[Math.floor(Math.random() * pieceTypes.length)];
+      state.targetPieces[sq] = piece;
+    });
+
+    renderRecallBoard();
+
+    // Start 3-second countdown
+    if (state.timerInterval) clearInterval(state.timerInterval);
+    state.timerInterval = setInterval(() => {
+      state.countdown--;
+      const cdNumber = document.getElementById('recall-countdown-number');
+      if (cdNumber) cdNumber.textContent = state.countdown;
+
+      if (state.countdown <= 0) {
+        clearInterval(state.timerInterval);
+        state.isMemorizing = false;
+        renderRecallBoard();
+      }
+    }, 1000);
+  }
+
+  function renderRecallBoard() {
+    const content = document.getElementById('arcade-cabinet-content');
+    if (!content) return;
+
+    const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+
+    let boardHTML = '';
+    ranks.forEach(rank => {
+      files.forEach(file => {
+        const sq = file + rank;
+        const isDark = (files.indexOf(file) + ranks.indexOf(rank)) % 2 !== 0;
+
+        let pieceHTML = '';
+        if (state.isMemorizing) {
+          const piece = state.targetPieces[sq];
+          if (piece) {
+            pieceHTML = `<img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/${piece}.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;">`;
+          }
+        } else {
+          const piece = state.userPieces[sq];
+          if (piece) {
+            pieceHTML = `<img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/${piece}.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;">`;
+          }
+        }
+
+        let labelHTML = '';
+        if (rank === '1') {
+          labelHTML += `<span class="board-coord file-coord" style="position:absolute; bottom:2px; right:4px; font-size:0.65rem; font-weight:700; opacity:0.6; color:${isDark ? '#cbd5e1' : '#475569'}; pointer-events:none;">${file}</span>`;
+        }
+        if (file === 'a') {
+          labelHTML += `<span class="board-coord rank-coord" style="position:absolute; top:2px; left:4px; font-size:0.65rem; font-weight:700; opacity:0.6; color:${isDark ? '#cbd5e1' : '#475569'}; pointer-events:none;">${rank}</span>`;
+        }
+
+        boardHTML += `
+          <div class="arcade-sq ${isDark ? 'dark' : 'light'}" data-sq="${sq}" style="position:relative; display:flex; align-items:center; justify-content:center; cursor:${state.isMemorizing ? 'default' : 'pointer'};" ${state.isMemorizing ? '' : `onclick="CK.arcade.handleRecallSquareClick('${sq}')"`}>
+            ${pieceHTML}
+            ${labelHTML}
+          </div>
+        `;
+      });
+    });
+
+    // Countdown overlay HTML
+    const countdownOverlayHTML = state.isMemorizing ? `
+      <div id="recall-countdown-overlay" style="position:absolute; inset:0; background:rgba(11,15,25,0.78); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:10; border-radius:4px; backdrop-filter: blur(2px);">
+        <div style="font-size:1.1rem; color:var(--p-blue); font-weight:700; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.12em;">Memorize Board!</div>
+        <div id="recall-countdown-number" style="font-size:4.5rem; font-weight:900; color:#fff; text-shadow:0 0 20px rgba(6,182,212,0.6); line-height:1;">${state.countdown}</div>
+        <div style="font-size:0.8rem; color:rgba(255,255,255,0.4); margin-top:10px;">Level ${level}: ${2+level} Pieces</div>
+      </div>
+    ` : '';
+
+    // Palette HTML
+    const palettePieces = [
+      { code: 'wp', icon: 'wp.png' }, { code: 'wn', icon: 'wn.png' }, { code: 'wb', icon: 'wb.png' }, 
+      { code: 'wr', icon: 'wr.png' }, { code: 'wq', icon: 'wq.png' }, { code: 'wk', icon: 'wk.png' },
+      { code: 'bp', icon: 'bp.png' }, { code: 'bn', icon: 'bn.png' }, { code: 'bb', icon: 'bb.png' }, 
+      { code: 'br', icon: 'br.png' }, { code: 'bq', icon: 'bq.png' }, { code: 'bk', icon: 'bk.png' }
+    ];
+
+    const paletteHTML = palettePieces.map(p => {
+      const isSelected = state.selectedPalettePiece === p.code;
+      return `
+        <button class="arcade-palette-btn ${isSelected ? 'selected' : ''}" 
+                style="width:36px; height:36px; padding:2px; background:${isSelected ? 'rgba(6,182,212,0.18)' : 'rgba(255,255,255,0.03)'}; border:1px solid ${isSelected ? 'var(--p-blue)' : 'rgba(255,255,255,0.1)'}; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; box-shadow:${isSelected ? '0 0 10px rgba(6,182,212,0.3)' : 'none'};" 
+                onclick="CK.arcade.selectPalettePiece('${p.code}')" title="Place ${p.code.toUpperCase()}">
+          <img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/${p.icon}" style="width:100%; height:100%; object-fit:contain;">
+        </button>
+      `;
+    }).join('');
+
+    // Eraser / Clear tools
+    const toolHTML = `
+      <button class="arcade-palette-btn ${state.selectedPalettePiece === 'eraser' ? 'selected' : ''}" 
+              style="width:36px; height:36px; padding:2px; background:${state.selectedPalettePiece === 'eraser' ? 'rgba(239,68,68,0.18)' : 'rgba(255,255,255,0.03)'}; border:1px solid ${state.selectedPalettePiece === 'eraser' ? '#ef4444' : 'rgba(255,255,255,0.1)'}; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;" 
+              onclick="CK.arcade.selectPalettePiece('eraser')" title="Eraser Tool">
+        <span style="font-size:1.1rem;">🧽</span>
+      </button>
+    `;
+
+    // Lives display
+    const livesHTML = Array.from({ length: 3 }).map((_, i) => {
+      const active = i < state.lives;
+      return `<span style="font-size:1.3rem; margin-right:2px; opacity:${active ? 1 : 0.2}; color:${active ? '#ef4444' : '#fff'}; filter:${active ? 'drop-shadow(0 0 4px rgba(239,68,68,0.5))' : 'none'}; transition: opacity 0.3s;">❤️</span>`;
+    }).join('');
+
+    content.innerHTML = `
+      <div class="arcade-header">
+        <div class="arcade-title-area">
+          <span class="arcade-game-icon">👁️</span>
+          <div class="arcade-title">Flashed Board <span>Recall</span></div>
+        </div>
+        <button class="arcade-exit-btn" onclick="CK.arcade.exitGame()">✕ Exit Arcade</button>
+      </div>
+      <div class="arcade-main">
+        <div class="arcade-play-area" style="position:relative;">
+          <div class="arcade-board-wrap">
+            <div class="arcade-board" id="recall-board" style="position:relative;">
+              ${boardHTML}
+              ${countdownOverlayHTML}
+            </div>
+          </div>
+        </div>
+        <div class="arcade-dashboard">
+          <div class="arcade-hud-card">
+            <div class="arcade-game-title" style="color:var(--p-purple); font-size:1.1rem; text-align:center;">Reconstruct Board!</div>
+            
+            <div style="display:flex; justify-content:center; margin:8px 0;">
+              ${livesHTML}
+            </div>
+
+            <div class="arcade-stats-row" style="margin-top:10px; margin-bottom:12px;">
+              <div class="arcade-stat-box">
+                <div class="arcade-stat-label">Level</div>
+                <div class="arcade-stat-val">${level}</div>
+              </div>
+              <div class="arcade-stat-box">
+                <div class="arcade-stat-label">Score</div>
+                <div class="arcade-stat-val">${score}</div>
+              </div>
+            </div>
+
+            ${state.isMemorizing ? `
+              <div style="background:rgba(6,182,212,0.08); padding:10px; border-radius:10px; border:1px solid rgba(6,182,212,0.15); font-size:0.8rem; text-align:center; color:#22d4bf;">
+                👀 Focus! Memorize all piece positions!
+              </div>
+            ` : `
+              <div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.06); margin-bottom:12px;">
+                <div style="font-size:0.75rem; color:rgba(255,255,255,0.4); margin-bottom:6px; font-weight:600; text-transform:uppercase;">Piece Palette:</div>
+                <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:5px; justify-items:center;">
+                  ${paletteHTML}
+                  ${toolHTML}
+                </div>
+              </div>
+              
+              <div style="display:flex; gap:8px;">
+                <button class="p-btn p-btn-teal p-btn-sm" style="flex:1; font-weight:700;" onclick="CK.arcade.verifyRecallPlacement()">✓ Verify Placement</button>
+                <button class="p-btn p-btn-ghost p-btn-sm" style="font-size:0.75rem; border-color:rgba(255,255,255,0.1);" onclick="CK.arcade.clearRecallBoard()">Clear</button>
+              </div>
+              <button class="p-btn p-btn-ghost p-btn-sm" style="width:100%; font-size:0.72rem; margin-top:6px; border-color:rgba(239,68,68,0.15); color:rgba(255,255,255,0.6);" onclick="CK.arcade.giveUpRecallLife()">💡 Show Target (Lose 1 Life)</button>
+            `}
+          </div>
+          
+          <div class="arcade-btn-group">
+            <button class="arcade-action-btn primary" onclick="window.CK.arcade.startRecallGame()">Restart</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  ARC.selectPalettePiece = (code) => {
+    state.selectedPalettePiece = code;
+    playSFX('select');
+    renderRecallBoard();
+  };
+
+  ARC.handleRecallSquareClick = (sq) => {
+    if (state.isMemorizing) return;
+
+    playSFX('select');
+    if (state.selectedPalettePiece === 'eraser') {
+      delete state.userPieces[sq];
+    } else {
+      state.userPieces[sq] = state.selectedPalettePiece;
+    }
+    renderRecallBoard();
+  };
+
+  ARC.clearRecallBoard = () => {
+    playSFX('select');
+    state.userPieces = {};
+    renderRecallBoard();
+  };
+
+  ARC.giveUpRecallLife = () => {
+    if (state.isMemorizing) return;
+
+    playSFX('buzz');
+    state.lives--;
+    if (state.lives <= 0) {
+      state.lives = 0;
+      playSFX('gameover');
+      renderRecallComplete();
+      return;
+    }
+
+    // Temporarily show target pieces for 2 seconds
+    state.isMemorizing = true;
+    state.countdown = 2;
+    renderRecallBoard();
+
+    if (state.timerInterval) clearInterval(state.timerInterval);
+    state.timerInterval = setTimeout(() => {
+      state.isMemorizing = false;
+      renderRecallBoard();
+    }, 2000);
+  };
+
+  ARC.verifyRecallPlacement = () => {
+    if (state.isMemorizing) return;
+
+    // Check if placement matches target exactly
+    let correct = true;
+    
+    // Check if lengths match and all target pieces are correctly placed
+    const targetKeys = Object.keys(state.targetPieces);
+    const userKeys = Object.keys(state.userPieces);
+
+    if (targetKeys.length !== userKeys.length) {
+      correct = false;
+    } else {
+      for (let sq of targetKeys) {
+        if (state.targetPieces[sq] !== state.userPieces[sq]) {
+          correct = false;
+          break;
+        }
+      }
+    }
+
+    if (correct) {
+      playSFX('win');
+      const pts = level * 25;
+      score += pts;
+      
+      // Level cleared overlay
+      const overlay = document.createElement('div');
+      overlay.style.position = 'absolute';
+      overlay.style.inset = '0';
+      overlay.style.background = 'rgba(11,15,25,0.85)';
+      overlay.style.display = 'flex';
+      overlay.style.flexDirection = 'column';
+      overlay.style.alignItems = 'center';
+      overlay.style.justifyContent = 'center';
+      overlay.style.zIndex = '12';
+      overlay.style.borderRadius = '4px';
+      overlay.style.backdropFilter = 'blur(3px)';
+      overlay.innerHTML = `
+        <div style="font-size:3rem; margin-bottom:10px;">🌟</div>
+        <h3 style="color:#fff; font-family:\'Poppins\',sans-serif; font-size:1.5rem; font-weight:800; margin:0 0 5px;">Level ${level} Cleared!</h3>
+        <p style="color:var(--p-blue); font-weight:700; margin:0 0 20px; font-size:0.95rem;">+${pts} Points (Score: ${score})</p>
+        <button class="arcade-action-btn primary" style="min-width:140px;" onclick="CK.arcade.proceedToNextRecallLevel()">Next Level</button>
+      `;
+      const boardEl = document.getElementById('recall-board');
+      if (boardEl) boardEl.appendChild(overlay);
+    } else {
+      playSFX('buzz');
+      state.lives--;
+
+      // Highlight wrong squares in red (error-glow)
+      const allSquares = new Set([...targetKeys, ...userKeys]);
+      allSquares.forEach(sq => {
+        if (state.targetPieces[sq] !== state.userPieces[sq]) {
+          const sqEl = document.querySelector(`#recall-board [data-sq="${sq}"]`);
+          if (sqEl) {
+            sqEl.classList.add('error-glow');
+            setTimeout(() => sqEl.classList.remove('error-glow'), 650);
+          }
+        }
+      });
+
+      if (state.lives <= 0) {
+        state.lives = 0;
+        playSFX('gameover');
+        renderRecallComplete();
+      } else {
+        renderRecallBoard();
+      }
+    }
+  };
+
+  ARC.proceedToNextRecallLevel = () => {
+    level++;
+    startRecallLevel();
+  };
+
+  function renderRecallComplete() {
+    gameComplete('recall', score, 'Recall Game Over!', `Excellent spatial memory! You reconstructed complex piece layouts up to Level ${level} and scored ${score} points. Practice regularly to sharpen your chess memory!`, 'CK.arcade.startRecallGame()');
   }
 
   return ARC;

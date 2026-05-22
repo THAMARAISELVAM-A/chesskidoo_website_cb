@@ -62,8 +62,7 @@ CK.student = {
     this.renderFeesGateway();
     this.renderReportCard();
     this.initCharts();
-    this.renderLevelHub();
-    this.applyLevelGating();
+    // Level hub and gating removed based on user request
 
     // Auto-sync Lichess data if linked (runs in background)
     this._autoSyncLichess();
@@ -101,39 +100,49 @@ CK.student = {
   },
 
   nav(panelId) {
-    // Level gating — block panels not yet unlocked for this student's level
-    const _need = this.panelUnlockLevel ? this.panelUnlockLevel(panelId) : null;
-    if (_need && !this.hasReached(_need)) {
-      CK.showToast(`🔒 This unlocks at ${_need} level — keep training, you'll get there!`, 'warning');
-      return;
+    let targetPanelId = panelId;
+    let highlightPanelId = panelId;
+    let isSessionRedirect = false;
+
+    if (panelId === 'session') {
+      targetPanelId = 'classroom';
+      highlightPanelId = 'session';
+      isSessionRedirect = true;
     }
+
     document.querySelectorAll('#student-page .p-panel').forEach(p => p.classList.remove('active'));
     
-    const target = document.getElementById(`student-panel-${panelId}`);
+    const target = document.getElementById(`student-panel-${targetPanelId}`);
     if (target) target.classList.add('active');
     
     document.querySelectorAll('#student-page .p-nav-item').forEach(btn => {
       btn.classList.remove('active');
-      if (btn.getAttribute('onclick')?.includes(`'${panelId}'`)) {
+      if (btn.getAttribute('onclick')?.includes(`'${highlightPanelId}'`)) {
         btn.classList.add('active');
       }
     });
 
     // Re-render dynamic panels when navigated to
-    if (panelId === 'achievements') this.renderAchievementsTab();
-    if (panelId === 'myrank') this.renderMyRank();
-    if (panelId === 'studyplan') this.renderStudyPlan();
-    if (panelId === 'progress') { this.renderRealProgress(); this.initCharts(); }
-    if (panelId === 'report') this.renderReportCard();
-    if (panelId === 'fees') this.renderFeesGateway();
-    if (panelId === 'reviews') this.renderCoachReviews();
-    if (panelId === 'resources') this.renderResources();
-    if (panelId === 'linked') this.renderLinkedAccounts();
-    if (panelId === 'schedule' && CK.schedulePro) CK.schedulePro.renderStudentSchedule('studentScheduleList', this.userProfile);
-    if (panelId === 'puzzles' && CK.puzzlesPro) CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', this.userProfile?.id, this.userProfile?.full_name);
-    if (panelId === 'classroom' && window.CK && CK.classroom) {
-      CK.classroom.studentTab('homework');
-    } else if (panelId !== 'classroom' && window.CK && CK.classroom) {
+    if (targetPanelId === 'achievements') this.renderAchievementsTab();
+    if (targetPanelId === 'myrank') this.renderMyRank();
+    if (targetPanelId === 'studyplan') this.renderStudyPlan();
+    if (targetPanelId === 'progress') { this.renderRealProgress(); this.initCharts(); }
+    if (targetPanelId === 'report') this.renderReportCard();
+    if (targetPanelId === 'fees') this.renderFeesGateway();
+    if (targetPanelId === 'reviews') this.renderCoachReviews();
+    if (targetPanelId === 'resources') this.renderResources();
+    if (targetPanelId === 'tournaments') this.renderTournamentsTab();
+    if (targetPanelId === 'linked') this.renderLinkedAccounts();
+    if (targetPanelId === 'schedule' && CK.schedulePro) CK.schedulePro.renderStudentSchedule('studentScheduleList', this.userProfile);
+    if (targetPanelId === 'puzzles' && CK.puzzlesPro) CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', this.userProfile?.id, this.userProfile?.full_name);
+    if (targetPanelId === 'vault') this.renderReplayVault();
+    if (targetPanelId === 'classroom' && window.CK && CK.classroom) {
+      if (isSessionRedirect) {
+        CK.classroom.studentTab('live');
+      } else {
+        CK.classroom.studentTab('homework');
+      }
+    } else if (targetPanelId !== 'classroom' && window.CK && CK.classroom) {
       CK.classroom.joinLiveClass && CK.classroom._stopPolling && CK.classroom._stopPolling();
     }
 
@@ -164,150 +173,8 @@ CK.student = {
   },
 
   /* ═══════════════════════════════════════════════════════
-     LEVEL SYSTEM — Beginner → Intermediate → Advanced
-     Tier-based focus content + progressive feature unlocking.
+     LEVEL SYSTEM — Removed based on user request
   ═════════════════════════════════════════════════════════ */
-  LEVEL_ORDER: ['Beginner', 'Intermediate', 'Advanced'],
-
-  LEVEL_CONFIG: {
-    Beginner: {
-      icon: '🌱', tag: 'Foundations', color: '#10B981',
-      puzzleDifficulty: 'Easy',
-      focus: [
-        'How every piece moves & setting up the board',
-        'King safety and basic checkmates (King + Queen)',
-        'Piece values — capture safely, avoid blunders',
-        'Opening principle: control the centre & develop pieces'
-      ],
-      goals: ['Solve 20 Easy tactics puzzles', 'Reach a 900 academy rating', 'Play 10 full games'],
-      unlocks: 'Puzzles, Game Tracker, Coach Reviews, Classroom & Resources'
-    },
-    Intermediate: {
-      icon: '⚔️', tag: 'Tactics & Strategy', color: '#3B82F6',
-      puzzleDifficulty: 'Medium',
-      focus: [
-        'Tactical patterns — forks, pins, skewers, discovered attacks',
-        'Building a simple, reliable opening repertoire',
-        'Basic rook & pawn endgames',
-        'Calculating 2–3 moves ahead before committing'
-      ],
-      goals: ['Solve 40 Medium puzzles', 'Reach a 1300 rating', 'Compete in an academy tournament'],
-      unlocks: 'Opening Trainer + Tournaments (on top of all Beginner features)'
-    },
-    Advanced: {
-      icon: '👑', tag: 'Mastery', color: '#e8b84b',
-      puzzleDifficulty: 'Hard',
-      focus: [
-        'Deep calculation & prophylactic thinking',
-        'Advanced endgame theory (Lucena, Philidor positions)',
-        'Engine-assisted opening preparation',
-        'Positional sacrifices & long-term strategic planning'
-      ],
-      goals: ['Solve Hard puzzles daily', 'Reach 1700+ and aim for a FIDE rating', 'Analyse your games in the Stockfish Lab'],
-      unlocks: 'PGN Stockfish Lab + every expert feature'
-    }
-  },
-
-  // panel id -> minimum level required to open it
-  PANEL_LOCKS: { openings: 'Intermediate', tournaments: 'Intermediate', lab: 'Advanced' },
-
-  currentLevelName() {
-    const lvl = (this.userProfile && this.userProfile.level) || 'Beginner';
-    return this.LEVEL_ORDER.includes(lvl) ? lvl : 'Beginner';
-  },
-  levelInfo() {
-    return this.LEVEL_CONFIG[this.currentLevelName()];
-  },
-  hasReached(level) {
-    return this.LEVEL_ORDER.indexOf(this.currentLevelName()) >= this.LEVEL_ORDER.indexOf(level);
-  },
-  panelUnlockLevel(panelId) {
-    return this.PANEL_LOCKS[panelId] || null;
-  },
-
-  /* Mark locked nav items with a 🔒 badge */
-  applyLevelGating() {
-    document.querySelectorAll('#student-page .p-nav-item').forEach(btn => {
-      const m = (btn.getAttribute('onclick') || '').match(/nav\('([^']+)'\)/);
-      if (!m) return;
-      const need = this.panelUnlockLevel(m[1]);
-      const locked = !!(need && !this.hasReached(need));
-      let lk = btn.querySelector('.nav-lock');
-      if (locked && !lk) {
-        lk = document.createElement('span');
-        lk.className = 'nav-lock';
-        lk.textContent = '🔒';
-        lk.style.cssText = 'margin-left:auto;font-size:.78rem;opacity:.65;';
-        btn.appendChild(lk);
-      } else if (!locked && lk) {
-        lk.remove();
-      }
-    });
-  },
-
-  /* Render the "Your Level" hub card at the top of the dashboard */
-  renderLevelHub() {
-    const panel = document.getElementById('student-panel-home');
-    if (!panel) return;
-    const _e = CK.esc || (s => s);
-    const lvlName = this.currentLevelName();
-    const info = this.levelInfo();
-    const idx = this.LEVEL_ORDER.indexOf(lvlName);
-    const next = this.LEVEL_ORDER[idx + 1] || null;
-
-    const track = this.LEVEL_ORDER.map((lv, i) => {
-      const c = this.LEVEL_CONFIG[lv];
-      const state = i === idx ? 'cur' : (i < idx ? 'done' : 'todo');
-      const bg = state === 'cur' ? c.color + '22' : (state === 'done' ? '#10B98118' : '#ffffff08');
-      const bd = state === 'cur' ? c.color : '#252b35';
-      const tc = state === 'cur' ? c.color : (state === 'done' ? '#10B981' : '#8a93a6');
-      return `<div style="flex:1;text-align:center;padding:8px 4px;border-radius:10px;background:${bg};border:1px solid ${bd};">
-        <div style="font-size:1.15rem;">${c.icon}</div>
-        <div style="font-size:.72rem;font-weight:700;color:${tc};">${lv}</div></div>`;
-    }).join('<div style="color:#3a4252;font-weight:700;">→</div>');
-
-    const li = (arr) => arr.map(x => `<li>${_e(x)}</li>`).join('');
-    const nextHtml = next
-      ? `<span style="margin-left:auto;font-size:.82rem;color:#8a93a6;">Next tier: <strong style="color:${this.LEVEL_CONFIG[next].color};">${next}</strong> — unlocks ${_e(this.LEVEL_CONFIG[next].unlocks)}</span>`
-      : `<span style="margin-left:auto;font-size:.82rem;color:#e8b84b;font-weight:700;">👑 Top tier reached — aim for FIDE-rated play!</span>`;
-
-    let hub = document.getElementById('studentLevelHub');
-    if (!hub) {
-      hub = document.createElement('div');
-      hub.id = 'studentLevelHub';
-      panel.insertBefore(hub, panel.firstChild);
-    }
-    hub.innerHTML = `
-      <div style="background:linear-gradient(135deg,#1a1f2e,#0f1320);border:1px solid #252b35;border-radius:16px;padding:22px;margin-bottom:20px;">
-        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-          <div style="font-size:2.3rem;">${info.icon}</div>
-          <div>
-            <div style="font-size:.7rem;letter-spacing:1.5px;text-transform:uppercase;color:#8a93a6;">Your Current Level</div>
-            <div style="font-size:1.45rem;font-weight:800;color:#fff;">${_e(lvlName)}
-              <span style="font-size:.78rem;font-weight:600;color:${info.color};">· ${_e(info.tag)}</span></div>
-          </div>
-          <div style="margin-left:auto;text-align:right;">
-            <div style="font-size:.7rem;color:#8a93a6;">Recommended puzzles</div>
-            <div style="font-weight:700;color:${info.color};">${_e(info.puzzleDifficulty)}</div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px;margin:16px 0;">${track}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div>
-            <div style="font-weight:700;color:#fff;margin-bottom:6px;">🎯 Focus at this level</div>
-            <ul style="margin:0;padding-left:18px;color:#c4ccda;font-size:.85rem;line-height:1.7;">${li(info.focus)}</ul>
-          </div>
-          <div>
-            <div style="font-weight:700;color:#fff;margin-bottom:6px;">🏆 Your goals</div>
-            <ul style="margin:0;padding-left:18px;color:#c4ccda;font-size:.85rem;line-height:1.7;">${li(info.goals)}</ul>
-          </div>
-        </div>
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid #252b35;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-          <span style="font-size:.83rem;color:#c4ccda;">✨ Unlocked for you: <strong style="color:#fff;">${_e(info.unlocks)}</strong></span>
-          ${nextHtml}
-        </div>
-      </div>`;
-  },
 
   updateProfile() {
     const p = this.userProfile;
@@ -457,9 +324,27 @@ CK.student = {
 
     // 2. Upcoming classes — fetched via DB layer (syncs from Supabase)
     const sTable = document.getElementById('studentUpcomingTable');
+    const allMeetings = (window.CK && CK.db) ? (await CK.db.getMeetings()) || [] : [];
+
+    // Live Class Banner Sync
+    const liveMeeting = allMeetings.find(m => m.status === 'live' && (!m.batch || m.batch === p.batch));
+    const liveBanner = document.getElementById('studentLiveClassBanner');
+    if (liveBanner) {
+      if (liveMeeting) {
+        const liveSub = document.getElementById('studentLiveClassSub');
+        if (liveSub) {
+          const coachName = liveMeeting.coach || p.coach || 'Your Coach';
+          const className = liveMeeting.title || liveMeeting.type || 'Chess Session';
+          liveSub.innerHTML = `Your coach <strong>${coachName}</strong> is currently live-streaming the class: <strong>${className}</strong>. Join now to participate!`;
+        }
+        liveBanner.style.display = 'flex';
+      } else {
+        liveBanner.style.display = 'none';
+      }
+    }
+
     if (sTable) {
       const todayStr = new Date().toISOString().split('T')[0];
-      const allMeetings = (await CK.db.getMeetings()) || [];
       const meetings = allMeetings
         .filter(m => m.date >= todayStr && (!m.batch || m.batch === p.batch))
         .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
@@ -935,6 +820,86 @@ CK.student = {
         <p class="p-review-note-text">"${_e(r.text)}"</p>
       </div>
     `).join('');
+  },
+
+  async renderReplayVault() {
+    const container = document.querySelector('#student-panel-vault .p-card-body');
+    if (!container) return;
+
+    container.innerHTML = \`
+      <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--p-text-muted);">
+        <div class="p-spinner" style="margin: 0 auto 12px; width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--p-blue); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        Loading synced class archives...
+      </div>
+    \`;
+
+    try {
+      const allDocs = await CK.db.getDocuments();
+      const recordings = allDocs.filter(d => d.type === 'recording');
+
+      if (recordings.length === 0) {
+        container.innerHTML = \`
+          <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: var(--p-surface3); border: 1px dashed rgba(255,255,255,0.1); border-radius: 14px;">
+            <div style="font-size: 3rem; margin-bottom: 16px;">📼</div>
+            <h3 style="color: #fff; font-size: 1.15rem; margin-bottom: 8px;">No Synced Class Replays Yet</h3>
+            <p style="color: var(--p-text-muted); font-size: 0.9rem; max-width: 400px; margin: 0 auto;">
+              When your coach streams and completes a live session, the automated recording will appear here.
+            </p>
+          </div>
+        \`;
+        return;
+      }
+
+      const _esc = CK.esc || (s => s);
+      container.innerHTML = recordings.map((rec, index) => {
+        const title = rec.name || 'Chess Class Replay';
+        const coach = rec.coach || 'Academy Coach';
+        const dateStr = rec.created_at ? new Date(rec.created_at).toLocaleDateString() : 'Recent';
+        const notes = rec.notes || 'Automated lesson recording archive.';
+        const link = rec.link || '';
+        
+        const badgeClass = index % 2 === 0 ? 'p-badge-blue' : 'p-badge-gold';
+        const btnClass = index % 2 === 0 ? 'p-btn-blue' : 'p-btn-gold';
+        const pieceIcon = index % 3 === 0 ? '♟️' : (index % 3 === 1 ? '♛' : '♞');
+        
+        return \`
+          <div class="p-card-vault-item"
+            style="background: var(--p-surface3); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, border-color 0.2s;">
+            <div
+              style="position: relative; height: 160px; background: #0c1420; display:flex; align-items:center; justify-content:center; border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <div style="font-size: 4rem;">\${pieceIcon}</div>
+              <div
+                style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.8); color:#fff; font-size:0.75rem; padding:2px 8px; border-radius:4px;">
+                \${dateStr}</div>
+            </div>
+            <div
+              style="padding: 20px; flex: 1; display:flex; flex-direction:column; justify-content:space-between; gap: 12px;">
+              <div>
+                <div class="p-badge \${badgeClass}" style="margin-bottom:8px;">\${_esc(rec.level || 'All Levels')}</div>
+                <h3 style="font-size:1.15rem; font-family:var(--font-display); color:#fff; margin-bottom:8px;">
+                  \${_esc(title)}</h3>
+                <p style="font-size:0.85rem; color:var(--p-text-muted); margin-bottom:12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                  \${_esc(notes)}
+                </p>
+                <div style="font-size: 0.8rem; color: var(--p-text-muted);">Coach: <strong style="color: #fff;">\${_esc(coach)}</strong></div>
+              </div>
+              <button class="p-btn \${btnClass}" style="width:100%; margin-top: auto;"
+                onclick="CK.openVaultSession('\${_esc(title.replace(/'/g, "\\\\'"))}', '\${_esc(coach.replace(/'/g, "\\\\'"))}', '\${_esc(link.replace(/'/g, "\\\\'"))}')">
+                ▶ Study Session Replay
+              </button>
+            </div>
+          </div>
+        \`;
+      }).join('');
+
+    } catch (e) {
+      console.error("[Student Vault] Error rendering replay vault:", e);
+      container.innerHTML = \`
+        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #ef4444;">
+          ⚠️ Error loading synced class archives. Please try again.
+        </div>
+      \`;
+    }
   },
 
   async renderAchievementsTab() {
@@ -2363,6 +2328,22 @@ CK.student = {
         </body>
       </html>
     `);
+  },
+
+  async renderTournamentsTab() {
+    if (!CK.tournament) return;
+    const container = document.getElementById('student-panel-tournaments');
+    if (!container) return;
+
+    // We can inject a basic container and then call T.renderTournamentList
+    container.innerHTML = `
+      <div class="p-card" style="margin-bottom:20px;">
+        <h2>🏆 Academy Tournaments</h2>
+        <p style="opacity:0.7;">Join active tournaments, compete with peers, and climb the leaderboard!</p>
+      </div>
+      <div id="studentTournamentContainer"></div>
+    `;
+    await CK.tournament.renderTournamentList('studentTournamentContainer');
   },
 
   async renderLinkedAccounts() {

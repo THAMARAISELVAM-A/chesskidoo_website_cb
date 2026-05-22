@@ -15,7 +15,19 @@ CK.classroom = (() => {
   const getSubmissions  = async () => await CK.db.getSubmissions();
   const saveSubmission  = async s  => await CK.db.saveSubmission(s);
   const getLive         = () => JSON.parse(localStorage.getItem(LIVE_KEY)   || 'null');
-  const saveLive        = d  => localStorage.setItem(LIVE_KEY, JSON.stringify(d));
+  const saveLive        = (d) => {
+    localStorage.setItem(LIVE_KEY, JSON.stringify(d));
+    if (window.supabaseClient) {
+      try {
+        const payload = d ? { id: 'global_live', fen: d.fen, pgn: d.coachNote || '', coach: window.CK?.currentUser?.full_name || 'Coach', ts: Date.now() } : null;
+        if (payload) {
+          window.supabaseClient.from('broadcasts').upsert(payload).then();
+        } else {
+          window.supabaseClient.from('broadcasts').delete().eq('id', 'global_live').then();
+        }
+      } catch(e) { console.warn("Supabase live push failed", e); }
+    }
+  };
   const getLibrary      = () => JSON.parse(localStorage.getItem(LIB_KEY)    || '[]');
   const saveLibrary     = l  => localStorage.setItem(LIB_KEY, JSON.stringify(l));
   const uid             = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -263,13 +275,116 @@ CK.classroom = (() => {
      STUDENT — LIVE CLASS
   ═══════════════════════════════════════════════════════════════════ */
 
+  let _liveSub = null;
+
   function joinLiveClass() {
     _syncLive();
     if (!_livePollTimer) _livePollTimer = setInterval(_syncLive, 2000);
+
+    // Supabase Realtime Zero-Latency Upgrade (Phase 1)
+    if (window.supabaseClient && !_liveSub) {
+      _liveSub = window.supabaseClient.channel('public:broadcasts')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'broadcasts', filter: "id=eq.global_live" }, (payload) => {
+           if (payload.eventType === 'DELETE') {
+             localStorage.setItem(LIVE_KEY, JSON.stringify(null));
+           } else if (payload.new) {
+             const d = payload.new;
+             const curr = getLive() || {};
+             localStorage.setItem(LIVE_KEY, JSON.stringify({
+               active: true, fen: d.fen, coachNote: d.pgn, updatedAt: d.ts,
+               orientation: curr.orientation || 'white', currentMove: curr.currentMove || 0
+             }));
+           }
+           _syncLive(); // Instantly update UI when socket message arrives
+        }).subscribe();
+    }
+
+    if (window.CK && CK.webrtc) {
+      CK.webrtc.joinStream();
+    }
+
+    // Auto-mark student join attendance
+    (async () => {
+      try {
+        const studentProfile = (window.CK && CK.student && CK.student.userProfile) || {};
+        const studentUserId = studentProfile.id || me();
+        const studentName = studentProfile.full_name || (window.CK && CK.currentUser && CK.currentUser.full_name) || 'Student';
+        const today = new Date().toISOString().split('T')[0];
+
+        // Fetch all meetings to find the one that is currently live
+        const meetings = (await CK.db.getMeetings()) || [];
+        const liveMeeting = meetings.find(m => m.status === 'live' && (!m.batch || m.batch === studentProfile.batch));
+
+        const classId = liveMeeting ? liveMeeting.id : 'Class';
+        const className = liveMeeting ? (liveMeeting.title || liveMeeting.type) : 'Chess Class';
+        const coachName = liveMeeting ? liveMeeting.coach : (studentProfile.coach || 'Coach');
+
+        const log = {
+          id: 'att-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+          userid: studentUserId,
+          studentId: studentUserId,
+          studentName: studentName,
+          classId: classId,
+          className: className,
+          coachId: coachName,
+          coachName: coachName,
+          markedAt: new Date().toISOString(),
+          date: today,
+          status: 'present'
+        };
+
+        await CK.db.saveAttendance(log);
+        console.log(`[Attendance] Marked student "${studentName}" present for class "${className}".`);
+      } catch (err) {
+        console.warn("[Attendance] Failed to record student join attendance:", err);
+      }
+    })();
+
+    // Meet fallback link rendering
+    (async () => {
+      try {
+        const studentProfile = (window.CK && CK.student && CK.student.userProfile) || {};
+        const links = (window.CK && CK.batchManager) ? await CK.batchManager.getLinks() : {};
+        const level = studentProfile.level || '';
+        const batch = studentProfile.batch || '';
+        const meetUrl = links[level] || links[batch] || '';
+        
+        const meetBtnContainer = document.getElementById('scMeetButtonContainer');
+        if (meetBtnContainer) {
+          if (meetUrl) {
+            meetBtnContainer.style.display = 'block';
+            meetBtnContainer.innerHTML = `
+              <div style="margin-top: 10px; margin-bottom: 10px; text-align: center;">
+                <a href="${meetUrl}" target="_blank" class="p-btn p-btn-gold p-btn-sm" style="display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); text-decoration: none;">
+                  🔗 Open Google Meet Video Call
+                </a>
+              </div>
+            `;
+          } else {
+            meetBtnContainer.style.display = 'none';
+            meetBtnContainer.innerHTML = '';
+          }
+        }
+      } catch (err) {
+        console.warn("[Meet Fallback] Failed to render Meet button:", err);
+      }
+    })();
   }
 
   function _stopPolling() {
     if (_livePollTimer) { clearInterval(_livePollTimer); _livePollTimer = null; }
+    if (window.supabaseClient && _liveSub) {
+       window.supabaseClient.removeChannel(_liveSub);
+       _liveSub = null;
+    }
+    if (window.CK && CK.webrtc) {
+      CK.webrtc.leaveStream();
+    }
+    const meetBtnContainer = document.getElementById('scMeetButtonContainer');
+    if (meetBtnContainer) {
+      meetBtnContainer.style.display = 'none';
+      meetBtnContainer.innerHTML = '';
+    }
   }
 
   function _syncLive() {
@@ -302,6 +417,24 @@ CK.classroom = (() => {
         });
       } else {
         _liveBoard.position(session.fen, true);
+      }
+
+      // Run local Stockfish evaluation for the student
+      if (window.CK && CK.engine) {
+        const txt = document.getElementById('scLiveEvalText');
+        if (txt) txt.textContent = '...';
+        CK.engine.evaluate(session.fen).then(res => {
+          if (res && session.fen === _lastLiveFen) {
+            const score = CK.engine.formatScore(res.cp, res.mate);
+            const bar   = CK.engine.cpToBar(res.cp, res.mate);
+            const col   = CK.engine.cpColor(res.cp, res.mate);
+            if (txt) txt.textContent = score;
+            const barEl = document.getElementById('scLiveEvalBar');
+            if (barEl) { barEl.style.width = bar + '%'; barEl.style.backgroundColor = col; }
+            const vBarEl = document.getElementById('scLiveVBar');
+            if (vBarEl) vBarEl.style.height = bar + '%';
+          }
+        });
       }
     }
   }
@@ -435,11 +568,33 @@ CK.classroom = (() => {
     const statusEl = document.getElementById('ccLiveStatus');
     if (statusEl) statusEl.innerHTML = '<span class="cls-live-dot"></span>&nbsp;<strong>Session is LIVE — students can see your board</strong>';
     CK.showToast('🔴 Live session started! Students can join now.', 'success');
+
+    // Auto-mark Coach Attendance
+    const coachId = window.CK?.currentUser?.id || window.CK?.currentUser?.userid || 'coach';
+    const classId = window.CK?.coach?._liveClassId || 'general_classroom';
+    if (window.CK?.db?.recordCoachAttendance) {
+      window.CK.db.recordCoachAttendance(coachId, classId).then();
+    }
   }
 
   function coachEndLive() {
+    // End-of-class Sweep for Attendance
+    const coachName = window.CK?.currentUser?.full_name || 'Coach';
+    const classId = window.CK?.coach?._liveClassId || 'general_classroom';
+    let className = 'General Classroom';
+    if (window.CK?.coach?.classesDb && classId !== 'general_classroom') {
+      const c = window.CK.coach.classesDb.find(x => x.id === classId);
+      if (c) className = c.class || c.title || className;
+    }
+    if (window.CK?.db?.runAttendanceSweep) {
+      window.CK.db.runAttendanceSweep(coachName, classId, className).then();
+    }
+
     saveLive(null);
     if (_ccLiveBoard) { _ccLiveBoard.destroy(); _ccLiveBoard = null; }
+    if (window.CK && CK.webrtc) {
+      CK.webrtc.stopBroadcast();
+    }
     const statusEl = document.getElementById('ccLiveStatus');
     if (statusEl) statusEl.textContent = 'Session ended';
     CK.showToast('Live session ended', 'info');

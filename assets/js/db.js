@@ -435,6 +435,55 @@
       setLocal('attendance', att);
       return log;
     },
+    async runAttendanceSweep(coachName, classId, className) {
+      if (!coachName) return;
+      const today = new Date().toISOString().split('T')[0];
+      
+      // 1. Get all student profiles
+      const students = (await this.getProfiles('student')) || [];
+      
+      // 2. Filter students assigned to this coach (case-insensitive)
+      const coachStudents = students.filter(s => s.coach && s.coach.trim().toLowerCase() === coachName.trim().toLowerCase());
+      if (coachStudents.length === 0) {
+        console.log(`[Attendance Sweep] No students found assigned to coach: ${coachName}`);
+        return;
+      }
+      
+      // 3. Get all attendance records for today
+      const todayLogs = (await this.getAttendance(null, today)) || [];
+      const presentUserIds = new Set(
+        todayLogs.filter(log => log.status === 'present').map(log => log.userid)
+      );
+      
+      console.log(`[Attendance Sweep] Sweeping for coach "${coachName}", class "${className || classId}". Today present user IDs:`, [...presentUserIds]);
+      
+      // 4. Mark absent for all students of this coach who are not already present
+      for (const student of coachStudents) {
+        const studentUserId = student.id || student.userid;
+        if (!studentUserId) continue;
+        
+        if (!presentUserIds.has(studentUserId)) {
+          const existingAbsent = todayLogs.find(log => log.userid === studentUserId && log.status === 'absent');
+          if (!existingAbsent) {
+            console.log(`[Attendance Sweep] Marking student ${student.full_name || studentUserId} as ABSENT`);
+            const log = {
+              id: 'att-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+              userid: studentUserId,
+              "studentId": studentUserId,
+              "studentName": student.full_name || 'Student',
+              "classId": classId || 'Class',
+              "className": className || 'Chess Class',
+              "coachId": coachName,
+              "coachName": coachName,
+              "markedAt": new Date().toISOString(),
+              date: today,
+              status: 'absent'
+            };
+            await this.saveAttendance(log);
+          }
+        }
+      }
+    },
 
 
     // --- RATINGS OPERATIONS ---
@@ -599,6 +648,41 @@
       localStorage.setItem('ck_meetings', JSON.stringify(list.filter(m => m.id !== id)));
       return true;
     },
+
+    // --- TOURNAMENTS OPERATIONS ---
+    async getTournaments() {
+      if (canUseSupabase()) {
+        try {
+          const { data, error } = await window.supabaseClient.from('tournaments').select('*').order('createdAt', { ascending: false });
+          if (!error && data) { localStorage.setItem('ck_tournaments', JSON.stringify(data)); return data; }
+          markSupabaseFailed();
+        } catch (e) { markSupabaseFailed(); }
+      }
+      return JSON.parse(localStorage.getItem('ck_tournaments') || '[]');
+    },
+    async saveTournament(t) {
+      if (!t.id) t.id = Date.now().toString();
+      if (canUseSupabase()) {
+        try {
+          const { error } = await window.supabaseClient.from('tournaments').upsert(t);
+          if (error) console.warn('[ChessKidoo DB] Tournament save error:', error);
+        } catch (e) { console.warn('[ChessKidoo DB] Tournament save error:', e); }
+      }
+      const list = JSON.parse(localStorage.getItem('ck_tournaments') || '[]');
+      const idx = list.findIndex(x => x.id === t.id);
+      if (idx !== -1) list[idx] = { ...list[idx], ...t };
+      else list.push(t);
+      localStorage.setItem('ck_tournaments', JSON.stringify(list));
+      return t;
+    },
+    async deleteTournament(id) {
+      if (canUseSupabase()) {
+        try { await window.supabaseClient.from('tournaments').delete().eq('id', id); } catch (e) { }
+      }
+      const list = JSON.parse(localStorage.getItem('ck_tournaments') || '[]');
+      localStorage.setItem('ck_tournaments', JSON.stringify(list.filter(x => x.id !== id)));
+      return true;
+    },
     // New: Classes Management (for Admin Portal)
     async getClasses() {
       if (canUseSupabase()) {
@@ -704,6 +788,18 @@
       if (idx !== -1) all[idx] = record; else all.push(record);
       localStorage.setItem('ck_coach_attendance', JSON.stringify(all));
       return record;
+    },
+    async recordCoachAttendance(coachId, classId) {
+      const today = new Date().toISOString().split('T')[0];
+      const record = {
+        id: 'ca-' + Date.now(),
+        "coachId": coachId || 'general',
+        "classId": classId || 'general',
+        date: today,
+        "joinedAt": new Date().toISOString()
+      };
+      console.log(`[Coach Attendance] Marking coach "${coachId}" present for class "${classId}"`);
+      return await this.saveCoachAttendance(record);
     },
     async deleteCoachAttendance(id) {
       if (canUseSupabase()) {

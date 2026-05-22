@@ -106,6 +106,8 @@ CREATE TABLE IF NOT EXISTS meetings (
   batch TEXT,
   students INT DEFAULT 0,
   link TEXT,
+  status TEXT,
+  "liveStartedAt" TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

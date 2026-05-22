@@ -145,6 +145,12 @@
       document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
     }, 3000);
   </script>
+  <style>
+    @keyframes pulseScale {
+      0% { transform: scale(0.95); filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.5)); }
+      100% { transform: scale(1.15); filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.9)); }
+    }
+  </style>
 </head>
 
 <body>
@@ -2603,6 +2609,17 @@
           <div class="p-content">
             <!-- HOME -->
             <div class="p-panel active" id="student-panel-home">
+              <!-- Live Class Notice Banner -->
+              <div id="studentLiveClassBanner" class="p-welcome-banner" style="display: none; background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.05) 100%); border: 1px solid rgba(239, 68, 68, 0.4); box-shadow: 0 0 15px rgba(239, 68, 68, 0.2); margin-bottom: 20px;">
+                <div class="p-welcome-icon" style="animation: pulseScale 1.5s infinite alternate;">🔴</div>
+                <div class="p-welcome-text">
+                  <h2 style="color: #f87171; text-shadow: 0 0 8px rgba(239, 68, 68, 0.3);">Live Class in Progress! 📡</h2>
+                  <p id="studentLiveClassSub" style="color: #fca5a5;">Your coach is currently live-streaming a session. Join now to participate!</p>
+                </div>
+                <div class="p-welcome-actions">
+                  <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.student.nav('session')" style="box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);">🔗 Join Live Classroom</button>
+                </div>
+              </div>
               <!-- Premium Welcome Banner -->
               <div class="p-welcome-banner">
                 <div class="p-welcome-icon">♞</div>
@@ -2614,6 +2631,7 @@
                 <div class="p-welcome-actions">
                   <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.student.nav('puzzles')">🧩 Do Puzzles</button>
                   <button class="p-btn p-btn-teal p-btn-sm" onclick="CK.student.nav('session')">📡 Join Class</button>
+                  <button class="p-btn p-btn-blue p-btn-sm" onclick="CK.multiplayer && CK.multiplayer.startMatchmaking()">⚔️ Play vs Friend</button>
                 </div>
               </div>
 
@@ -3835,9 +3853,12 @@
                       <textarea id="labPgnInput" class="p-form-control"
                         style="height:95px;font-family:monospace;font-size:0.8rem;margin-bottom:10px;background:var(--p-surface3);color:#fff;border:1px solid rgba(255,255,255,0.1);resize:vertical;"
                         placeholder="Paste PGN here… e.g. 1. e4 e5 2. Nf3 Nc6"></textarea>
-                      <button class="p-btn p-btn-blue" style="width:100%;margin-bottom:14px;"
-                        onclick="CK.lab.analyzePgn(document.getElementById('labPgnInput').value,'studentLabBoard')">🔬
-                        Analyze PGN</button>
+                      <div style="display:flex;gap:8px;margin-bottom:14px;">
+                        <button class="p-btn p-btn-blue" style="flex:1;"
+                          onclick="CK.lab.analyzePgn(document.getElementById('labPgnInput').value,'studentLabBoard')">🔬 Analyze PGN</button>
+                        <button class="p-btn p-btn-blue" style="flex:1;background:var(--p-teal);"
+                          onclick="CK.lab.loadRandomPuzzle('studentLabBoard')">🧩 Load Puzzle</button>
+                      </div>
                       <div id="studentPgnDbExplorer" class="lab-db-explorer" style="display:none;margin-bottom:14px;"></div>
                       <div class="lab-eval-panel">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
@@ -4047,16 +4068,42 @@
                   <!-- Live Class Tab -->
                   <div id="scTabLive" style="display:none;">
                     <div id="scLiveStatus" style="margin-bottom:16px;font-size:0.9rem;"></div>
+                    <!-- Google Meet Fallback Button Container -->
+                    <div id="scMeetButtonContainer" style="margin-bottom:16px; display:none;"></div>
                     <div id="scLiveBoardWrap" style="display:none;">
                       <div class="lab-main-grid">
-                        <div id="scLiveBoard" class="lab-board-container"></div>
-                        <div class="lab-eval-panel">
-                          <div style="font-size:0.82rem;font-weight:700;color:var(--p-teal);margin-bottom:8px;">📢
-                            Coach's Note</div>
-                          <div id="scLiveCoachNote"
-                            style="font-size:0.87rem;color:var(--p-text-muted);line-height:1.65;min-height:60px;">
-                            Waiting for coach to broadcast…</div>
+                        <div class="lab-board-with-vbar">
+                          <div class="lab-vbar-wrap">
+                            <div class="lab-vbar-score">▲</div>
+                            <div class="lab-vbar-track">
+                              <div id="scLiveVBar" style="width:100%;height:53%;background:var(--p-blue);transition:height 0.5s;"></div>
+                            </div>
+                            <div class="lab-vbar-score">▼</div>
+                          </div>
+                          <div id="scLiveBoard" class="lab-board-container"></div>
                         </div>
+                        <div class="lab-eval-panel">
+                          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
+                            <span style="font-size:0.87rem;font-weight:700;color:#fff;">Live Engine Eval</span>
+                            <span id="scLiveEvalText" class="p-badge p-badge-blue" style="font-family:monospace;font-size:0.95rem;font-weight:800;">...</span>
+                          </div>
+                          <div class="lab-eval-bar-track" style="margin-bottom:14px;">
+                            <div id="scLiveEvalBar" class="lab-eval-bar-fill" style="width:53%;"></div>
+                          </div>
+                          <div style="font-size:0.82rem;font-weight:700;color:var(--p-teal);margin-bottom:8px;">📢 Coach's Note</div>
+                          <div id="scLiveCoachNote" style="font-size:0.87rem;color:var(--p-text-muted);line-height:1.65;min-height:60px;">Waiting for coach to broadcast…</div>
+                          
+                          <!-- WebRTC Video Stub (Phase 4) -->
+                          <div style="margin-top:20px;">
+                            <div style="font-size:0.82rem;font-weight:700;color:var(--p-blue);margin-bottom:8px;display:flex;justify-content:space-between;">
+                              <span>📹 Coach Video Stream</span>
+                              <span style="font-size:0.7rem;opacity:0.6;">● LIVE (WebRTC Stub)</span>
+                            </div>
+                            <div id="scLiveVideoBox" style="width:100%; height:140px; background:#000; border-radius:8px; border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.3); font-size:0.85rem; position:relative; overflow:hidden;">
+                                <div style="position:absolute;top:10px;left:10px;background:red;color:white;font-size:0.6rem;padding:2px 6px;border-radius:4px;font-weight:bold;">REC</div>
+                                Video Stream Pending (Phase 4)
+                            </div>
+                          </div>
                       </div>
                     </div>
                     <div style="margin-top:16px;font-size:0.8rem;color:rgba(255,255,255,0.28);">Board syncs every 2
@@ -4273,9 +4320,12 @@
                   </div>
                 </div>
                 <div class="session-controls" style="display:flex; gap:10px; flex-wrap:wrap">
-                  <button class="p-btn p-btn-teal" id="coachStartBtn" onclick="CK.coach.toggleSession()">▶ Start Live
-                    Command Center</button>
+                  <button class="p-btn p-btn-teal" id="coachStartBtn" onclick="CK.coach.toggleSession()">▶ Start Live Command Center</button>
                   <button class="p-btn p-btn-ghost" onclick="CK.coach.endSession()">⬛ End Session</button>
+                  <!-- Mirrored Stream Controls for convenience -->
+                  <button id="btnStartStreamCC" class="p-btn p-btn-blue" style="display:none; font-size:0.82rem;" onclick="CK.webrtc.startBroadcast(true, true)">📹 Go Live (Video)</button>
+                  <button id="btnStartAudioStreamCC" class="p-btn p-btn-teal" style="display:none; font-size:0.82rem;" onclick="CK.webrtc.startBroadcast(false, true)">🎙️ Go Live (Audio)</button>
+                  <button id="btnStopStreamCC" class="p-btn p-btn-ghost" style="display:none; font-size:0.82rem; color:#ef4444; border-color:rgba(239,68,68,0.25);" onclick="CK.webrtc.stopBroadcast()">⏹ Stop Stream</button>
                 </div>
               </div>
 
@@ -4288,12 +4338,14 @@
                   <h3
                     style="font-size: 1.1rem; color: #fff; font-family: var(--font-display); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
                     📹 Virtual Video Feed</h3>
-                  <div
+                  <div id="coachCommandCenterVideoFeed"
                     style="width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 12px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1);">
                     <div
-                      style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,201,167,0.8); color: #000; font-size: 0.8rem; font-weight: bold; padding: 2px 8px; border-radius: 4px;">
+                      style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,201,167,0.8); color: #000; font-size: 0.8rem; font-weight: bold; padding: 2px 8px; border-radius: 4px; z-index: 10;">
                       Live: Coach</div>
-                    <div style="font-size: 3rem; color: #00c9a7;">👩‍🏫</div>
+                    <div id="ccDefaultEmoji" style="font-size: 3rem; color: #00c9a7;">👩‍🏫</div>
+                    <video id="ccFeedVideo" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover; border-radius:12px; display:none;"></video>
+                    <canvas id="ccFeedCanvas" style="width:100%; height:100%; border-radius:12px; display:none;"></canvas>
                   </div>
                   <div
                     style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: var(--p-text-muted);">
@@ -4461,9 +4513,32 @@
             <div class="p-panel" id="coach-panel-notes">
               <div class="p-card" style="margin-bottom:20px;">
                 <div class="p-card-header">
-                  <div class="p-card-title">📝 Student Game Notes & Diagnostics</div>
-                  <button class="p-btn p-btn-teal p-btn-sm" onclick="CK.coach.topAction()">+ Add Quick
-                    Assessment</button>
+                  <div class="p-card-title">📝 Send Personalized Notes</div>
+                </div>
+                <div class="p-card-body" style="padding:20px;">
+                  <div style="display:grid; gap:15px;">
+                    <div>
+                      <label class="p-form-label">Select Student</label>
+                      <select class="p-form-control" id="coach_inline_note_student"></select>
+                    </div>
+                    <div>
+                      <label class="p-form-label">Message / PGN / Homework Link</label>
+                      <textarea class="p-form-control" id="coach_inline_note_text" rows="3" placeholder="Type your personalized note here..."></textarea>
+                    </div>
+                    <div>
+                      <label class="p-form-label">Rating Adjustment (ELO ±)</label>
+                      <input type="number" class="p-form-control" id="coach_inline_note_rating_delta" value="0" style="max-width:100px;">
+                    </div>
+                    <div>
+                      <button class="p-btn p-btn-teal" onclick="CK.coach.saveInlineNote()">✉️ Send Note to Student Inbox</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="p-card" style="margin-bottom:20px;">
+                <div class="p-card-header">
+                  <div class="p-card-title">📨 Sent Notes History</div>
                 </div>
                 <div class="p-card-body" style="padding:20px;" id="coachNotesContainer">
                   <div style="text-align:center;opacity:.45;padding:30px;">Loading notes…</div>
@@ -4731,8 +4806,8 @@
                       Broadcast to Students</div>
                   </div>
                   <div style="display:flex;gap:8px;align-items:center;">
-                    <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.lab.broadcastCoach()">📢 Broadcast to
-                      Class</button>
+                    <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.lab.broadcastCoach()">📢 Broadcast to Class</button>
+                    <button class="p-btn p-btn-rose p-btn-sm" onclick="CK.coach.openPuzzleCreatorFromLab()">🎯 Assign as Puzzle</button>
                   </div>
                 </div>
                 <div class="p-card-body" style="padding:20px 25px;">
@@ -4820,9 +4895,12 @@
                       <textarea id="coachLabPgnInput" class="p-form-control"
                         style="height:108px;font-family:monospace;font-size:0.82rem;margin-bottom:11px;background:var(--p-surface3);color:#fff;border:1px solid rgba(255,255,255,0.1);resize:vertical;"
                         placeholder="Paste lesson PGN here…"></textarea>
-                      <button class="p-btn p-btn-teal" style="width:100%;margin-bottom:14px;"
-                        onclick="CK.lab.analyzePgn(document.getElementById('coachLabPgnInput').value,'coachLabBoard')">🔬
-                        Evaluate &amp; Sync</button>
+                      <div style="display:flex;gap:8px;margin-bottom:14px;">
+                        <button class="p-btn p-btn-teal" style="flex:1;"
+                          onclick="CK.lab.analyzePgn(document.getElementById('coachLabPgnInput').value,'coachLabBoard')">🔬 Evaluate &amp; Sync</button>
+                        <button class="p-btn p-btn-blue" style="flex:1;background:var(--p-gold);color:#000;"
+                          onclick="CK.lab.loadRandomPuzzle('coachLabBoard')">🧩 Load Puzzle</button>
+                      </div>
                       <div id="coachPgnDbExplorer" class="lab-db-explorer" style="display:none;margin-bottom:14px;"></div>
                       <div class="lab-eval-panel" style="border-color:rgba(45,212,191,0.2);">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
@@ -4993,9 +5071,23 @@
                           placeholder="Type a note, question, or tactical pattern to explain…"></textarea>
                         <button class="p-btn p-btn-gold" style="width:100%;margin-bottom:12px;"
                           onclick="CK.classroom.coachBroadcastNote()">Send Note Live</button>
-                        <div style="font-size:0.78rem;color:rgba(255,255,255,0.3);line-height:1.5;">Students see your
+                        <div style="font-size:0.78rem;color:rgba(255,255,255,0.3);line-height:1.5;margin-bottom:15px;">Students see your
                           current board position and note in real-time. Navigate with the buttons to walk through the
                           game.</div>
+
+                        <!-- WebRTC Coach Broadcast Controls (Phase 4) -->
+                        <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:15px; margin-top:10px;">
+                          <div style="font-size:0.82rem;font-weight:700;color:var(--p-blue);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+                            <span>📹 Class Broadcast (P2P Stream)</span>
+                            <span id="ccStreamStatusBadge" style="font-size:0.65rem;opacity:0.6;font-weight:bold;">● OFFLINE</span>
+                          </div>
+                          <div style="display:flex; gap:6px; margin-bottom:8px;">
+                            <button id="btnStartStream" class="p-btn p-btn-blue p-btn-sm" style="flex:1;font-size:0.75rem;" onclick="CK.webrtc.startBroadcast(true, true)">📹 Go Live (Video)</button>
+                            <button id="btnStartAudioStream" class="p-btn p-btn-teal p-btn-sm" style="flex:1;font-size:0.75rem;" onclick="CK.webrtc.startBroadcast(false, true)">🎙️ Go Live (Audio)</button>
+                            <button id="btnStopStream" class="p-btn p-btn-ghost p-btn-sm" style="display:none;flex:1;font-size:0.75rem;color:#ef4444;border-color:rgba(239,68,68,0.25);" onclick="CK.webrtc.stopBroadcast()">⏹ Stop Stream</button>
+                          </div>
+                          <div id="ccLiveVideoPreviewBox" style="width:100%; height:110px; background:#070b13; border-radius:8px; border:1px solid rgba(255,255,255,0.06); display:none; align-items:center; justify-content:center; position:relative; overflow:hidden;"></div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -5359,21 +5451,7 @@
           <span class="arena-title-text">AI Challenge Arena</span>
         </div>
         <div class="arena-header-settings">
-          <div class="difficulty-selector">
-            <button class="diff-btn" data-level="Beginner" onclick="CK.arena.setDifficulty('Beginner')">Beginner</button>
-            <button class="diff-btn active" data-level="Intermediate"
-              onclick="CK.arena.setDifficulty('Intermediate')">Intermediate</button>
-            <button class="diff-btn" data-level="Advanced" onclick="CK.arena.setDifficulty('Advanced')">Advanced</button>
-            <button class="diff-btn" data-level="Expert" onclick="CK.arena.setDifficulty('Expert')">Expert</button>
-          </div>
-          
-          <div class="difficulty-selector timer-selector" style="margin-left:10px;">
-            <button class="timer-btn" data-time="180" onclick="CK.arena.setTimeControl(180)">3 Min</button>
-            <button class="timer-btn" data-time="300" onclick="CK.arena.setTimeControl(300)">5 Min</button>
-            <button class="timer-btn active" data-time="600" onclick="CK.arena.setTimeControl(600)">10 Min</button>
-            <button class="timer-btn" data-time="1800" onclick="CK.arena.setTimeControl(1800)">30 Min</button>
-            <button class="timer-btn" data-time="untimed" onclick="CK.arena.setTimeControl('untimed')">Untimed</button>
-          </div>
+          <button class="btn-more-games" onclick="CK.arena.openChallengeModal()" style="background:var(--arena-gold); color:#111; font-weight:700; box-shadow:0 0 15px rgba(232,184,75,0.4); border:none;">⚔️ Configure Match</button>
         </div>
         <div class="arena-header-right">
           <button class="btn-more-games" onclick="CK.navigate('more-games')">🎮 More Games</button>
@@ -5522,6 +5600,50 @@
       <!-- Post-Game Report Overlay -->
       <div class="arena-report-overlay" id="arena-report-overlay"></div>
 
+      <!-- Arena Challenge Modal -->
+      <div class="arena-report-overlay" id="arena-challenge-overlay" style="display:none; z-index:9999; opacity:1;"></div>
+      <div class="arena-report-modal" id="arena-challenge-modal" style="display:none; z-index:10000; max-width:450px; opacity:1; transform:translateY(0);">
+        <div class="ar-header">
+          <div class="ar-title" style="font-size:1.6rem; text-align:center; width:100%;">⚔️ Challenge Setup</div>
+        </div>
+        <div class="ar-body" style="padding:24px;">
+          
+          <div style="margin-bottom:24px;">
+            <div style="color:var(--p-text-muted); font-size:0.85rem; font-weight:700; text-transform:uppercase; margin-bottom:12px; letter-spacing:0.05em;">Select Difficulty</div>
+            <div class="difficulty-selector" style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="diff-btn" data-level="Beginner" onclick="CK.arena.setDifficulty('Beginner')">Beginner</button>
+              <button class="diff-btn active" data-level="Intermediate" onclick="CK.arena.setDifficulty('Intermediate')">Intermediate</button>
+              <button class="diff-btn" data-level="Advanced" onclick="CK.arena.setDifficulty('Advanced')">Advanced</button>
+              <button class="diff-btn" data-level="Expert" onclick="CK.arena.setDifficulty('Expert')">Expert</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom:24px;">
+            <div style="color:var(--p-text-muted); font-size:0.85rem; font-weight:700; text-transform:uppercase; margin-bottom:12px; letter-spacing:0.05em;">Select Playing Style</div>
+            <div class="difficulty-selector" style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="style-btn active" data-style="Balanced" onclick="CK.arena.setStyle('Balanced')">Balanced</button>
+              <button class="style-btn" data-style="Aggressive" onclick="CK.arena.setStyle('Aggressive')">Aggressive</button>
+              <button class="style-btn" data-style="Defensive" onclick="CK.arena.setStyle('Defensive')">Defensive</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom:32px;">
+            <div style="color:var(--p-text-muted); font-size:0.85rem; font-weight:700; text-transform:uppercase; margin-bottom:12px; letter-spacing:0.05em;">Select Time Control</div>
+            <div class="difficulty-selector timer-selector" style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="timer-btn" data-time="180" onclick="CK.arena.setTimeControl(180)">3 Min</button>
+              <button class="timer-btn" data-time="300" onclick="CK.arena.setTimeControl(300)">5 Min</button>
+              <button class="timer-btn active" data-time="600" onclick="CK.arena.setTimeControl(600)">10 Min</button>
+              <button class="timer-btn" data-time="1800" onclick="CK.arena.setTimeControl(1800)">30 Min</button>
+              <button class="timer-btn" data-time="untimed" onclick="CK.arena.setTimeControl('untimed')">Untimed</button>
+            </div>
+          </div>
+
+          <button onclick="CK.arena.startCustomGame()" style="width:100%; padding:16px; border-radius:12px; background:var(--arena-gold); color:#111; font-weight:800; font-size:1.1rem; border:none; cursor:pointer; box-shadow:0 4px 15px rgba(232,184,75,0.3); transition:all 0.2s;">▶ START MATCH</button>
+          <button onclick="CK.arena.closeChallengeModal()" style="width:100%; padding:12px; border-radius:12px; background:transparent; color:var(--p-text-muted); font-weight:600; font-size:0.9rem; border:none; cursor:pointer; margin-top:8px;">Cancel</button>
+
+        </div>
+      </div>
+
       <!-- Certificate Overlay -->
       <div class="cert-overlay" id="cert-overlay"></div>
     </div>
@@ -5562,6 +5684,12 @@
                 Quest</span><span class="score-strip-val" id="score-badge-queenquest">—</span></div>
             <div class="score-strip-item"><span class="score-strip-icon">🧠</span><span class="score-strip-label">Quiz
                 Blitz</span><span class="score-strip-val" id="score-badge-quiz">—</span></div>
+            <div class="score-strip-item"><span class="score-strip-icon">🧭</span><span
+                class="score-strip-label">Coordinates</span><span class="score-strip-val" id="score-badge-coordinates">—</span>
+            </div>
+            <div class="score-strip-item"><span class="score-strip-icon">👁️</span><span
+                class="score-strip-label">Recall</span><span class="score-strip-val" id="score-badge-recall">—</span>
+            </div>
           </div>
 
           <div class="games-grid">
@@ -5661,12 +5789,44 @@
               </div>
               <div class="card-best">Best: <span id="score-display-quiz">—</span></div>
             </div>
+
+            <!-- Speed Coordinates Trainer -->
+            <div class="game-card coordinates-card" onclick="CK.arcade.startCoordinatesTrainer()" style="--card-color: #06b6d4;">
+              <div class="card-glow"></div>
+              <div class="game-new-badge">NEW</div>
+              <div class="game-icon">🧭</div>
+              <h3 class="card-title">Speed Coordinates</h3>
+              <p class="card-desc">Find and click the random board coordinates as fast as possible within 30 seconds!</p>
+              <div class="card-badges">
+                <span class="badge" style="background:#06b6d4; color:#000; font-weight:700;">Coordinates</span>
+                <span class="badge" style="background:rgba(255,255,255,0.1); color:white;">Speed</span>
+              </div>
+              <div class="card-best">Best: <span id="score-display-coordinates">—</span></div>
+            </div>
+
+            <!-- Flashed Board Recall -->
+            <div class="game-card recall-card" onclick="CK.arcade.startRecallGame()" style="--card-color: #a855f7;">
+              <div class="card-glow"></div>
+              <div class="game-new-badge">NEW</div>
+              <div class="game-icon">👁️</div>
+              <h3 class="card-title">Flashed Recall</h3>
+              <p class="card-desc">Memorize the piece positions in 3 seconds, then reconstruct them on the board!</p>
+              <div class="card-badges">
+                <span class="badge" style="background:#a855f7; color:white; font-weight:700;">Recall</span>
+                <span class="badge" style="background:rgba(255,255,255,0.1); color:white;">Memory</span>
+              </div>
+              <div class="card-best">Best: <span id="score-display-recall">—</span></div>
+            </div>
           </div>
 
           <!-- ======================== ARCADE OVERLAY ======================== -->
           <div id="arcade-overlay" class="arcade-overlay">
-            <div class="arcade-cabinet" id="arcade-cabinet-content">
-              <!-- Dynamically populated by JS depending on selected game -->
+            <div class="arcade-cabinet" style="position:relative;">
+              <div class="crt-scanline"></div>
+              <div class="crt-glow"></div>
+              <div id="arcade-cabinet-content">
+                <!-- Dynamically populated by JS depending on selected game -->
+              </div>
             </div>
           </div>
 
@@ -6443,7 +6603,9 @@
   <!-- Feature Modules -->
   <script defer src="assets/js/engine.js"></script>
   <script defer src="assets/js/engine-play.js"></script>
+  <script defer src="assets/js/multiplayer.js"></script>
   <script defer src="assets/js/classroom.js"></script>
+  <script defer src="assets/js/webrtc-stream.js"></script>
   <script defer src="assets/js/classes-system.js"></script>
   <script defer src="assets/js/schedule-pro.js"></script>
   <script defer src="assets/js/puzzles-pro.js"></script>
@@ -6477,16 +6639,39 @@
   <script defer src="assets/js/arcade.js"></script>
 
   <script>
-    // Vault helper functions
-    CK.openVaultSession = (title, coach) => {
+    CK.openVaultSession = (title, coach, videoUrl = '') => {
       const t = document.getElementById('vaultModalTitle');
       const c = document.getElementById('vaultModalCoach');
       if (t) t.textContent = title;
       if (c) c.textContent = 'Coach: ' + coach;
+      
+      const videoSim = document.getElementById('vaultVideoSim');
+      if (videoSim) {
+        if (videoUrl) {
+          videoSim.innerHTML = `
+            <video id="vaultRealVideo" controls autoplay style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px;">
+              <source src="${videoUrl}" type="video/webm">
+              Your browser does not support the video tag.
+            </video>
+          `;
+        } else {
+          videoSim.innerHTML = `
+            <div style="font-size: 4rem; margin-bottom: 12px;">📽️</div>
+            <div>Playing Masterclass Video Stream...</div>
+            <div id="vaultVideoTimestamp"
+              style="color: #d4af37; font-weight: bold; margin-top: 8px; font-size: 1.4rem;">02:15 / 45:20</div>
+          `;
+        }
+      }
+
       CK.openModal('vaultModal');
       CK.renderVaultBoard();
     };
     CK.closeVaultModal = () => {
+      const video = document.getElementById('vaultRealVideo');
+      if (video) {
+        try { video.pause(); } catch(e){}
+      }
       CK.closeModal('vaultModal');
     };
     CK.seekVaultMove = (time, moveText, analysis) => {

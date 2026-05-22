@@ -1627,13 +1627,31 @@ A.newGame = () => {
     coachMode = enabled;
   };
 
-A.setTimeControl = (timeVal) => {
-  selectedTimeControl = timeVal;
-  document.querySelectorAll('.timer-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.time === String(timeVal));
-  });
-  A.newGame();
-};
+  A.openChallengeModal = () => {
+    const overlay = document.getElementById('arena-challenge-overlay');
+    const modal = document.getElementById('arena-challenge-modal');
+    if (overlay) overlay.style.display = 'block';
+    if (modal) modal.style.display = 'block';
+  };
+
+  A.closeChallengeModal = () => {
+    const overlay = document.getElementById('arena-challenge-overlay');
+    const modal = document.getElementById('arena-challenge-modal');
+    if (overlay) overlay.style.display = 'none';
+    if (modal) modal.style.display = 'none';
+  };
+
+  A.setTimeControl = (timeVal) => {
+    selectedTimeControl = timeVal;
+    document.querySelectorAll('.timer-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.time === String(timeVal));
+    });
+  };
+
+  A.startCustomGame = () => {
+    A.closeChallengeModal();
+    A.newGame();
+  };
 
 /* ─── Hint System ─── */
 A.showHint = () => {
