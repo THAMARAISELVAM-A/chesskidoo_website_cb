@@ -687,8 +687,10 @@
       const moves = game.moves({ verbose: true });
       if (moves.length > 0) {
         move = game.move(moves[Math.floor(Math.random() * moves.length)]);
-      return;
+      }
     }
+
+    if (!move) return;
 
     if (move.captured) {
       if (move.color === 'w') {

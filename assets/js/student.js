@@ -826,19 +826,19 @@ CK.student = {
     const container = document.querySelector('#student-panel-vault .p-card-body');
     if (!container) return;
 
-    container.innerHTML = \`
+    container.innerHTML = `
       <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--p-text-muted);">
         <div class="p-spinner" style="margin: 0 auto 12px; width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--p-blue); border-radius: 50%; animation: spin 1s linear infinite;"></div>
         Loading synced class archives...
       </div>
-    \`;
+    `;
 
     try {
       const allDocs = await CK.db.getDocuments();
       const recordings = allDocs.filter(d => d.type === 'recording');
 
       if (recordings.length === 0) {
-        container.innerHTML = \`
+        container.innerHTML = `
           <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: var(--p-surface3); border: 1px dashed rgba(255,255,255,0.1); border-radius: 14px;">
             <div style="font-size: 3rem; margin-bottom: 16px;">📼</div>
             <h3 style="color: #fff; font-size: 1.15rem; margin-bottom: 8px;">No Synced Class Replays Yet</h3>
@@ -846,7 +846,7 @@ CK.student = {
               When your coach streams and completes a live session, the automated recording will appear here.
             </p>
           </div>
-        \`;
+        `;
         return;
       }
 
@@ -862,43 +862,43 @@ CK.student = {
         const btnClass = index % 2 === 0 ? 'p-btn-blue' : 'p-btn-gold';
         const pieceIcon = index % 3 === 0 ? '♟️' : (index % 3 === 1 ? '♛' : '♞');
         
-        return \`
+        return `
           <div class="p-card-vault-item"
             style="background: var(--p-surface3); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, border-color 0.2s;">
             <div
               style="position: relative; height: 160px; background: #0c1420; display:flex; align-items:center; justify-content:center; border-bottom: 1px solid rgba(255,255,255,0.1);">
-              <div style="font-size: 4rem;">\${pieceIcon}</div>
+              <div style="font-size: 4rem;">${pieceIcon}</div>
               <div
                 style="position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.8); color:#fff; font-size:0.75rem; padding:2px 8px; border-radius:4px;">
-                \${dateStr}</div>
+                ${dateStr}</div>
             </div>
             <div
               style="padding: 20px; flex: 1; display:flex; flex-direction:column; justify-content:space-between; gap: 12px;">
               <div>
-                <div class="p-badge \${badgeClass}" style="margin-bottom:8px;">\${_esc(rec.level || 'All Levels')}</div>
+                <div class="p-badge ${badgeClass}" style="margin-bottom:8px;">${_esc(rec.level || 'All Levels')}</div>
                 <h3 style="font-size:1.15rem; font-family:var(--font-display); color:#fff; margin-bottom:8px;">
-                  \${_esc(title)}</h3>
+                  ${_esc(title)}</h3>
                 <p style="font-size:0.85rem; color:var(--p-text-muted); margin-bottom:12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                  \${_esc(notes)}
+                  ${_esc(notes)}
                 </p>
-                <div style="font-size: 0.8rem; color: var(--p-text-muted);">Coach: <strong style="color: #fff;">\${_esc(coach)}</strong></div>
+                <div style="font-size: 0.8rem; color: var(--p-text-muted);">Coach: <strong style="color: #fff;">${_esc(coach)}</strong></div>
               </div>
-              <button class="p-btn \${btnClass}" style="width:100%; margin-top: auto;"
-                onclick="CK.openVaultSession('\${_esc(title.replace(/'/g, "\\\\'"))}', '\${_esc(coach.replace(/'/g, "\\\\'"))}', '\${_esc(link.replace(/'/g, "\\\\'"))}')">
+              <button class="p-btn ${btnClass}" style="width:100%; margin-top: auto;"
+                onclick="CK.openVaultSession('${_esc(title.replace(/'/g, "\\'"))}', '${_esc(coach.replace(/'/g, "\\'"))}', '${_esc(link.replace(/'/g, "\\'"))}')">
                 ▶ Study Session Replay
               </button>
             </div>
           </div>
-        \`;
+        `;
       }).join('');
 
     } catch (e) {
       console.error("[Student Vault] Error rendering replay vault:", e);
-      container.innerHTML = \`
+      container.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #ef4444;">
           ⚠️ Error loading synced class archives. Please try again.
         </div>
-      \`;
+      `;
     }
   },
 
