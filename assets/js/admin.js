@@ -1079,9 +1079,9 @@ CK.admin = {
       if (!password || password.length < 8) return CK.showToast('Initial password must be at least 8 characters', 'error');
 
       if (window.supabaseClient) {
-        const { data, error } = await window.supabaseClient.auth.signUp({ email, password });
+        const { data, error } = await CK.accessManager.setCredential(email, password);
         if (error) return CK.showToast('Auth account creation failed: ' + error.message, 'error');
-        authUid = data.user?.id || ('student-' + Date.now());
+        authUid = data?.user?.id || ('student-' + Date.now());
       } else {
         authUid = 'student-' + Date.now();
       }
@@ -1377,9 +1377,9 @@ CK.admin = {
     if (isNew && window.supabaseClient) {
       const password = getV('admin_c_password');
       if (!password || password.length < 8) return CK.showToast('Initial password must be at least 8 characters', 'error');
-      const { data, error } = await window.supabaseClient.auth.signUp({ email, password });
+      const { data, error } = await CK.accessManager.setCredential(email, password);
       if (error) return CK.showToast('Auth account creation failed: ' + error.message, 'error');
-      authUid = data.user?.id || ('coach-' + Date.now());
+      authUid = data?.user?.id || ('coach-' + Date.now());
     } else if (isNew) {
       authUid = 'coach-' + Date.now();
     }

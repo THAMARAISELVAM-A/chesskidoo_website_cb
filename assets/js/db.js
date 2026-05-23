@@ -901,11 +901,13 @@
       const auth = this._getAdminAuth();
       if (auth) {
         try {
-          await auth.signUp({ email: email.toLowerCase(), password });
+          return await auth.signUp({ email: email.toLowerCase(), password });
         } catch(e) {
           console.error("Supabase Auth Error:", e);
+          return { error: e };
         }
       }
+      return { error: new Error('Supabase client unavailable') };
     },
 
     async removeCredential(email) {
