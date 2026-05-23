@@ -332,8 +332,8 @@ CREATE POLICY "coach_own_assignments"
 CREATE POLICY "student_read_assignments"
   ON public.assignments FOR SELECT
   USING (
-    "assignedTo" = 'all'
-    OR "assignedTo" = (SELECT batch FROM public.users WHERE id = auth.uid()::text LIMIT 1)
+    'all' = ANY("assignedTo")
+    OR (SELECT batch FROM public.users WHERE id = auth.uid()::text LIMIT 1) = ANY("assignedTo")
   );
 
 -- =============================================================================
