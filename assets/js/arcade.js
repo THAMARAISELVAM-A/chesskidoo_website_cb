@@ -217,7 +217,7 @@ CK.arcade = (() => {
         if (piece) {
           const colorPrefix = piece.color === 'white' ? 'w' : 'b';
           const typeCode = piece.type.toLowerCase();
-          const imgSrc = `https://images.chesscomfiles.com/chess-themes/pieces/neo/150/${colorPrefix}${typeCode}.png`;
+          const imgSrc = `/assets/img/pieces/${colorPrefix}${typeCode}.png`;
           pieceHTML = `<div class="arcade-piece ${piece.color}" style="width:100%;height:100%;"><img src="${imgSrc}" style="width:85%;height:85%;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.5));pointer-events:none;"></div>`;
         }
         boardHTML += `
@@ -558,12 +558,12 @@ CK.arcade = (() => {
      GAME 3: CHESS MATCH-3 (MEMORY MATCHING)
      ========================================== */
   const MEMORY_PIECES = [
-    { code: 'K', img: 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wk.png' },
-    { code: 'Q', img: 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wq.png' },
-    { code: 'R', img: 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wr.png' },
-    { code: 'B', img: 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wb.png' },
-    { code: 'N', img: 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wn.png' },
-    { code: 'P', img: 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wp.png' }
+    { code: 'K', img: '/assets/img/pieces/wk.png' },
+    { code: 'Q', img: '/assets/img/pieces/wq.png' },
+    { code: 'R', img: '/assets/img/pieces/wr.png' },
+    { code: 'B', img: '/assets/img/pieces/wb.png' },
+    { code: 'N', img: '/assets/img/pieces/wn.png' },
+    { code: 'P', img: '/assets/img/pieces/wp.png' }
   ];
 
   ARC.startMemoryMatchGame = () => {
@@ -817,7 +817,7 @@ CK.arcade = (() => {
 
         let entityHTML = '';
         if (isKnight) {
-          entityHTML = '<div class="arcade-piece white" style="width:100%;height:100%;"><img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wn.png" style="width:85%;height:85%;pointer-events:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.5));"></div>';
+          entityHTML = '<div class="arcade-piece white" style="width:100%;height:100%;"><img src="/assets/img/pieces/wn.png" style="width:85%;height:85%;pointer-events:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.5));"></div>';
         } else if (isTarget) {
           entityHTML = '<div class="arcade-star">⭐</div>';
         }
@@ -1027,9 +1027,9 @@ CK.arcade = (() => {
 
         let entityHTML = '';
         if (isKing) {
-          entityHTML = '<div class="arcade-piece white" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wk.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;"></div>';
+          entityHTML = '<div class="arcade-piece white" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="/assets/img/pieces/wk.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;"></div>';
         } else if (hasPawn) {
-          entityHTML = '<div class="arcade-piece black" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/bp.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;"></div>';
+          entityHTML = '<div class="arcade-piece black" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="/assets/img/pieces/bp.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;"></div>';
         }
 
         boardHTML += `
@@ -1206,9 +1206,9 @@ CK.arcade = (() => {
 
         let entityHTML = '';
         if (isQueen) {
-          entityHTML = '<div class="arcade-piece white" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wq.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;"></div>';
+          entityHTML = '<div class="arcade-piece white" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="/assets/img/pieces/wq.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;"></div>';
         } else if (isTarget) {
-          entityHTML = '<div class="arcade-piece black" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/br.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none; filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.85));"></div>';
+          entityHTML = '<div class="arcade-piece black" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="/assets/img/pieces/br.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none; filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.85));"></div>';
         }
 
         boardHTML += `
@@ -1763,12 +1763,12 @@ CK.arcade = (() => {
         if (state.isMemorizing) {
           const piece = state.targetPieces[sq];
           if (piece) {
-            pieceHTML = `<img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/${piece}.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;">`;
+            pieceHTML = `<img src="/assets/img/pieces/${piece}.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;">`;
           }
         } else {
           const piece = state.userPieces[sq];
           if (piece) {
-            pieceHTML = `<img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/${piece}.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;">`;
+            pieceHTML = `<img src="/assets/img/pieces/${piece}.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;">`;
           }
         }
 
@@ -1812,7 +1812,7 @@ CK.arcade = (() => {
         <button class="arcade-palette-btn ${isSelected ? 'selected' : ''}" 
                 style="width:36px; height:36px; padding:2px; background:${isSelected ? 'rgba(6,182,212,0.18)' : 'rgba(255,255,255,0.03)'}; border:1px solid ${isSelected ? 'var(--p-blue)' : 'rgba(255,255,255,0.1)'}; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; box-shadow:${isSelected ? '0 0 10px rgba(6,182,212,0.3)' : 'none'};" 
                 onclick="CK.arcade.selectPalettePiece('${p.code}')" title="Place ${p.code.toUpperCase()}">
-          <img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/${p.icon}" style="width:100%; height:100%; object-fit:contain;">
+          <img src="/assets/img/pieces/${p.icon}" style="width:100%; height:100%; object-fit:contain;">
         </button>
       `;
     }).join('');

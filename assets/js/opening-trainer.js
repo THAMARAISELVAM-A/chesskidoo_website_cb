@@ -280,7 +280,7 @@ CK.openingTrainer = (() => {
 
       const board = Chessboard('otDrillBoard', {
         pieceTheme: function (piece) {
-          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+          return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
         },
         draggable: true,
         position: 'start',

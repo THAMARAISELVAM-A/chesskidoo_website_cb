@@ -254,7 +254,7 @@ CK.enginePlay = (() => {
     if (_pvBoard) { try { _pvBoard.destroy(); } catch(e) {} _pvBoard = null; }
     _pvBoard = Chessboard(boardId, {
       pieceTheme: function (piece) {
-        return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+        return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
       },
       position: 'start',
       orientation: playerColor,
@@ -291,7 +291,7 @@ CK.enginePlay = (() => {
     if (_pvBoard) { try { _pvBoard.destroy(); } catch(e) {} _pvBoard = null; }
     _pvBoard = Chessboard('pvBoard', {
       pieceTheme: function (piece) {
-        return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+        return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
       },
       position: _pvGame.fen(),
       orientation: myColor === 'w' ? 'white' : 'black',

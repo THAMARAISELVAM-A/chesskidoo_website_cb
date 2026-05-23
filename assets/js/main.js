@@ -834,7 +834,7 @@ ta: {
       this.game = new Chess();
       this.board = Chessboard(containerId, {
         pieceTheme: function (piece) {
-          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+          return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
         },
         position: 'start',
         orientation: this.orientation
@@ -932,7 +932,7 @@ ta: {
       if (this.board) { this.board.destroy(); this.board = null; }
       this.board = Chessboard(boardId, {
         pieceTheme: function (piece) {
-          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+          return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
         },
         position: this.game.fen(),
         orientation: this.orientation
@@ -1040,7 +1040,7 @@ ta: {
         if (this.board) { this.board.destroy(); this.board = null; }
         this.board = Chessboard(this._activeBoardId, {
           pieceTheme: function (piece) {
-            return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+            return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
           },
           position: 'start',
           orientation: this.orientation
@@ -1178,7 +1178,7 @@ ta: {
       if (this.board) { this.board.destroy(); this.board = null; }
       this.board = Chessboard(this._activeBoardId, {
         pieceTheme: function (piece) {
-          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+          return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
         },
         position: g.fen(),
         orientation: this.orientation
@@ -1192,7 +1192,7 @@ ta: {
       if (this.board) { this.board.destroy(); this.board = null; }
       this.board = Chessboard(this._activeBoardId, {
         pieceTheme: function (piece) {
-          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+          return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
         },
         position: g.fen(),
         orientation: 'white',
@@ -1266,7 +1266,7 @@ ta: {
       const self = this;
       this.board = Chessboard(this._activeBoardId, {
         pieceTheme: function (piece) {
-          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+          return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
         },
         position: 'start',
         orientation: 'white',

@@ -233,7 +233,7 @@ CK.puzzlesPro = (() => {
       if (!wrap) return;
       _pzBoard = Chessboard('pzProBoardWrap', {
         pieceTheme: function (piece) {
-          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+          return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
         },
         position: _pzGame.fen(),
         orientation: _pzGame.turn() === 'w' ? 'white' : 'black',

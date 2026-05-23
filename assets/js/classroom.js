@@ -147,7 +147,7 @@ CK.classroom = (() => {
     if (_hwBoard) { _hwBoard.destroy(); _hwBoard = null; }
     const cfg = {
       pieceTheme: function (piece) {
-        return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+        return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
       },
       position: 'start',
       orientation: 'white',
@@ -409,7 +409,7 @@ CK.classroom = (() => {
       if (!_liveBoard) {
         _liveBoard = Chessboard('scLiveBoard', {
           pieceTheme: function (piece) {
-            return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+            return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
           },
           position:    session.fen,
           orientation: session.orientation || 'white',
@@ -555,7 +555,7 @@ CK.classroom = (() => {
     requestAnimationFrame(() => {
       _ccLiveBoard = Chessboard('ccLiveBoard', {
         pieceTheme: function (piece) {
-          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+          return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
         },
         position:    liveFen,
         orientation: 'white',

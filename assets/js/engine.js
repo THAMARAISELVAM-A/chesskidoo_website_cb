@@ -26,7 +26,10 @@ CK.engine = (() => {
     if (_sfWorker) return;
     try {
       // Stockfish 16 Lite (single-threaded, no COOP/COEP needed)
-      const workerUrl = '/stockfish/src/stockfish-nnue-16-single.js';
+      const blob = new Blob([
+        "importScripts('https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js');"
+      ], { type: 'application/javascript' });
+      const workerUrl = URL.createObjectURL(blob);
       _sfWorker = new Worker(workerUrl);
       _sfWorker.addEventListener('message', _handleSfMessage);
       _sfWorker.postMessage('uci');
