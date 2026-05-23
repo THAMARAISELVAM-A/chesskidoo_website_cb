@@ -403,7 +403,7 @@
         if (piece) {
           const pieceEl = document.createElement('div');
           pieceEl.className = `a-piece piece-${piece.color}`;
-          pieceEl.innerHTML = `<img src="/assets/img/pieces/${piece.color}${piece.type.toLowerCase()}.png" style="width: 92%; height: 92%; filter: drop-shadow(0 4px 5px rgba(0,0,0,0.4)); pointer-events: none;" alt="${piece.type}">`;
+          pieceEl.innerHTML = `<img src="/assets/img/pieces/${piece.color}${piece.type.toLowerCase()}.png" style="width: 92%; height: 92%; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35)); pointer-events: none;" alt="${piece.type}">`;
           sqEl.appendChild(pieceEl);
         }
 

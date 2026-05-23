@@ -6552,13 +6552,16 @@
   <!-- Stockfish 18 WASM — Web Worker for Arena AI -->
   <script>
     (function() {
-      var SF_URL = '/stockfish/src/stockfish-nnue-16-single.js';
       window.Stockfish = function() {
         try {
+          var blob = new Blob([
+            "importScripts('https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js');"
+          ], { type: 'application/javascript' });
+          var SF_URL = URL.createObjectURL(blob);
           var worker = new Worker(SF_URL);
           var self = { onmessage: null };
           worker.addEventListener('message', function(e) {
-            if (self.onmessage) self.onmessage(e.data);
+            if (self.onmessage) self.onmessage(e);
           });
           self.postMessage = function(msg) { worker.postMessage(msg); };
           self.terminate = function() { worker.terminate(); };

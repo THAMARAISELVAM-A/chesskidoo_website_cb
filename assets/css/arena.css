@@ -625,7 +625,7 @@
   z-index: 2;
   position: relative;
   transition: transform 0.18s ease;
-  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.6));
+  filter: none;
   cursor: grab;
 }
 .a-piece svg {
@@ -634,14 +634,6 @@
   display: block;
 }
 .a-piece:active { cursor: grabbing; }
-
-/* Custom premium pieces colors */
-.a-piece.piece-w {
-  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.7));
-}
-.a-piece.piece-b {
-  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.9));
-}
 
 /* Coordinate labels */
 .arena-coords-left {
