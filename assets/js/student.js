@@ -1858,21 +1858,41 @@ CK.student = {
   },
 
   async onPaymentSuccess(response) {
-    const p = this.userProfile;
-    if (p) {
-      p.status = 'Paid';
-      p.last_txn_id = response.razorpay_payment_id || ('CK_TXN_' + Math.floor(1e8 + Math.random() * 9e8));
-      p.paid_date = new Date().toLocaleDateString('en-GB');
-      p.pay_method = 'Razorpay';
-      const _rd = new Date(); _rd.setMonth(_rd.getMonth() + 1); _rd.setDate(14);
-      p.due_date = _rd.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
-      await CK.db.saveProfile(p);
+    CK.showToast('Payment successful! Verifying securely with the bank...', 'info');
+    
+    // Polling logic to wait for the backend Webhook to update the DB securely
+    const studentId = this.userProfile?.id;
+    if (!studentId) return;
+
+    // Show a loading UI state if possible
+    const btn = document.getElementById('paySubmitBtn');
+    if (btn) {
+      btn.disabled = true;
+      const textSpan = btn.querySelector('.pay-btn-text');
+      if (textSpan) textSpan.textContent = 'Verifying Transaction...';
     }
-    CK.showToast('Payment successful! Your account has been updated.', 'success');
-    this.renderFeesGateway();
-    if (window.CK && CK.admin && typeof CK.admin.loadStudents === 'function') {
-      CK.admin.loadStudents();
-    }
+
+    let attempts = 0;
+    const maxAttempts = 15; // 30 seconds total
+    
+    const poll = setInterval(async () => {
+      attempts++;
+      // Re-fetch profile from database to see if Webhook updated it
+      const profile = await CK.db.getProfile(studentId);
+      
+      if (profile && profile.status === 'Paid') {
+        clearInterval(poll);
+        this.userProfile = profile;
+        CK.currentUser = profile;
+        localStorage.setItem('ck_user', JSON.stringify(profile));
+        CK.showToast('Verification complete! Your account is now securely Paid.', 'success');
+        this.renderFeesGateway();
+      } else if (attempts >= maxAttempts) {
+        clearInterval(poll);
+        CK.showToast('Verification is taking longer than expected. Please refresh the page in a few minutes.', 'warning');
+        if (btn) btn.disabled = false;
+      }
+    }, 2000);
   },
 
   // ── UPI PAYMENT FLOW ──────────────────────────────────────────────
