@@ -82,6 +82,20 @@ CK.engine = (() => {
         if (mateMatch)  _sfResolve.mate   = parseInt(mateMatch[1]);
         if (pvMatch)    _sfResolve.pv     = pvMatch[1].trim();
       }
+
+      // Progressive depth reporting callback
+      if (_sfResolve.onProgress && depthMatch) {
+        const intermediate = {
+          cp:     _sfResolve.cp    ?? null,
+          mate:   _sfResolve.mate  ?? null,
+          depth:  _sfResolve.depth || 0,
+          knodes: _sfResolve.knodes || 0,
+          pv:     _sfResolve.pv   || _sfResolve.bestmove || '',
+          pvs:    _sfResolve.pvs  || [],
+          source: 'local'
+        };
+        _sfResolve.onProgress(intermediate);
+      }
     }
   }
 
@@ -100,15 +114,15 @@ CK.engine = (() => {
     _sfResolve = null;
   }
 
-  function _evaluateLocal(fen) {
+  function _evaluateLocal(fen, onProgress) {
     return new Promise((resolve) => {
       if (!_sfWorker || !_sfReady) { resolve(null); return; }
-      // Cancel any pending eval
+      // Cancel any pending eval instantly to clean the queue
       if (_sfResolve) {
         _sfResolve.resolve(null);
         _sfResolve = null;
       }
-      _sfResolve = { resolve, cp: null, mate: null, depth: 0, knodes: 0, pv: '', bestmove: '', pvs: [] };
+      _sfResolve = { resolve, onProgress, cp: null, mate: null, depth: 0, knodes: 0, pv: '', bestmove: '', pvs: [] };
       _sfWorker.postMessage('stop');
       _sfWorker.postMessage('setoption name MultiPV value 3');
       _sfWorker.postMessage('ucinewgame');
@@ -148,9 +162,13 @@ CK.engine = (() => {
   }
 
   // ── Unified Evaluate (Cloud → Local fallback) ──
-  async function evaluate(fen) {
+  async function evaluate(fen, onProgress) {
     if (!fen || fen === 'start') return null;
-    if (_cache.has(fen)) return _cache.get(fen);
+    if (_cache.has(fen)) {
+      const cached = _cache.get(fen);
+      if (onProgress) onProgress(cached);
+      return cached;
+    }
     if (_inFlight.has(fen)) return null;
     _inFlight.add(fen);
 
@@ -158,9 +176,11 @@ CK.engine = (() => {
       // Try cloud first (faster, deeper)
       let result = await _evaluateCloud(fen);
 
-      // If cloud failed, try local WASM
-      if (!result && _sfWorker && _sfReady) {
-        result = await _evaluateLocal(fen);
+      // If cloud resolved, feed the progress callback immediately
+      if (result) {
+        if (onProgress) onProgress(result);
+      } else if (_sfWorker && _sfReady) {
+        result = await _evaluateLocal(fen, onProgress);
       }
 
       if (result) {
@@ -174,10 +194,10 @@ CK.engine = (() => {
   }
 
   // Force local evaluation (for offline or deeper analysis)
-  async function evaluateLocal(fen) {
+  async function evaluateLocal(fen, onProgress) {
     if (!fen || fen === 'start') return null;
     if (!_sfWorker) _initLocalEngine();
-    return _evaluateLocal(fen);
+    return _evaluateLocal(fen, onProgress);
   }
 
   function formatScore(cp, mate) {

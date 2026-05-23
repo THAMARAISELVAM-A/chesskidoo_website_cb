@@ -1108,7 +1108,15 @@
     // 2. Evaluate after move (relative to opponent, so negate it for player's perspective)
     testGame.move(playerSan);
     const fenAfter = testGame.fen();
-    const resultAfter = await CK.engine.evaluate(fenAfter);
+    const resultAfter = await CK.engine.evaluate(fenAfter, (progress) => {
+      if (progress) {
+        let cpOpponentProg = progress.cp !== null ? progress.cp : (progress.mate ? progress.mate * 10000 : 0);
+        let playerEvalAfterProg = -cpOpponentProg;
+        let absoluteCpProg = isWhite ? playerEvalAfterProg : -playerEvalAfterProg;
+        const displayEvalProg = absoluteCpProg / 100;
+        updateEngineDisplay(displayEvalProg, progress.depth, progress.pv ? [progress.pv] : []);
+      }
+    });
     let cpOpponent = resultAfter ? (resultAfter.cp !== null ? resultAfter.cp : (resultAfter.mate ? resultAfter.mate * 10000 : 0)) : 0;
     
     let playerEvalAfter = -cpOpponent;
@@ -1668,107 +1676,213 @@
     const certId = 'CK-' + now.getFullYear() + '-' + Math.random().toString(36).substring(2, 8).toUpperCase();
     const savedName = localStorage.getItem('ck_player_name') || '';
     
-    // Determine title and ribbon color
     const isWin = result === 'win';
     const titleText = isWin ? 'Certificate of Victory' : (result === 'draw' ? 'Certificate of Merit' : 'Certificate of Participation');
-    const ribbonColor = isWin ? '#fbbf24' : (result === 'draw' ? '#94a3b8' : '#f87171');
+    const ribbonColor = isWin ? '#d4af37' : (result === 'draw' ? '#b0b8c3' : '#e07a5f');
     const gradeColor = grade === 'S' ? '#fbbf24' : (grade === 'A' ? '#a78bfa' : (grade === 'B' ? '#38bdf8' : (grade === 'C' ? '#4ade80' : '#f87171')));
 
-    const planMap = {'Beginner': 'Pawn Vanguard (Beginner Class)', 'Intermediate': 'Knight Riders (Intermediate Class)', 'Advanced': 'Rook Castle (Advanced Class)', 'Grandmaster': 'Master Class (Elite)', 'Master': 'Master Class (Elite)'};
+    const planMap = {
+      'Beginner': 'Pawn Vanguard (Beginner Class)', 
+      'Intermediate': 'Knight Riders (Intermediate Class)', 
+      'Advanced': 'Rook Castle (Advanced Class)', 
+      'Grandmaster': 'Master Class (Elite)', 
+      'Master': 'Master Class (Elite)'
+    };
     const suggestedPlan = planMap[currentDifficulty] || 'Pawn Vanguard (Beginner Class)';
 
     overlay.innerHTML = `
-      <div class="cert-modal" style="background: transparent; box-shadow: none;">
-        <div class="cert-premium-container" style="background: #fff; padding: 12px; border-radius: 4px; box-shadow: 0 40px 100px rgba(0,0,0,0.8), 0 0 0 2px #d4af37, 0 0 0 8px rgba(255,255,255,0.1);">
-          <div class="cert-premium-inner" style="border: 2px solid #d4af37; padding: 40px; position: relative; background: linear-gradient(135deg, #fffcf5, #fff); text-align: center; min-width: 500px; max-width: 600px;">
+      <div class="cert-perspective-container">
+        <div class="cert-card">
+          <!-- Holographic specular layer -->
+          <div class="cert-holo-overlay"></div>
+          
+          <!-- Guilloche gold border -->
+          <svg class="cert-guilloche-border" viewBox="0 0 800 560" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#bf953f" />
+                <stop offset="25%" stop-color="#fcf6ba" />
+                <stop offset="50%" stop-color="#b38728" />
+                <stop offset="75%" stop-color="#fbf5b7" />
+                <stop offset="100%" stop-color="#aa771c" />
+              </linearGradient>
+            </defs>
+            <!-- Repeating geometric borders -->
+            <rect x="15" y="15" width="770" height="530" fill="none" stroke="url(#goldGradient)" stroke-width="2" rx="10"/>
+            <rect x="22" y="22" width="756" height="516" fill="none" stroke="url(#goldGradient)" stroke-width="0.75" stroke-dasharray="6,4" rx="8"/>
+            <rect x="26" y="26" width="748" height="508" fill="none" stroke="url(#goldGradient)" stroke-width="0.5" rx="6"/>
             
-            <!-- Ornate Corners -->
-            <svg style="position: absolute; top: 8px; left: 8px; width: 40px; height: 40px; fill: none; stroke: #d4af37; stroke-width: 1.5;" viewBox="0 0 100 100"><path d="M 0 100 L 0 0 L 100 0" /><circle cx="20" cy="20" r="10"/></svg>
-            <svg style="position: absolute; top: 8px; right: 8px; width: 40px; height: 40px; fill: none; stroke: #d4af37; stroke-width: 1.5; transform: rotate(90deg);" viewBox="0 0 100 100"><path d="M 0 100 L 0 0 L 100 0" /><circle cx="20" cy="20" r="10"/></svg>
-            <svg style="position: absolute; bottom: 8px; left: 8px; width: 40px; height: 40px; fill: none; stroke: #d4af37; stroke-width: 1.5; transform: rotate(-90deg);" viewBox="0 0 100 100"><path d="M 0 100 L 0 0 L 100 0" /><circle cx="20" cy="20" r="10"/></svg>
-            <svg style="position: absolute; bottom: 8px; right: 8px; width: 40px; height: 40px; fill: none; stroke: #d4af37; stroke-width: 1.5; transform: rotate(180deg);" viewBox="0 0 100 100"><path d="M 0 100 L 0 0 L 100 0" /><circle cx="20" cy="20" r="10"/></svg>
+            <!-- Corner Accents -->
+            <!-- Top-Left -->
+            <path d="M 15,45 L 45,15 M 15,55 L 55,15 M 15,65 L 65,15" stroke="url(#goldGradient)" stroke-width="0.5" fill="none"/>
+            <!-- Top-Right -->
+            <path d="M 785,45 L 755,15 M 785,55 L 745,15 M 785,65 L 735,15" stroke="url(#goldGradient)" stroke-width="0.5" fill="none"/>
+            <!-- Bottom-Left -->
+            <path d="M 15,515 L 45,545 M 15,505 L 55,545 M 15,495 L 65,545" stroke="url(#goldGradient)" stroke-width="0.5" fill="none"/>
+            <!-- Bottom-Right -->
+            <path d="M 785,515 L 755,545 M 785,505 L 745,545 M 785,495 L 735,545" stroke="url(#goldGradient)" stroke-width="0.5" fill="none"/>
+            
+            <!-- Geometric Guilloche Waves -->
+            <!-- Top Wave -->
+            <path d="M 30,35 Q 80,25 130,35 T 230,35 T 330,35 T 430,35 T 530,35 T 630,35 T 730,35 T 770,35" fill="none" stroke="url(#goldGradient)" stroke-width="0.5" opacity="0.65"/>
+            <path d="M 30,38 Q 80,48 130,38 T 230,38 T 330,38 T 430,38 T 530,38 T 630,38 T 730,38 T 770,38" fill="none" stroke="url(#goldGradient)" stroke-width="0.5" opacity="0.65"/>
+            <!-- Bottom Wave -->
+            <path d="M 30,525 Q 80,515 130,525 T 230,525 T 330,525 T 430,525 T 530,525 T 630,525 T 730,525 T 770,525" fill="none" stroke="url(#goldGradient)" stroke-width="0.5" opacity="0.65"/>
+            <path d="M 30,522 Q 80,532 130,522 T 230,522 T 330,522 T 430,522 T 530,522 T 630,522 T 730,522 T 770,522" fill="none" stroke="url(#goldGradient)" stroke-width="0.5" opacity="0.65"/>
+          </svg>
 
-            <!-- Header -->
-            <div style="font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 900; color: #111; letter-spacing: 2px; margin-bottom: 4px;">
-              CHESS<span style="color: #d4af37;">KIDOO</span>
+          <!-- Academy Header -->
+          <div class="cert-academy-title">CHESSKIDOO ACADEMY</div>
+          <div class="cert-subtitle-top">Arena of Artificial Intelligence</div>
+
+          <!-- Crest -->
+          <svg class="cert-crest" viewBox="0 0 100 100">
+            <!-- Laurel Wreath -->
+            <path d="M 50,82 C 30,78 22,60 25,42 C 27,32 35,22 45,17" fill="none" stroke="url(#goldGradient)" stroke-width="1.8"/>
+            <path d="M 50,82 C 70,78 78,60 75,42 C 73,32 65,22 55,17" fill="none" stroke="url(#goldGradient)" stroke-width="1.8"/>
+            <path d="M 25,42 Q 21,39 24,35 Q 28,37 25,42 M 27,51 Q 23,48 26,44 Q 30,46 27,51 M 31,60 Q 27,57 30,53 Q 34,55 31,60 M 37,69 Q 33,66 36,62 Q 40,64 37,69 M 75,42 Q 79,39 76,35 Q 72,37 75,42 M 73,51 Q 77,48 74,44 Q 70,46 73,51 M 69,60 Q 73,57 70,53 Q 66,55 69,60 M 63,69 Q 67,66 64,62 Q 60,64 63,69" fill="url(#goldGradient)"/>
+            <!-- Shield -->
+            <path d="M 50,22 C 60,22 66,25 66,40 C 66,58 50,73 50,73 C 50,73 34,58 34,40 C 34,25 40,22 50,22 Z" fill="none" stroke="url(#goldGradient)" stroke-width="2"/>
+            <!-- Crossed Kings -->
+            <path d="M 44,53 L 48,53 L 47,40 L 50,42 L 44,32 L 39,42 L 42,40 Z" fill="url(#goldGradient)"/>
+            <path d="M 56,53 L 52,53 L 53,40 L 50,42 L 56,32 L 61,42 L 58,40 Z" fill="url(#goldGradient)"/>
+            <circle cx="50" cy="48" r="3" fill="url(#goldGradient)"/>
+          </svg>
+
+          <!-- Document Title -->
+          <h1 class="cert-main-title">${titleText}</h1>
+
+          <p class="cert-congratulations">This diploma is proudly awarded to</p>
+
+          <!-- Input area for Name -->
+          <div class="cert-input-wrap">
+            <input type="text" id="cert-player-name" placeholder="Enter Your Name" value="${savedName.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}">
+            <div class="cert-input-line"></div>
+          </div>
+
+          <!-- Description paragraph -->
+          <p class="cert-description">
+            For outstanding strategic performance in the Arena, defeating the <strong>${currentDifficulty}</strong> engine personality with a precision rating of <strong>${accuracy}%</strong> over a sequence of <strong>${moveHistory.length} moves</strong>.
+          </p>
+
+          <!-- Premium Statistics & Info Grid -->
+          <div class="cert-stats-grid">
+            <div class="cert-stat-box" style="text-align: right;">
+              <span class="cert-stat-label">Tactical Grade</span>
+              <span class="cert-stat-large" style="color: ${gradeColor};">${grade}</span>
             </div>
-            <div style="font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 4px; margin-bottom: 24px;">Artificial Intelligence Arena</div>
-
-            <!-- Title -->
-            <h1 style="font-family: 'Playfair Display', serif; font-size: 40px; font-weight: 900; color: #d4af37; margin: 0 0 24px 0; letter-spacing: 1px; line-height: 1.2;">
-              ${titleText}
-            </h1>
-
-            <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: #555; margin-bottom: 12px; font-style: italic;">Proudly presented to</p>
-
-            <!-- Player Name -->
-            <div class="cert-input-section" style="margin-bottom: 32px;">
-              <input type="text" id="cert-player-name" placeholder="Enter your name" value="${savedName.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}" style="width: 80%; text-align: center; padding: 12px; border: none; border-bottom: 2px solid #d4af37; background: transparent; font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; color: #111; outline: none; margin-bottom: 8px;">
+            <div class="cert-stat-divider"></div>
+            <div class="cert-stat-box" style="text-align: center;">
+              <span class="cert-stat-label">Next Rank Pathway</span>
+              <span class="cert-stat-value">${suggestedPlan}</span>
             </div>
-
-            <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: #444; line-height: 1.6; max-width: 440px; margin: 0 auto 32px;">
-              For demonstrating exceptional tactical awareness and strategic thinking against the <strong>${currentDifficulty}</strong> AI engine, achieving an accuracy rating of <strong>${accuracy}%</strong> over <strong>${moveHistory.length} moves</strong>.
-            </p>
-
-            <!-- Grade & Details Grid -->
-            <div style="display: flex; justify-content: center; align-items: center; gap: 40px; margin-bottom: 40px;">
-              <div style="text-align: right; flex: 1;">
-                <div style="font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Performance Grade</div>
-                <div style="font-family: 'Playfair Display', serif; font-size: 64px; font-weight: 900; color: ${gradeColor}; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">${grade}</div>
+            <div class="cert-stat-divider"></div>
+            <div class="cert-stat-box" style="text-align: left;">
+              <div style="margin-bottom: 8px;">
+                <span class="cert-stat-label" style="display:inline-block; margin-bottom:2px;">Awarded Date</span>
+                <span class="cert-stat-date-id">${dateStr}</span>
               </div>
-              <div style="width: 1px; height: 80px; background: #e5e7eb;"></div>
-              <div style="text-align: left; flex: 1.5;">
-                <div style="font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Suggested Next Step</div>
-                <div style="font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 700; color: #d4af37;">${suggestedPlan}</div>
-              </div>
-              <div style="width: 1px; height: 80px; background: #e5e7eb;"></div>
-              <div style="text-align: left; flex: 1;">
-                <div style="margin-bottom: 12px;">
-                  <div style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px;">Date</div>
-                  <div style="font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; color: #111;">${dateStr}</div>
-                </div>
-                <div>
-                  <div style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px;">Certificate ID</div>
-                  <div style="font-family: 'Courier New', monospace; font-size: 13px; font-weight: 600; color: #111;">${certId}</div>
-                </div>
+              <div>
+                <span class="cert-stat-label" style="display:inline-block; margin-bottom:2px;">Verification Hash</span>
+                <span class="cert-stat-date-id" style="font-family: monospace; font-size: 0.75rem; letter-spacing: 0;">${certId}</span>
               </div>
             </div>
+          </div>
 
-            <!-- Signatures -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px; padding: 0 20px;">
-              <div style="text-align: center;">
-                <div style="width: 120px; border-bottom: 1px solid #333; margin-bottom: 8px;"></div>
-                <div style="font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px;">Stockfish 16</div>
+          <!-- Signatures Footer -->
+          <div class="cert-footer-row">
+            <!-- Left Signature: Engine -->
+            <div class="cert-sig-block">
+              <div class="cert-sig-blank">
+                <span class="cert-ai-signature">Stockfish 10</span>
               </div>
-              
-              <!-- Ribbon Seal -->
-              <div style="position: relative; width: 60px; height: 60px; background: ${ribbonColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15), inset 0 0 0 2px #fff, inset 0 0 0 4px rgba(0,0,0,0.1);">
-                <span style="font-size: 24px;">♛</span>
-                <!-- Ribbon Tails -->
-                <div style="position: absolute; top: 100%; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; z-index: -1;">
-                  <div style="width: 12px; height: 24px; background: ${ribbonColor}; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%); opacity: 0.9;"></div>
-                  <div style="width: 12px; height: 32px; background: ${ribbonColor}; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 85%, 0 100%); opacity: 0.9;"></div>
-                </div>
-              </div>
-              
-              <div style="text-align: center;">
-                <div style="font-family: 'Playfair Display', serif; font-size: 20px; font-style: italic; color: #111; margin-bottom: -4px;">C. Kidoo</div>
-                <div style="width: 120px; border-bottom: 1px solid #333; margin-bottom: 8px;"></div>
-                <div style="font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px;">Arena Director</div>
-              </div>
+              <div class="cert-sig-underline"></div>
+              <span class="cert-sig-title">AI Engine Arbitrator</span>
             </div>
 
+            <!-- Central Seal (Foil & Ribbon) -->
+            <div class="cert-seal-wrap">
+              <div class="cert-foil-seal" style="border-color: ${ribbonColor}; box-shadow: 0 8px 20px rgba(0,0,0,0.15), inset 0 0 0 2px #fff, inset 0 0 20px ${ribbonColor};">
+                <div class="cert-seal-crown">♛</div>
+              </div>
+              <div class="cert-seal-ribbon-tail-1" style="background: ${ribbonColor};"></div>
+              <div class="cert-seal-ribbon-tail-2" style="background: ${ribbonColor};"></div>
+            </div>
+
+            <!-- Right Signature: Director -->
+            <div class="cert-sig-block">
+              <div class="cert-sig-blank" style="position: relative;">
+                <!-- Animated SVG Signature -->
+                <svg class="cert-sig-svg" viewBox="0 0 150 50">
+                  <path class="sig-path" d="M 15,28 C 25,8 35,12 30,32 C 27,42 20,48 30,38 C 40,28 55,18 50,32 C 48,38 52,35 60,28 C 67,20 73,25 70,32 C 68,35 72,33 77,29 C 82,25 87,26 85,32 C 83,35 87,32 93,29 C 99,26 105,27 103,32 C 101,35 110,27 120,22 C 130,17 135,24 130,34 C 125,44 115,48 125,40 C 135,32 150,30 145,38" fill="none" stroke="#2c3e50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="cert-sig-underline"></div>
+              <span class="cert-sig-title">Academy Director</span>
+            </div>
           </div>
         </div>
-        
-        <div style="margin-top: 24px; display: flex; gap: 16px; justify-content: center;">
-          <button class="report-btn report-btn-secondary" onclick="CK.arena.closeCertificate()" style="background: rgba(255,255,255,0.1); color: #fff;">Close</button>
-          <button class="report-btn report-btn-primary" onclick="CK.arena.printCertificate()" style="background: #d4af37; color: #111;"><span style="margin-right: 8px;">🖨️</span> Print Certificate</button>
-        </div>
+      </div>
+
+      <div class="cert-action-bar">
+        <button class="cert-action-btn btn-secondary" onclick="CK.arena.closeCertificate()">Close</button>
+        <button class="cert-action-btn btn-primary" onclick="CK.arena.printCertificate()">🖨️ Print Certificate</button>
       </div>
     `;
 
     overlay.classList.add('active');
+
+    // Trigger handwriting signature path animation after slight delay
+    setTimeout(() => {
+      const cardEl = document.querySelector('.cert-card');
+      if (cardEl) {
+        cardEl.classList.add('animate-sig');
+      }
+    }, 400);
+
+    // Dynamic 3D mouse tilt tracking and specular shimmer movement
+    const card = document.querySelector('.cert-card');
+    if (card) {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const w = rect.width;
+        const h = rect.height;
+
+        const px = x / w;
+        const py = y / h;
+
+        const rotateY = ((px - 0.5) * 16).toFixed(2);
+        const rotateX = (-(py - 0.5) * 16).toFixed(2);
+
+        card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+
+        const holo = card.querySelector('.cert-holo-overlay');
+        if (holo) {
+          holo.style.backgroundPosition = `${px * 100}% ${py * 100}%`;
+          const dist = Math.sqrt(Math.pow(px - 0.5, 2) + Math.pow(py - 0.5, 2));
+          holo.style.opacity = (0.1 + dist * 0.75).toFixed(2);
+        }
+      });
+
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'rotateX(0deg) rotateY(0deg)';
+        const holo = card.querySelector('.cert-holo-overlay');
+        if (holo) {
+          holo.style.backgroundPosition = '0% 0%';
+          holo.style.opacity = '0';
+        }
+      });
+    }
+
+    // Bind input listener to save the name to localStorage
+    const input = document.getElementById('cert-player-name');
+    if (input) {
+      input.addEventListener('input', (e) => {
+        localStorage.setItem('ck_player_name', e.target.value);
+      });
+    }
   };
 
   A.closeReport = () => {
@@ -1782,13 +1896,59 @@
   };
 
   A.printCertificate = () => {
-    const certHtml = document.querySelector('#cert-overlay .cert-modal');
+    const certHtml = document.querySelector('#cert-overlay .cert-card');
     if (!certHtml) return;
     const printWindow = window.open('', '_blank');
     if (!printWindow) { CK.showToast('Please allow popups to print.', 'warning'); return; }
     const doc = printWindow.document;
     doc.open();
-    doc.write(`<html><head><title>ChessKidoo Certificate</title><style>@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@400;600&display=swap');@page{size:landscape;margin:0;}body{font-family:'Inter',sans-serif;margin:0;padding:40px;background:#fffcf5;display:flex;justify-content:center;align-items:center;min-height:100vh;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.print-container{background:#fff;padding:40px;border:2px solid #d4af37;position:relative;width:800px;text-align:center;}.cert-input-section input{border:none!important;border-bottom:2px solid #d4af37!important;background:transparent!important;}</style></head><body><div class="print-container">${certHtml.innerHTML.replace(/<input[^>]*value="([^"]*)"[^>]*>/, '<div style="font-family:\'Playfair Display\',serif;font-size:36px;font-weight:700;color:#111;margin-bottom:8px;border-bottom:2px solid #d4af37;padding-bottom:8px;">$1</div>')}</div></body></html>`);
+    doc.write(`<html><head><title>ChessKidoo Certificate</title><style>
+      @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Cormorant+Garamond:ital,wght@1,500;1,700&family=Montserrat:wght@400;600;700&display=swap');
+      @page { size: landscape; margin: 0; }
+      body { font-family: 'Montserrat', sans-serif; margin: 0; padding: 40px; background: #fffcf5; display: flex; justify-content: center; align-items: center; min-height: 100vh; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .cert-card { background: #fffdf5; border-radius: 12px; position: relative; padding: 36px 48px; width: 800px; height: 560px; box-sizing: border-box; text-align: center; border: 2px solid rgba(212, 175, 55, 0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+      .cert-guilloche-border { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+      .cert-academy-title { font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: 700; color: #1a1a1a; letter-spacing: 4px; margin-bottom: 2px; }
+      .cert-subtitle-top { font-family: 'Montserrat', sans-serif; font-size: 0.75rem; text-transform: uppercase; color: #777; letter-spacing: 3px; margin-bottom: 12px; }
+      .cert-crest { width: 70px; height: 70px; margin-bottom: 10px; }
+      .cert-main-title { font-family: 'Cinzel', serif; font-size: 2.2rem; font-weight: 900; color: #d4af37; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 2px; }
+      .cert-congratulations { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.1rem; color: #555; margin: 0 0 10px 0; }
+      .cert-input-wrap { margin-bottom: 18px; width: 70%; text-align: center; }
+      .cert-input-wrap div { font-family: 'Cormorant Garamond', serif; font-size: 2.4rem; font-weight: 700; font-style: italic; color: #111; border-bottom: 2px solid #d4af37; padding-bottom: 4px; margin: 0 auto; width: 100%; text-align: center; }
+      .cert-description { font-family: 'Montserrat', sans-serif; font-size: 0.85rem; line-height: 1.6; color: #444; max-width: 580px; margin: 0 auto 20px; }
+      .cert-stats-grid { display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 24px; width: 100%; }
+      .cert-stat-box { display: flex; flex-direction: column; flex: 1; }
+      .cert-stat-label { font-size: 0.65rem; text-transform: uppercase; color: #888; letter-spacing: 1px; margin-bottom: 4px; }
+      .cert-stat-large { font-family: 'Cinzel', serif; font-size: 2rem; font-weight: 900; line-height: 1; }
+      .cert-stat-value { font-family: 'Montserrat', sans-serif; font-size: 0.9rem; font-weight: 700; color: #d4af37; }
+      .cert-stat-date-id { font-size: 0.8rem; font-weight: 600; color: #222; }
+      .cert-stat-divider { width: 1px; height: 45px; background: #e5e7eb; }
+      .cert-footer-row { display: flex; width: 100%; justify-content: space-between; align-items: flex-end; padding: 0 20px; margin-top: 10px; box-sizing: border-box; }
+      .cert-sig-block { display: flex; flex-direction: column; align-items: center; width: 150px; }
+      .cert-sig-blank { height: 40px; display: flex; align-items: flex-end; justify-content: center; width: 100%; }
+      .cert-ai-signature { font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 600; color: #555; }
+      .cert-sig-underline { width: 100%; height: 1px; background: #333; margin-top: 4px; margin-bottom: 4px; }
+      .cert-sig-title { font-size: 0.65rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+      .cert-sig-svg { width: 120px; height: 40px; }
+      .sig-path { fill: none; stroke: #2c3e50; stroke-width: 2; }
+      .cert-seal-wrap { position: relative; width: 60px; height: 60px; margin-bottom: -10px; }
+      .cert-foil-seal { width: 50px; height: 50px; background: #d4af37; border-radius: 50%; border: 2px solid #d4af37; display: flex; align-items: center; justify-content: center; margin: 0 auto; }
+      .cert-seal-crown { font-size: 20px; color: #fff; }
+      .cert-seal-ribbon-tail-1, .cert-seal-ribbon-tail-2 { position: absolute; top: 35px; width: 10px; height: 25px; background: #d4af37; z-index: -1; }
+      .cert-seal-ribbon-tail-1 { left: 16px; transform: rotate(15deg); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%); }
+      .cert-seal-ribbon-tail-2 { right: 16px; transform: rotate(-15deg); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%); }
+    </style></head><body>
+      <div class="cert-card">${certHtml.innerHTML.replace(/<input[^>]*value="([^"]*)"[^>]*>/, '<div>$1</div>')}</div>
+    </body></html>`);
+    doc.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
+  };
+
+  A.closeCertificate = () => {
+    const overlay = document.getElementById('cert-overlay');
+    if (overlay) overlay.classList.remove('active');
+  };air Display\',serif;font-size:36px;font-weight:700;color:#111;margin-bottom:8px;border-bottom:2px solid #d4af37;padding-bottom:8px;">$1</div>')}</div></body></html>`);
     doc.close();
     printWindow.focus();
     setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
