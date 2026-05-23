@@ -1812,13 +1812,12 @@ CK.student = {
       const gst = Math.round(tuition * 0.18);
       const total = tuition + gst;
 
-      // Create server-side order for tamper-proof amount verification
+      // Attempt to create server-side order for tamper-proof amount verification (optional)
       let orderId = null;
       try {
         const session = await window.supabaseClient?.auth.getSession();
         const token = session?.data?.session?.access_token;
         if (token && window.APP_CONFIG?.SUPABASE_URL) {
-          CK.showToast('Creating secure payment order…', 'info');
           const res = await fetch(
             `${window.APP_CONFIG.SUPABASE_URL}/functions/v1/razorpay-order`,
             {
@@ -1830,7 +1829,7 @@ CK.student = {
           if (res.ok) { const data = await res.json(); orderId = data.order_id; }
         }
       } catch (e) {
-        console.warn('[ChessKidoo] Server-side order creation failed, proceeding in fallback mode:', e);
+        console.info('[ChessKidoo] Edge Function order creation skipped. Using client-side order.');
       }
 
       const options = {

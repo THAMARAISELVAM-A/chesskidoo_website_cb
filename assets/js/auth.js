@@ -228,4 +228,26 @@
     }, 400);
   };
 
+  // ── Global Auth State Listener for Password Recovery ──
+  if (window.supabaseClient) {
+    window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setTimeout(async () => {
+          const newPassword = prompt("Please enter your NEW password (minimum 8 characters):");
+          if (newPassword && newPassword.length >= 8) {
+            const { error } = await window.supabaseClient.auth.updateUser({ password: newPassword });
+            if (error) {
+              CK.showToast("Failed to update password: " + error.message, "error");
+            } else {
+              CK.showToast("Password updated successfully! You can now log in.", "success");
+              await CK.logout();
+            }
+          } else {
+            CK.showToast("Password must be at least 8 characters. Please refresh the page to try again.", "error");
+          }
+        }, 1000); // Give the UI a moment to load
+      }
+    });
+  }
+
 })();
