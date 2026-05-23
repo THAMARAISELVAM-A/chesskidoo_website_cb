@@ -8,46 +8,7 @@
   const CK = window.CK = window.CK || {};
   const A = CK.arena = {};
 
-  /* ─── Audio System ─── */
-  let audioCtx = null;
-  A.initAudio = () => {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-  };
-  A.playMoveSound = () => {
-    if (!audioCtx) return;
-    try {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.1);
-    } catch(e) {}
-  };
-  A.playTickSound = () => {
-    if (!audioCtx) return;
-    try {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.05);
-      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.05);
-    } catch(e) {}
-  };
-
-  /* ─── State ─── */
+  /* ─── State & Visual Toggles ─── */
   let game = null;
   let boardEl = null;
   let selectedSq = null;
@@ -55,6 +16,14 @@
   let currentDifficulty = 'Intermediate';
   let currentStyle = 'Balanced';
   let coachMode = false;
+  let audioCoachEnabled = false;
+  let threatMapEnabled = false;
+  let safetyRadarEnabled = false;
+  let selectedCoachId = 'magnus';
+  let blunderReplayMode = false;
+  let blunderReplayList = [];
+  let blunderReplayIdx = 0;
+  
   let isPlayerTurn = true;
   let isGameOver = false;
   let isThinking = false;
@@ -81,6 +50,271 @@
   let quickMoveState = null;
   let memoryGameState = null;
   let gameTimer = null;
+
+  /* ─── Coaches Database ─── */
+  const COACHES = {
+    magnus: {
+      id: 'magnus',
+      name: 'Magnus Carlsen',
+      emoji: '👑',
+      style: 'Balanced',
+      avatar: '👑',
+      desc: 'Balanced and ultra-precise positional play.',
+      voicePitch: 0.9,
+      voiceRate: 0.95,
+      commentaryGreeting: "Hello! Let's play a high-accuracy match. Think carefully before each move.",
+      commentaryBlunder: "Hmm, that was a blunder. Positional weaknesses will be punished.",
+      commentaryBrilliant: "Excellent move! That shows strong tactical vision.",
+      commentaryWin: "Checkmate! Well played, you held up well.",
+      commentaryLoss: "That is checkmate. Keep studying the endgames."
+    },
+    tal: {
+      id: 'tal',
+      name: 'Mikhail Tal',
+      emoji: '🪄',
+      style: 'Aggressive',
+      avatar: '🪄',
+      desc: 'Hyper-aggressive attacker. Prefers sharp sacrifices!',
+      voicePitch: 1.1,
+      voiceRate: 1.05,
+      commentaryGreeting: "Prepare for complications! Let the storm begin!",
+      commentaryBlunder: "Ah! A mistake! In chess, you must seize the initiative, not give it away!",
+      commentaryBrilliant: "Beautiful! A sacrifice worthy of Riga! Magnificent!",
+      commentaryWin: "Yes, mate! What a wild battle that was!",
+      commentaryLoss: "Magnificent! You attacked brilliantly. You win!"
+    },
+    petrosian: {
+      id: 'petrosian',
+      name: 'Tigran Petrosian',
+      emoji: '🛡️',
+      style: 'Defensive',
+      avatar: '🛡️',
+      desc: 'The Iron Tiger. Safety-first prophylaxis.',
+      voicePitch: 0.85,
+      voiceRate: 0.85,
+      commentaryGreeting: "Welcome. Safety is the key. Let us build a secure position.",
+      commentaryBlunder: "Careful! You left a piece undefended. Secure your perimeter.",
+      commentaryBrilliant: "Impressive prophylaxis. You protected all escape squares.",
+      commentaryWin: "Checkmate. The fortress holds, and the counter-attack succeeds.",
+      commentaryLoss: "Congratulations. You found a crack in my shield."
+    },
+    beth: {
+      id: 'beth',
+      name: 'Beth Harmon',
+      emoji: '👩‍🦰',
+      style: 'Tactical',
+      avatar: '👩‍🦰',
+      desc: 'Prodigy who strikes with sharp tactics.',
+      voicePitch: 1.0,
+      voiceRate: 0.95,
+      commentaryGreeting: "Let's see what you've got. I'm playing to win.",
+      commentaryBlunder: "That was a bad blunder. Did you miss the threat?",
+      commentaryBrilliant: "Wow, impressive! That was a sharp tactical blow.",
+      commentaryWin: "Checkmate. A clean finish, good try though.",
+      commentaryLoss: "Wow, you got me. Excellent tactical play."
+    }
+  };
+
+  /* ─── Upgraded Audio System (Acoustic Physical Modeling) ─── */
+  let audioCtx = null;
+  A.initAudio = () => {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  };
+
+  A.playMoveSound = (isCapture = false) => {
+    if (!audioCtx) return;
+    try {
+      A.initAudio();
+      const now = audioCtx.currentTime;
+      
+      // Base wooden knock impact (sine sweep)
+      const osc1 = audioCtx.createOscillator();
+      const gain1 = audioCtx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(180, now);
+      osc1.frequency.exponentialRampToValueAtTime(70, now + 0.05);
+      gain1.gain.setValueAtTime(isCapture ? 0.6 : 0.4, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+      
+      osc1.connect(gain1);
+      gain1.connect(audioCtx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.05);
+
+      // High click transient frequency component
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(1000, now);
+      osc2.frequency.exponentialRampToValueAtTime(400, now + 0.015);
+      gain2.gain.setValueAtTime(isCapture ? 0.35 : 0.2, now);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
+      
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      osc2.start(now);
+      osc2.stop(now + 0.015);
+
+      // capture play secondary strike wood rattle
+      if (isCapture) {
+        setTimeout(() => {
+          if (!audioCtx) return;
+          const now2 = audioCtx.currentTime;
+          const osc3 = audioCtx.createOscillator();
+          const gain3 = audioCtx.createGain();
+          osc3.type = 'sine';
+          osc3.frequency.setValueAtTime(130, now2);
+          osc3.frequency.exponentialRampToValueAtTime(50, now2 + 0.04);
+          gain3.gain.setValueAtTime(0.25, now2);
+          gain3.gain.exponentialRampToValueAtTime(0.001, now2 + 0.04);
+          osc3.connect(gain3);
+          gain3.connect(audioCtx.destination);
+          osc3.start(now2);
+          osc3.stop(now2 + 0.04);
+        }, 35);
+      }
+    } catch(e) {}
+  };
+
+  A.playTickSound = () => {
+    if (!audioCtx) return;
+    try {
+      A.initAudio();
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const filter = audioCtx.createBiquadFilter();
+      const gain = audioCtx.createGain();
+      
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(2500, now);
+      osc.frequency.exponentialRampToValueAtTime(1200, now + 0.008);
+      
+      filter.type = 'highpass';
+      filter.frequency.setValueAtTime(1800, now);
+      
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.008);
+      
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.start(now);
+      osc.stop(now + 0.008);
+    } catch(e) {}
+  };
+
+  A.playChime = (type) => {
+    if (!audioCtx) return;
+    try {
+      A.initAudio();
+      const now = audioCtx.currentTime;
+      
+      if (type === 'win') {
+        const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+        notes.forEach((freq, idx) => {
+          const time = now + (idx * 0.12);
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, time);
+          gain.gain.setValueAtTime(0.25, time);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(time);
+          osc.stop(time + 0.4);
+        });
+      } else if (type === 'loss') {
+        const notes = [392.00, 311.13, 261.63, 196.00]; // G4, Eb4, C4, G3
+        notes.forEach((freq, idx) => {
+          const time = now + (idx * 0.15);
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, time);
+          gain.gain.setValueAtTime(0.25, time);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(time);
+          osc.stop(time + 0.55);
+        });
+      } else {
+        const notes = [261.63, 293.66, 329.63]; // C4, D4, E4
+        notes.forEach((freq, idx) => {
+          const time = now + (idx * 0.12);
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, time);
+          gain.gain.setValueAtTime(0.2, time);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.4);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(time);
+          osc.stop(time + 0.45);
+        });
+      }
+    } catch(e) {}
+  };
+
+  /* ─── Upgraded Audio Coach (Text-to-Speech) ─── */
+  A.speakCoach = (text) => {
+    if (!audioCoachEnabled || !window.speechSynthesis) return;
+    try {
+      window.speechSynthesis.cancel();
+      const coach = COACHES[selectedCoachId] || COACHES.magnus;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.pitch = coach.voicePitch || 1.0;
+      utterance.rate = coach.voiceRate || 1.0;
+      
+      const voices = window.speechSynthesis.getVoices();
+      const englishVoice = voices.find(v => v.lang.startsWith('en-'));
+      if (englishVoice) utterance.voice = englishVoice;
+      
+      window.speechSynthesis.speak(utterance);
+    } catch(e) {
+      console.warn("Speech synthesis failed:", e);
+    }
+  };
+
+  /* ─── Helpers for Threat Map & Safety Radar ─── */
+  function calculateThreats() {
+    const threats = {};
+    const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    for (let r = 1; r <= 8; r++) {
+      for (let f of files) {
+        const sq = f + r;
+        const attackedByWhite = game.attacked('w', sq);
+        const attackedByBlack = game.attacked('b', sq);
+        threats[sq] = { w: attackedByWhite, b: attackedByBlack };
+      }
+    }
+    return threats;
+  }
+
+  function calculateVulnerablePieces() {
+    const vulnerable = {};
+    const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    const opponentColor = playerColor === 'w' ? 'b' : 'w';
+    
+    for (let r = 1; r <= 8; r++) {
+      for (let f of files) {
+        const sq = f + r;
+        const piece = game.get(sq);
+        if (piece && piece.color === playerColor) {
+          const isAttacked = game.attacked(opponentColor, sq);
+          if (isAttacked) {
+            const isDefended = game.attacked(playerColor, sq);
+            vulnerable[sq] = isDefended ? 'attacked' : 'hanging';
+          }
+        }
+      }
+    }
+    return vulnerable;
+  }
 
   const DIFFICULTY_DEPTH = { Beginner: 1, Intermediate: 2, Advanced: 3, Expert: 4 };
   const PIECE_VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
@@ -125,6 +359,21 @@
     puzzleMode = false;
     quickMoveState = null;
     memoryGameState = null;
+    blunderReplayMode = false;
+
+    // Load visual/audio toggles
+    audioCoachEnabled = localStorage.getItem('ck_audio_coach') === 'true';
+    threatMapEnabled = localStorage.getItem('ck_threat_map') === 'true';
+    safetyRadarEnabled = localStorage.getItem('ck_safety_radar') === 'true';
+    selectedCoachId = localStorage.getItem('ck_selected_coach_id') || 'magnus';
+    
+    // Sync UI elements
+    const acEl = document.getElementById('arena-audio-coach');
+    const tmEl = document.getElementById('arena-threat-map');
+    const srEl = document.getElementById('arena-safety-radar');
+    if (acEl) acEl.checked = audioCoachEnabled;
+    if (tmEl) tmEl.checked = threatMapEnabled;
+    if (srEl) srEl.checked = safetyRadarEnabled;
 
     game = new Chess();
     boardEl = document.getElementById('arena-board');
@@ -152,6 +401,8 @@
     awaitingAIMove = false;
     achievements = JSON.parse(localStorage.getItem('ck_achievements') || '[]');
 
+    A.selectCoach(selectedCoachId); // sync Opponent and setup grid UI
+
     renderBoard();
     renderAnalysisPanel();
     updateStatus('Your turn — play as White');
@@ -165,6 +416,11 @@
     initEvalChart();
     A.updateMinimaxAnalysis = () => {};
     A.updateMinimaxAnalysis();
+    
+    // Speak coach greeting
+    setTimeout(() => {
+      A.speakCoach(COACHES[selectedCoachId].commentaryGreeting);
+    }, 600);
   };
 
   function handleTimeout(loserColor) {
@@ -181,6 +437,8 @@
 
     updateStatus(resultText, 'gameover');
     checkAchievements(result);
+    saveGameToHistory(result);
+    A.playChime(result);
 
     setTimeout(() => {
       showPostGameReport(result);
@@ -391,6 +649,9 @@
     }
     boardEl.innerHTML = '';
 
+    const threats = threatMapEnabled ? calculateThreats() : null;
+    const vulnerable = safetyRadarEnabled ? calculateVulnerablePieces() : null;
+
     for (let rank = 0; rank < 8; rank++) {
       for (let file = 0; file < 8; file++) {
         const sq = String.fromCharCode(97 + file) + (8 - rank);
@@ -399,10 +660,26 @@
         sqEl.className = `a-sq ${isLight ? 'light' : 'dark'}`;
         sqEl.dataset.square = sq;
 
+        // Apply Threat Map overlays
+        if (threats && threats[sq]) {
+          const t = threats[sq];
+          if (t.w && !t.b) sqEl.classList.add('threat-white');
+          else if (!t.w && t.b) sqEl.classList.add('threat-black');
+          else if (t.w && t.b) sqEl.classList.add('threat-contested');
+        }
+
         const piece = game.get(sq);
         if (piece) {
           const pieceEl = document.createElement('div');
           pieceEl.className = `a-piece piece-${piece.color}`;
+
+          // Apply Safety Radar highlights on user's pieces
+          if (vulnerable && vulnerable[sq] && piece.color === playerColor) {
+            const v = vulnerable[sq];
+            if (v === 'hanging') pieceEl.classList.add('safety-hanging');
+            else if (v === 'attacked') pieceEl.classList.add('safety-attacked');
+          }
+
           pieceEl.innerHTML = `<img src="/assets/img/pieces/${piece.color}${piece.type.toLowerCase()}.png" style="width: 92%; height: 92%; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35)); pointer-events: none;" alt="${piece.type}">`;
           sqEl.appendChild(pieceEl);
         }
@@ -505,6 +782,29 @@
   async function executePlayerMove(move) {
     if (isGameOver || isThinking || !isPlayerTurn) return;
 
+    if (blunderReplayMode) {
+      const blunder = blunderReplayList[blunderReplayIdx];
+      const playedUci = move.from + move.to + (move.promotion || '');
+      const isCorrect = playedUci === blunder.bestMove;
+      
+      if (isCorrect) {
+        game.move(move);
+        renderBoard();
+        A.playChime('win');
+        CK.showToast("Correct! That is the best move.", "success");
+        updateStatus("Correct! Loading next...");
+        isThinking = true;
+        setTimeout(() => {
+          loadBlunder(blunderReplayIdx + 1);
+        }, 1500);
+      } else {
+        A.playChime('loss');
+        CK.showToast("Incorrect move! Try again.", "error");
+        updateStatus(`Incorrect! Try again to find a better move than ${blunder.playedMove}`);
+      }
+      return;
+    }
+
     if (puzzleMode) {
       if (!A.checkPuzzleSolution(move.san)) return;
     }
@@ -517,6 +817,7 @@
       quickMoveState.solved = true;
       game.move(move);
       renderBoard();
+      A.playMoveSound(!!move.captured);
       CK.showToast('Correct!', 'success');
       if (gameTimer) clearInterval(gameTimer);
       setTimeout(() => A.startQuickMove(), 2000);
@@ -544,12 +845,22 @@
     });
 
     renderBoard();
+    A.playMoveSound(!!moveResult.captured);
     isPlayerTurn = false;
     isThinking = true;
     updateStatus('Coach is analyzing...', 'info');
 
     // Await engine eval for classification
     const evalObj = await getEvalForPosition(fenBefore, moveResult.san);
+
+    // Speak commentary on major classifications
+    if (evalObj) {
+      if (evalObj.classification === 'blunder') {
+        A.speakCoach(COACHES[selectedCoachId].commentaryBlunder);
+      } else if (evalObj.classification === 'brilliant') {
+        A.speakCoach(COACHES[selectedCoachId].commentaryBrilliant);
+      }
+    }
 
     // COACH MODE CHECK
     if (coachMode && evalObj && evalObj.classification === 'blunder') {
@@ -625,7 +936,6 @@
         if (res.ok) {
           const data = await res.json();
           if (data.moves && data.moves.length > 0) {
-            // Pick randomly from the top 2 master moves
             const topMoves = data.moves.slice(0, 2);
             const choice = topMoves[Math.floor(Math.random() * topMoves.length)];
             makeAIMove(choice.uci);
@@ -646,8 +956,8 @@
     if (result && result.pvs && result.pvs.length > 0) {
       let chosenMoveStr = result.pvs[0].pv.split(' ')[0]; // Balanced default
 
-      // AI Personality Logic (Aggressive / Defensive)
-      if (currentStyle !== 'Balanced' && result.pvs.length > 1) {
+      // AI Personality Logic
+      if (selectedCoachId !== 'magnus' && result.pvs.length > 1) {
         const topCp = result.pvs[0].cp !== null ? result.pvs[0].cp : (result.pvs[0].mate ? result.pvs[0].mate * 1000 : 0);
         let bestCandidate = result.pvs[0];
         let bestScore = -Infinity;
@@ -656,8 +966,7 @@
           const pvObj = result.pvs[i];
           const cp = pvObj.cp !== null ? pvObj.cp : (pvObj.mate ? pvObj.mate * 1000 : 0);
           
-          // Only consider moves within 80 centipawns of the absolute best move to prevent blundering
-          if (Math.abs(topCp - cp) <= 80) {
+          if (Math.abs(topCp - cp) <= 120) {
             const firstMove = pvObj.pv.split(' ')[0];
             
             const testGame = new Chess(fen);
@@ -666,27 +975,31 @@
             
             if (moveData) {
               let styleScore = 0;
-              if (currentStyle === 'Aggressive') {
-                if (moveData.captured) styleScore += 50;
-                if (moveData.flags.includes('p')) styleScore += 30; // promotion
+              if (selectedCoachId === 'tal') {
+                if (moveData.captured) styleScore += 60;
+                if (moveData.flags.includes('p')) styleScore += 40;
                 testGame.move(moveData);
-                if (testGame.in_check()) styleScore += 40;
+                if (testGame.in_check()) styleScore += 50;
                 testGame.undo();
                 
                 const isWhite = testGame.turn() === 'w';
                 const rankFrom = parseInt(moveData.from[1]);
                 const rankTo = parseInt(moveData.to[1]);
-                if (isWhite && rankTo > rankFrom) styleScore += 10;
-                if (!isWhite && rankTo < rankFrom) styleScore += 10;
-              } else if (currentStyle === 'Defensive') {
-                if (!moveData.captured) styleScore += 20;
-                if (moveData.flags.includes('c') || moveData.flags.includes('k') || moveData.flags.includes('q')) styleScore += 50; // castling
+                if (isWhite && rankTo > rankFrom) styleScore += 15;
+                if (!isWhite && rankTo < rankFrom) styleScore += 15;
+              } else if (selectedCoachId === 'petrosian') {
+                if (!moveData.captured) styleScore += 30;
+                if (moveData.flags.includes('c') || moveData.flags.includes('k') || moveData.flags.includes('q')) styleScore += 70;
                 
                 const isWhite = testGame.turn() === 'w';
                 const rankFrom = parseInt(moveData.from[1]);
                 const rankTo = parseInt(moveData.to[1]);
-                if (isWhite && rankTo <= rankFrom) styleScore += 20;
-                if (!isWhite && rankTo >= rankFrom) styleScore += 20;
+                if (isWhite && rankTo <= rankFrom) styleScore += 25;
+                if (!isWhite && rankTo >= rankFrom) styleScore += 25;
+              } else if (selectedCoachId === 'beth') {
+                if (['d4', 'e4', 'd5', 'e5'].includes(moveData.to)) styleScore += 40;
+                if (moveData.piece === 'q') styleScore += 25;
+                if (moveData.captured) styleScore += 30;
               }
               
               if (styleScore > bestScore) {
@@ -753,6 +1066,7 @@
     evalHistory.push(evalHistory.length > 0 ? evalHistory[evalHistory.length - 1] : 0);
 
     renderBoard();
+    A.playMoveSound(!!move.captured);
     renderAnalysisPanel();
     
     // Deduct exact thinking time from AI clock if we have a valid aiStartTime
@@ -914,6 +1228,8 @@
 
     updateStatus(resultText, 'gameover');
     checkAchievements(result);
+    saveGameToHistory(result);
+    A.playChime(result);
 
     setTimeout(() => {
       showPostGameReport(result);
@@ -1201,6 +1517,9 @@
         <div class="arena-report-actions">
           <button class="report-btn report-btn-secondary" onclick="CK.arena.closeReport()">Close</button>
           <button class="report-btn report-btn-secondary" onclick="CK.arena.playAgain()">Play Again</button>
+          ${(counts.blunder + counts.mistake) > 0 ? `
+          <button class="report-btn report-btn-primary" onclick="CK.arena.startBlunderReplay()" style="background:linear-gradient(135deg, var(--arena-purple), #8b5cf6); border:none; color:white; box-shadow:0 0 15px rgba(139,92,246,0.4);">💡 Practice Blunders</button>
+          ` : ''}
           <button class="report-btn report-btn-primary" onclick="CK.arena.showCertificate('${result}', '${grade}', '${gradeClass}', ${accuracy})">🏆 View Certificate</button>
         </div>
       </div>
@@ -1487,6 +1806,8 @@ A.resignGame = () => {
   isThinking = false;
   if (clockInterval) clearInterval(clockInterval);
   updateStatus('You resigned — AI Wins', 'gameover');
+  saveGameToHistory('loss');
+  A.playChime('loss');
   setTimeout(() => showPostGameReport('loss'), 800);
 };
 
@@ -1496,6 +1817,8 @@ A.offerDraw = () => {
   isThinking = false;
   if (clockInterval) clearInterval(clockInterval);
   updateStatus('Game Drawn by agreement', 'gameover');
+  saveGameToHistory('draw');
+  A.playChime('draw');
   setTimeout(() => showPostGameReport('draw'), 800);
 };
 
@@ -1523,6 +1846,283 @@ A.newGame = () => {
   A.toggleCoach = (enabled) => {
     coachMode = enabled;
   };
+
+  A.toggleAudioCoach = (enabled) => {
+    audioCoachEnabled = enabled;
+    localStorage.setItem('ck_audio_coach', enabled);
+  };
+
+  A.toggleThreatMap = (enabled) => {
+    threatMapEnabled = enabled;
+    renderBoard();
+    localStorage.setItem('ck_threat_map', enabled);
+  };
+
+  A.toggleSafetyRadar = (enabled) => {
+    safetyRadarEnabled = enabled;
+    renderBoard();
+    localStorage.setItem('ck_safety_radar', enabled);
+  };
+
+  A.selectCoach = (coachId) => {
+    if (!COACHES[coachId]) return;
+    selectedCoachId = coachId;
+    currentStyle = COACHES[coachId].style;
+    localStorage.setItem('ck_selected_coach_id', coachId);
+    
+    // Update active cards in Challenge setup modal
+    document.querySelectorAll('.coach-select-card').forEach(card => {
+      card.classList.toggle('active', card.dataset.coach === coachId);
+    });
+    
+    // Update Current Opponent info on sidebar
+    const nameEl = document.getElementById('arena-current-coach-name');
+    const styleEl = document.getElementById('arena-current-coach-style');
+    const avatarEl = document.getElementById('arena-current-coach-avatar');
+    
+    if (nameEl) nameEl.textContent = COACHES[coachId].name;
+    if (styleEl) styleEl.textContent = COACHES[coachId].style;
+    if (avatarEl) avatarEl.textContent = COACHES[coachId].emoji;
+  };
+
+  A.switchTab = (tab) => {
+    const movesEl = document.getElementById('arena-move-list');
+    const logEl = document.getElementById('arena-match-log');
+    const movesTabBtn = document.getElementById('arena-tab-moves');
+    const logTabBtn = document.getElementById('arena-tab-history');
+
+    if (tab === 'moves') {
+      if (movesEl) movesEl.style.display = 'block';
+      if (logEl) logEl.style.display = 'none';
+      if (movesTabBtn) movesTabBtn.classList.add('active');
+      if (logTabBtn) logTabBtn.classList.remove('active');
+    } else {
+      if (movesEl) movesEl.style.display = 'none';
+      if (logEl) logEl.style.display = 'block';
+      if (movesTabBtn) movesTabBtn.classList.remove('active');
+      if (logTabBtn) logTabBtn.classList.add('active');
+      A.renderMatchHistory();
+    }
+  };
+
+  A.renderMatchHistory = () => {
+    const logEl = document.getElementById('arena-match-log');
+    if (!logEl) return;
+
+    const history = JSON.parse(localStorage.getItem('ck_arena_history') || '[]');
+    
+    if (history.length === 0) {
+      logEl.innerHTML = `<div style="color:var(--arena-text-muted); font-size:0.75rem; text-align:center; padding:40px 0;">No matches played yet. Play a game to log your progress!</div>`;
+      return;
+    }
+
+    const total = history.length;
+    const wins = history.filter(h => h.result === 'win').length;
+    const draws = history.filter(h => h.result === 'draw').length;
+    const winRate = Math.round(((wins + draws * 0.5) / total) * 100);
+    const avgAccuracy = Math.round(history.reduce((sum, h) => sum + h.accuracy, 0) / total);
+
+    let html = `
+      <div class="match-log-summary">
+        <div class="match-log-summary-box">
+          <div class="match-log-summary-val">${total}</div>
+          <div class="match-log-summary-lbl">Played</div>
+        </div>
+        <div class="match-log-summary-box" style="border-left:1px solid rgba(255,255,255,0.05); border-right:1px solid rgba(255,255,255,0.05);">
+          <div class="match-log-summary-val">${winRate}%</div>
+          <div class="match-log-summary-lbl">Win Rate</div>
+        </div>
+        <div class="match-log-summary-box">
+          <div class="match-log-summary-val">${avgAccuracy}%</div>
+          <div class="match-log-summary-lbl">Avg Acc</div>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+    `;
+
+    history.forEach((h, idx) => {
+      const resLabel = h.result === 'win' ? 'Win' : h.result === 'loss' ? 'Loss' : 'Draw';
+      html += `
+        <div class="match-log-item">
+          <div class="ml-left">
+            <span style="font-size:1.3rem;">${h.avatar || '🤖'}</span>
+            <div>
+              <div class="ml-opponent">${h.opponent}</div>
+              <div class="ml-meta">${h.difficulty} · ${h.moves} moves · ${h.date}</div>
+            </div>
+          </div>
+          <div class="ml-right">
+            <div class="ml-accuracy">${h.accuracy}%</div>
+            <span class="ml-result-badge ${h.result}">${resLabel}</span>
+            <button class="ml-pgn-btn" onclick="CK.arena.downloadPGN(${idx})" title="Download PGN">📥</button>
+          </div>
+        </div>
+      `;
+    });
+
+    html += '</div>';
+    logEl.innerHTML = html;
+  };
+
+  A.downloadPGN = (idx) => {
+    const history = JSON.parse(localStorage.getItem('ck_arena_history') || '[]');
+    const record = history[idx];
+    if (!record || !record.pgn) return;
+
+    const blob = new Blob([record.pgn], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chesskidoo_${record.opponent.toLowerCase().replace(/ /g, '_')}_${record.date.replace(/ /g, '_')}.pgn`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    CK.showToast("PGN file downloaded successfully!", "success");
+  };
+
+  A.startBlunderReplay = () => {
+    A.closeReport();
+    blunderReplayList = [];
+    for (let i = 0; i < moveHistory.length; i++) {
+      const hist = classificationHistory[i] || {};
+      const move = moveHistory[i];
+      if (move.color === playerColor && (hist.classification === 'blunder' || hist.classification === 'mistake')) {
+        const fenBefore = i === 0 ? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' : moveHistory[i - 1].fen;
+        blunderReplayList.push({
+          index: i,
+          fenBefore,
+          playedMove: move.san,
+          bestMove: hist.bestMove,
+          classification: hist.classification
+        });
+      }
+    }
+    
+    if (blunderReplayList.length === 0) {
+      CK.showToast("No blunders to practice in this game!", "info");
+      return;
+    }
+    
+    blunderReplayMode = true;
+    blunderReplayIdx = 0;
+    
+    const banner = document.getElementById('blunder-replay-banner');
+    if (banner) banner.style.display = 'flex';
+    
+    loadBlunder(0);
+  };
+
+  function loadBlunder(idx) {
+    if (idx >= blunderReplayList.length) {
+      CK.showToast("All blunders corrected! Fantastic job!", "success");
+      A.exitBlunderReplay();
+      setTimeout(() => {
+        showPostGameReport(moveHistory[moveHistory.length - 1]?.color === playerColor ? 'win' : 'loss');
+      }, 1000);
+      return;
+    }
+    
+    blunderReplayIdx = idx;
+    const blunder = blunderReplayList[idx];
+    
+    game = new Chess(blunder.fenBefore);
+    isPlayerTurn = true;
+    isGameOver = false;
+    isThinking = false;
+    selectedSq = null;
+    legalMoves = [];
+    
+    renderBoard();
+    
+    const textEl = document.getElementById('blunder-replay-text');
+    if (textEl) {
+      textEl.textContent = `Blunder ${idx + 1} of ${blunderReplayList.length}: Find a better move than ${blunder.playedMove}!`;
+    }
+    
+    updateStatus(`Practice: Find a better move than ${blunder.playedMove}`);
+    A.speakCoach("Find a better move in this position.");
+  }
+
+  A.exitBlunderReplay = () => {
+    blunderReplayMode = false;
+    const banner = document.getElementById('blunder-replay-banner');
+    if (banner) banner.style.display = 'none';
+    A.init();
+  };
+
+  function saveGameToHistory(result) {
+    const totalMoves = moveHistory.length;
+    const classifications = classificationHistory.map(c => c.classification);
+    const weights = { brilliant: 1, best: 1, excellent: 0.9, good: 0.7, inaccuracy: 0.4, mistake: 0.2, blunder: 0 };
+    let totalWeight = 0;
+    classifications.forEach(c => { totalWeight += weights[c] || 0.5; });
+    const accuracy = classifications.length > 0 ? Math.round((totalWeight / classifications.length) * 100) : 50;
+
+    let grade;
+    if (accuracy >= 90) grade = 'S';
+    else if (accuracy >= 75) grade = 'A';
+    else if (accuracy >= 60) grade = 'B';
+    else if (accuracy >= 40) grade = 'C';
+    else grade = 'D';
+
+    const pgn = generatePGN(result);
+
+    const matchRecord = {
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      opponent: COACHES[selectedCoachId].name,
+      avatar: COACHES[selectedCoachId].emoji,
+      difficulty: currentDifficulty,
+      result,
+      accuracy,
+      moves: totalMoves,
+      grade,
+      pgn
+    };
+
+    const history = JSON.parse(localStorage.getItem('ck_arena_history') || '[]');
+    history.unshift(matchRecord);
+    if (history.length > 50) history.pop();
+    localStorage.setItem('ck_arena_history', JSON.stringify(history));
+
+    A.renderMatchHistory();
+    
+    // Speak post-game result
+    setTimeout(() => {
+      if (result === 'win') {
+        A.speakCoach(COACHES[selectedCoachId].commentaryLoss);
+      } else if (result === 'loss') {
+        A.speakCoach(COACHES[selectedCoachId].commentaryWin);
+      } else {
+        A.speakCoach("The game is a draw. Good fight.");
+      }
+    }, 800);
+  }
+
+  function generatePGN(result) {
+    const pgnHeaders = [
+      `[Event "ChessKidoo AI Arena Match"]`,
+      `[Site "ChessKidoo Academy"]`,
+      `[Date "${new Date().toISOString().slice(0, 10).replace(/-/g, '.')}"]`,
+      `[Round "1"]`,
+      `[White "Player"]`,
+      `[Black "${COACHES[selectedCoachId].name}"]`,
+      `[Result "${result === 'win' ? '1-0' : result === 'loss' ? '0-1' : '1/2-1/2'}"]`,
+      `[Difficulty "${currentDifficulty}"]`,
+      `[Style "${COACHES[selectedCoachId].style}"]`
+    ];
+
+    let moveText = '';
+    for (let i = 0; i < moveHistory.length; i++) {
+      if (i % 2 === 0) {
+        moveText += `${Math.floor(i / 2) + 1}. `;
+      }
+      moveText += `${moveHistory[i].san} `;
+    }
+    moveText += result === 'win' ? '1-0' : result === 'loss' ? '0-1' : '1/2-1/2';
+
+    return pgnHeaders.join('\n') + '\n\n' + moveText;
+  }
 
   A.openChallengeModal = () => {
     const overlay = document.getElementById('arena-challenge-overlay');

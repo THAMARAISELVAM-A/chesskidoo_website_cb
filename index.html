@@ -5456,13 +5456,31 @@
                 <span class="arena-coord">h</span>
               </div>
             </div>
-            <div style="flex: 1; min-width: 250px; margin-left: 16px; display: flex; flex-direction: column; height: 100%; max-height: min(500px, 80vw);">          <!-- Move List -->
-          <div class="arena-panel">
-            <div class="arena-panel-header">Move History</div>
-            <div class="arena-move-list" id="arena-move-list"></div>
-          </div></div>
+            <div style="flex: 1; min-width: 250px; margin-left: 16px; display: flex; flex-direction: column; height: 100%; max-height: min(500px, 80vw);">          <!-- Move List & Match Log -->
+              <div class="arena-panel" style="display:flex; flex-direction:column; height:100%;">
+                <div class="arena-panel-header" style="display:flex; justify-content:space-between; align-items:center; padding: 4px 8px;">
+                  <div class="arena-tabs" style="display:flex; gap:6px;">
+                    <button class="arena-tab-btn active" id="arena-tab-moves" onclick="CK.arena.switchTab('moves')">Moves</button>
+                    <button class="arena-tab-btn" id="arena-tab-history" onclick="CK.arena.switchTab('history')">Match Log</button>
+                  </div>
+                </div>
+                <div class="arena-move-list" id="arena-move-list" style="flex:1;"></div>
+                <div class="arena-match-log" id="arena-match-log" style="display:none; flex:1; overflow-y:auto; padding:12px;"></div>
+              </div>
+            </div>
           </div>
 
+          <!-- Blunder Replay Prompt -->
+          <div class="blunder-replay-banner" id="blunder-replay-banner" style="display:none; background: linear-gradient(135deg, #1e1b4b 0%, #311042 100%); border: 1px solid var(--arena-purple); padding: 12px 16px; border-radius: 12px; margin-bottom: 12px; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(167, 95, 250, 0.2); margin-top: 10px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:1.4rem;">💡</span>
+              <div style="text-align:left;">
+                <div style="font-size:0.85rem; font-weight:700; color:#fff;">Practice Blunder Mode</div>
+                <div id="blunder-replay-text" style="font-size:0.75rem; color:var(--arena-text-muted);">Blunder 1 of 3: Find a better move than g7-g5!</div>
+              </div>
+            </div>
+            <button onclick="CK.arena.exitBlunderReplay()" style="background:rgba(255,255,255,0.08); border:none; color:#fff; font-size:0.75rem; font-weight:700; padding:6px 12px; border-radius:6px; cursor:pointer;">Exit</button>
+          </div>
           <!-- Status -->
           <div class="arena-status" id="arena-status">Your turn — play as White</div>
 
@@ -5492,20 +5510,50 @@
         <div class="arena-analysis-col">
           <!-- AI Settings -->
           <div class="arena-panel" style="padding: 16px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
               <span style="font-size:0.75rem; font-weight:700; color:var(--arena-text-muted); text-transform:uppercase; letter-spacing:0.08em;">AI Settings</span>
-              <div class="coach-toggle" style="display:flex; align-items:center; gap:6px;">
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:#e2e8f0; font-size:0.75rem; font-weight:600;">Coach Mode</span>
                 <label class="switch" style="position:relative; display:inline-block; width:34px; height:20px;">
                   <input type="checkbox" id="arena-coach-mode" onchange="CK.arena.toggleCoach(this.checked)" style="opacity:0; width:0; height:0;">
                   <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#334155; transition:.4s; border-radius:34px;"></span>
                 </label>
-                <label for="arena-coach-mode" style="color:#e2e8f0; font-size:0.75rem; font-weight:600; cursor:pointer;">Coach Mode</label>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:#e2e8f0; font-size:0.75rem; font-weight:600;">🔊 Audio Coach</span>
+                <label class="switch" style="position:relative; display:inline-block; width:34px; height:20px;">
+                  <input type="checkbox" id="arena-audio-coach" onchange="CK.arena.toggleAudioCoach(this.checked)" style="opacity:0; width:0; height:0;">
+                  <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#334155; transition:.4s; border-radius:34px;"></span>
+                </label>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:#e2e8f0; font-size:0.75rem; font-weight:600;">🧭 Threat Map</span>
+                <label class="switch" style="position:relative; display:inline-block; width:34px; height:20px;">
+                  <input type="checkbox" id="arena-threat-map" onchange="CK.arena.toggleThreatMap(this.checked)" style="opacity:0; width:0; height:0;">
+                  <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#334155; transition:.4s; border-radius:34px;"></span>
+                </label>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:#e2e8f0; font-size:0.75rem; font-weight:600;">⚠️ Safety Radar</span>
+                <label class="switch" style="position:relative; display:inline-block; width:34px; height:20px;">
+                  <input type="checkbox" id="arena-safety-radar" onchange="CK.arena.toggleSafetyRadar(this.checked)" style="opacity:0; width:0; height:0;">
+                  <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#334155; transition:.4s; border-radius:34px;"></span>
+                </label>
               </div>
             </div>
-            <div class="personality-selector" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
-              <button class="style-btn active" data-style="Balanced" onclick="CK.arena.setStyle('Balanced')" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#94a3b8; padding:6px 0; border-radius:6px; font-size:0.75rem; cursor:pointer; font-weight:600;">Balanced</button>
-              <button class="style-btn" data-style="Aggressive" onclick="CK.arena.setStyle('Aggressive')" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#94a3b8; padding:6px 0; border-radius:6px; font-size:0.75rem; cursor:pointer; font-weight:600;">Aggressive</button>
-              <button class="style-btn" data-style="Defensive" onclick="CK.arena.setStyle('Defensive')" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#94a3b8; padding:6px 0; border-radius:6px; font-size:0.75rem; cursor:pointer; font-weight:600;">Defensive</button>
+            
+            <div style="border-top:1px solid rgba(255,255,255,0.05); padding-top:12px; margin-top:8px;">
+              <span style="font-size:0.7rem; font-weight:700; color:var(--arena-text-muted); text-transform:uppercase; letter-spacing:0.08em; display:block; margin-bottom:8px;">Current Opponent</span>
+              <div id="arena-current-coach-info" style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.02); padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                <span id="arena-current-coach-avatar" style="font-size:1.5rem;">👑</span>
+                <div style="text-align:left;">
+                  <div id="arena-current-coach-name" style="font-size:0.8rem; font-weight:700; color:#fff;">Magnus Carlsen</div>
+                  <div id="arena-current-coach-style" style="font-size:0.65rem; color:var(--arena-gold); font-weight:600; text-transform:uppercase;">Balanced</div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -5597,11 +5645,32 @@
           </div>
 
           <div style="margin-bottom:24px;">
-            <div style="color:var(--p-text-muted); font-size:0.85rem; font-weight:700; text-transform:uppercase; margin-bottom:12px; letter-spacing:0.05em;">Select Playing Style</div>
-            <div class="difficulty-selector" style="display:flex; gap:8px; flex-wrap:wrap;">
-              <button class="style-btn active" data-style="Balanced" onclick="CK.arena.setStyle('Balanced')">Balanced</button>
-              <button class="style-btn" data-style="Aggressive" onclick="CK.arena.setStyle('Aggressive')">Aggressive</button>
-              <button class="style-btn" data-style="Defensive" onclick="CK.arena.setStyle('Defensive')">Defensive</button>
+            <div style="color:var(--p-text-muted); font-size:0.85rem; font-weight:700; text-transform:uppercase; margin-bottom:12px; letter-spacing:0.05em;">Select Opponent Coach</div>
+            <div class="coach-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div class="coach-select-card active" data-coach="magnus" onclick="CK.arena.selectCoach('magnus')">
+                <div style="font-size:1.8rem; margin-bottom:4px;">👑</div>
+                <div style="font-weight:700; font-size:0.85rem; color:#fff;">Magnus Carlsen</div>
+                <div style="font-size:0.65rem; color:var(--arena-gold); font-weight:600; text-transform:uppercase; margin-bottom:4px;">Balanced</div>
+                <div style="font-size:0.65rem; opacity:0.7; line-height:1.2; text-align:center;">Endgame specialist playing with ultra-high precision.</div>
+              </div>
+              <div class="coach-select-card" data-coach="tal" onclick="CK.arena.selectCoach('tal')">
+                <div style="font-size:1.8rem; margin-bottom:4px;">🪄</div>
+                <div style="font-weight:700; font-size:0.85rem; color:#fff;">Mikhail Tal</div>
+                <div style="font-size:0.65rem; color:#f87171; font-weight:600; text-transform:uppercase; margin-bottom:4px;">Aggressive</div>
+                <div style="font-size:0.65rem; opacity:0.7; line-height:1.2; text-align:center;">The Magician from Riga. Loves wild tactical sacrifices!</div>
+              </div>
+              <div class="coach-select-card" data-coach="petrosian" onclick="CK.arena.selectCoach('petrosian')">
+                <div style="font-size:1.8rem; margin-bottom:4px;">🛡️</div>
+                <div style="font-weight:700; font-size:0.85rem; color:#fff;">Tigran Petrosian</div>
+                <div style="font-size:0.65rem; color:#60a5fa; font-weight:600; text-transform:uppercase; margin-bottom:4px;">Defensive</div>
+                <div style="font-size:0.65rem; opacity:0.7; line-height:1.2; text-align:center;">The Iron Tiger. Prophylactic maneuvers and deep defense.</div>
+              </div>
+              <div class="coach-select-card" data-coach="beth" onclick="CK.arena.selectCoach('beth')">
+                <div style="font-size:1.8rem; margin-bottom:4px;">👩‍🦰</div>
+                <div style="font-weight:700; font-size:0.85rem; color:#fff;">Beth Harmon</div>
+                <div style="font-size:0.65rem; color:#c084fc; font-weight:600; text-transform:uppercase; margin-bottom:4px;">Tactical</div>
+                <div style="font-size:0.65rem; opacity:0.7; line-height:1.2; text-align:center;">Fierce and intuitive prodigy. Heavy center attacks.</div>
+              </div>
             </div>
           </div>
 
