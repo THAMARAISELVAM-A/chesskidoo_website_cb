@@ -237,7 +237,7 @@ CK.notifs = (() => {
   async function sendEmail(toEmail, subject, bodyHtml) {
     if (!toEmail || !subject) return false;
     // Requires EmailJS SDK loaded and configured
-    if (typeof emailjs === 'undefined') {
+    if (typeof window.emailjs === 'undefined') {
       console.warn('EmailJS SDK not loaded — skipping email notification');
       return false;
     }
@@ -245,7 +245,7 @@ CK.notifs = (() => {
       const cfg = window.APP_CONFIG || {};
       const serviceId  = cfg.EMAILJS_SERVICE  || localStorage.getItem('ck_emailjs_service')  || 'service_chesskidoo';
       const templateId = cfg.EMAILJS_TEMPLATE || localStorage.getItem('ck_emailjs_template') || 'template_notification';
-      await emailjs.send(serviceId, templateId, {
+      await window.emailjs.send(serviceId, templateId, {
         to_email: toEmail,
         subject: subject,
         message: bodyHtml

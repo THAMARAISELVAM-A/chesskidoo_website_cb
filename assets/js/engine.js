@@ -25,12 +25,9 @@ CK.engine = (() => {
   function _initLocalEngine() {
     if (_sfWorker) return;
     try {
-      // Stockfish 18 Lite (single-threaded, no COOP/COEP needed)
-      const workerUrl = 'https://cdn.jsdelivr.net/npm/stockfish@18.0.0/stockfish-18-lite-single.js';
-      const blobCode = `importScripts("${workerUrl}");`;
-      const blob = new Blob([blobCode], { type: 'application/javascript' });
-      const blobUrl = URL.createObjectURL(blob);
-      _sfWorker = new Worker(blobUrl);
+      // Stockfish 16 Lite (single-threaded, no COOP/COEP needed)
+      const workerUrl = '/stockfish/src/stockfish-nnue-16-single.js';
+      _sfWorker = new Worker(workerUrl);
       _sfWorker.addEventListener('message', _handleSfMessage);
       _sfWorker.postMessage('uci');
       console.log('[Engine] Local Stockfish 18 WASM initializing…');

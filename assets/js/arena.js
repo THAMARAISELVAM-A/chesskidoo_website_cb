@@ -8,6 +8,45 @@
   const CK = window.CK = window.CK || {};
   const A = CK.arena = {};
 
+  /* ─── Audio System ─── */
+  let audioCtx = null;
+  A.initAudio = () => {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  };
+  A.playMoveSound = () => {
+    if (!audioCtx) return;
+    try {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.1);
+    } catch(e) {}
+  };
+  A.playTickSound = () => {
+    if (!audioCtx) return;
+    try {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.05);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.05);
+    } catch(e) {}
+  };
+
   /* ─── State ─── */
   let game = null;
   let boardEl = null;
@@ -158,9 +197,11 @@
       if (elapsedSec >= 1) {
         if (activeClock === 'w') {
           whiteClock = Math.max(0, whiteClock - elapsedSec);
+          if (whiteClock > 0 && whiteClock <= 10) A.playTickSound(); // tick when low on time
           if (whiteClock === 0) { handleTimeout('w'); return; }
         } else if (activeClock === 'b') {
           blackClock = Math.max(0, blackClock - elapsedSec);
+          if (blackClock > 0 && blackClock <= 10) A.playTickSound(); // tick when low on time
           if (blackClock === 0) { handleTimeout('b'); return; }
         }
         lastTickTime += elapsedSec * 1000;
@@ -512,7 +553,7 @@
 
     // COACH MODE CHECK
     if (coachMode && evalObj && evalObj.classification === 'blunder') {
-      const confirmTakeback = window.confirm(`⚠️ COACH WARNING\n\nThat move was a blunder (dropped evaluation by ${(evalObj.diff/100).toFixed(1)} pawns).\nStockfish recommends: ${evalObj.bestMove}\n\nDo you want to take it back?`);
+      const confirmTakeback = await A.showCoachCard(evalObj);
       if (confirmTakeback) {
         game.undo();
         moveHistory.pop();
@@ -799,16 +840,29 @@
     const moveListEl = document.getElementById('arena-move-list');
     if (moveListEl) {
       let html = '';
+      const iconMap = { brilliant: '!!', best: '★', excellent: '!', good: '', inaccuracy: '?!', mistake: '?', blunder: '??' };
       for (let i = 0; i < moveHistory.length; i += 2) {
         const moveNum = Math.floor(i / 2) + 1;
         const whiteMove = moveHistory[i];
         const blackMove = moveHistory[i + 1];
         const wClass = classificationHistory[i]?.classification || '';
         const bClass = classificationHistory[i + 1]?.classification || '';
-        html += `<div class="amove-row">
+        
+        const wIcon = iconMap[wClass] ? `<span class="amove-icon icon-${wClass}">${iconMap[wClass]}</span>` : '';
+        const bIcon = iconMap[bClass] ? `<span class="amove-icon icon-${bClass}">${iconMap[bClass]}</span>` : '';
+
+        const rowBg = moveNum % 2 === 0 ? 'background: rgba(255,255,255,0.02);' : '';
+
+        html += `<div class="amove-row" style="${rowBg}">
           <span class="amove-num">${moveNum}.</span>
-          <span class="amove-san class-${wClass}">${whiteMove?.san || ''}</span>
-          <span class="amove-san class-${bClass}">${blackMove?.san || ''}</span>
+          <div class="amove-cell class-${wClass}">
+            <span class="amove-san">${whiteMove?.san || ''}</span>
+            ${wIcon}
+          </div>
+          <div class="amove-cell class-${bClass}">
+            <span class="amove-san">${blackMove?.san || ''}</span>
+            ${bIcon}
+          </div>
         </div>`;
       }
       moveListEl.innerHTML = html;
@@ -1007,7 +1061,7 @@
     const weights = { brilliant: 1, best: 1, excellent: 0.9, good: 0.7, inaccuracy: 0.4, mistake: 0.2, blunder: 0 };
     let totalWeight = 0;
     classifications.forEach(c => { totalWeight += weights[c] || 0.5; });
-    const accuracy = classifications.length > 0 ? Math.round((totalWeight / classifications.length) * 100) : 50;
+    const accuracy = classifications.length > 0 ? Math.round((totalWeight / classifications.length) * 100) : 0;
 
     // Count classifications
     const counts = { brilliant: 0, best: 0, excellent: 0, good: 0, inaccuracy: 0, mistake: 0, blunder: 0 };
@@ -1275,9 +1329,117 @@
     return colors[c] || '#f1f5f9';
   }
 
-  // Engine logic completely replaces the old mock diff and synchronous evaluateBoard 
+  A.showCertificate = (result, grade, gradeClass, accuracy) => {
+    const overlay = document.getElementById('cert-overlay');
+    if (!overlay) return;
 
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const certId = 'CK-' + now.getFullYear() + '-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const savedName = localStorage.getItem('ck_player_name') || '';
+    
+    // Determine title and ribbon color
+    const isWin = result === 'win';
+    const titleText = isWin ? 'Certificate of Victory' : (result === 'draw' ? 'Certificate of Merit' : 'Certificate of Participation');
+    const ribbonColor = isWin ? '#fbbf24' : (result === 'draw' ? '#94a3b8' : '#f87171');
+    const gradeColor = grade === 'S' ? '#fbbf24' : (grade === 'A' ? '#a78bfa' : (grade === 'B' ? '#38bdf8' : (grade === 'C' ? '#4ade80' : '#f87171')));
 
+    const planMap = {'Beginner': 'Pawn Vanguard (Beginner Class)', 'Intermediate': 'Knight Riders (Intermediate Class)', 'Advanced': 'Rook Castle (Advanced Class)', 'Grandmaster': 'Master Class (Elite)', 'Master': 'Master Class (Elite)'};
+    const suggestedPlan = planMap[currentDifficulty] || 'Pawn Vanguard (Beginner Class)';
+
+    overlay.innerHTML = `
+      <div class="cert-modal" style="background: transparent; box-shadow: none;">
+        <div class="cert-premium-container" style="background: #fff; padding: 12px; border-radius: 4px; box-shadow: 0 40px 100px rgba(0,0,0,0.8), 0 0 0 2px #d4af37, 0 0 0 8px rgba(255,255,255,0.1);">
+          <div class="cert-premium-inner" style="border: 2px solid #d4af37; padding: 40px; position: relative; background: linear-gradient(135deg, #fffcf5, #fff); text-align: center; min-width: 500px; max-width: 600px;">
+            
+            <!-- Ornate Corners -->
+            <svg style="position: absolute; top: 8px; left: 8px; width: 40px; height: 40px; fill: none; stroke: #d4af37; stroke-width: 1.5;" viewBox="0 0 100 100"><path d="M 0 100 L 0 0 L 100 0" /><circle cx="20" cy="20" r="10"/></svg>
+            <svg style="position: absolute; top: 8px; right: 8px; width: 40px; height: 40px; fill: none; stroke: #d4af37; stroke-width: 1.5; transform: rotate(90deg);" viewBox="0 0 100 100"><path d="M 0 100 L 0 0 L 100 0" /><circle cx="20" cy="20" r="10"/></svg>
+            <svg style="position: absolute; bottom: 8px; left: 8px; width: 40px; height: 40px; fill: none; stroke: #d4af37; stroke-width: 1.5; transform: rotate(-90deg);" viewBox="0 0 100 100"><path d="M 0 100 L 0 0 L 100 0" /><circle cx="20" cy="20" r="10"/></svg>
+            <svg style="position: absolute; bottom: 8px; right: 8px; width: 40px; height: 40px; fill: none; stroke: #d4af37; stroke-width: 1.5; transform: rotate(180deg);" viewBox="0 0 100 100"><path d="M 0 100 L 0 0 L 100 0" /><circle cx="20" cy="20" r="10"/></svg>
+
+            <!-- Header -->
+            <div style="font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 900; color: #111; letter-spacing: 2px; margin-bottom: 4px;">
+              CHESS<span style="color: #d4af37;">KIDOO</span>
+            </div>
+            <div style="font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 4px; margin-bottom: 24px;">Artificial Intelligence Arena</div>
+
+            <!-- Title -->
+            <h1 style="font-family: 'Playfair Display', serif; font-size: 40px; font-weight: 900; color: #d4af37; margin: 0 0 24px 0; letter-spacing: 1px; line-height: 1.2;">
+              ${titleText}
+            </h1>
+
+            <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: #555; margin-bottom: 12px; font-style: italic;">Proudly presented to</p>
+
+            <!-- Player Name -->
+            <div class="cert-input-section" style="margin-bottom: 32px;">
+              <input type="text" id="cert-player-name" placeholder="Enter your name" value="${savedName.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}" style="width: 80%; text-align: center; padding: 12px; border: none; border-bottom: 2px solid #d4af37; background: transparent; font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; color: #111; outline: none; margin-bottom: 8px;">
+            </div>
+
+            <p style="font-family: 'Inter', sans-serif; font-size: 14px; color: #444; line-height: 1.6; max-width: 440px; margin: 0 auto 32px;">
+              For demonstrating exceptional tactical awareness and strategic thinking against the <strong>${currentDifficulty}</strong> AI engine, achieving an accuracy rating of <strong>${accuracy}%</strong> over <strong>${moveHistory.length} moves</strong>.
+            </p>
+
+            <!-- Grade & Details Grid -->
+            <div style="display: flex; justify-content: center; align-items: center; gap: 40px; margin-bottom: 40px;">
+              <div style="text-align: right; flex: 1;">
+                <div style="font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Performance Grade</div>
+                <div style="font-family: 'Playfair Display', serif; font-size: 64px; font-weight: 900; color: ${gradeColor}; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">${grade}</div>
+              </div>
+              <div style="width: 1px; height: 80px; background: #e5e7eb;"></div>
+              <div style="text-align: left; flex: 1.5;">
+                <div style="font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Suggested Next Step</div>
+                <div style="font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 700; color: #d4af37;">${suggestedPlan}</div>
+              </div>
+              <div style="width: 1px; height: 80px; background: #e5e7eb;"></div>
+              <div style="text-align: left; flex: 1;">
+                <div style="margin-bottom: 12px;">
+                  <div style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px;">Date</div>
+                  <div style="font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; color: #111;">${dateStr}</div>
+                </div>
+                <div>
+                  <div style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px;">Certificate ID</div>
+                  <div style="font-family: 'Courier New', monospace; font-size: 13px; font-weight: 600; color: #111;">${certId}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Signatures -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px; padding: 0 20px;">
+              <div style="text-align: center;">
+                <div style="width: 120px; border-bottom: 1px solid #333; margin-bottom: 8px;"></div>
+                <div style="font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px;">Stockfish 16</div>
+              </div>
+              
+              <!-- Ribbon Seal -->
+              <div style="position: relative; width: 60px; height: 60px; background: ${ribbonColor}; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15), inset 0 0 0 2px #fff, inset 0 0 0 4px rgba(0,0,0,0.1);">
+                <span style="font-size: 24px;">♛</span>
+                <!-- Ribbon Tails -->
+                <div style="position: absolute; top: 100%; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; z-index: -1;">
+                  <div style="width: 12px; height: 24px; background: ${ribbonColor}; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%); opacity: 0.9;"></div>
+                  <div style="width: 12px; height: 32px; background: ${ribbonColor}; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 85%, 0 100%); opacity: 0.9;"></div>
+                </div>
+              </div>
+              
+              <div style="text-align: center;">
+                <div style="font-family: 'Playfair Display', serif; font-size: 20px; font-style: italic; color: #111; margin-bottom: -4px;">C. Kidoo</div>
+                <div style="width: 120px; border-bottom: 1px solid #333; margin-bottom: 8px;"></div>
+                <div style="font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px;">Arena Director</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        
+        <div style="margin-top: 24px; display: flex; gap: 16px; justify-content: center;">
+          <button class="report-btn report-btn-secondary" onclick="CK.arena.closeCertificate()" style="background: rgba(255,255,255,0.1); color: #fff;">Close</button>
+          <button class="report-btn report-btn-primary" onclick="CK.arena.printCertificate()" style="background: #d4af37; color: #111;"><span style="margin-right: 8px;">🖨️</span> Print Certificate</button>
+        </div>
+      </div>
+    `;
+
+    overlay.classList.add('active');
+  };
 
   A.closeReport = () => {
     const overlay = document.getElementById('arena-report-overlay');
@@ -1289,296 +1451,18 @@
     setTimeout(() => A.init(), 200);
   };
 
-/* ─── Certificate ─── */
-A.showCertificate = (result, grade, gradeClass, accuracy) => {
-  const overlay = document.getElementById('cert-overlay');
-  if (!overlay) return;
-
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  const certId = 'CK-' + now.getFullYear() + '-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-  const savedName = localStorage.getItem('ck_player_name') || '';
-  
-  overlay.innerHTML = `
-    <div class="cert-modal">
-      <div class="cert-border-outer">
-        <div class="cert-border-inner">
-          <div class="cert-logo" style="font-size: 64px; margin-bottom: 20px; color: #c89a38; text-shadow: 0 0 20px rgba(200, 154, 56, 0.5);">♛</div>
-          <div class="cert-academy-name" style="font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 900; color: #1a1a1a; margin-bottom: 8px;">
-            Chess<span style="color: #c89a38;">Kidoo</span>
-          </div>
-          <div class="cert-title" style="font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 900; color: #c89a38; text-transform: uppercase; letter-spacing: 4px; margin: 24px 0 16px; border-bottom: 2px solid #e8b84b; display: inline-block; padding-bottom: 12px;">
-            Certificate of Achievement
-          </div>
-          <div class="cert-subtitle" style="font-size: 14px; color: #888; margin-bottom: 24px; font-style: italic; letter-spacing: 1px;">
-            AI Challenge Arena
-          </div>
-          
-          <div class="cert-input-section" style="margin: 24px 0; padding: 20px; background: rgba(232, 184, 75, 0.08); border-radius: 16px; border: 1px dashed rgba(200, 154, 56, 0.4);">
-            <input type="text" id="cert-player-name" placeholder="Enter your name" value="${savedName.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}" style="width: 70%; max-width: 300px; padding: 14px 20px; border-radius: 10px; border: 2px solid #e8b84b; font-size: 16px; margin-bottom: 12px; background: #fff; font-family: inherit;">
-            <div class="cert-presented" style="font-size: 13px; color: #666; margin-bottom: 10px; letter-spacing: 0.5px;">This certificate is proudly presented to</div>
-            <div class="cert-player-name" id="cert-display-name" style="font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 900; color: #1a1a1a; min-height: 40px; display: flex; align-items: center; justify-content: center; letter-spacing: -0.5px;">${savedName.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') || '---'}</div>
-          </div>
-          
-          <div class="cert-details-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 440px; margin: 24px auto; text-align: left;">
-            <div class="cert-detail-item" style="display: flex; justify-content: space-between; font-size: 14px; padding: 10px 0; border-bottom: 1px dotted #ddd;">
-              <span class="cert-detail-label" style="color: #888; font-weight: 500;">Difficulty</span>
-              <span class="cert-detail-value" style="color: #1a1a1a; font-weight: 700;">${currentDifficulty}</span>
-            </div>
-            <div class="cert-detail-item" style="display: flex; justify-content: space-between; font-size: 14px; padding: 10px 0; border-bottom: 1px dotted #ddd;">
-              <span class="cert-detail-label" style="color: #888; font-weight: 500;">Result</span>
-              <span class="cert-detail-value" style="color: #1a1a1a; font-weight: 700;">${result === 'win' ? 'Victory' : result === 'loss' ? 'Defeat' : 'Draw'}</span>
-            </div>
-            <div class="cert-detail-item" style="display: flex; justify-content: space-between; font-size: 14px; padding: 10px 0; border-bottom: 1px dotted #ddd;">
-              <span class="cert-detail-label" style="color: #888; font-weight: 500;">Accuracy</span>
-              <span class="cert-detail-value" style="color: #1a1a1a; font-weight: 700;">${accuracy}%</span>
-            </div>
-            <div class="cert-detail-item" style="display: flex; justify-content: space-between; font-size: 14px; padding: 10px 0; border-bottom: 1px dotted #ddd;">
-              <span class="cert-detail-label" style="color: #888; font-weight: 500;">Moves</span>
-              <span class="cert-detail-value" style="color: #1a1a1a; font-weight: 700;">${moveHistory.length}</span>
-            </div>
-          </div>
-          
-          <div class="cert-grade ${gradeClass}" style="font-family: 'Playfair Display', serif; font-size: 56px; font-weight: 900; margin: 20px 0; line-height: 1;">${grade}</div>
-          
-          <div class="cert-signature-area" style="display: flex; justify-content: center; align-items: center; gap: 50px; margin-top: 30px; padding-top: 20px; border-top: 1px dashed rgba(200, 154, 56, 0.4);">
-            <div class="cert-signature" style="text-align: center;">
-              <div style="width: 140px; height: 1px; background: #333; margin: 0 auto 10px;"></div>
-              <div style="font-size: 12px; color: #666; font-style: italic; letter-spacing: 0.5px;">ChessKidoo AI</div>
-            </div>
-          </div>
-          
-          <div class="cert-id" style="font-family: monospace; font-size: 12px; color: #aaa; margin-top: 20px; letter-spacing: 0.5px;">Certificate ID: ${certId}</div>
-          <div class="cert-date" style="font-size: 12px; color: #888; margin-top: 6px;">${dateStr}</div>
-          
-          <div class="cert-actions" style="display: flex; gap: 16px; justify-content: center; margin-top: 28px;">
-            <button class="cert-btn cert-btn-print" id="cert-download-btn" ${savedName.length >= 2 ? '' : 'disabled'} style="padding: 14px 32px; background: #c89a38; color: #fff; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; ${savedName.length >= 2 ? '' : 'opacity: 0.5; cursor: not-allowed;'}">🖨️ Download Certificate</button>
-            <button class="cert-btn cert-btn-close" onclick="CK.arena.closeCertificate()" style="padding: 14px 32px; background: #f1f5f9; color: #333; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; border: 1px solid #ddd;">Close</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  overlay.classList.add('active');
-  
-  const nameInput = document.getElementById('cert-player-name');
-  const displayName = document.getElementById('cert-display-name');
-  const downloadBtn = document.getElementById('cert-download-btn');
-  
-  nameInput.addEventListener('input', function() {
-    const name = this.value.trim();
-    displayName.textContent = name || '---';
-    downloadBtn.disabled = name.length < 2;
-    if (name.length >= 2) {
-      downloadBtn.style.opacity = '1';
-      downloadBtn.style.cursor = 'pointer';
-    } else {
-      downloadBtn.style.opacity = '0.5';
-      downloadBtn.style.cursor = 'not-allowed';
-    }
-  });
-  
-  downloadBtn.onclick = () => {
-    const name = nameInput.value.trim();
-    if (name.length < 2) return;
-    localStorage.setItem('ck_player_name', name);
-    downloadCertificateAsImage();
-  };
-  
-  function downloadCertificateAsImage() {
-    const name = nameInput.value.trim();
-    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    
+  A.printCertificate = () => {
+    const certHtml = document.querySelector('#cert-overlay .cert-modal');
+    if (!certHtml) return;
     const printWindow = window.open('', '_blank');
-    if (!printWindow) { CK.showToast('Please allow popups to download the certificate.', 'warning'); return; }
+    if (!printWindow) { CK.showToast('Please allow popups to print.', 'warning'); return; }
     const doc = printWindow.document;
     doc.open();
-    doc.write(`
-      <html>
-      <head>
-        <title>ChessKidoo Certificate</title>
-        <style>
-          @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&display=swap');
-          body { 
-            font-family: 'DM Sans', sans-serif; 
-            margin: 0; 
-            padding: 30px; 
-            background: #fffdf5;
-            color: #1a1a1a;
-          }
-          .cert-container { 
-            max-width: 780px; 
-            margin: 0 auto; 
-            background: #fffdf5;
-            border: 3px solid #c89a38;
-            padding: 20px;
-            position: relative;
-          }
-          .cert-inner { 
-            border: 1px solid #e8b84b; 
-            padding: 50px; 
-            text-align: center; 
-            background: radial-gradient(circle at center top, #fffdf5 0%, #fef9e7 100%);
-            position: relative;
-            min-height: 600px;
-          }
-          .cert-watermark {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 180px;
-            color: rgba(200, 154, 56, 0.05);
-            z-index: 0;
-            font-family: serif;
-          }
-          .cert-logo { 
-            font-size: 64px; 
-            margin-bottom: 20px; 
-            color: #c89a38; 
-            text-shadow: 0 0 20px rgba(200, 154, 56, 0.5);
-            position: relative;
-            z-index: 1;
-          }
-          .cert-academy-name { 
-            font-family: 'Playfair Display', serif; 
-            font-size: 28px; 
-            font-weight: 900; 
-            color: #1a1a1a; 
-            margin-bottom: 8px;
-            position: relative;
-            z-index: 1;
-          }
-          .cert-title { 
-            font-family: 'Playfair Display', serif; 
-            font-size: 28px; 
-            font-weight: 900; 
-            color: #c89a38; 
-            text-transform: uppercase; 
-            letter-spacing: 4px; 
-            margin: 24px 0 16px; 
-            border-bottom: 2px solid #e8b84b; 
-            display: inline-block; 
-            padding-bottom: 12px;
-            position: relative;
-            z-index: 1;
-          }
-          .cert-subtitle { 
-            font-size: 14px; 
-            color: #888; 
-            margin-bottom: 24px; 
-            font-style: italic; 
-            letter-spacing: 1px;
-            position: relative;
-            z-index: 1;
-          }
-          .cert-presented { 
-            font-size: 13px; 
-            color: #666; 
-            margin-bottom: 10px; 
-            letter-spacing: 0.5px;
-            position: relative;
-            z-index: 1;
-          }
-          .cert-player-name { 
-            font-family: 'Playfair Display', serif; 
-            font-size: 32px; 
-            font-weight: 900; 
-            color: #1a1a1a; 
-            margin: 12px 0 24px; 
-            border-bottom: 1px solid #ddd; 
-            display: inline-block; 
-            padding: 0 40px;
-            position: relative;
-            z-index: 1;
-          }
-          .cert-details-grid { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
-            gap: 16px; 
-            max-width: 440px; 
-            margin: 24px auto; 
-            text-align: left;
-            position: relative;
-            z-index: 1;
-          }
-          .cert-detail-item { 
-            display: flex; 
-            justify-content: space-between; 
-            font-size: 14px; 
-            padding: 10px 0; 
-            border-bottom: 1px dotted #ddd; 
-          }
-          .cert-detail-label { color: #888; font-weight: 500; }
-          .cert-detail-value { color: #1a1a1a; font-weight: 700; }
-          .cert-grade { 
-            font-family: 'Playfair Display', serif; 
-            font-size: 56px; 
-            font-weight: 900; 
-            margin: 20px 0; 
-            line-height: 1;
-            position: relative;
-            z-index: 1;
-          }
-          .cert-grade.grade-s { color: #c89a38; }
-          .cert-grade.grade-a { color: #10B981; }
-          .cert-grade.grade-b { color: #5b96f6; }
-          .cert-grade.grade-c { color: #F59E0B; }
-          .cert-grade.grade-d { color: #EF5350; }
-          .cert-signature-area { 
-            display: flex; 
-            justify-content: center; 
-            gap: 50px; 
-            margin-top: 30px; 
-            padding-top: 20px; 
-            border-top: 1px dashed rgba(200, 154, 56, 0.4);
-            position: relative;
-            z-index: 1;
-          }
-          .cert-signature { text-align: center; }
-          .cert-signature-line { width: 140px; height: 1px; background: #333; margin: 0 auto 10px; }
-          .cert-signature-label { font-size: 12px; color: #666; font-style: italic; letter-spacing: 0.5px; }
-          .cert-id { font-family: monospace; font-size: 12px; color: #aaa; margin-top: 20px; letter-spacing: 0.5px; position: relative; z-index: 1; }
-          .cert-date { font-size: 12px; color: #888; margin-top: 6px; position: relative; z-index: 1; }
-        </style>
-      </head>
-      <body>
-        <div class="cert-container">
-          <div class="cert-inner">
-            <div class="cert-watermark">♛</div>
-            <div class="cert-logo">♛</div>
-            <div class="cert-academy-name">Chess<span style="color: #c89a38;">Kidoo</span></div>
-            <div class="cert-title">Certificate of Achievement</div>
-            <div class="cert-subtitle">AI Challenge Arena</div>
-            <div class="cert-presented">This certificate is proudly presented to</div>
-            <div class="cert-player-name">${name}</div>
-            <div class="cert-details-grid">
-              <div class="cert-detail-item"><span class="cert-detail-label">Difficulty</span><span class="cert-detail-value">${currentDifficulty}</span></div>
-              <div class="cert-detail-item"><span class="cert-detail-label">Result</span><span class="cert-detail-value">${result === 'win' ? 'Victory' : result === 'loss' ? 'Defeat' : 'Draw'}</span></div>
-              <div class="cert-detail-item"><span class="cert-detail-label">Accuracy</span><span class="cert-detail-value">${accuracy}%</span></div>
-              <div class="cert-detail-item"><span class="cert-detail-label">Moves</span><span class="cert-detail-value">${moveHistory.length}</span></div>
-            </div>
-            <div class="cert-grade grade-${grade.toLowerCase()}">${grade}</div>
-            <div class="cert-signature-area">
-              <div class="cert-signature">
-                <div class="cert-signature-line"></div>
-                <div class="cert-signature-label">ChessKidoo AI</div>
-              </div>
-            </div>
-            <div class="cert-id">Certificate ID: ${certId}</div>
-            <div class="cert-date">${dateStr}</div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `);
+    doc.write(`<html><head><title>ChessKidoo Certificate</title><style>@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@400;600&display=swap');@page{size:landscape;margin:0;}body{font-family:'Inter',sans-serif;margin:0;padding:40px;background:#fffcf5;display:flex;justify-content:center;align-items:center;min-height:100vh;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.print-container{background:#fff;padding:40px;border:2px solid #d4af37;position:relative;width:800px;text-align:center;}.cert-input-section input{border:none!important;border-bottom:2px solid #d4af37!important;background:transparent!important;}</style></head><body><div class="print-container">${certHtml.innerHTML.replace(/<input[^>]*value="([^"]*)"[^>]*>/, '<div style="font-family:\'Playfair Display\',serif;font-size:36px;font-weight:700;color:#111;margin-bottom:8px;border-bottom:2px solid #d4af37;padding-bottom:8px;">$1</div>')}</div></body></html>`);
     doc.close();
     printWindow.focus();
-    printWindow.print();
-    printWindow.close();
+    setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
   };
-};
 
   A.closeCertificate = () => {
     const overlay = document.getElementById('cert-overlay');
@@ -1636,6 +1520,44 @@ A.newGame = () => {
     if (modal) modal.style.display = 'block';
   };
 
+  A.showCoachCard = (evalObj) => {
+    return new Promise(resolve => {
+      const overlay = document.getElementById('coach-overlay');
+      if (!overlay) return resolve(false);
+
+      const diffPawns = (evalObj.diff/100).toFixed(1);
+      overlay.innerHTML = `
+        <div class="coach-card">
+          <div class="coach-card-icon">⚠️</div>
+          <div class="coach-card-title">COACH WARNING</div>
+          <div class="coach-card-body">
+            <p>That move was a <span style="color:var(--arena-red); font-weight:bold;">blunder</span>!</p>
+            <p style="font-size: 0.9em; opacity: 0.8; margin-top: 4px;">Evaluation dropped by ${diffPawns} pawns.</p>
+            <div class="coach-card-recommendation">
+              <span>Stockfish recommends:</span>
+              <strong style="color:var(--arena-gold); font-size:1.1em; margin-left: 6px;">${evalObj.bestMove}</strong>
+            </div>
+            <p style="margin-top: 16px;">Do you want to take it back?</p>
+          </div>
+          <div class="coach-card-actions">
+            <button id="coach-btn-takeback" class="coach-btn coach-btn-primary">Take Back Move</button>
+            <button id="coach-btn-keep" class="coach-btn coach-btn-secondary">Keep Move</button>
+          </div>
+        </div>
+      `;
+      overlay.classList.add('active');
+
+      document.getElementById('coach-btn-takeback').onclick = () => {
+        overlay.classList.remove('active');
+        resolve(true);
+      };
+      document.getElementById('coach-btn-keep').onclick = () => {
+        overlay.classList.remove('active');
+        resolve(false);
+      };
+    });
+  };
+
   A.closeChallengeModal = () => {
     const overlay = document.getElementById('arena-challenge-overlay');
     const modal = document.getElementById('arena-challenge-modal');
@@ -1650,30 +1572,69 @@ A.newGame = () => {
     });
   };
 
+  A.setTimerAndRestart = (timeVal) => {
+    A.setTimeControl(timeVal);
+    A.newGame();
+    CK.showToast('Match restarted with new time control.', 'success');
+  };
+
+  A.setCustomTimer = () => {
+    const input = document.getElementById('custom-timer-input');
+    if (!input || !input.value) return;
+    let mins = parseInt(input.value, 10);
+    if (isNaN(mins) || mins <= 0) return;
+    A.setTimerAndRestart(mins * 60);
+    input.value = '';
+  };
+
   A.startCustomGame = () => {
     A.closeChallengeModal();
     A.newGame();
   };
 
 /* ─── Hint System ─── */
-A.showHint = () => {
+A.showHint = async () => {
   if (isGameOver || isThinking || !isPlayerTurn) return;
   
-  const depth = DIFFICULTY_DEPTH[currentDifficulty] || 2;
-  const bestMove = getBestMoveMinimax(depth);
+  CK.showToast('🤖 Finding the best move...', 'info');
   
-  if (bestMove) {
-    const fromEl = document.querySelector(`.a-sq[data-square="${bestMove.from}"]`);
-    const toEl = document.querySelector(`.a-sq[data-square="${bestMove.to}"]`);
-    
-    if (fromEl) {
-      fromEl.style.animation = 'hintPulse 1.5s ease-in-out 3';
+  const fen = game.fen();
+  const depth = DIFFICULTY_DEPTH[currentDifficulty] || 2;
+  if (CK.engine.setDepth) CK.engine.setDepth(depth);
+  
+  const result = await CK.engine.evaluate(fen);
+  
+  if (result && result.pvs && result.pvs.length > 0) {
+    const moveStr = result.pvs[0].pv.split(' ')[0];
+    if (moveStr) {
+      const from = moveStr.substring(0, 2);
+      const to = moveStr.substring(2, 4);
+      const promo = moveStr.length > 4 ? moveStr[4] : 'q';
+      
+      // Get the SAN name using chess.js
+      const tempGame = new Chess(fen);
+      let san = '';
+      try {
+        const move = tempGame.move({ from, to, promotion: promo });
+        if (move) san = move.san;
+      } catch (e) {
+        san = from + '-' + to;
+      }
+
+      const fromEl = document.querySelector(`.a-sq[data-square="${from}"]`);
+      const toEl = document.querySelector(`.a-sq[data-square="${to}"]`);
+      
+      if (fromEl) {
+        fromEl.style.animation = 'hintPulse 1.5s ease-in-out 3';
+      }
+      if (toEl) {
+        toEl.style.animation = 'hintPulse 1.5s ease-in-out 3';
+      }
+      
+      CK.showToast(`Hint: Play ${san}`, 'info');
     }
-    if (toEl) {
-      toEl.style.animation = 'hintPulse 1.5s ease-in-out 3';
-    }
-    
-    CK.showToast(`Hint: Play ${bestMove.san}`, 'info');
+  } else {
+    CK.showToast('No hint found.', 'warning');
   }
 };
 
@@ -1714,7 +1675,6 @@ A.startPuzzle = (puzzleId = null) => {
   activeClock = 'w';
   achievements = JSON.parse(localStorage.getItem('ck_achievements') || '[]');
   engineReady = true;
-  useWasm = false;
   
   renderBoard();
   renderAnalysisPanel();

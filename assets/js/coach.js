@@ -798,15 +798,19 @@ CK.coach = {
     if (!el) return;
     const _e = CK.esc || (s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'));
     const coachName = this.coachProfile?.full_name || CK.currentUser?.full_name || '';
-    const all = (await CK.db.getFeedback()) || [];
+    const all = (await CK.tracker?.getReviews()) || [];
     const mine = coachName
-      ? all.filter(f => !f.coach || f.coach === coachName)
+      ? all.filter(f => (f.coach || '').toLowerCase() === coachName.toLowerCase())
       : all;
     if (!mine.length) {
       el.innerHTML = '<div style="text-align:center;opacity:.45;padding:30px;">No notes yet — add an assessment above.</div>';
       return;
     }
-    const fmt = ts => ts ? new Date(ts).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+    const fmt = ts => {
+      if (!ts) return '—';
+      const d = new Date(ts);
+      return isNaN(d.getTime()) ? ts : d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+    };
     el.innerHTML = mine.slice(0, 20).map(f => `
       <div class="p-review-note" style="position:relative;">
         <div class="p-review-note-header">
@@ -821,7 +825,9 @@ CK.coach = {
 
   async _deleteFeedback(id) {
     if (!id) return;
-    await CK.db.deleteFeedback(id);
+    if (CK.tracker && typeof CK.tracker.deleteReview === 'function') {
+      await CK.tracker.deleteReview(id);
+    }
     this.loadCoachNotes();
     CK.showToast('Note deleted.', 'success');
   },

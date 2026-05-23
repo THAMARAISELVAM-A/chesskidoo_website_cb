@@ -1618,7 +1618,7 @@
 
               <div class="form-group-v2" style="position:relative;">
                 <label class="form-group-v2-label">Password</label>
-                <input type="password" name="password" value="" placeholder="••••••••" required
+                <input type="password" name="password" value="" placeholder="••••••••" autocomplete="current-password" required
                   autocomplete="current-password" class="form-group-v2-input" style="padding-right: 50px;">
                 <button type="button" onclick="CK.togglePassword('loginForm')" class="form-group-v2-eye">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -5198,10 +5198,11 @@
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- ======================== PARENTS PAGE ======================== -->
-    <div id="parent-page" class="page">
-      <div class="portal-body">
+  <!-- ======================== PARENTS PAGE ======================== -->
+  <div id="parent-page" class="page">
+    <div class="portal-body">
         <!-- SIDEBAR -->
         <nav class="p-sidebar">
           <div class="p-sidebar-brand">
@@ -5485,7 +5486,7 @@
               <span class="arena-coord">1</span>
             </div>
             <!-- Board with coords -->
-            <div>
+            <div style="width: fit-content; display: flex; flex-direction: column;">
               <div class="arena-board-wrapper">
                 <div class="arena-board" id="arena-board"></div>
               </div>
@@ -5500,6 +5501,11 @@
                 <span class="arena-coord">h</span>
               </div>
             </div>
+            <div style="flex: 1; min-width: 250px; margin-left: 16px; display: flex; flex-direction: column; height: 100%; max-height: min(500px, 80vw);">          <!-- Move List -->
+          <div class="arena-panel">
+            <div class="arena-panel-header">Move History</div>
+            <div class="arena-move-list" id="arena-move-list"></div>
+          </div></div>
           </div>
 
           <!-- Status -->
@@ -5547,6 +5553,24 @@
               <button class="style-btn" data-style="Defensive" onclick="CK.arena.setStyle('Defensive')" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#94a3b8; padding:6px 0; border-radius:6px; font-size:0.75rem; cursor:pointer; font-weight:600;">Defensive</button>
             </div>
           </div>
+
+          <!-- Time Control -->
+          <div class="arena-panel" style="padding: 16px; margin-top: 12px;">
+            <div style="margin-bottom:12px;">
+              <span style="font-size:0.75rem; font-weight:700; color:var(--arena-text-muted); text-transform:uppercase; letter-spacing:0.08em;">Time Control</span>
+            </div>
+            <div class="timer-selector" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom: 8px;">
+              <button class="timer-btn" data-time="180" onclick="CK.arena.setTimerAndRestart(180)" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#94a3b8; padding:6px 0; border-radius:6px; font-size:0.75rem; cursor:pointer; font-weight:600;">3 Min</button>
+              <button class="timer-btn" data-time="300" onclick="CK.arena.setTimerAndRestart(300)" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#94a3b8; padding:6px 0; border-radius:6px; font-size:0.75rem; cursor:pointer; font-weight:600;">5 Min</button>
+              <button class="timer-btn active" data-time="600" onclick="CK.arena.setTimerAndRestart(600)" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#94a3b8; padding:6px 0; border-radius:6px; font-size:0.75rem; cursor:pointer; font-weight:600;">10 Min</button>
+              <button class="timer-btn" data-time="1800" onclick="CK.arena.setTimerAndRestart(1800)" style="background:transparent; border:1px solid rgba(255,255,255,0.2); color:#94a3b8; padding:6px 0; border-radius:6px; font-size:0.75rem; cursor:pointer; font-weight:600;">30 Min</button>
+              <button class="timer-btn" data-time="untimed" onclick="CK.arena.setTimerAndRestart('untimed')" style="grid-column: span 2; background:transparent; border:1px solid rgba(255,255,255,0.2); color:#94a3b8; padding:6px 0; border-radius:6px; font-size:0.75rem; cursor:pointer; font-weight:600;">Untimed</button>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <input type="number" id="custom-timer-input" placeholder="Custom (min)" min="1" max="180" style="flex:1; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; padding:6px 10px; font-size:0.75rem;">
+              <button onclick="CK.arena.setCustomTimer()" style="background:var(--arena-gold); border:none; color:#111; font-weight:700; border-radius:6px; padding:0 12px; font-size:0.75rem; cursor:pointer; transition:all 0.2s;">Set</button>
+            </div>
+          </div>
           <style>
             .style-btn.active { background: rgba(56, 189, 248, 0.1) !important; border-color: #38bdf8 !important; color: #38bdf8 !important; }
             .coach-toggle input:checked + .slider { background-color: #10b981; }
@@ -5589,13 +5613,12 @@
             <div class="captured-pieces" id="arena-captured-black"></div>
           </div>
 
-          <!-- Move List -->
-          <div class="arena-panel">
-            <div class="arena-panel-header">Move History</div>
-            <div class="arena-move-list" id="arena-move-list"></div>
-          </div>
+
         </div>
       </div>
+
+      <!-- Coach Mode Overlay -->
+      <div id="coach-overlay" class="arena-overlay"></div>
 
       <!-- Post-Game Report Overlay -->
       <div class="arena-report-overlay" id="arena-report-overlay"></div>
@@ -5951,7 +5974,7 @@
           <div class="p-form-group"><label class="p-form-label">Student Email</label><input class="p-form-control"
               id="admin_s_email" type="email" placeholder="student@example.com" /></div>
           <div class="p-form-group"><label class="p-form-label">Initial Password</label><input class="p-form-control"
-              id="admin_s_password" type="password" placeholder="Min 8 characters" /></div>
+              id="admin_s_password" type="password" placeholder="Min 8 characters" autocomplete="current-password" /></div>
         </div>
         <div class="p-form-row">
           <div class="p-form-group"><label class="p-form-label">Student Level</label>
@@ -6033,7 +6056,7 @@
         </div>
         <div class="p-form-row" id="admin_c_auth_row">
           <div class="p-form-group"><label class="p-form-label">Initial Password</label><input class="p-form-control"
-              id="admin_c_password" type="password" placeholder="Min 8 characters" /></div>
+              id="admin_c_password" type="password" placeholder="Min 8 characters" autocomplete="current-password" /></div>
           <div class="p-form-group" style="display:flex; align-items:flex-end;">
             <span style="font-size:0.8rem; color:var(--p-text-muted); padding-bottom:8px;">Coach will use this to log in</span>
           </div>
@@ -6574,7 +6597,7 @@
   <!-- Stockfish 18 WASM — Web Worker for Arena AI -->
   <script>
     (function() {
-      var SF_URL = 'https://cdn.jsdelivr.net/npm/stockfish@18.0.0/stockfish-18-lite-single.js';
+      var SF_URL = '/stockfish/src/stockfish-nnue-16-single.js';
       window.Stockfish = function() {
         try {
           var worker = new Worker(SF_URL);

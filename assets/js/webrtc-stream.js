@@ -6,6 +6,7 @@
 window.CK = window.CK || {};
 
 CK.webrtc = (() => {
+  const supabaseClient = window.supabaseClient;
   const WTC = {};
 
   let localStream = null;

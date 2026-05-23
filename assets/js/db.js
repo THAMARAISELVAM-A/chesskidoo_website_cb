@@ -911,8 +911,14 @@
         date: reviewObj.date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
       };
       if (canUseSupabase()) {
-        try { await window.supabaseClient.from('coach_notes').insert(note); } catch(e) {}
+        try {
+          const { data, error } = await window.supabaseClient.from('coach_notes').insert(note).select();
+          if (!error && data && data[0]) {
+            note.id = data[0].id;
+          }
+        } catch(e) {}
       }
+      if (!note.id) note.id = Date.now();
       const notes = JSON.parse(localStorage.getItem('ck_coach_notes')) || [];
       notes.push(note);
       localStorage.setItem('ck_coach_notes', JSON.stringify(notes));
@@ -941,6 +947,18 @@
       if (window.CK && CK.student && typeof CK.student.renderCoachReviews === 'function') {
         CK.student.renderCoachReviews();
       }
+    },
+
+    async deleteReview(id) {
+      if (canUseSupabase()) {
+        try {
+          await window.supabaseClient.from('coach_notes').delete().eq('id', id);
+        } catch(e) {}
+      }
+      const notes = JSON.parse(localStorage.getItem('ck_coach_notes') || '[]');
+      const filtered = notes.filter(n => String(n.id) !== String(id));
+      localStorage.setItem('ck_coach_notes', JSON.stringify(filtered));
+      return true;
     },
 
     async getReviews(studentName) {

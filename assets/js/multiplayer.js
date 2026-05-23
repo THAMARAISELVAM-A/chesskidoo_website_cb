@@ -4,6 +4,7 @@
 window.CK = window.CK || {};
 
 CK.multiplayer = (() => {
+  const supabaseClient = window.supabaseClient;
   let _sub = null;
   let _activeGameId = null;
   let _myColor = null; // 'w' or 'b'

@@ -332,7 +332,7 @@ CK.parents = (() => {
               <div class="par-fb-header">
                 <span class="par-fb-date">${new Date(f.created_at).toLocaleDateString('en-IN')}</span>
               </div>
-              <div class="par-fb-msg">${_e(f.text)}</div>
+              <div class="par-fb-msg">${_e(f.text || f.message)}</div>
               ${f.reply ? `<div class="par-fb-reply">💬 Academy reply: ${_e(f.reply)}</div>` : ''}
             </div>`;
           }).join('') : '<div class="cls-empty">No previous feedback.</div>'}
@@ -345,9 +345,12 @@ CK.parents = (() => {
     const feedback = {
       id: 'fb-' + Date.now(),
       parent_name: _parentProfile?.full_name || 'Parent',
+      fromName: _parentProfile?.full_name || 'Parent',
       parent_email: _parentProfile?.email || '',
       student_email: _childProfile?.email || '',
-      text,
+      childName: _childProfile?.full_name || '',
+      text: text,
+      message: text,
       status: 'new',
       created_at: new Date().toISOString()
     };
@@ -371,11 +374,11 @@ CK.parents = (() => {
     el.innerHTML = all.map(f => `
       <div class="par-fb-card" style="margin-bottom:12px;">
         <div class="par-fb-header">
-          <span style="font-weight:700">${_e(f.parent_name || 'Parent')}</span>
+          <span style="font-weight:700">${_e(f.parent_name || f.fromName || 'Parent')}</span>
           <span class="par-fb-date">${new Date(f.created_at).toLocaleDateString('en-IN')}</span>
         </div>
-        ${f.student_email ? `<div style="font-size:0.8rem;color:var(--p-text-muted)">Child: ${_e(f.student_email)}</div>` : ''}
-        <div class="par-fb-msg">${_e(f.text)}</div>
+        ${f.student_email || f.childName ? `<div style="font-size:0.8rem;color:var(--p-text-muted)">Child: ${_e(f.student_email || f.childName)}</div>` : ''}
+        <div class="par-fb-msg">${_e(f.text || f.message)}</div>
         ${f.reply
           ? `<div class="par-fb-reply">💬 Replied: ${_e(f.reply)}</div>`
           : `<div style="display:flex;gap:8px;margin-top:8px;">
