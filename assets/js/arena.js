@@ -932,9 +932,9 @@
     const newAchievements = [];
     if (result === 'win') newAchievements.push(ACHIEVEMENTS.first_win);
     if (classifications.filter(c => c === 'blunder').length >= 3) newAchievements.push(ACHIEVEMENTS.blunder_finder);
-    if (classifications.filter(c => c === 'blunder' || c === 'mistake').length === 0) newAchievements.push(ACHIEVEMENTS.perfect_game);
+    if (totalMoves >= 10 && classifications.filter(c => c === 'blunder' || c === 'mistake').length === 0) newAchievements.push(ACHIEVEMENTS.perfect_game);
     if (totalMoves <= 10 && result === 'win') newAchievements.push(ACHIEVEMENTS.speed_win);
-    if (accuracy >= 90) newAchievements.push(ACHIEVEMENTS.accuracy_master);
+    if (totalMoves >= 15 && accuracy >= 90) newAchievements.push(ACHIEVEMENTS.accuracy_master);
 
     newAchievements.forEach(a => {
       if (!achievements.find(existing => existing.name === a.name)) {
@@ -960,6 +960,17 @@
     else if (accuracy >= 72) { playerActualLevel = 'Advanced';     actualIdx = 2; }
     else if (accuracy >= 55) { playerActualLevel = 'Intermediate'; actualIdx = 1; }
     else               { playerActualLevel = 'Beginner';     actualIdx = 0; }
+
+    if (totalMoves < 5) {
+      lines.push({ icon: '⏱️', text: 'The game ended too quickly for deep analysis. Play a longer game to get a comprehensive evaluation of your skills and a proper level assessment.' });
+      return { 
+        lines, 
+        levelMsg: "Play at least 5 moves to unlock an accurate level assessment.", 
+        levelIcon: 'ℹ️', 
+        levelColor: '#64748b', 
+        playerActualLevel: 'N/A' 
+      };
+    }
 
     // Opening commentary
     const earlyErrors = classificationHistory.slice(0, Math.min(8, totalMoves))
