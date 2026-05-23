@@ -734,6 +734,12 @@ CK.classroom = (() => {
     renderLibrary();
   }
 
+  window.addEventListener('resize', () => {
+    if (_hwBoard) _hwBoard.resize();
+    if (_liveBoard) _liveBoard.resize();
+    if (_ccLiveBoard) _ccLiveBoard.resize();
+  });
+
   return {
     /* Student */
     studentTab, renderStudentHomework, openHomework, closeHomework,

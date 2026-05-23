@@ -483,6 +483,10 @@ CK.enginePlay = (() => {
     return _pvGame ? _pvGame.history({ verbose: true }) : [];
   }
 
+  window.addEventListener('resize', () => {
+    if (_pvBoard) _pvBoard.resize();
+  });
+
   return {
     evaluate, getBestMove, LEVELS, TIME_CONTROLS,
     initPlayVsComputer, pvNewGame, pvFlip, pvResign, pvGetMoveHistory,

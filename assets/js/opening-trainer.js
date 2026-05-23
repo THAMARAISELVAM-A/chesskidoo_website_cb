@@ -239,7 +239,7 @@ CK.openingTrainer = (() => {
         </div>
         <div class="ot-modal-body">
           <div class="ot-drill-left">
-            <div id="otDrillBoard" style="width:340px;"></div>
+            <div id="otDrillBoard" style="width:340px;max-width:100%;margin:0 auto;"></div>
             <div id="otDrillStatus" class="ot-drill-status">Play the correct move for ${opening.side === 'white' ? '⬜ White' : '⬛ Black'}</div>
           </div>
           <div class="ot-drill-right">
@@ -433,6 +433,12 @@ CK.openingTrainer = (() => {
         <div class="ot-ov-stat"><div class="ot-ov-val">${total}</div><div class="ot-ov-lbl">Total</div></div>
       </div>`;
   }
+
+  window.addEventListener('resize', () => {
+    if (_drillState && _drillState.board) {
+      _drillState.board.resize();
+    }
+  });
 
   return {
     OPENINGS, getMasteryPct, getMasteryLevel,

@@ -1755,4 +1755,10 @@ ta: {
   }, { rootMargin: '200px' });
   document.querySelectorAll('img[data-src]').forEach(img => lazyImgObs.observe(img));
 
+  window.addEventListener('resize', () => {
+    if (window.CK && CK.lab && CK.lab.board) {
+      CK.lab.board.resize();
+    }
+  });
+
 })();

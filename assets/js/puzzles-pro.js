@@ -319,6 +319,10 @@ CK.puzzlesPro = (() => {
     if (modal) modal.remove();
   }
 
+  window.addEventListener('resize', () => {
+    if (_pzBoard) _pzBoard.resize();
+  });
+
   return {
     PUZZLES, getLeaderboard, recordScore, hasSolved,
     getPuzzleById, getDailyPuzzle, getFilteredPuzzles,
