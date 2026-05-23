@@ -1756,31 +1756,7 @@ CK.student = {
   },
 
   selectPayMethod(el, method) {
-    document.querySelectorAll('#student-panel-fees .pay-method').forEach(m => m.classList.remove('active'));
-    if (el) el.classList.add('active');
-    this._selectedPayMethod = method;
-
-    const btn   = document.getElementById('paySubmitBtn');
-    const strip = document.getElementById('payUpiStrip');
-    if (method === 'upi') {
-      if (btn) {
-        const textSpan = btn.querySelector('.pay-btn-text');
-        const iconSpan = btn.querySelector('.pay-btn-icon');
-        if (textSpan) textSpan.textContent = 'Pay via UPI / Google Pay';
-        if (iconSpan) iconSpan.textContent = '📱';
-        btn.classList.remove('razorpay-mode');
-      }
-      if (strip) strip.style.display = 'flex';
-    } else {
-      if (btn) {
-        const textSpan = btn.querySelector('.pay-btn-text');
-        const iconSpan = btn.querySelector('.pay-btn-icon');
-        if (textSpan) textSpan.textContent = 'Pay Securely via Razorpay';
-        if (iconSpan) iconSpan.textContent = '🔒';
-        btn.classList.add('razorpay-mode');
-      }
-      if (strip) strip.style.display = 'none';
-    }
+    this._selectedPayMethod = 'upi'; // Force UPI
   },
 
   async processPayment() {
@@ -1789,72 +1765,7 @@ CK.student = {
       CK.showToast('Please accept the Terms of Service before proceeding.', 'warning');
       return;
     }
-
-    const method = this._selectedPayMethod || 'upi';
-
-    if (method === 'upi') {
-      this.openUpiPayment();
-    } else {
-      // Card / Net Banking / EMI — Razorpay
-      if (!window.Razorpay) {
-        CK.showToast('Payment gateway is loading. Please try again in a moment.', 'warning');
-        return;
-      }
-      // Guard: if the Razorpay key was never configured, don't open a broken
-      // gateway — route the parent to the working UPI option instead.
-      const _rzpKey = window.CK_RAZORPAY_KEY || '';
-      if (!_rzpKey || /PLACEHOLDER|REPLACE_WITH/i.test(_rzpKey)) {
-        CK.showToast('Card payments aren’t set up yet — please use the UPI / Google Pay option above.', 'warning');
-        return;
-      }
-      const p = this.userProfile || {};
-      const tuition = parseInt(p.fee) || 4000;
-      const gst = Math.round(tuition * 0.18);
-      const total = tuition + gst;
-
-      // Attempt to create server-side order for tamper-proof amount verification (optional)
-      let orderId = null;
-      try {
-        const session = await window.supabaseClient?.auth.getSession();
-        const token = session?.data?.session?.access_token;
-        if (token && window.APP_CONFIG?.SUPABASE_URL) {
-          const res = await fetch(
-            `${window.APP_CONFIG.SUPABASE_URL}/functions/v1/razorpay-order`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-              body: JSON.stringify({ amount_inr: total, student_id: p.id, batch: p.batch || 'Chess Training' }),
-            }
-          );
-          if (res.ok) { const data = await res.json(); orderId = data.order_id; }
-        }
-      } catch (e) {
-        console.info('[ChessKidoo] Edge Function order creation skipped. Using client-side order.');
-      }
-
-      const options = {
-        key:         window.CK_RAZORPAY_KEY || 'rzp_test_PLACEHOLDER',
-        amount:      total * 100,
-        currency:    'INR',
-        name:        'ChessKidoo Academy',
-        description: (p.batch || 'Chess Training') + ' — ' + (p.level || 'Intermediate') + ' Batch',
-        handler:     response => CK.student.onPaymentSuccess(response),
-        prefill:     { name: p.full_name || '', email: p.email || '', contact: p.phone_number || p.phone || '' },
-        notes:       { student_id: p.id || '', batch: p.batch || '' },
-        theme:       { color: '#D97706' },
-        modal:       { ondismiss: () => CK.showToast('Payment cancelled.', 'warning') },
-      };
-      if (orderId) options.order_id = orderId;
-      try {
-        const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', err => {
-          CK.showToast('Payment failed: ' + (err.error?.description || 'Unknown error'), 'error');
-        });
-        rzp.open();
-      } catch (e) {
-        CK.showToast('Could not open payment gateway. Please refresh and try again.', 'error');
-      }
-    }
+    this.openUpiPayment();
   },
 
   async onPaymentSuccess(response) {
