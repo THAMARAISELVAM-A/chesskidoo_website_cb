@@ -1641,6 +1641,17 @@
   .arena-report-actions { padding: 0 20px 20px; }
   .cert-border-inner { padding: 24px 20px; }
   .cert-details-grid { grid-template-columns: 1fr; }
+  /* Certificate: drop the 3D tilt on mobile (it shifts the card off-centre),
+     stack the card + action buttons vertically, and let it scroll */
+  .cert-overlay {
+    padding: 12px !important; overflow-y: auto !important;
+    flex-direction: column !important;
+    align-items: center !important; justify-content: flex-start !important;
+    gap: 14px !important;
+  }
+  .cert-perspective-container { perspective: none !important; max-width: 100% !important; width: 100% !important; }
+  .cert-card { transform: none !important; width: 100% !important; max-width: 100% !important; }
+  .cert-actions { flex-wrap: wrap !important; justify-content: center !important; width: 100%; }
 }
 
 /* ─── ChessKidoo Arcade Cabinets (Playable Games Redesign) ─── */
