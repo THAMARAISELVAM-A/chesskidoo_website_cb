@@ -345,7 +345,7 @@
 }
 
 .more-games-subtitle {
-  color: var(--arena-text-muted);
+  color: #cbd5e6;
   font-size: clamp(1rem, 2.5vw, 1.25rem);
   max-width: 680px;
   margin: 0 auto;
@@ -418,7 +418,7 @@
 }
 
 .card-desc {
-  color: var(--arena-text-muted);
+  color: #c7d2e0;
   font-size: 0.95rem;
   margin-bottom: 20px;
   line-height: 1.5;

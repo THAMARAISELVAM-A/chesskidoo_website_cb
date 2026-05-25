@@ -159,6 +159,30 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
+   MORE GAMES — compact 2-up grid on phones (was 1 huge card per screen)
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 700px) {
+  .games-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  .game-card { padding: 18px 12px !important; border-radius: 18px !important; }
+  .game-icon { font-size: 2.3rem !important; margin-bottom: 6px !important; }
+  .card-title { font-size: 1rem !important; margin-bottom: 5px !important; }
+  .card-desc { font-size: 0.76rem !important; margin-bottom: 12px !important; line-height: 1.4 !important; }
+  .card-badges { gap: 4px !important; flex-wrap: wrap !important; }
+  .card-badges .badge { font-size: 0.6rem !important; padding: 3px 7px !important; }
+  .card-best { font-size: 0.72rem !important; }
+  /* tame the heavy 3D hover/tilt on touch so taps feel snappy */
+  .game-card:hover { transform: translateY(-4px) !important; }
+}
+@media (max-width: 360px) {
+  .games-grid { gap: 9px !important; }
+  .game-card { padding: 14px 9px !important; }
+  .card-title { font-size: 0.92rem !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════
    TOUCH DEVICE — DISABLE HOVER EFFECTS
    ═══════════════════════════════════════════════════════════ */
 @media (hover: none) and (pointer: coarse) {
