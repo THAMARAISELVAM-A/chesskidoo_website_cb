@@ -78,17 +78,20 @@
   // Helper: Set local storage item
   const setLocal = (key, data) => localStorage.setItem(`ck_db_${key}`, JSON.stringify(data));
 
-  // Determine if Supabase can be queried
-  let _supabaseDisabled = false; // Fast-fail flag: once Supabase fails, stop retrying this session
+  // Determine if Supabase can be queried.
+  // A single transient failure must NOT disable the DB for the whole session
+  // (that was making the app appear "disconnected" — all writes silently went
+  // to localStorage and never reached Supabase). Instead we back off for a short
+  // cooldown and then automatically retry, so the connection self-heals.
+  let _supabaseCooldownUntil = 0;
+  const _COOLDOWN_MS = 12000;
   const canUseSupabase = () => {
-    if (_supabaseDisabled) return false;
+    if (Date.now() < _supabaseCooldownUntil) return false;
     return !!(window.supabaseClient && navigator.onLine);
   };
   const markSupabaseFailed = () => {
-    if (!_supabaseDisabled) {
-      _supabaseDisabled = true;
-      console.warn("[ChessKidoo DB] Supabase marked unreachable. All queries will use local storage for this session.");
-    }
+    _supabaseCooldownUntil = Date.now() + _COOLDOWN_MS;
+    console.warn(`[ChessKidoo DB] Supabase temporarily unreachable; retrying in ${_COOLDOWN_MS/1000}s. Using local storage meanwhile.`);
   };
 
   /* ─── CK.db Main Object ─── */
@@ -104,11 +107,11 @@
           // Race against a 3s timeout to prevent hanging
           const result = await Promise.race([
             query,
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Supabase timeout')), 3000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Supabase timeout')), 6000))
           ]);
           const { data, error } = result;
-          if (!error && data) return data;
-          console.warn("[ChessKidoo DB] Supabase query failed, falling back to local storage:", error);
+          if (!error) return data || [];
+          console.warn("[ChessKidoo DB] Supabase query failed, falling back to local storage:", error.message || error);
           markSupabaseFailed();
         } catch (e) {
           console.warn("[ChessKidoo DB] Supabase error, falling back:", e);
@@ -127,11 +130,13 @@
           const col = isCustomUserId ? 'userid' : 'id';
           const result = await Promise.race([
             window.supabaseClient.from('users').select('*').eq(col, id).maybeSingle(),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Supabase timeout')), 3000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Supabase timeout')), 6000))
           ]);
           const { data, error } = result;
-          if (!error && data) return data;
-          console.warn("[ChessKidoo DB] Supabase profile query failed, falling back:", error);
+          // No error = successful query. data may be null (user simply not found) —
+          // that is NOT a connection failure, so return it without disabling Supabase.
+          if (!error) return data;
+          console.warn("[ChessKidoo DB] Supabase profile query error, falling back:", error.message || error);
           markSupabaseFailed();
         } catch (e) {
           console.warn("[ChessKidoo DB] Profile query error, falling back:", e);

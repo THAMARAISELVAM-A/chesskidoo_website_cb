@@ -1806,10 +1806,14 @@
   transition: filter 0.12s ease, outline 0.1s ease;
 }
 .arcade-sq.light {
-  background-color: var(--arcade-board-light, #d4d4a8);
+  background-color: var(--arcade-board-light, #ebecd3);
+  /* same-colour 1px spread fills sub-pixel grid seams so the board reads as a
+     clean continuous checkerboard instead of thin dark lines */
+  box-shadow: 0 0 0 1px var(--arcade-board-light, #ebecd3);
 }
 .arcade-sq.dark {
-  background-color: var(--arcade-board-dark, #4a7a2e);
+  background-color: var(--arcade-board-dark, #6f9c54);
+  box-shadow: 0 0 0 1px var(--arcade-board-dark, #6f9c54);
 }
 .arcade-sq:hover {
   filter: brightness(1.08);
