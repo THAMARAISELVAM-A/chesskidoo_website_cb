@@ -671,7 +671,7 @@ CK.admin = {
     const allStudents = (await CK.db.getProfiles('student')) || [];
 
     tbody.innerHTML = coaches.map(c => {
-      const spec = c.puzzle || c.specialty || 'Chess Strategy';
+      const spec = c.specialization || c.specialty || (typeof c.puzzle === 'string' ? c.puzzle : '') || 'Chess Strategy';
       const fide = c.rating ? c.rating + ' ELO' : (c.fide_rating || '—');
       const batches = c.batches || c.schedule || '—';
       const timetable = c.timetable || c.availability || '—';
@@ -1076,7 +1076,7 @@ CK.admin = {
       const email    = getV('admin_s_email');
       const password = getV('admin_s_password');
       if (!email)    return CK.showToast('Student email is required for new enrollment', 'error');
-      if (!password || password.length < 8) return CK.showToast('Initial password must be at least 8 characters', 'error');
+      if (!password || password.length < 6) return CK.showToast('Initial password must be at least 6 characters', 'error');
 
       if (window.supabaseClient) {
         const { data, error } = await CK.accessManager.setCredential(email, password);
@@ -1376,7 +1376,7 @@ CK.admin = {
     let authUid = existingId;
     if (isNew && window.supabaseClient) {
       const password = getV('admin_c_password');
-      if (!password || password.length < 8) return CK.showToast('Initial password must be at least 8 characters', 'error');
+      if (!password || password.length < 6) return CK.showToast('Initial password must be at least 6 characters', 'error');
       const { data, error } = await CK.accessManager.setCredential(email, password);
       if (error) return CK.showToast('Auth account creation failed: ' + error.message, 'error');
       authUid = data?.user?.id || ('coach-' + Date.now());
@@ -1391,7 +1391,7 @@ CK.admin = {
       email: existing.email || email,
       phone_number: phone,
       role: 'coach',
-      puzzle:       getV('admin_c_spec'),
+      specialization: getV('admin_c_spec'),
       address:      getV('admin_c_addr'),
       photo:        getV('admin_c_photo'),
       status:       getV('admin_c_status') || 'Active',
