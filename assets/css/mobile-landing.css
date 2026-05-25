@@ -93,7 +93,13 @@ button, a, select, .btn, .nav-link, .faq-trigger,
   }
   .sq { width: 100% !important; height: 100% !important; }
   .piece { font-size: clamp(20px, 8vw, 36px) !important; }
-  .coords-col { height: 100% !important; width: 16px !important; margin-right: 2px !important; }
+  /* Rank-label column must stretch to the fluid board height (it was bunching
+     at the top because height:100% can't resolve against an auto-height parent) */
+  .board-section div[style*="flex-start"] { align-items: stretch !important; }
+  .coords-col {
+    height: auto !important; align-self: stretch !important;
+    width: 14px !important; margin-right: 2px !important;
+  }
   .coords-row { width: 100% !important; margin-top: 4px !important; }
   .coord { font-size: 9px !important; }
 

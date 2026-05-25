@@ -978,6 +978,21 @@
 }
 .arena-report-overlay.active { display: flex; }
 
+/* Configure-Match modal is a sibling of its overlay (not nested), so it needs
+   its own fixed centering — otherwise it renders static at the bottom of the
+   page and the "Configure Match" panel appears invisible/off-screen. */
+#arena-challenge-modal {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 10001 !important;
+  width: calc(100% - 32px);
+  max-width: 460px;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
 .arena-report-modal {
   background: var(--arena-surface);
   border: 1px solid var(--arena-border);
@@ -2676,7 +2691,9 @@
 
 /* ─── Upgraded AI Arena Custom CSS Styles ─── */
 
-.coach-grid {
+/* Scoped to the AI Arena coach-SELECT grid only (it shares the generic
+   .coach-grid class which otherwise clobbers the landing coaches grid). */
+.coach-grid:has(.coach-select-card) {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;

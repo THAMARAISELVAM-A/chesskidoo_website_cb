@@ -52,12 +52,12 @@
     // Pre-populate offline credentials in localStorage so demo accounts are fully accessible out-of-the-box
     const credsKey = 'ck_user_credentials';
     const credsVersion = 'ck_creds_version';
-    if (!localStorage.getItem(credsKey) || localStorage.getItem(credsVersion) !== '2') {
-      localStorage.setItem(credsVersion, '2');
+    if (!localStorage.getItem(credsKey) || localStorage.getItem(credsVersion) !== '3') {
+      localStorage.setItem(credsVersion, '3');
       const defaultCreds = {
         'admin@chesskidoo.com': '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', // admin123
         'admin@gmail.com': '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', // admin123
-        'student@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
+        'student@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', // 123456 (student default)
         'arivuselvam@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
         'gyanasurya@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
         'vishnu@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
