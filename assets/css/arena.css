@@ -30,10 +30,10 @@
   --arena-indigo: #6366f1;
   --arena-text: #f1f5f9;
   --arena-text-muted: #94a3b8;
-  --arena-board-light: #d4d4a8;
-  --arena-board-dark: #4a7a2e;
-  --arcade-board-light: #d4d4a8;
-  --arcade-board-dark: #4a7a2e;
+  --arena-board-light: #ebecd3;
+  --arena-board-dark: #6f9c54;
+  --arcade-board-light: #ebecd3;
+  --arcade-board-dark: #6f9c54;
   --arena-shadow: rgba(0, 0, 0, 0.4);
   --arena-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   --card-puzzle: #f59e0b;
@@ -1785,10 +1785,13 @@
   grid-template-rows: repeat(8, 1fr);
   width: 100%;
   height: 100%;
-  border-radius: 10px;
+  border-radius: 14px;
   overflow: hidden;
-  border: 4px solid #3a5220;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(85,107,47,0.3), inset 0 0 20px rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow:
+    0 24px 60px rgba(0,0,0,0.55),
+    0 0 0 6px rgba(255,255,255,0.03),
+    0 0 0 1px rgba(0,0,0,0.4);
   position: relative;
 }
 .arcade-sq {
@@ -1809,8 +1812,8 @@
   background-color: var(--arcade-board-dark, #4a7a2e);
 }
 .arcade-sq:hover {
-  filter: brightness(1.15);
-  outline: 2px solid rgba(85,107,47,0.55);
+  filter: brightness(1.08);
+  outline: 2px solid rgba(255,255,255,0.4);
   outline-offset: -2px;
   z-index: 1;
 }
