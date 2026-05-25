@@ -2049,7 +2049,7 @@
 }
 
 .lab-ml-empty {
-  color: rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.62);
   text-align: center;
   padding: 20px;
   font-size: 0.83rem;
@@ -2069,7 +2069,7 @@
 
 .lab-move-num {
   font-size: 0.75rem;
-  color: rgba(255,255,255,0.28);
+  color: rgba(255,255,255,0.62);
   font-weight: 600;
   padding: 4px 2px;
   text-align: right;
@@ -2160,7 +2160,7 @@
 
 .lab-vbar-score {
   font-size: 0.6rem;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.62);
   line-height: 1;
 }
 
@@ -2280,7 +2280,7 @@
   border: 1px solid rgba(255,255,255,0.12);
   border-radius: 20px;
   background: transparent;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.62);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
@@ -2298,7 +2298,7 @@
 .cls-empty {
   text-align: center;
   padding: 48px 20px;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.62);
   font-size: 0.95rem;
   background: rgba(17, 20, 24, 0.3);
   border: 2px dashed rgba(255,255,255,0.08);
@@ -2341,7 +2341,7 @@
 .cls-hw-info { flex: 1; min-width: 0; }
 .cls-hw-title { font-size: 0.97rem; font-weight: 700; color: #fff; margin-bottom: 2px; }
 .cls-hw-meta  { font-size: 0.78rem; color: var(--p-text-muted); }
-.cls-hw-desc  { font-size: 0.82rem; color: rgba(255,255,255,0.45); margin-top: 4px; }
+.cls-hw-desc  { font-size: 0.82rem; color: rgba(255,255,255,0.62); margin-top: 4px; }
 
 .cls-hw-right {
   display: flex;
@@ -2430,7 +2430,7 @@
   padding: 6px 10px;
   font-size: 0.73rem;
   font-weight: 700;
-  color: rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.62);
   letter-spacing: .05em;
   text-transform: uppercase;
   border-bottom: 1px solid rgba(255,255,255,0.07);
@@ -2497,7 +2497,7 @@
 .card-best {
   margin-top: 10px;
   font-size: 0.77rem;
-  color: rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.62);
   border-top: 1px solid rgba(255,255,255,0.07);
   padding-top: 8px;
 }
@@ -2732,7 +2732,7 @@
 
 .sd-session-countdown-label {
   font-size: 0.73rem;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.62);
 }
 
 .sd-session-countdown-val {
@@ -2914,7 +2914,7 @@
 
 .sd-lesson-prog-label {
   font-size: 0.7rem;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.62);
 }
 
 .sd-lesson-btn {
@@ -2991,7 +2991,7 @@
 
 .pz-stat-lbl {
   font-size: 0.72rem;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.62);
   margin-top: 2px;
 }
 
@@ -3014,7 +3014,7 @@
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: .07em;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.62);
   border-bottom: 1px solid rgba(255,255,255,0.05);
   background: rgba(255,255,255,0.02);
   font-family: 'Poppins', sans-serif;
@@ -3067,7 +3067,7 @@
 
 .pz-placeholder p {
   font-size: 0.85rem;
-  color: rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.62);
   line-height: 1.6;
 }
 
@@ -3218,7 +3218,7 @@
 
 .pay-academy-sub {
   font-size: 0.72rem;
-  color: rgba(255,255,255,0.38);
+  color: rgba(255,255,255,0.62);
   margin-top: 2px;
 }
 
@@ -3275,7 +3275,7 @@
   justify-content: space-between;
   align-items: center;
   font-size: 0.83rem;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.62);
   margin-top: 4px;
 }
 
@@ -3302,7 +3302,7 @@
 .pay-security-note {
   margin-top: 20px;
   font-size: 0.7rem;
-  color: rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.62);
   text-align: center;
   line-height: 1.7;
   letter-spacing: 0.02em;
@@ -3343,7 +3343,7 @@
 
 .pay-form-sub {
   font-size: 0.78rem;
-  color: rgba(255,255,255,0.38);
+  color: rgba(255,255,255,0.62);
   margin-top: 4px;
   letter-spacing: 0.01em;
 }
@@ -3356,7 +3356,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .1em;
-  color: rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.62);
 }
 
 .pay-methods {
@@ -3426,7 +3426,7 @@
 
 .pay-method-desc {
   font-size: 0.68rem;
-  color: rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.62);
   margin-top: 1px;
   white-space: nowrap;
   overflow: hidden;
@@ -3480,7 +3480,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: .1em;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.62);
   margin-bottom: 4px;
 }
 
@@ -3495,7 +3495,7 @@
 
 .pay-amount-note {
   font-size: 0.68rem;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.62);
   margin-top: 4px;
 }
 
@@ -3578,7 +3578,7 @@
 
 .pay-upi-payee-phone {
   font-size: 0.71rem;
-  color: rgba(255,255,255,0.38);
+  color: rgba(255,255,255,0.62);
   margin-top: 2px;
 }
 
@@ -3619,7 +3619,7 @@
   align-items: flex-start;
   gap: 10px;
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.62);
   cursor: pointer;
   line-height: 1.55;
 }
@@ -3713,7 +3713,7 @@
   padding: 4px 10px;
   font-size: 0.68rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.38);
+  color: rgba(255,255,255,0.62);
   white-space: nowrap;
 }
 .pay-trust-chip svg { opacity: 0.5; flex-shrink: 0; }

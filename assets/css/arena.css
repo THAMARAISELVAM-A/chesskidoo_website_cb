@@ -4,8 +4,11 @@
    and digital certificate styles.
    --------------------------------------------------------------- */
 
-/* ─── Arena Color Palette ─── */
-#arena-page {
+/* ─── Arena Color Palette ───
+   Defined on :root (not just #arena-page) so dynamically-created arcade/game
+   overlays appended to <body> still resolve these vars instead of falling back
+   to the dark cream-theme text colour (which caused low-contrast dark-on-dark). */
+:root, #arena-page {
   --arena-bg: #0a0c0f;
   --arena-surface: #111418;
   --arena-surface2: #1a1f2e;
@@ -652,7 +655,7 @@
 .arena-coord {
   font-size: 10px;
   font-weight: 600;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.62);
   width: 12.5%;
   text-align: center;
   font-family: 'Poppins', sans-serif !important;
@@ -2532,7 +2535,7 @@
 }
 .card-best {
   font-size: 0.78rem;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.62);
   margin-top: 14px;
   border-top: 1px solid rgba(255,255,255,0.06);
   padding-top: 10px;

@@ -1336,6 +1336,7 @@ CK.student = {
   async initCharts() {
     const ctx = document.getElementById('ratingChart')?.getContext('2d');
     if (!ctx) return;
+    if (!this.userProfile) return; // profile not loaded yet — avoid null crash
 
     // Fetch historical ratings from DB
     const history = await CK.db.getRatings(this.userProfile.id || this.userProfile.userid);
