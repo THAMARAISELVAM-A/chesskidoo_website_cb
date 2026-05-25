@@ -282,7 +282,7 @@ CK.certs = (() => {
     _loadJsPDF(() => generatePDF(cert));
   }
 
-  let _pendingClaim = null;
+  const _pendingClaim = null;
   function claimCert() {
     const user = CK.currentUser || JSON.parse(localStorage.getItem('ck_user') || '{}');
     if (!user || !user.id) { CK.showToast('Please log in first', 'error'); return; }

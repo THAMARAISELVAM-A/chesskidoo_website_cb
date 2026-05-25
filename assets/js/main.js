@@ -222,6 +222,62 @@
     }, 4000);
   };
 
+  /* ─── Help & Support overlay ─── */
+  CK.showHelp = (role = 'student') => {
+    const tips = {
+      admin: [
+        ['📡 Live Tracking', 'See which coaches and students are active in real time.'],
+        ['🎓 Students & Coaches', 'Enroll, edit and manage everyone from one place.'],
+        ['🔑 Access Management', 'Set individual login credentials for each user.'],
+        ['📊 Reports & Analytics', 'Track attendance, revenue and engagement trends.'],
+      ],
+      coach: [
+        ['📡 Live Session', 'Run a synced board with your students in real time.'],
+        ['🎓 My Students', 'View progress, ratings and game history per student.'],
+        ['✅ Attendance', 'Mark attendance for each class quickly.'],
+        ['🧩 Assign Puzzles', 'Push tactics puzzles to your students.'],
+      ],
+      student: [
+        ['📡 Join Class', 'Hop into your live session when class is on.'],
+        ['🧩 My Puzzles', 'Solve daily tactics to climb your rating.'],
+        ['🔬 PGN Lab', 'Analyse games with the built-in engine.'],
+        ['💳 Fee Payment', 'Pay securely via UPI / Google Pay.'],
+      ],
+      parent: [
+        ['📈 Progress', "Track your child's rating and learning trends."],
+        ['✅ Attendance', 'See class attendance at a glance.'],
+        ['💳 Fee Payment', 'Pay class fees securely online.'],
+        ['💬 Feedback', 'Message the academy directly.'],
+      ],
+    };
+    const list = (tips[role] || tips.student)
+      .map(([t, d]) => `<div class="ck-help-item"><div class="ck-help-item-t">${t}</div><div class="ck-help-item-d">${d}</div></div>`)
+      .join('');
+    let ov = document.getElementById('ck-help-overlay');
+    if (ov) ov.remove();
+    ov = document.createElement('div');
+    ov.id = 'ck-help-overlay';
+    ov.className = 'ck-help-overlay';
+    ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
+    ov.innerHTML = `
+      <div class="ck-help-card" role="dialog" aria-label="Help and support">
+        <button class="ck-help-close" aria-label="Close" onclick="document.getElementById('ck-help-overlay').remove()">✕</button>
+        <div class="ck-help-head">
+          <div class="ck-help-icon">♟</div>
+          <div>
+            <h3>Help &amp; Support</h3>
+            <p>Quick guide to your ChessKidoo portal</p>
+          </div>
+        </div>
+        <div class="ck-help-list">${list}</div>
+        <div class="ck-help-contact">
+          <a href="https://wa.me/919025846663" target="_blank" rel="noopener" class="ck-help-btn ck-help-btn-wa">💬 WhatsApp Support</a>
+          <a href="mailto:Chesskidoo37@gmail.com" class="ck-help-btn ck-help-btn-mail">✉️ Email Us</a>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+  };
+
   /* ─── Game Particles Animation ─── */
   CK.initGameParticles = () => {
     const container = document.getElementById('game-particles');
@@ -1402,6 +1458,56 @@ ta: {
       }
       const active = Object.values(JSON.parse(localStorage.getItem('ck_live_presence') || '{}')).filter(u => u.role === 'student' && Date.now() - u.lastSeen < 300000).length;
       CK.showToast(`📢 Position broadcasted to ${active} active student${active !== 1 ? 's' : ''}!`, 'success');
+    },
+
+    _followSubscription: null,
+    toggleFollowCoach() {
+      const btn = document.getElementById('studentFollowCoachBtn');
+      const dot = btn?.querySelector('.live-dot');
+      const isFollowing = !!this._followSubscription;
+
+      if (isFollowing) {
+        if (window.supabaseClient && typeof window.supabaseClient.removeChannel === 'function') {
+          window.supabaseClient.removeChannel(this._followSubscription);
+        }
+        this._followSubscription = null;
+        if (btn) {
+          btn.style.background = '';
+          btn.style.borderColor = '';
+          btn.style.color = '';
+        }
+        if (dot) dot.style.display = 'none';
+        CK.showToast('📡 Unfollowed coach board.', 'info');
+      } else {
+        if (!window.supabaseClient || typeof window.supabaseClient.channel !== 'function') {
+          CK.showToast('Real-time database connection not available.', 'error');
+          return;
+        }
+
+        CK.showToast('📡 Syncing with Coach board live...', 'success');
+        if (btn) {
+          btn.style.background = 'rgba(34,197,94,0.15)';
+          btn.style.borderColor = '#22c55e';
+          btn.style.color = '#22c55e';
+        }
+        if (dot) dot.style.display = 'inline-block';
+
+        // Load the initial coach board state first
+        window.supabaseClient.from('broadcasts').select('*').eq('id', 'coach_board').maybeSingle().then(res => {
+          if (res.data && res.data.pgn) {
+            this.analyzePgn(res.data.pgn, 'studentLabBoard');
+          }
+        });
+
+        // Listen for realtime updates
+        this._followSubscription = window.supabaseClient.channel('public:broadcasts_coach')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'broadcasts', filter: "id=eq.coach_board" }, (payload) => {
+            if (payload.new && payload.new.pgn) {
+              this.analyzePgn(payload.new.pgn, 'studentLabBoard');
+            }
+          })
+          .subscribe();
+      }
     },
 
     lichessEmbed(inputId, frameId) {

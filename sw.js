@@ -1,5 +1,5 @@
 /* ChessKidoo Service Worker — offline-first static assets, network-first API */
-const CACHE = 'ck-v10';
+const CACHE = 'ck-v14';
 
 const PRECACHE = [
   '/',
@@ -38,6 +38,8 @@ const PRECACHE = [
   '/assets/js/pgn-library.js',
   '/assets/js/chessboard.js',
   '/assets/js/certs.js',
+  '/assets/js/webrtc-stream.js',
+  '/assets/js/multiplayer.js',
   '/manifest.json',
 ];
 

@@ -4,14 +4,13 @@
 window.CK = window.CK || {};
 
 CK.multiplayer = (() => {
-  const supabaseClient = window.supabaseClient;
   let _sub = null;
   let _activeGameId = null;
   let _myColor = null; // 'w' or 'b'
 
   async function startMatchmaking() {
-    if (!window.supabaseClient) {
-      CK.showToast('Database offline. Cannot connect to matchmaking servers.', 'error');
+    if (!window.supabaseClient || typeof window.supabaseClient.channel !== 'function') {
+      CK.showToast('Database offline or Realtime channel unsupported.', 'error');
       return;
     }
     const me = CK.currentUser || { id: 'anon-' + Date.now(), full_name: 'Guest Player' };
@@ -20,7 +19,7 @@ CK.multiplayer = (() => {
 
     try {
       // 1. Look for a waiting game
-      const { data: waiting } = await supabaseClient
+      const { data: waiting } = await window.supabaseClient
         .from('multiplayer_games')
         .select('*')
         .eq('status', 'waiting')
@@ -30,7 +29,7 @@ CK.multiplayer = (() => {
 
       if (waiting) {
         // Join as black
-        const { error } = await supabaseClient.from('multiplayer_games')
+        const { error } = await window.supabaseClient.from('multiplayer_games')
           .update({ black_id: me.id, black_name: me.full_name, status: 'active' })
           .eq('id', waiting.id);
         
@@ -46,7 +45,7 @@ CK.multiplayer = (() => {
       // 2. Create new game as white
       const newId = 'game_' + Date.now();
       const initialFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-      const { error: insertErr } = await supabaseClient.from('multiplayer_games')
+      const { error: insertErr } = await window.supabaseClient.from('multiplayer_games')
         .insert({
           id: newId,
           white_id: me.id,
@@ -79,29 +78,33 @@ CK.multiplayer = (() => {
     }
 
     // Subscribe to game changes
-    if (_sub) supabaseClient.removeChannel(_sub);
-    _sub = supabaseClient.channel('public:multiplayer_games:id=eq.' + _activeGameId)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'multiplayer_games', filter: `id=eq.${_activeGameId}` }, (payload) => {
-        const d = payload.new;
-        if (d.status === 'active' && _myColor === 'w' && d.black_name) {
-          CK.showToast(`⚔️ ${d.black_name} has joined! You are White.`, 'success');
-        }
-        if (CK.enginePlay && CK.enginePlay.onMultiplayerUpdate) {
-          CK.enginePlay.onMultiplayerUpdate(d.fen, d.pgn);
-        }
-      }).subscribe();
+    if (_sub && window.supabaseClient && typeof window.supabaseClient.removeChannel === 'function') {
+      window.supabaseClient.removeChannel(_sub);
+    }
+    if (window.supabaseClient && typeof window.supabaseClient.channel === 'function') {
+      _sub = window.supabaseClient.channel('public:multiplayer_games:id=eq.' + _activeGameId)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'multiplayer_games', filter: `id=eq.${_activeGameId}` }, (payload) => {
+          const d = payload.new;
+          if (d.status === 'active' && _myColor === 'w' && d.black_name) {
+            CK.showToast(`⚔️ ${d.black_name} has joined! You are White.`, 'success');
+          }
+          if (CK.enginePlay && CK.enginePlay.onMultiplayerUpdate) {
+            CK.enginePlay.onMultiplayerUpdate(d.fen, d.pgn);
+          }
+        }).subscribe();
+    }
   }
 
   async function pushMove(fen, pgn) {
     if (!_activeGameId || !window.supabaseClient) return;
-    await supabaseClient.from('multiplayer_games')
+    await window.supabaseClient.from('multiplayer_games')
       .update({ fen, pgn })
       .eq('id', _activeGameId);
   }
 
   function endSession() {
-    if (_sub) {
-      supabaseClient.removeChannel(_sub);
+    if (_sub && window.supabaseClient && typeof window.supabaseClient.removeChannel === 'function') {
+      window.supabaseClient.removeChannel(_sub);
       _sub = null;
     }
     _activeGameId = null;

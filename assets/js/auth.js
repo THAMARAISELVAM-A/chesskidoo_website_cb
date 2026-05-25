@@ -85,6 +85,25 @@
         isOfflineMode = true;
       }
 
+      // 2. Per-user credential check (SHA-256 hashes stored in localStorage)
+      if (!profile && isOfflineMode) {
+        const creds = JSON.parse(localStorage.getItem('ck_user_credentials') || '{}');
+        const storedHash = creds[email];
+        if (storedHash) {
+          const encoder = new TextEncoder();
+          const data = encoder.encode(password);
+          const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+          const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+          if (hashHex === storedHash) {
+            const allUsers = JSON.parse(localStorage.getItem('ck_db_users') || '[]');
+            profile = allUsers.find(u => (u.email || '').toLowerCase() === email) || null;
+            if (!profile && email === 'admin@gmail.com') {
+              profile = { id: window.APP_CONFIG?.ADMIN_UUID || 'admin', full_name: 'Academy Admin', email, role: 'admin', userid: 'admin' };
+            }
+          }
+        }
+      }
+
       if (!profile) {
         throw new Error('Incorrect email or password. Please try again.');
       }
@@ -109,7 +128,7 @@
       _recordFail(email);
       CK.showToast(err.message || 'Invalid credentials. Please try again.', 'error');
     } finally {
-      btn.textContent = 'Enter the Arena →';
+      btn.textContent = 'Sign In';
       btn.disabled = false;
     }
   };

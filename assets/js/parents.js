@@ -428,7 +428,7 @@ CK.parents = (() => {
     const upiId   = cfg.ACADEMY_UPI_ID   || 'saminathanranjith73@okaxis';
     const upiName = cfg.ACADEMY_UPI_NAME || 'Ranjith A S';
     const status  = c.status || 'Pending';
-    const isPaid  = /paid/i.test(status);
+    const isPaid  = status === 'Paid';
     const enc     = s => encodeURIComponent(s);
     const note    = enc('ChessKidoo Fee - ' + (c.full_name || 'Student'));
     const params  = `pa=${enc(upiId)}&pn=${enc(upiName)}&am=${total}&cu=INR&tn=${note}`;
@@ -441,56 +441,181 @@ CK.parents = (() => {
       paytm:   `paytmmp://pay?${params}`
     };
 
+    const fmt = n => '₹' + n.toLocaleString('en-IN');
+
     el.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px;">
-        <div>
-          <div style="font-weight:700;font-size:1.05rem;">${_e(c.full_name || 'Student')}</div>
-          <div style="color:var(--p-text-muted);font-size:0.85rem;">${_e(c.level || 'Beginner')} · ${_e(c.batch || 'Group')}</div>
+      <div class="pay-gateway-wrap">
+        <!-- Left: Order Summary -->
+        <div class="pay-order-card">
+          <div class="pay-order-header">
+            <div class="pay-academy-logo">♟</div>
+            <div>
+              <div class="pay-academy-name">ChessKidoo Academy</div>
+              <div class="pay-academy-sub">India's Premier Chess Training Platform</div>
+            </div>
+          </div>
+          <div class="pay-divider"></div>
+          <div class="pay-order-title">Fee Invoice (Child Account)</div>
+          <div class="pay-order-student">${_e(c.full_name || 'Chess Student')}</div>
+          
+          <div class="pay-line-items">
+            <div class="pay-line">
+              <span>Batch</span>
+              <span>${_e(c.batch || 'Evening')}</span>
+            </div>
+            <div class="pay-line">
+              <span>Level</span>
+              <span>${_e(c.level || 'Intermediate')}</span>
+            </div>
+            <div class="pay-line">
+              <span>Billing Period</span>
+              <span>May – Jul 2026</span>
+            </div>
+            <div class="pay-line">
+              <span>Tuition Fee</span>
+              <span>${fmt(tuition)}</span>
+            </div>
+            <div class="pay-line">
+              <span>GST (18%)</span>
+              <span>${fmt(gst)}</span>
+            </div>
+            <div class="pay-divider" style="margin:10px 0;"></div>
+            <div class="pay-line pay-total-line">
+              <span>Total Due</span>
+              <span class="pay-total-amount">${fmt(total)}</span>
+            </div>
+            <div class="pay-status-row">
+              <span>Payment Status</span>
+              <span class="pay-status-badge ${isPaid ? 'paid' : 'pending'}">${isPaid ? '✅ Paid' : '⚡ Pending'}</span>
+            </div>
+          </div>
+          <div class="pay-security-note">
+            🔒 256-bit SSL Encrypted · PCI-DSS Compliant · RBI Regulated
+          </div>
         </div>
-        <span class="p-badge p-badge-${isPaid ? 'green' : 'red'}">${_e(status)}</span>
+
+        <!-- Right Column -->
+        ${isPaid ? `
+          <!-- Success Card -->
+          <div class="pay-success-card">
+            <div class="pay-success-icon" style="font-size:3rem; margin-bottom:12px; text-align:center;">✅</div>
+            <h2 class="pay-success-title" style="font-size:1.4rem; font-weight:800; color:#fff; text-align:center; margin-bottom:8px;">Payment Successful!</h2>
+            <p class="pay-success-sub" style="color:var(--p-text-muted); font-size:0.85rem; text-align:center; margin-bottom:20px;">Your child's fee has been successfully received and verified.</p>
+            <div class="pay-receipt-box" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); padding:16px; border-radius:12px; font-size:0.83rem;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Txn ID</span><span>${_e(c.last_txn_id || 'CK_TXN_—')}</span></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Amount</span><span>${fmt(total)}</span></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Date</span><span>${_e(c.paid_date || new Date().toLocaleDateString('en-GB'))}</span></div>
+              <div style="display:flex;justify-content:space-between;"><span>Method</span><span>${_e(c.pay_method || 'UPI (Parent)')}</span></div>
+            </div>
+            <button class="p-btn p-btn-gold" style="width:100%; margin-top:16px;" onclick="CK.parents.downloadReceipt()">📥 Download Official Receipt</button>
+          </div>
+        ` : `
+          <!-- Checkout Form Card -->
+          <div class="pay-form-card">
+            <div class="pay-form-header">
+              <div class="pay-form-title">Complete Payment</div>
+              <div class="pay-form-sub">Secure &amp; instant · Zero platform fees</div>
+            </div>
+            
+            <div class="pay-amount-card">
+              <div class="pay-amount-left">
+                <div class="pay-amount-label">Total Amount</div>
+                <div class="pay-amount-val">${fmt(total)}</div>
+                <div class="pay-amount-note">Incl. 18% GST &amp; materials</div>
+              </div>
+              <div class="pay-amount-right">
+                <div class="pay-amount-lock-ring">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="11" width="18" height="11" rx="3" stroke="#22c55e" stroke-width="1.8" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#22c55e" stroke-width="1.8" stroke-linecap="round" />
+                  </svg>
+                </div>
+                <div class="pay-amount-secure-text">Secured</div>
+              </div>
+            </div>
+
+            <!-- Payee Info -->
+            <div class="pay-upi-payee-card">
+              <div class="pay-upi-payee-avatar">R</div>
+              <div class="pay-upi-payee-info">
+                <div class="pay-upi-payee-name">Ranjith A S</div>
+                <div class="pay-upi-payee-id"><span>${_e(upiId)}</span></div>
+                <div class="pay-upi-payee-phone">📱 Academy Verified UPI</div>
+              </div>
+              <div class="pay-upi-payee-verified">
+                <span class="pay-upi-tick">✓</span>
+                <span>Verified</span>
+              </div>
+            </div>
+
+            <!-- Step 1: Pay -->
+            <div class="pay-section-header" style="font-size:0.8rem; font-weight:700; color:var(--p-gold); margin-top:8px; text-transform:uppercase; letter-spacing:0.05em;">Step 1: Scan QR or Open UPI App</div>
+            
+            <!-- QR Code Frame -->
+            <div class="upi-qr-frame" style="background:#fff; padding:12px; border-radius:16px; width:176px; height:176px; margin:10px auto; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(0,0,0,0.15);">
+              <div id="parUpiQrCode" style="width:100%; height:100%;"></div>
+            </div>
+
+            <!-- Copy UPI Row -->
+            <div style="display:flex; align-items:center; justify-content:center; gap:8px; background:rgba(255,255,255,0.04); border-radius:8px; padding:6px 12px; font-size:0.8rem;">
+              <span style="font-family:monospace; color:#cbd5e1; word-break:break-all; font-weight:600;">${_e(upiId)}</span>
+              <button class="p-btn p-btn-ghost p-btn-sm" style="padding:3px 8px; font-size:0.72rem;" onclick="CK.parents.copyAcademyUpi()">📋 Copy</button>
+            </div>
+
+            <!-- UPI App Buttons -->
+            <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; margin-top:4px;">
+              <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.parents.payChildFeesApp('gpay')" style="font-size:0.75rem; font-weight:600;">Google Pay</button>
+              <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.parents.payChildFeesApp('phonepe')" style="font-size:0.75rem; font-weight:600;">PhonePe</button>
+              <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.parents.payChildFeesApp('paytm')" style="font-size:0.75rem; font-weight:600;">Paytm</button>
+              <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.parents.payChildFeesApp('upi')" style="font-size:0.75rem; font-weight:600;">Other UPI App</button>
+            </div>
+
+            <!-- Step 2: Confirm -->
+            <div class="pay-section-header" style="font-size:0.8rem; font-weight:700; color:var(--p-gold); margin-top:12px; text-transform:uppercase; letter-spacing:0.05em;">Step 2: Enter Transaction / UTR ID</div>
+            
+            <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); padding:14px; border-radius:14px;">
+              <input type="text" id="parFeeUtr" class="p-input" placeholder="e.g. 12-digit Ref No. / UTR" maxlength="30" autocomplete="off" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')" style="text-align:center; font-weight:700; letter-spacing:0.1em; font-family:monospace; background:rgba(0,0,0,0.2);">
+              <button id="parFeeConfirmBtn" class="pay-submit-btn" onclick="CK.parents.confirmChildPayment()" style="margin-top:12px; width:100%;">
+                <span class="pay-btn-icon">✅</span>
+                <span class="pay-btn-text">Confirm Payment</span>
+                <span class="pay-btn-arrow">→</span>
+              </button>
+            </div>
+
+            <!-- Trust strip -->
+            <div class="pay-trust-strip" style="margin-top:12px;">
+              <div class="pay-trust-chip">🔒 SSL Secured</div>
+              <div class="pay-trust-chip">⚡ Instant Verify</div>
+              <div class="pay-trust-chip">🛡️ RBI Regulated</div>
+            </div>
+          </div>
+        `}
       </div>
-
-      <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:16px;margin-bottom:18px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Tuition Fee</span><span>₹${tuition.toLocaleString('en-IN')}</span></div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>GST (18%)</span><span>₹${gst.toLocaleString('en-IN')}</span></div>
-        <div style="display:flex;justify-content:space-between;font-weight:800;border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;margin-top:6px;">
-          <span>Total Payable</span><span style="color:var(--p-gold);">₹${total.toLocaleString('en-IN')}</span>
-        </div>
-      </div>
-
-      ${isPaid ? `
-        <div class="par-attn-alert" style="background:rgba(34,197,94,0.12);color:#22c55e;">
-          ✅ Fees are fully paid${c.paid_date ? ' on ' + _e(String(c.paid_date)) : ''}.
-          ${c.last_txn_id ? '<br>Reference: ' + _e(String(c.last_txn_id)) : ''}
-        </div>` : `
-        <div style="margin-bottom:14px;">
-          <div style="font-weight:700;margin-bottom:8px;">Step 1 — Pay ₹${total.toLocaleString('en-IN')} to the academy UPI</div>
-          <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);border-radius:8px;padding:10px;margin-bottom:10px;">
-            <span style="font-family:monospace;font-weight:700;flex:1;word-break:break-all;">${_e(upiId)}</span>
-            <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.parents.copyAcademyUpi()">📋 Copy</button>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.parents.payChildFeesApp('gpay')">Google Pay</button>
-            <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.parents.payChildFeesApp('phonepe')">PhonePe</button>
-            <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.parents.payChildFeesApp('paytm')">Paytm</button>
-            <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.parents.payChildFeesApp('upi')">Other UPI App</button>
-          </div>
-        </div>
-
-        <div>
-          <div style="font-weight:700;margin-bottom:8px;">Step 2 — Confirm with your transaction reference</div>
-          <div class="cls-form-row">
-            <label>UTR / Transaction ID</label>
-            <input class="p-input" id="parFeeUtr" placeholder="12-digit UTR from your payment app" maxlength="30">
-          </div>
-          <button class="p-btn p-btn-blue" id="parFeeConfirmBtn" onclick="CK.parents.confirmChildPayment()" style="margin-top:10px;">
-            ✅ Confirm Payment
-          </button>
-          <div style="color:var(--p-text-muted);font-size:0.78rem;margin-top:8px;">
-            After paying, enter the UTR/reference number shown in your UPI app and confirm. The academy will verify it.
-          </div>
-        </div>`}
     `;
+
+    if (!isPaid) {
+      setTimeout(() => {
+        const qrEl = document.getElementById('parUpiQrCode');
+        if (qrEl) {
+          qrEl.innerHTML = '';
+          if (window.QRCode) {
+            try {
+              new window.QRCode(qrEl, {
+                text: _parFeeLinks.upi,
+                width: 176,
+                height: 176,
+                colorDark: '#1a1a2e',
+                colorLight: '#ffffff',
+                correctLevel: window.QRCode.CorrectLevel.H
+              });
+            } catch (e) {
+              console.error('[ChessKidoo] Parent QR generation failed:', e);
+              qrEl.innerHTML = '<div style="color:#94a3b8;font-size:0.75rem;padding:12px;text-align:center;">QR unavailable<br>Use app buttons below</div>';
+            }
+          }
+        }
+      }, 50);
+    }
   }
 
   function payChildFeesApp(app) {
@@ -521,7 +646,12 @@ CK.parents = (() => {
     if (!_childProfile) { CK.showToast('No linked child account.', 'error'); return; }
 
     const btn = document.getElementById('parFeeConfirmBtn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Confirming…'; }
+    let textSpan = null;
+    if (btn) {
+      btn.disabled = true;
+      textSpan = btn.querySelector('.pay-btn-text');
+      if (textSpan) textSpan.textContent = 'Confirming…';
+    }
 
     try {
       const c = _childProfile;
@@ -543,15 +673,234 @@ CK.parents = (() => {
       CK.showToast('Payment recorded. Please contact the academy if it is not reflected.', 'warning');
       renderFees();
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = '✅ Confirm Payment'; }
+      if (btn) {
+        btn.disabled = false;
+        if (textSpan) textSpan.textContent = 'Confirm Payment';
+      }
     }
+  }
+
+  function downloadReceipt() {
+    const p = _childProfile || {};
+    const _eR = CK.esc || (s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'));
+    const name = _eR((p.full_name || 'STUDENT').toUpperCase());
+    const level = _eR(p.level || 'Beginner');
+    const rating = Number(p.rating || 800);
+    const coach = _eR((p.coach || 'COACH').toUpperCase());
+    const feeAmount = p.fee || 4000;
+    const gstAmount = Math.round(feeAmount * 0.18);
+    const total = feeAmount + gstAmount;
+    const dateStr = p.paid_date || new Date().toLocaleDateString('en-GB');
+
+    const words = total === 4720 ? 'Four Thousand Seven Hundred and Twenty Rupees Only' :
+                  total === 1888 ? 'One Thousand Eight Hundred and Eighty Eight Rupees Only' :
+                  total === 2596 ? 'Two Thousand Five Hundred and Ninety Six Rupees Only' :
+                  total === 5310 ? 'Five Thousand Three Hundred and Ten Rupees Only' :
+                  `${total} Rupees Only`;
+
+    const receiptWin = window.open('', '_blank', 'width=800,height=950');
+    if (!receiptWin) { CK.showToast('Please allow popups to download the receipt.', 'warning'); return; }
+    receiptWin.document.write(`
+      <html>
+        <head>
+          <title>ChessKidoo Official Payment Receipt</title>
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+          <style>
+            body {
+              font-family: 'Montserrat', sans-serif;
+              color: #1e293b;
+              margin: 0;
+              padding: 0;
+              background: #fff;
+              -webkit-print-color-adjust: exact;
+              color-adjust: exact;
+            }
+            .receipt-container {
+              max-width: 720px;
+              margin: 0 auto;
+              background: #fff;
+              border: 1px solid #e2e8f0;
+              box-sizing: border-box;
+              position: relative;
+              overflow: hidden;
+            }
+            .r-header {
+              background: #b4831f !important;
+              color: #000;
+              padding: 35px 20px 25px 20px;
+              text-align: center;
+            }
+            .r-title-brand {
+              font-family: 'Cinzel', serif;
+              font-size: 2.4rem;
+              font-weight: 700;
+              letter-spacing: 5px;
+              margin: 0 0 8px 0;
+            }
+            .r-slogan {
+              font-style: italic;
+              font-family: serif;
+              font-size: 1.1rem;
+              margin: 0 0 15px 0;
+            }
+            .r-contact {
+              font-size: 0.9rem;
+              font-weight: 600;
+              display: flex;
+              justify-content: center;
+              gap: 25px;
+            }
+            .r-subhead {
+              background: #f8fafc;
+              text-align: center;
+              padding: 16px;
+              font-family: 'Cinzel', serif;
+              font-size: 1.4rem;
+              font-weight: 700;
+              letter-spacing: 8px;
+              border-bottom: 1px solid #cbd5e1;
+            }
+            .r-meta {
+              display: flex;
+              justify-content: space-between;
+              padding: 16px 30px;
+              font-size: 0.95rem;
+              border-bottom: 1px solid #cbd5e1;
+            }
+            .r-body {
+              padding: 30px;
+              position: relative;
+            }
+            .watermark {
+              position: absolute;
+              top: 15%;
+              right: 10%;
+              font-size: 8rem;
+              font-weight: 900;
+              color: rgba(0, 201, 167, 0.08);
+              border: 8px solid rgba(0, 201, 167, 0.08);
+              border-radius: 16px;
+              padding: 10px 40px;
+              transform: rotate(-15deg);
+              pointer-events: none;
+              letter-spacing: 15px;
+            }
+            .sec-title {
+              font-size: 1rem;
+              font-weight: 700;
+              color: #b4831f;
+              letter-spacing: 2px;
+              margin-bottom: 15px;
+              text-transform: uppercase;
+            }
+            .r-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 35px;
+            }
+            .r-table td {
+              padding: 10px 0;
+              font-size: 0.95rem;
+              border-bottom: 1px dashed #cbd5e1;
+            }
+            .r-table td.lbl {
+              color: #64748b;
+            }
+            .r-table td.val {
+              text-align: right;
+              font-weight: 700;
+              color: #0f172a;
+            }
+            .total-box {
+              border-top: 2px solid #b4831f;
+              border-bottom: 2px solid #b4831f;
+              padding: 20px 30px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin: 10px 0 30px 0;
+            }
+            .total-lbl {
+              font-size: 1.2rem;
+              font-weight: 700;
+            }
+            .total-val {
+              font-size: 2rem;
+              font-weight: 700;
+              color: #0f172a;
+            }
+            .words {
+              font-style: italic;
+              color: #475569;
+              font-size: 0.95rem;
+              margin-top: -15px;
+              padding-left: 30px;
+              margin-bottom: 40px;
+            }
+            .r-footer {
+              text-align: center;
+              padding: 30px;
+              font-size: 0.85rem;
+              color: #64748b;
+              border-top: 1px solid #cbd5e1;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-container">
+            <div class="r-header">
+              <div class="r-title-brand">CHESSKIDOO ACADEMY</div>
+              <div class="r-slogan">Nurturing Young Minds Through Chess</div>
+              <div class="r-contact">
+                <span>🌐 www.chesskidoo.com</span>
+                <span>📧 support@chesskidoo.com</span>
+              </div>
+            </div>
+            <div class="r-subhead">RECEIPT</div>
+            <div class="r-meta">
+              <span><strong>Receipt No:</strong> RECP-${p.last_txn_id || '—'}</span>
+              <span><strong>Date:</strong> ${dateStr}</span>
+            </div>
+            <div class="r-body">
+              <div class="watermark">PAID</div>
+              <div class="sec-title">Received From</div>
+              <table class="r-table">
+                <tr><td class="lbl">Student Name</td><td class="val">${name}</td></tr>
+                <tr><td class="lbl">Level / Curriculum</td><td class="val">${level}</td></tr>
+                <tr><td class="lbl">Rating (ELO)</td><td class="val">${rating}</td></tr>
+                <tr><td class="lbl">Assigned Coach</td><td class="val">${coach}</td></tr>
+              </table>
+              <div class="sec-title">Payment Information</div>
+              <table class="r-table">
+                <tr><td class="lbl">Payment Method</td><td class="val">${p.pay_method || 'UPI (Parent)'}</td></tr>
+                <tr><td class="lbl">UTR / Ref Number</td><td class="val">${p.last_txn_id || '—'}</td></tr>
+                <tr><td class="lbl">Billing Period</td><td class="val">${p.due_date || 'May - Jul 2026'}</td></tr>
+              </table>
+              <div class="total-box">
+                <span class="total-lbl">Total Amount Paid</span>
+                <span class="total-val">₹${total.toLocaleString('en-IN')}</span>
+              </div>
+              <div class="words">Amount in words: ${words}</div>
+            </div>
+            <div class="r-footer">
+              Thank you for trusting ChessKidoo Academy. This is a system-generated official receipt.
+              <br><button onclick="window.print()" style="margin-top: 15px; background: #b4831f; color: #000; border: none; padding: 10px 20px; font-weight: bold; border-radius: 6px; cursor: pointer;">Print Receipt</button>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+    receiptWin.document.close();
   }
 
   return {
     init, nav, renderChildProfile, renderAttendance, renderProgress,
     renderSchedule, renderReports, renderFeedbackList, submitFeedback,
     renderAllFeedback, replyFeedback, renderFees, payChildFeesApp,
-    copyAcademyUpi, confirmChildPayment,
+    copyAcademyUpi, confirmChildPayment, downloadReceipt,
     generateAIReport: renderAIWeekly
   };
 })();
+

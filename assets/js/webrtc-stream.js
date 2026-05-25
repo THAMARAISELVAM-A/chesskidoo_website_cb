@@ -6,7 +6,7 @@
 window.CK = window.CK || {};
 
 CK.webrtc = (() => {
-  const supabaseClient = window.supabaseClient;
+  // Dynamic window.supabaseClient reference is used to resolve async loading issues
   const WTC = {};
 
   let localStream = null;
@@ -14,7 +14,7 @@ CK.webrtc = (() => {
   let studentPeerConnection = null; // Single RTCPeerConnection (Student side)
   let webrtcChannel = null;
   let isBroadcasting = false;
-  let isListening = false;
+  const isListening = false;
   let streamMode = 'none'; // 'video' or 'audio' or 'none'
   let mediaRecorder = null;
   let recordedChunks = [];
@@ -475,7 +475,9 @@ CK.webrtc = (() => {
         event: 'stream-stopped',
         payload: { coachId: getMyUserId() }
       });
-      supabaseClient.removeChannel(webrtcChannel);
+      if (window.supabaseClient && typeof window.supabaseClient.removeChannel === 'function') {
+        window.supabaseClient.removeChannel(webrtcChannel);
+      }
       webrtcChannel = null;
     }
   };
@@ -522,7 +524,9 @@ CK.webrtc = (() => {
     }
 
     if (webrtcChannel) {
-      supabaseClient.removeChannel(webrtcChannel);
+      if (window.supabaseClient && typeof window.supabaseClient.removeChannel === 'function') {
+        window.supabaseClient.removeChannel(webrtcChannel);
+      }
       webrtcChannel = null;
     }
   };
@@ -567,11 +571,16 @@ CK.webrtc = (() => {
      ──────────────────────────────────────────────────────────────────────── */
 
   function _setupSignalingChannel(isCoach) {
-    if (webrtcChannel) {
-      supabaseClient.removeChannel(webrtcChannel);
+    if (webrtcChannel && window.supabaseClient && typeof window.supabaseClient.removeChannel === 'function') {
+      window.supabaseClient.removeChannel(webrtcChannel);
     }
 
-    webrtcChannel = supabaseClient.channel('webrtc-classroom-signals');
+    if (window.supabaseClient && typeof window.supabaseClient.channel === 'function') {
+      webrtcChannel = window.supabaseClient.channel('webrtc-classroom-signals');
+    } else {
+      console.warn("[WebRTC Signaling] Supabase client or channel API not available.");
+      return;
+    }
 
     webrtcChannel
       .on('broadcast', { event: 'join-request' }, (packet) => {

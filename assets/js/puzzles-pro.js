@@ -205,7 +205,7 @@ CK.puzzlesPro = (() => {
           </div>
         </div>
         <div class="pz-modal-body">
-          <div id="pzProBoardWrap" style="width:340px;max-width:100%;margin:0 auto;"></div>
+          <div id="pzProBoardWrap" style="width:100%;max-width:360px;margin:0 auto;"></div>
           <div class="pz-info-panel">
             <div class="pz-hint-box" id="pzProHint">💡 ${puzzle.hint}</div>
             <div id="pzProStatus" class="pz-status"></div>

@@ -282,7 +282,7 @@ CK.classroom = (() => {
     if (!_livePollTimer) _livePollTimer = setInterval(_syncLive, 2000);
 
     // Supabase Realtime Zero-Latency Upgrade (Phase 1)
-    if (window.supabaseClient && !_liveSub) {
+    if (window.supabaseClient && typeof window.supabaseClient.channel === 'function' && !_liveSub) {
       _liveSub = window.supabaseClient.channel('public:broadcasts')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'broadcasts', filter: "id=eq.global_live" }, (payload) => {
            if (payload.eventType === 'DELETE') {
@@ -374,7 +374,9 @@ CK.classroom = (() => {
   function _stopPolling() {
     if (_livePollTimer) { clearInterval(_livePollTimer); _livePollTimer = null; }
     if (window.supabaseClient && _liveSub) {
-       window.supabaseClient.removeChannel(_liveSub);
+       if (typeof window.supabaseClient.removeChannel === 'function') {
+         window.supabaseClient.removeChannel(_liveSub);
+       }
        _liveSub = null;
     }
     if (window.CK && CK.webrtc) {

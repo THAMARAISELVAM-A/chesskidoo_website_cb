@@ -281,14 +281,27 @@
   };
 
   /* ─── Helpers for Threat Map & Safety Radar ─── */
+  function isSquareAttacked(color, sq) {
+    if (typeof game.attacked === 'function') return game.attacked(color, sq);
+    try {
+      const fen = game.fen();
+      const tmp = new Chess(fen);
+      const parts = fen.split(' ');
+      parts[1] = color;
+      try { tmp.load(parts.join(' ')); } catch (_) { return false; }
+      const moves = tmp.moves({ verbose: true });
+      return moves.some(m => m.to === sq);
+    } catch (_) { return false; }
+  }
+
   function calculateThreats() {
     const threats = {};
     const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
     for (let r = 1; r <= 8; r++) {
-      for (let f of files) {
+      for (const f of files) {
         const sq = f + r;
-        const attackedByWhite = game.attacked('w', sq);
-        const attackedByBlack = game.attacked('b', sq);
+        const attackedByWhite = isSquareAttacked('w', sq);
+        const attackedByBlack = isSquareAttacked('b', sq);
         threats[sq] = { w: attackedByWhite, b: attackedByBlack };
       }
     }
@@ -299,15 +312,15 @@
     const vulnerable = {};
     const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
     const opponentColor = playerColor === 'w' ? 'b' : 'w';
-    
+
     for (let r = 1; r <= 8; r++) {
-      for (let f of files) {
+      for (const f of files) {
         const sq = f + r;
         const piece = game.get(sq);
         if (piece && piece.color === playerColor) {
-          const isAttacked = game.attacked(opponentColor, sq);
+          const isAttacked = isSquareAttacked(opponentColor, sq);
           if (isAttacked) {
-            const isDefended = game.attacked(playerColor, sq);
+            const isDefended = isSquareAttacked(playerColor, sq);
             vulnerable[sq] = isDefended ? 'attacked' : 'hanging';
           }
         }
@@ -1110,17 +1123,17 @@
     const fenAfter = testGame.fen();
     const resultAfter = await CK.engine.evaluate(fenAfter, (progress) => {
       if (progress) {
-        let cpOpponentProg = progress.cp !== null ? progress.cp : (progress.mate ? progress.mate * 10000 : 0);
-        let playerEvalAfterProg = -cpOpponentProg;
-        let absoluteCpProg = isWhite ? playerEvalAfterProg : -playerEvalAfterProg;
+        const cpOpponentProg = progress.cp !== null ? progress.cp : (progress.mate ? progress.mate * 10000 : 0);
+        const playerEvalAfterProg = -cpOpponentProg;
+        const absoluteCpProg = isWhite ? playerEvalAfterProg : -playerEvalAfterProg;
         const displayEvalProg = absoluteCpProg / 100;
         updateEngineDisplay(displayEvalProg, progress.depth, progress.pv ? [progress.pv] : []);
       }
     });
-    let cpOpponent = resultAfter ? (resultAfter.cp !== null ? resultAfter.cp : (resultAfter.mate ? resultAfter.mate * 10000 : 0)) : 0;
+    const cpOpponent = resultAfter ? (resultAfter.cp !== null ? resultAfter.cp : (resultAfter.mate ? resultAfter.mate * 10000 : 0)) : 0;
     
-    let playerEvalAfter = -cpOpponent;
-    let absoluteCp = isWhite ? playerEvalAfter : -playerEvalAfter;
+    const playerEvalAfter = -cpOpponent;
+    const absoluteCp = isWhite ? playerEvalAfter : -playerEvalAfter;
 
     // 3. Centipawn loss
     const diff = evalBefore - playerEvalAfter;
@@ -1945,19 +1958,10 @@
     setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
   };
 
-  A.closeCertificate = () => {
-    const overlay = document.getElementById('cert-overlay');
-    if (overlay) overlay.classList.remove('active');
-  };air Display\',serif;font-size:36px;font-weight:700;color:#111;margin-bottom:8px;border-bottom:2px solid #d4af37;padding-bottom:8px;">$1</div>')}</div></body></html>`);
-    doc.close();
-    printWindow.focus();
-    setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
-  };
-
-  A.closeCertificate = () => {
-    const overlay = document.getElementById('cert-overlay');
-    if (overlay) overlay.classList.remove('active');
-  };
+   A.closeCertificate = () => {
+     const overlay = document.getElementById('cert-overlay');
+     if (overlay) overlay.classList.remove('active');
+   };
 
 /* ─── Game Controls ─── */
 A.resignGame = () => {
@@ -2352,7 +2356,7 @@ A.newGame = () => {
   A.setCustomTimer = () => {
     const input = document.getElementById('custom-timer-input');
     if (!input || !input.value) return;
-    let mins = parseInt(input.value, 10);
+    const mins = parseInt(input.value, 10);
     if (isNaN(mins) || mins <= 0) return;
     A.setTimerAndRestart(mins * 60);
     input.value = '';

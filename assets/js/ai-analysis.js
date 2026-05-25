@@ -27,7 +27,7 @@ CK.ai = (() => {
 
     const ratings = await CK.db.getRatings(profile.userid || studentId);
     const attendance = await CK.db.getAttendance(studentId);
-    const puzzleScores = await CK.db.getPuzzleScores(studentId);
+     // const puzzleScores = await CK.db.getPuzzleScores(studentId);
     const xpLogs = CK.rpg ? CK.rpg.getXPHistory(studentId, 100) : [];
 
     // Calculate scores per category (0-100)
@@ -204,12 +204,12 @@ CK.ai = (() => {
       ]
     };
 
-    focusAreas.forEach((cat, i) => {
-      const tasks = taskTemplates[cat] || taskTemplates.tactics;
-      tasks.forEach((task, j) => {
-        weekPlans[j].tasks.push({ category: cat, task, icon: CATEGORIES[cat].icon });
-      });
-    });
+     focusAreas.forEach((cat) => {
+       const tasks = taskTemplates[cat] || taskTemplates.tactics;
+       tasks.forEach((task, j) => {
+         weekPlans[j].tasks.push({ category: cat, task, icon: CATEGORIES[cat].icon });
+       });
+     });
 
     plan.weeklySchedule = weekPlans;
 
@@ -437,25 +437,25 @@ CK.ai = (() => {
     return report;
   };
 
-  /* ─── Render: Weakness Radar Chart ─── */
-  AI.renderWeaknessChart = (canvasId, analysis) => {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas || !window.Chart) return;
+   /* ─── Render: Weakness Radar Chart ─── */
+   AI.renderWeaknessChart = (canvasId, analysis) => {
+     const canvas = document.getElementById(canvasId);
+     if (!canvas || !window.Chart) return;
 
-    // Destroy existing chart if any
-    const existingChart = Chart.getChart(canvas);
-    if (existingChart) existingChart.destroy();
+     const labels = Object.values(CATEGORIES).map(c => c.name);
+     const data = Object.keys(CATEGORIES).map(k => analysis.scores[k] || 0);
 
-    const labels = Object.values(CATEGORIES).map(c => c.name);
-    const data = Object.keys(CATEGORIES).map(k => analysis.scores[k] || 0);
+      // Destroy existing chart if any
+      const existingChart = window.Chart.getChart(canvas);
+      if (existingChart) existingChart.destroy();
 
-    new Chart(canvas, {
-      type: 'radar',
-      data: {
-        labels,
-        datasets: [{
-          label: analysis.studentName,
-          data,
+      new window.Chart(canvas, {
+       type: 'radar',
+       data: {
+         labels,
+         datasets: [{
+           label: analysis.studentName,
+           data,
           backgroundColor: 'rgba(251, 191, 36, 0.15)',
           borderColor: '#fbbf24',
           borderWidth: 2,

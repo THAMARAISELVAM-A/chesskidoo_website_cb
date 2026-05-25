@@ -572,7 +572,7 @@ CK.arcade = (() => {
     level = 1;
 
     // Create 12 cards (6 pairs)
-    let cards = [];
+    const cards = [];
     MEMORY_PIECES.forEach(p => {
       cards.push({ id: Math.random(), piece: p, flipped: false, matched: false });
       cards.push({ id: Math.random(), piece: p, flipped: false, matched: false });
@@ -1958,7 +1958,7 @@ CK.arcade = (() => {
     if (targetKeys.length !== userKeys.length) {
       correct = false;
     } else {
-      for (let sq of targetKeys) {
+      for (const sq of targetKeys) {
         if (state.targetPieces[sq] !== state.userPieces[sq]) {
           correct = false;
           break;

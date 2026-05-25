@@ -92,6 +92,46 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
+   768px — MOBILE: FIX INLINE-STYLE OVERRIDES
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .arena-board-container {
+    flex-direction: column !important;
+  }
+  .arena-board-container > div[style*="min-width: 250px"] {
+    min-width: unset !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-height: 180px !important;
+  }
+  .arena-board-wrapper {
+    width: 100% !important;
+  }
+  .arena-board {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .arena-board-container > div[style*="fit-content"] {
+    width: 100% !important;
+  }
+
+  /* Game action buttons: wrap and fit */
+  .arena-controls {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    justify-content: center !important;
+    padding: 0 8px;
+  }
+  .arena-ctrl-btn {
+    flex: 1 1 calc(50% - 6px) !important;
+    min-width: 0 !important;
+    font-size: 0.78rem !important;
+    padding: 10px 12px !important;
+    justify-content: center !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
    480px — SMALL PHONES (Tighter Paddings)
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 480px) {
@@ -99,15 +139,23 @@
     padding: 12px 8px;
     gap: 16px;
   }
-  
+
   .btn-more-games { padding: 8px 12px; font-size: 0.75rem; }
   .arena-player-info { padding: 4px 8px; }
   .arena-player-avatar { width: 28px; height: 28px; font-size: 0.7rem; }
-  
-  .arena-coord { display: none; } /* Hide coords on very small screens to maximize board */
+
+  .arena-coord { display: none; }
   .arena-coords-left, .arena-coords-bottom { display: none; }
-  
+
   .eval-bar-container { width: 10px; margin-right: 4px; }
+
+  .arena-board-container > div[style*="min-width: 250px"] {
+    max-height: 150px !important;
+  }
+  .arena-ctrl-btn {
+    font-size: 0.72rem !important;
+    padding: 8px 10px !important;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════

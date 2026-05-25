@@ -1721,8 +1721,11 @@ CK.student = {
 
     // Seed UPI strip with actual UPI ID from config
     const cfg = window.APP_CONFIG || {};
+    const upiId = cfg.ACADEMY_UPI_ID || 'saminathanranjith73@okaxis';
+    const upiName = cfg.ACADEMY_UPI_NAME || 'Ranjith A S';
+    
     const upiIdEl = document.getElementById('payUpiIdPreview');
-    if (upiIdEl) upiIdEl.textContent = cfg.ACADEMY_UPI_ID || 'saminathanranjith73@okaxis';
+    if (upiIdEl) upiIdEl.textContent = upiId;
 
     const badge = document.getElementById('payStatusBadge');
     if (badge) {
@@ -1741,7 +1744,7 @@ CK.student = {
         if (box && !box.dataset.filled) {
           box.dataset.filled = '1';
           const _e = CK.esc || (s => s);
-           box.innerHTML = `
+          box.innerHTML = `
             <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Txn ID</span><span>${_e(p.last_txn_id || 'CK_TXN_—')}</span></div>
             <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Amount</span><span>${fmt(total)}</span></div>
             <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Date</span><span>${_e(p.paid_date || new Date().toLocaleDateString('en-GB'))}</span></div>
@@ -1752,6 +1755,54 @@ CK.student = {
     } else {
       if (formCard) formCard.style.display = 'block';
       if (successCard) successCard.style.display = 'none';
+
+      // Setup UPI details dynamically
+      const note = encodeURIComponent('ChessKidoo Fee - ' + (p.full_name || 'Student'));
+      const enc = s => encodeURIComponent(s);
+      
+      this._upiPaymentTotal = total;
+      this._upiLinks = {
+        upi:     `upi://pay?pa=${enc(upiId)}&pn=${enc(upiName)}&am=${total}&cu=INR&tn=${note}`,
+        gpay:    `tez://upi/pay?pa=${enc(upiId)}&pn=${enc(upiName)}&am=${total}&cu=INR&tn=${note}`,
+        phonepe: `phonepe://pay?pa=${enc(upiId)}&pn=${enc(upiName)}&am=${total}&cu=INR&tn=${note}`,
+        paytm:   `paytmmp://pay?pa=${enc(upiId)}&pn=${enc(upiName)}&am=${total}&cu=INR&tn=${note}`
+      };
+
+      const upiIdTextEl = document.getElementById('studentUpiIdText');
+      if (upiIdTextEl) upiIdTextEl.textContent = upiId;
+
+      // Render the inline QR Code
+      setTimeout(() => {
+        const qrEl = document.getElementById('studentUpiQrCode');
+        if (qrEl) {
+          qrEl.innerHTML = '';
+          if (window.QRCode) {
+            try {
+              new window.QRCode(qrEl, {
+                text: this._upiLinks.upi,
+                width: 176,
+                height: 176,
+                colorDark: '#1a1a2e',
+                colorLight: '#ffffff',
+                correctLevel: window.QRCode.CorrectLevel.H
+              });
+            } catch (e) {
+              console.error('[ChessKidoo] Student QR generation failed:', e);
+              qrEl.innerHTML = '<div style="color:#94a3b8;font-size:0.75rem;padding:12px;text-align:center;">QR unavailable<br>Use app buttons below</div>';
+            }
+          }
+        }
+      }, 50);
+
+      // Reset UTR UI elements
+      const utrEl = document.getElementById('studentUpiUtrInput');
+      if (utrEl) utrEl.value = '';
+      const confirmBtn = document.getElementById('studentUpiConfirmBtn');
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        const textSpan = confirmBtn.querySelector('.pay-btn-text');
+        if (textSpan) textSpan.textContent = 'Confirm Payment & Get Receipt';
+      }
     }
   },
 
@@ -1760,122 +1811,14 @@ CK.student = {
   },
 
   async processPayment() {
-    const termsCheck = document.getElementById('payTermsCheck');
-    if (!termsCheck || !termsCheck.checked) {
-      CK.showToast('Please accept the Terms of Service before proceeding.', 'warning');
-      return;
-    }
-    this.openUpiPayment();
+    this.renderFeesGateway();
   },
 
   async onPaymentSuccess(response) {
-    CK.showToast('Payment successful! Verifying securely with the bank...', 'info');
-    
-    // Polling logic to wait for the backend Webhook to update the DB securely
-    const studentId = this.userProfile?.id;
-    if (!studentId) return;
-
-    // Show a loading UI state if possible
-    const btn = document.getElementById('paySubmitBtn');
-    if (btn) {
-      btn.disabled = true;
-      const textSpan = btn.querySelector('.pay-btn-text');
-      if (textSpan) textSpan.textContent = 'Verifying Transaction...';
-    }
-
-    let attempts = 0;
-    const maxAttempts = 15; // 30 seconds total
-    
-    const poll = setInterval(async () => {
-      attempts++;
-      // Re-fetch profile from database to see if Webhook updated it
-      const profile = await CK.db.getProfile(studentId);
-      
-      if (profile && profile.status === 'Paid') {
-        clearInterval(poll);
-        this.userProfile = profile;
-        CK.currentUser = profile;
-        localStorage.setItem('ck_user', JSON.stringify(profile));
-        CK.showToast('Verification complete! Your account is now securely Paid.', 'success');
-        this.renderFeesGateway();
-      } else if (attempts >= maxAttempts) {
-        clearInterval(poll);
-        CK.showToast('Verification is taking longer than expected. Please refresh the page in a few minutes.', 'warning');
-        if (btn) btn.disabled = false;
-      }
-    }, 2000);
+    // Deprecated for inline checkout
   },
 
   // ── UPI PAYMENT FLOW ──────────────────────────────────────────────
-
-  openUpiPayment() {
-    const p   = this.userProfile || {};
-    const cfg = window.APP_CONFIG || {};
-    const tuition = parseInt(p.fee) || 4000;
-    const gst     = Math.round(tuition * 0.18);
-    const total   = tuition + gst;
-
-    const upiId   = cfg.ACADEMY_UPI_ID   || 'saminathanranjith73@okaxis';
-    const upiName = cfg.ACADEMY_UPI_NAME || 'Ranjith A S';
-    const note    = encodeURIComponent('ChessKidoo Fee - ' + (p.full_name || 'Student'));
-    const enc     = s => encodeURIComponent(s);
-
-    this._upiPaymentTotal = total;
-    this._upiLinks = {
-      upi:     `upi://pay?pa=${enc(upiId)}&pn=${enc(upiName)}&am=${total}&cu=INR&tn=${note}`,
-      gpay:    `tez://upi/pay?pa=${enc(upiId)}&pn=${enc(upiName)}&am=${total}&cu=INR&tn=${note}`,
-      phonepe: `phonepe://pay?pa=${enc(upiId)}&pn=${enc(upiName)}&am=${total}&cu=INR&tn=${note}`,
-      paytm:   `paytmmp://pay?pa=${enc(upiId)}&pn=${enc(upiName)}&am=${total}&cu=INR&tn=${note}`
-    };
-
-    // Populate amount
-    const amtEl = document.getElementById('upiAmountShow');
-    if (amtEl) amtEl.textContent = total.toLocaleString('en-IN');
-
-    // Populate VPA display
-    const vpaEl = document.getElementById('upiVpaDisplay');
-    if (vpaEl) vpaEl.textContent = upiId;
-
-    // Set strip preview
-    const previewEl = document.getElementById('payUpiIdPreview');
-    if (previewEl) previewEl.textContent = upiId;
-
-    // Generate QR code
-    const qrEl = document.getElementById('upiQrCode');
-    if (qrEl) {
-      qrEl.innerHTML = '';
-      if (window.QRCode) {
-        try {
-          new window.QRCode(qrEl, {
-            text: this._upiLinks.upi,
-            width: 176,
-            height: 176,
-            colorDark: '#1a1a2e',
-            colorLight: '#ffffff',
-            correctLevel: window.QRCode.CorrectLevel.H
-          });
-        } catch (e) {
-          qrEl.innerHTML = '<div style="color:#94a3b8;font-size:0.75rem;padding:12px;text-align:center;">QR unavailable<br>Use app buttons below</div>';
-        }
-      }
-    }
-
-    // Reset UTR input and confirm button
-    const utrEl = document.getElementById('upiUtrInput');
-    if (utrEl) utrEl.value = '';
-    const confirmBtn = document.getElementById('upiConfirmBtn');
-    if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = '✅ Confirm & Get Receipt'; }
-
-    // Show modal
-    const modal = document.getElementById('upiPayModal');
-    if (modal) { modal.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
-  },
-
-  closeUpiModal() {
-    const modal = document.getElementById('upiPayModal');
-    if (modal) modal.style.display = 'none';
-    document.body.style.overflow = '';
-  },
 
   openUpiApp(app) {
     const links = this._upiLinks || {};
@@ -1899,7 +1842,7 @@ CK.student = {
   },
 
   async submitUtrPayment() {
-    const utrEl = document.getElementById('upiUtrInput');
+    const utrEl = document.getElementById('studentUpiUtrInput');
     const utr   = utrEl ? utrEl.value.trim() : '';
 
     if (!utr || utr.length < 8 || utr.length > 30 || !/^[A-Z0-9]+$/i.test(utr)) {
@@ -1907,8 +1850,13 @@ CK.student = {
       return;
     }
 
-    const confirmBtn = document.getElementById('upiConfirmBtn');
-    if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Verifying…'; }
+    const confirmBtn = document.getElementById('studentUpiConfirmBtn');
+    let textSpan = null;
+    if (confirmBtn) {
+      confirmBtn.disabled = true;
+      textSpan = confirmBtn.querySelector('.pay-btn-text');
+      if (textSpan) textSpan.textContent = 'Verifying…';
+    }
 
     try {
       const p     = this.userProfile;
@@ -1931,7 +1879,6 @@ CK.student = {
         console.warn('[ChessKidoo] Email send failed:', emailErr);
       }
 
-      this.closeUpiModal();
       CK.showToast('Payment confirmed! Receipt sent to your email.', 'success');
       this.renderFeesGateway();
       if (window.CK && CK.admin && typeof CK.admin.loadStudents === 'function') {
@@ -1940,10 +1887,12 @@ CK.student = {
     } catch (e) {
       console.error('[ChessKidoo] UTR submission error:', e);
       CK.showToast('Payment recorded. Please contact admin if receipt is not received.', 'warning');
-      this.closeUpiModal();
       this.renderFeesGateway();
     } finally {
-      if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = '✅ Confirm & Get Receipt'; }
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        if (textSpan) textSpan.textContent = 'Confirm Payment & Get Receipt';
+      }
     }
   },
 

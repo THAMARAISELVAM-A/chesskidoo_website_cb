@@ -49,9 +49,9 @@
     rel="stylesheet">
   <!-- Razorpay Payment SDK -->
   <script defer src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script>if(typeof emailjs!=='undefined')emailjs.init('1EuHvvzi2H9RnaBF6');</script>
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/portals.css">
   <link rel="stylesheet" href="assets/css/arena.css">
@@ -60,9 +60,7 @@
   <link rel="stylesheet" href="assets/css/mobile-portals.css">
   <link rel="stylesheet" href="assets/css/mobile-arena.css">
 
-  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <!-- Backend: Supabase JS SDK -->
-
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
 
   <!-- Structured Data: LocalBusiness + Course -->
@@ -232,7 +230,7 @@
                   two</em><br><em>moves</em><br>ahead.</h1>
               <div class="hero-btns">
                 <button class="btn hero-btn-demo" onclick="CK.openDemoModal()">🗓️ Book Free Demo</button>
-                <a href="https://wa.me/919025846663" target="_blank" class="btn hero-btn-wa">
+                <a href="https://wa.me/919025846663" target="_blank" class="btn hero-btn-wa" aria-label="Contact us on WhatsApp">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="#25D366" xmlns="http://www.w3.org/2000/svg"
                     style="margin-right: 2px;">
                     <path
@@ -1562,9 +1560,9 @@
     <!-- Scroll-to-Top Button -->
     <button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="
       position:fixed; bottom:100px; right:28px; z-index:999;
-      width:44px; height:44px; border-radius:12px;
+      width:40px; height:40px; border-radius:10px;
       background:linear-gradient(135deg,#E8A020,#F5C842);
-      border:none; cursor:pointer; font-size:1.2rem;
+      border:none; cursor:pointer; font-size:1.1rem;
       box-shadow:0 4px 16px rgba(232,160,32,.4);
       opacity:0; transform:translateY(10px);
       transition:all .3s ease; display:grid; place-items:center;
@@ -1618,7 +1616,7 @@
 
               <div class="form-group-v2" style="position:relative;">
                 <label class="form-group-v2-label">Password</label>
-                <input type="password" name="password" value="" placeholder="••••••••" autocomplete="current-password" required
+                <input type="password" name="password" value="" placeholder="••••••••" required
                   autocomplete="current-password" class="form-group-v2-input" style="padding-right: 50px;">
                 <button type="button" onclick="CK.togglePassword('loginForm')" class="form-group-v2-eye">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -1655,14 +1653,14 @@
                   d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
                   fill="#FBBC05" />
                 <path
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   fill="#EA4335" />
               </svg> Continue with Google
             </button>
 
             <p style="text-align:center; margin-top:24px; font-size:0.88rem; color: #64748b; font-weight: 500;">Don't
-              have an account? <a href="#" style="color:#d97706; font-weight:700; text-decoration: none;">Create
-                Account</a></p>
+              have an account? <a href="#" onclick="event.preventDefault(); CK.showToast('Contact the academy to get your login credentials.', 'info');" style="color:#d97706; font-weight:700; text-decoration: none;">Request
+                Access</a></p>
 
           </div>
         </div>
@@ -1779,7 +1777,8 @@
               <div class="p-icon-btn notif-bell-wrap" title="Notifications"
                 onclick="CK.notifs&&CK.notifs.toggleDrawer('admin')" style="position:relative;cursor:pointer;">🔔<span
                   class="notif-bell-badge" style="display:none;"></span></div>
-              <div class="p-icon-btn" title="Help">❓</div>
+              <div class="p-icon-btn" title="Help & Support" onclick="CK.showHelp&&CK.showHelp('admin')"
+                style="cursor:pointer;">❓</div>
               <button class="p-btn p-btn-gold p-btn-sm" id="adminTopActionBtn" onclick="CK.admin.topAction()">+ Add
                 Student</button>
             </div>
@@ -3543,7 +3542,7 @@
                     <div class="pay-amount-left">
                       <div class="pay-amount-label">Total Amount</div>
                       <div class="pay-amount-val" id="payAmountDisplay">₹4,500</div>
-                      <div class="pay-amount-note">Incl. GST &amp; materials</div>
+                      <div class="pay-amount-note">Incl. 18% GST &amp; materials</div>
                     </div>
                     <div class="pay-amount-right">
                       <div class="pay-amount-lock-ring">
@@ -3557,13 +3556,13 @@
                     </div>
                   </div>
 
-                  <!-- UPI Payee card (shown when UPI is active) -->
+                  <!-- Payee Info -->
                   <div id="payUpiStrip" class="pay-upi-payee-card">
                     <div class="pay-upi-payee-avatar">R</div>
                     <div class="pay-upi-payee-info">
                       <div class="pay-upi-payee-name">Ranjith A S</div>
-                      <div class="pay-upi-payee-id"><span id="payUpiIdPreview">9025846663@upi</span></div>
-                      <div class="pay-upi-payee-phone">📱 9025846663</div>
+                      <div class="pay-upi-payee-id"><span id="payUpiIdPreview">saminathanranjith73@okaxis</span></div>
+                      <div class="pay-upi-payee-phone">📱 Academy Verified UPI</div>
                     </div>
                     <div class="pay-upi-payee-verified">
                       <span class="pay-upi-tick">✓</span>
@@ -3571,20 +3570,39 @@
                     </div>
                   </div>
 
-                  <!-- Terms -->
-                  <label class="pay-terms-row">
-                    <input type="checkbox" id="payTermsCheck"
-                      style="width:15px;height:15px;accent-color:var(--p-gold);flex-shrink:0;" />
-                    <span>I agree to ChessKidoo's <a href="#" style="color:var(--p-gold);">Terms of Service</a> and
-                      <a href="#" style="color:var(--p-gold);">Refund Policy</a></span>
-                  </label>
+                  <!-- Step 1: Pay -->
+                  <div class="pay-section-header" style="font-size:0.8rem; font-weight:700; color:var(--p-gold); margin-top:8px; text-transform:uppercase; letter-spacing:0.05em;">Step 1: Scan QR or Open UPI App</div>
+                  
+                  <!-- QR Code Frame -->
+                  <div class="upi-qr-frame" style="background:#fff; padding:12px; border-radius:16px; width:176px; height:176px; margin:10px auto; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(0,0,0,0.15);">
+                    <div id="studentUpiQrCode" style="width:100%; height:100%;"></div>
+                  </div>
 
-                  <!-- CTA Button -->
-                  <button class="pay-submit-btn" id="paySubmitBtn" onclick="CK.student.processPayment()">
-                    <span class="pay-btn-icon">📱</span>
-                    <span class="pay-btn-text">Pay via UPI / Google Pay</span>
-                    <span class="pay-btn-arrow">→</span>
-                  </button>
+                  <!-- Copy UPI Row -->
+                  <div style="display:flex; align-items:center; justify-content:center; gap:8px; background:rgba(255,255,255,0.04); border-radius:8px; padding:6px 12px; font-size:0.8rem;">
+                    <span style="font-family:monospace; color:#cbd5e1; word-break:break-all; font-weight:600;" id="studentUpiIdText">saminathanranjith73@okaxis</span>
+                    <button class="p-btn p-btn-ghost p-btn-sm" style="padding:3px 8px; font-size:0.72rem;" onclick="CK.student.copyUpiId()">📋 Copy</button>
+                  </div>
+
+                  <!-- UPI App Buttons -->
+                  <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; margin-top:4px;">
+                    <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.student.openUpiApp('gpay')" style="font-size:0.75rem; font-weight:600;">Google Pay</button>
+                    <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.student.openUpiApp('phonepe')" style="font-size:0.75rem; font-weight:600;">PhonePe</button>
+                    <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.student.openUpiApp('paytm')" style="font-size:0.75rem; font-weight:600;">Paytm</button>
+                    <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.student.openUpiApp('upi')" style="font-size:0.75rem; font-weight:600;">Other UPI App</button>
+                  </div>
+
+                  <!-- Step 2: Confirm -->
+                  <div class="pay-section-header" style="font-size:0.8rem; font-weight:700; color:var(--p-gold); margin-top:12px; text-transform:uppercase; letter-spacing:0.05em;">Step 2: Enter Transaction / UTR ID</div>
+                  
+                  <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); padding:14px; border-radius:14px;">
+                    <input type="text" id="studentUpiUtrInput" class="p-input" placeholder="e.g. 12-digit Ref No. / UTR" maxlength="30" autocomplete="off" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')" style="text-align:center; font-weight:700; letter-spacing:0.1em; font-family:monospace; background:rgba(0,0,0,0.2);">
+                    <button id="studentUpiConfirmBtn" class="pay-submit-btn" onclick="CK.student.submitUtrPayment()" style="margin-top:12px; width:100%;">
+                      <span class="pay-btn-icon">✅</span>
+                      <span class="pay-btn-text">Confirm Payment &amp; Get Receipt</span>
+                      <span class="pay-btn-arrow">→</span>
+                    </button>
+                  </div>
 
                   <!-- Trust strip -->
                   <div class="pay-trust-strip">
@@ -3791,8 +3809,11 @@
                         <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.lab.last()" title="Last">⏭</button>
                         <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.lab.flip()"
                           title="Flip board">🔁</button>
-                        <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.lab.broadcastCoach()"
-                          title="Broadcast to students">📢</button>
+                        <button class="p-btn p-btn-ghost p-btn-sm" id="studentFollowCoachBtn" onclick="CK.lab.toggleFollowCoach()"
+                          title="Follow Coach board in real-time" style="display:inline-flex;align-items:center;gap:6px;">
+                          <span class="live-dot" style="display:none;width:8px;height:8px;background:#22c55e;border-radius:50%;box-shadow:0 0 8px #22c55e;animation:pulse 1.5s infinite;"></span>
+                          <span>📡 Follow Coach</span>
+                        </button>
                       </div>
                     </div>
 
@@ -4123,6 +4144,7 @@
           </div>
         </div>
       </div>
+    </div>
     </div>
     <div id="coach-page" class="page">
       <div class="portal-body">
@@ -4835,6 +4857,8 @@
                         <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.lab.last()" title="Last">⏭</button>
                         <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.lab.flip()"
                           title="Flip board">🔁</button>
+                        <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.lab.broadcastCoach()"
+                          title="Broadcast board to students" style="color:var(--p-teal);font-weight:700;">📢 Broadcast</button>
                       </div>
                     </div>
 
@@ -5153,7 +5177,6 @@
         </div>
       </div>
     </div>
-  </div>
 
   <!-- ======================== PARENTS PAGE ======================== -->
   <div id="parent-page" class="page">
@@ -5375,13 +5398,8 @@
             </div>
 
             <div class="p-panel par-panel" id="par-panel-fees">
-              <div class="p-card">
-                <div class="p-card-header">
-                  <div class="p-card-title">💳 Fee Payment</div>
-                </div>
-                <div class="p-card-body" id="parFeesContent" style="padding:20px;">
-                  <div style="text-align:center;opacity:.45;padding:30px;">Loading fee details…</div>
-                </div>
+              <div id="parFeesContent">
+                <div style="text-align:center;opacity:.45;padding:30px;">Loading fee details…</div>
               </div>
             </div>
 
@@ -6643,38 +6661,38 @@
     })();
   </script>
 
-  <!-- Core Framework & DB (Load First) -->
-  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script defer src="assets/js/config.js"></script>
-  <script defer src="assets/js/db.js"></script>
-  <script defer src="assets/js/auth.js"></script>
-  <script defer src="assets/js/router.js"></script>
+   <!-- Core Framework & DB (Load First) -->
+   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+   <script defer type="module" src="assets/js/config.js"></script>
+   <script defer type="module" src="assets/js/db.js"></script>
+   <script defer type="module" src="assets/js/auth.js"></script>
+   <script defer type="module" src="assets/js/router.js"></script>
 
   <!-- Feature Modules -->
-  <script defer src="assets/js/engine.js"></script>
-  <script defer src="assets/js/engine-play.js"></script>
-  <script defer src="assets/js/multiplayer.js"></script>
-  <script defer src="assets/js/classroom.js"></script>
-  <script defer src="assets/js/webrtc-stream.js"></script>
-  <script defer src="assets/js/classes-system.js"></script>
-  <script defer src="assets/js/schedule-pro.js"></script>
-  <script defer src="assets/js/puzzles-pro.js"></script>
-  <script defer src="assets/js/certs.js"></script>
-  <script defer src="assets/js/reports-system.js"></script>
-  <script defer src="assets/js/parents.js"></script>
-  <script defer src="assets/js/notifications.js"></script>
-  <script defer src="assets/js/game-tracker.js"></script>
-  <script defer src="assets/js/opening-trainer.js"></script>
-  <script defer src="assets/js/gamification.js"></script>
-  <script defer src="assets/js/tournament-engine.js"></script>
-  <script defer src="assets/js/ai-analysis.js"></script>
-  <script defer src="assets/js/anti-cheat.js"></script>
-  <script defer src="assets/js/main.js"></script>
-  <script defer src="assets/js/admin.js"></script>
-  <script defer src="assets/js/student.js"></script>
-  <script defer src="assets/js/coach.js"></script>
-  <script defer src="assets/js/pgn-library.js"></script>
-  <script defer src="assets/js/chessboard.js"></script>
+  <script defer type="module" src="assets/js/engine.js"></script>
+  <script defer type="module" src="assets/js/engine-play.js"></script>
+  <script defer type="module" src="assets/js/multiplayer.js"></script>
+  <script defer type="module" src="assets/js/classroom.js"></script>
+  <script defer type="module" src="assets/js/webrtc-stream.js"></script>
+  <script defer type="module" src="assets/js/classes-system.js"></script>
+  <script defer type="module" src="assets/js/schedule-pro.js"></script>
+  <script defer type="module" src="assets/js/puzzles-pro.js"></script>
+  <script defer type="module" src="assets/js/certs.js"></script>
+  <script defer type="module" src="assets/js/reports-system.js"></script>
+  <script defer type="module" src="assets/js/parents.js"></script>
+  <script defer type="module" src="assets/js/notifications.js"></script>
+  <script defer type="module" src="assets/js/game-tracker.js"></script>
+  <script defer type="module" src="assets/js/opening-trainer.js"></script>
+  <script defer type="module" src="assets/js/gamification.js"></script>
+  <script defer type="module" src="assets/js/tournament-engine.js"></script>
+  <script defer type="module" src="assets/js/ai-analysis.js"></script>
+  <script defer type="module" src="assets/js/anti-cheat.js"></script>
+  <script defer type="module" src="assets/js/main.js"></script>
+  <script defer type="module" src="assets/js/admin.js"></script>
+  <script defer type="module" src="assets/js/student.js"></script>
+  <script defer type="module" src="assets/js/coach.js"></script>
+  <script defer type="module" src="assets/js/pgn-library.js"></script>
+  <script defer type="module" src="assets/js/chessboard.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (window.CK && CK.pgnLibrary) {
@@ -6685,8 +6703,8 @@
   </script>
 
 
-  <script defer src="assets/js/arena.js"></script>
-  <script defer src="assets/js/arcade.js"></script>
+  <script defer type="module" src="assets/js/arena.js"></script>
+  <script defer type="module" src="assets/js/arcade.js"></script>
 
   <script>
     const CK = window.CK = window.CK || {};
@@ -6773,16 +6791,19 @@
 
   <!-- ── World-Class Enhancement Scripts ── -->
   <script>
-    // Scroll-to-top button
+    // Scroll-to-top button — only on the landing page (portals scroll internally)
     window.addEventListener('scroll', () => {
       const btn = document.getElementById('scrollTopBtn');
       if (!btn) return;
-      if (window.scrollY > 400) {
+      const landingActive = document.getElementById('landing-page')?.classList.contains('active');
+      if (landingActive && window.scrollY > 400) {
         btn.style.opacity = '1';
         btn.style.transform = 'translateY(0)';
+        btn.style.pointerEvents = 'auto';
       } else {
         btn.style.opacity = '0';
         btn.style.transform = 'translateY(10px)';
+        btn.style.pointerEvents = 'none';
       }
     });
 
@@ -6854,74 +6875,7 @@
     });
   </script>
 
-
-  <!-- ══════════════════════════════════════════════════════
-       UPI PAYMENT MODAL
-       Opens when student clicks Pay via UPI
-       ══════════════════════════════════════════════════════ -->
-  <div id="upiPayModal" class="upi-modal-overlay" onclick="if(event.target===this)CK.student.closeUpiModal()">
-    <div class="upi-modal-card">
-      <button class="upi-modal-close" onclick="CK.student.closeUpiModal()" title="Close">✕</button>
-
-      <div class="upi-modal-header">
-        <div class="upi-modal-logo">♟</div>
-        <h2 class="upi-modal-title">Pay via UPI</h2>
-        <div class="upi-modal-sub">ChessKidoo Academy · Fee Payment</div>
-      </div>
-
-      <div class="upi-amount-badge">₹<span id="upiAmountShow">0</span></div>
-
-      <!-- QR Code -->
-      <div class="upi-qr-section">
-        <p class="upi-qr-label">Scan with Google Pay, PhonePe, or any UPI app</p>
-        <div class="upi-qr-frame">
-          <div id="upiQrCode" class="upi-qr-inner"></div>
-        </div>
-        <div class="upi-vpa-row">
-          <span class="upi-vpa-label">UPI ID</span>
-          <span class="upi-vpa-val" id="upiVpaDisplay">9025846663@upi</span>
-          <button class="upi-copy-btn" onclick="CK.student.copyUpiId()" title="Copy">📋</button>
-        </div>
-        <div class="upi-payee-row">Pay to: <strong>9025846663 &nbsp;·&nbsp; Ranjith A S</strong></div>
-      </div>
-
-      <!-- OR divider -->
-      <div class="upi-or-divider"><span>or open directly in your app</span></div>
-
-      <!-- App deep-link buttons -->
-      <div class="upi-app-grid">
-        <button class="upi-app-btn gpay" onclick="CK.student.openUpiApp('gpay')">
-          <span class="upi-app-icon gpay-icon">G</span>
-          <span>Google Pay</span>
-        </button>
-        <button class="upi-app-btn phonepe" onclick="CK.student.openUpiApp('phonepe')">
-          <span class="upi-app-icon phonepe-icon">Pe</span>
-          <span>PhonePe</span>
-        </button>
-        <button class="upi-app-btn paytm" onclick="CK.student.openUpiApp('paytm')">
-          <span class="upi-app-icon paytm-icon">₹</span>
-          <span>Paytm</span>
-        </button>
-        <button class="upi-app-btn any-upi" onclick="CK.student.openUpiApp('upi')">
-          <span class="upi-app-icon any-icon">UPI</span>
-          <span>Any App</span>
-        </button>
-      </div>
-
-      <!-- UTR Confirmation -->
-      <div class="upi-utr-box">
-        <div class="upi-utr-heading">After paying, enter your Transaction / UTR ID</div>
-        <input type="text" id="upiUtrInput" class="upi-utr-input" placeholder="e.g. 123456789012 or AXISXXXXXXXXXXXX"
-          maxlength="30" autocomplete="off" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')" />
-        <div class="upi-utr-hint">Find this in your UPI app → Transactions → Details</div>
-        <button id="upiConfirmBtn" class="upi-confirm-btn" onclick="CK.student.submitUtrPayment()">
-          ✅ Confirm &amp; Get Receipt
-        </button>
-      </div>
-
-      <div class="upi-secure-footer">🔒 Direct bank transfer · Zero platform charges · Receipt via email</div>
-    </div>
-  </div>
+  <!-- UPI payment is now handled inline inside checkout forms -->
 
   <!-- ═══════════════════════════════════════════════════════════
        NOTIFICATION DRAWER — shared across all portals

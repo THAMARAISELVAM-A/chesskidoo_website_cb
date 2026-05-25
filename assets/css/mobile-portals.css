@@ -217,10 +217,18 @@
 
   /* ── Buttons: minimum 44px touch targets ── */
   .p-btn,
-  button.p-btn,
-  .p-icon-btn {
+  button.p-btn {
     min-height: 44px;
     padding: 10px 16px;
+  }
+  /* Icon buttons must stay square (don't inherit text-button padding) */
+  .p-icon-btn {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    flex-shrink: 0;
+    aspect-ratio: 1 / 1;
   }
 
   /* ── Live panel / student grid: single column ── */

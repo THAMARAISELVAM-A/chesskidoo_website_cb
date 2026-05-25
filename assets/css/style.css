@@ -3337,6 +3337,12 @@ button, input, textarea, select, a {
   bottom: calc(20px + env(safe-area-inset-bottom));
 }
 
+/* Hide scroll-to-top button on any non-landing page (portals/arena scroll internally) */
+body:has(.page.active:not(#landing-page)) #scrollTopBtn {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 /* Ensure portals bottom nav clears iOS home indicator */
 @media (max-width: 600px) {
   .p-sidebar {

@@ -273,8 +273,8 @@ CK.engine = (() => {
       pvHtml = '<div class="engine-pvs" style="margin-top:12px; font-family:monospace; font-size:0.85rem; border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;">';
       result.pvs.forEach((p, i) => {
         if (!p) return;
-        let s = formatScore(p.cp, p.mate);
-        let moves = p.pv ? p.pv.split(' ').slice(0, 5).join(' ') + (p.pv.split(' ').length > 5 ? '...' : '') : '';
+        const s = formatScore(p.cp, p.mate);
+        const moves = p.pv ? p.pv.split(' ').slice(0, 5).join(' ') + (p.pv.split(' ').length > 5 ? '...' : '') : '';
         pvHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:4px; padding:3px 6px; border-radius:4px; background:rgba(255,255,255,0.02);">
                      <span style="color:${cpColor(p.cp, p.mate)}; width:45px; font-weight:700;">${s}</span>
                      <span style="color:rgba(255,255,255,0.6); flex:1; margin-left:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${moves}</span>

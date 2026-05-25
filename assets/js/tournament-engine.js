@@ -238,7 +238,7 @@ CK.tournament = (() => {
 
   function _knockoutPairing(t) {
     const round = t.currentRound;
-    let eligible = [...t.players].filter(p => !p.eliminated);
+    const eligible = [...t.players].filter(p => !p.eliminated);
 
     if (round === 1) {
       eligible.sort((a, b) => b.rating - a.rating);

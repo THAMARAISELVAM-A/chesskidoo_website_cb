@@ -51,19 +51,21 @@
     });
     // Pre-populate offline credentials in localStorage so demo accounts are fully accessible out-of-the-box
     const credsKey = 'ck_user_credentials';
-    if (!localStorage.getItem(credsKey)) {
+    const credsVersion = 'ck_creds_version';
+    if (!localStorage.getItem(credsKey) || localStorage.getItem(credsVersion) !== '2') {
+      localStorage.setItem(credsVersion, '2');
       const defaultCreds = {
         'admin@chesskidoo.com': '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', // admin123
         'admin@gmail.com': '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', // admin123
-        'student@gmail.com': '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55', // chess123
-        'arivuselvam@gmail.com': '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55', // chess123
-        'gyanasurya@gmail.com': '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55', // chess123
-        'vishnu@gmail.com': '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55', // chess123
-        'haris@gmail.com': '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55', // chess123
-        'yogesh@gmail.com': '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55', // chess123
-        'sudhin@gmail.com': '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55', // chess123
-        'ranjith@gmail.com': '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55', // chess123
-        'rohith@gmail.com': '777a025f5ca4a20f7bafee940f2820e28e1f4bbcbd9dd774bbce883166ef7c55' // chess123
+        'student@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
+        'arivuselvam@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
+        'gyanasurya@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
+        'vishnu@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
+        'haris@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
+        'yogesh@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
+        'sudhin@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
+        'ranjith@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
+        'rohith@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248' // chess123
       };
       localStorage.setItem(credsKey, JSON.stringify(defaultCreds));
     }

@@ -14,15 +14,38 @@
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/dashboard.css">
 
-  <style>
-    :root {
-      --board-light: #F0D9B5;
-      --board-dark: #B58863;
-      --ink: #1C1917;
-      --amber: #D97706;
-      --amber-pale: #FEF3C7;
-      --amber-light: #F59E0B;
+<style>
+    /* Skip-to-content link (accessibility) */
+    .skip-to-content {
+      position: absolute;
+      top: -100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--amber);
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 0 0 8px 8px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      z-index: 99999;
+      text-decoration: none;
+      transition: top 0.2s;
     }
+    .skip-to-content:focus {
+      top: 0;
+      outline: 3px solid #fff;
+      outline-offset: 2px;
+    }
+
+    :root {
+  --board-light: #F0D9B5;
+  --board-dark: #B58863;
+  --ink: #1C1917;
+  --amber: #D97706;
+  --amber-pale: #FEF3C7;
+  --amber-light: #F59E0B;
+  --amber-dark: #b45309;
+}
 
     body {
       background: linear-gradient(135deg, #fdf8f0 0%, #f5ede0 100%);
@@ -333,6 +356,9 @@
   </style>
 </head>
 <body>
+  <!-- Skip to content (accessibility) -->
+  <a href="#main-chessboard" class="skip-to-content">Skip to game board</a>
+
   <div class="chess-replay-page">
     <a href="index.html" class="back-link">← Back to Home</a>
 
@@ -355,11 +381,11 @@
     </div>
 
     <div class="controls">
-      <button class="control-btn" id="firstBtn" title="First Move">⏮</button>
-      <button class="control-btn" id="prevBtn" title="Previous Move">⏪</button>
-      <button class="control-btn play-btn" id="playBtn" title="Play/Pause">▶</button>
-      <button class="control-btn" id="nextBtn" title="Next Move">⏩</button>
-      <button class="control-btn" id="lastBtn" title="Last Move">⏭</button>
+      <button class="control-btn" id="firstBtn" aria-label="First Move">⏮</button>
+      <button class="control-btn" id="prevBtn" aria-label="Previous Move">⏪</button>
+      <button class="control-btn play-btn" id="playBtn" aria-label="Play/Pause">▶</button>
+      <button class="control-btn" id="nextBtn" aria-label="Next Move">⏩</button>
+      <button class="control-btn" id="lastBtn" aria-label="Last Move">⏭</button>
 
       <div class="speed-control">
         <span>Speed:</span>
@@ -374,10 +400,6 @@
       </ul>
     </div>
   </div>
-
-  <!-- Chart.js (needed by other scripts) -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <!-- Chess Engine -->
   <script src="assets/js/chessboard.js"></script>
 </body>
