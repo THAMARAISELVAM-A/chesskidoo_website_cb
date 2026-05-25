@@ -13,11 +13,11 @@
 window.CK = window.CK || {};
 
 window.APP_CONFIG = {
-  SUPABASE_URL:     "https://hcjuyqicftkgpiyrkscr.supabase.co",
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjanV5cWljZnRrZ3BpeXJrc2NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NTE4NTIsImV4cCI6MjA5MzEyNzg1Mn0.utVxS7jX2GH9mIVbKquuQFCyH99nUmP_geWI8hhWJP4",
+  SUPABASE_URL:     "https://bqlnsununvsyksvhczrm.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxbG5zdW51bnZzeWtzdmhjenJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2OTk3NzQsImV4cCI6MjA5NTI3NTc3NH0.bErfe3TrlHNGg1CT_7e9GkbPhuhFIp_y9fqp1kFL_8c",
 
-  // Admin UUID from Supabase Auth (set after creating the admin user)
-  ADMIN_UUID:       "a007b0b0-9b30-478f-a147-1af18dff20ce",
+  // Admin UUID — matches the seeded admin user in the users table
+  ADMIN_UUID:       "a0000000-0000-4000-8000-000000000001",
 
   // Razorpay — replace with your live key from dashboard.razorpay.com
   // Test key format: rzp_test_XXXXXXXXXXXXXXXX
