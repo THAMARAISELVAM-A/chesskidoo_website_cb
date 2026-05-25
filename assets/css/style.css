@@ -3401,8 +3401,14 @@ body:has(.page.active:not(#landing-page)) #scrollTopBtn {
 }
 .notation-322f9 {
   font-family: 'Poppins', sans-serif;
-  font-weight: 600;
-  font-size: 12px;
+  font-weight: 700 !important;
+  font-size: 8px !important;
+  opacity: 0.85;
+  line-height: 1 !important;
+  pointer-events: none;
+}
+@media (min-width: 768px) {
+  .notation-322f9 { font-size: 10px !important; }
 }
 .white-1e1d7 .notation-322f9 {
   color: #769656 !important;
