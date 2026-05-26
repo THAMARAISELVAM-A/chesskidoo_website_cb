@@ -1,0 +1,432 @@
+/* ════════════════════════════════════════════════════════════════════
+   PORTAL MODERN ENHANCEMENT LAYER
+   ────────────────────────────────────────────────────────────────────
+   Subtle modern polish that overlays the existing portal styling
+   without breaking any functional rules:
+   - Smooth panel entry animations
+   - Refined card hover states with gold-tinted glow
+   - Gradient accents on primary actions
+   - Better empty-state messaging
+   - Skeleton shimmer for loading placeholders
+   - Consistent icon button hovers
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ─── Animated panel entry — content slides in smoothly on nav switch ─── */
+.p-panel.active {
+  animation: portalPanelIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes portalPanelIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Stat cards — refined hover with gold glow ─── */
+.p-stat-card,
+.p-data-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform .28s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow .28s ease,
+              border-color .28s ease;
+}
+.p-stat-card::after,
+.p-data-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(232,184,75,0.08), transparent 50%);
+  opacity: 0;
+  transition: opacity .28s ease;
+  pointer-events: none;
+}
+.p-stat-card:hover,
+.p-data-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(232, 184, 75, 0.35);
+  box-shadow: 0 14px 32px rgba(0,0,0,0.18), 0 0 0 1px rgba(232,184,75,0.08);
+}
+.p-stat-card:hover::after,
+.p-data-card:hover::after {
+  opacity: 1;
+}
+
+/* ─── Card top accent line that animates in on hover ─── */
+.p-card {
+  position: relative;
+  transition: border-color .28s ease, transform .28s ease;
+}
+.p-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    rgba(232,184,75,0) 0%,
+    rgba(232,184,75,0.6) 50%,
+    rgba(232,184,75,0) 100%);
+  opacity: 0;
+  transition: opacity .3s ease;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.p-card:hover::before {
+  opacity: 1;
+}
+
+/* ─── Welcome banner — subtle animated gradient ─── */
+.p-welcome-banner {
+  position: relative;
+  overflow: hidden;
+}
+.p-welcome-banner::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: conic-gradient(from 0deg,
+    transparent 0deg,
+    rgba(232,184,75,0.04) 30deg,
+    transparent 60deg,
+    transparent 360deg);
+  animation: bannerShine 12s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes bannerShine {
+  to { transform: rotate(360deg); }
+}
+.p-welcome-banner > * { position: relative; z-index: 1; }
+
+/* ─── Nav items — fluid hover indicator ─── */
+.p-nav-item {
+  position: relative;
+  overflow: hidden;
+}
+.p-nav-item::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  width: 3px;
+  height: 0;
+  transform: translateY(-50%);
+  background: linear-gradient(180deg, #e8b84b, #d4a035);
+  border-radius: 0 3px 3px 0;
+  transition: height .25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.p-nav-item:hover::before,
+.p-nav-item.active::before {
+  height: 70%;
+}
+.p-nav-item.active {
+  background: linear-gradient(90deg, rgba(232,184,75,0.12) 0%, transparent 100%);
+}
+
+/* ─── Buttons — refined gradient + lift ─── */
+.p-btn-gold,
+.p-btn-blue,
+.p-btn-teal,
+.p-btn-green {
+  position: relative;
+  overflow: hidden;
+  transition: transform .2s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow .2s ease;
+}
+.p-btn-gold::after,
+.p-btn-blue::after,
+.p-btn-teal::after,
+.p-btn-green::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.18), transparent 60%);
+  opacity: 0;
+  transition: opacity .2s ease;
+  pointer-events: none;
+}
+.p-btn-gold:hover::after,
+.p-btn-blue:hover::after,
+.p-btn-teal:hover::after,
+.p-btn-green:hover::after {
+  opacity: 1;
+}
+.p-btn-gold:active,
+.p-btn-blue:active,
+.p-btn-teal:active,
+.p-btn-green:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* ─── Icon buttons (topbar bell, help, etc.) — softer hover ─── */
+.p-icon-btn {
+  transition: background .2s ease, transform .2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.p-icon-btn:hover {
+  transform: scale(1.08);
+}
+
+/* ─── Empty states — friendlier ─── */
+.cls-empty,
+.p-empty-state,
+.p-no-data {
+  padding: 36px 20px !important;
+  text-align: center;
+  border: 2px dashed var(--p-border) !important;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.02);
+  color: var(--p-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+:root[data-theme="light"] .cls-empty,
+:root[data-theme="light"] .p-empty-state,
+:root[data-theme="light"] .p-no-data {
+  background: rgba(20,30,50,0.02);
+}
+
+/* ─── Skeleton shimmer (for loading placeholders) ─── */
+.p-skeleton {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+@keyframes skeletonShimmer {
+  to { background-position: -200% 0; }
+}
+
+/* ─── Tables — modern row hover + striped subtle ─── */
+.p-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.p-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--p-surface);
+  z-index: 1;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--p-text-muted);
+}
+.p-table tbody tr {
+  transition: background .15s ease;
+}
+.p-table tbody tr:hover {
+  background: rgba(232,184,75,0.05);
+}
+.p-table tbody tr:nth-child(even) {
+  background: rgba(255,255,255,0.015);
+}
+:root[data-theme="light"] .p-table tbody tr:nth-child(even) {
+  background: rgba(20,30,50,0.015);
+}
+
+/* ─── Form inputs — refined focus ring with gold accent ─── */
+.p-input,
+.p-textarea,
+.p-select {
+  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.p-input:focus,
+.p-textarea:focus,
+.p-select:focus {
+  border-color: #e8b84b !important;
+  box-shadow: 0 0 0 3px rgba(232,184,75,0.15);
+  outline: none;
+}
+
+/* ─── Section headings — subtle accent ─── */
+.p-card-title,
+.p-section-title {
+  position: relative;
+  padding-left: 14px;
+}
+.p-card-title::before,
+.p-section-title::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 70%;
+  background: linear-gradient(180deg, #e8b84b, #d4a035);
+  border-radius: 2px;
+}
+
+/* ─── Progress bars — animated fill ─── */
+.p-progress-bar,
+.arena-progress-bar {
+  overflow: hidden;
+  position: relative;
+}
+.p-progress-fill,
+.arena-progress-fill {
+  position: relative;
+  overflow: hidden;
+}
+.p-progress-fill::after,
+.arena-progress-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.35) 50%,
+    rgba(255,255,255,0) 100%);
+  animation: progressShine 2s linear infinite;
+}
+@keyframes progressShine {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+
+/* ─── Badges — refined pill style ─── */
+.p-badge,
+.badge {
+  letter-spacing: 0.04em;
+  transition: background .2s ease, transform .15s ease;
+}
+.p-badge:hover,
+.badge:hover {
+  transform: scale(1.04);
+}
+
+/* ─── Modal animations — softer entrance ─── */
+.p-modal-overlay,
+.modal-overlay {
+  animation: portalModalFade .25s ease;
+}
+@keyframes portalModalFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.p-modal,
+.modal-card {
+  animation: portalModalPop .35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes portalModalPop {
+  from { opacity: 0; transform: scale(0.92) translateY(20px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ─── Avatar pulse on online indicator ─── */
+.p-user-avatar.online::after,
+.p-online-dot {
+  position: relative;
+}
+.p-online-dot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: inherit;
+  animation: onlinePulse 2s ease-in-out infinite;
+}
+@keyframes onlinePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 209, 160, 0.5); }
+  50%      { box-shadow: 0 0 0 6px rgba(34, 209, 160, 0); }
+}
+
+/* ─── Mobile portals: smoother sidebar drawer ─── */
+@media (max-width: 768px) {
+  .p-sidebar {
+    box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+  }
+  .p-panel.active {
+    animation-duration: 0.35s;
+  }
+}
+
+/* ─── Scrollbar refinement ─── */
+.p-content::-webkit-scrollbar,
+.p-table-wrap::-webkit-scrollbar,
+.notif-drawer::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.p-content::-webkit-scrollbar-thumb,
+.p-table-wrap::-webkit-scrollbar-thumb,
+.notif-drawer::-webkit-scrollbar-thumb {
+  background: rgba(232,184,75,0.2);
+  border-radius: 4px;
+}
+.p-content::-webkit-scrollbar-thumb:hover,
+.p-table-wrap::-webkit-scrollbar-thumb:hover {
+  background: rgba(232,184,75,0.4);
+}
+
+/* ─── Focus visible — keyboard navigation indicator ─── */
+.p-nav-item:focus-visible,
+.p-btn:focus-visible,
+.p-icon-btn:focus-visible,
+.p-theme-toggle:focus-visible {
+  outline: 2px solid #e8b84b;
+  outline-offset: 2px;
+}
+
+/* ─── Avatar gradient ring on hover ─── */
+.p-user-avatar,
+.p-live-avatar {
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.p-user-avatar:hover,
+.p-live-avatar:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 3px rgba(232,184,75,0.35);
+}
+
+/* ─── Live indicator pulse for active sessions ─── */
+.p-live-indicator,
+.live-now-badge {
+  position: relative;
+}
+.p-live-indicator::before,
+.live-now-badge::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 8px;
+  transform: translateY(-50%);
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 0 0 rgba(239,68,68,0.5);
+  animation: liveDotPulse 1.6s ease-in-out infinite;
+}
+@keyframes liveDotPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.6); }
+  50%      { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+}
+
+/* ─── Coach commentary box — typing cursor accent ─── */
+.arena-coach-commentary-text {
+  position: relative;
+}
+
+/* ─── Tournament cards — gradient hover lift ─── */
+.p-tournament-card {
+  transition: transform .3s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow .3s ease;
+}
+.p-tournament-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 24px 50px rgba(0,0,0,0.25);
+}
+
+/* ─── Puzzle cards — selection ring ─── */
+.p-puzzle-card.active {
+  border-color: #e8b84b !important;
+  box-shadow: 0 0 0 2px rgba(232,184,75,0.35), 0 12px 28px rgba(0,0,0,0.22);
+}
+
+/* ─── Subtle text gradient on stat values ─── */
+.p-stat-val {
+  background: linear-gradient(135deg, currentColor 0%, currentColor 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}

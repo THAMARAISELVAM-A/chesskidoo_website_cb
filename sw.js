@@ -1,5 +1,5 @@
 /* ChessKidoo Service Worker — offline-first static assets, network-first API */
-const CACHE = 'ck-v31';
+const CACHE = 'ck-v32';
 
 const PRECACHE = [
   '/',
@@ -10,6 +10,7 @@ const PRECACHE = [
   '/assets/css/mobile-landing.css',
   '/assets/css/mobile-portals.css',
   '/assets/css/mobile-arena.css',
+  '/assets/css/portal-modern.css',
   '/assets/css/tomai.css',
   '/assets/js/config.js',
   '/assets/js/db.js',
