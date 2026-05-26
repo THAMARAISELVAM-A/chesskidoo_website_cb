@@ -329,7 +329,7 @@
     return vulnerable;
   }
 
-  const DIFFICULTY_DEPTH = { Beginner: 1, Intermediate: 2, Advanced: 3, Expert: 4 };
+  const DIFFICULTY_DEPTH = { Beginner: 3, Intermediate: 8, Advanced: 14, Expert: 20 };
   const PIECE_VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
   const PIECE_SVG = {
     w: {
@@ -960,8 +960,8 @@
 
     updateStatus('🤖 Computer is thinking…');
 
-    const depthLevels = { Beginner: 1, Intermediate: 5, Advanced: 10, Expert: 18 };
-    const engineDepth = depthLevels[currentDifficulty] || 5;
+    const depthLevels = { Beginner: 3, Intermediate: 8, Advanced: 14, Expert: 20 };
+    const engineDepth = depthLevels[currentDifficulty] || 8;
 
     CK.engine.setDepth(engineDepth);
     const result = await CK.engine.evaluateLocal(fen);
@@ -1029,6 +1029,17 @@
     } else if (result && result.bestmove) {
       makeAIMove(result.bestmove);
     } else {
+      // Fallback: Use built-in Pure JS Negamax Engine instead of random moves!
+      if (window.CK && CK.enginePlay) {
+        const jsDepths = { Beginner: 1, Intermediate: 2, Advanced: 3, Expert: 4 };
+        const jsDepth = jsDepths[currentDifficulty] || 2;
+        const bestMoveObj = CK.enginePlay.getBestMove(game, jsDepth);
+        if (bestMoveObj) {
+          makeAIMove(bestMoveObj.from + bestMoveObj.to + (bestMoveObj.promotion || ''));
+          return;
+        }
+      }
+      // Ultimate fallback: completely random move
       const moves = game.moves({ verbose: true });
       if (moves.length > 0) {
         const random = moves[Math.floor(Math.random() * moves.length)];
@@ -1680,222 +1691,354 @@
     return colors[c] || '#f1f5f9';
   }
 
-  A.showCertificate = (result, grade, gradeClass, accuracy) => {
+  /* ──────────────────────────────────────────────────────────────────
+     Certificate flow — REDESIGN (2026-05-26)
+     ──────────────────────────────────────────────────────────────────
+     Two-phase: (1) ask for player name in a clean prompt, (2) render
+     the finalized certificate with the name baked in, the difficulty
+     level shown prominently, and a knight as the verification mark.
+     ────────────────────────────────────────────────────────────────── */
+  const _certEscape = (s) => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+  // Inline knight SVG (used as both the central crest and the
+  // verification seal — single source of truth, scaled via viewBox).
+  const _certKnightSVG = `
+    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="ckKnightGold" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%"  stop-color="#fcf3a3"/>
+          <stop offset="40%" stop-color="#d4af37"/>
+          <stop offset="100%" stop-color="#8a6a1f"/>
+        </linearGradient>
+      </defs>
+      <!-- stylised knight silhouette -->
+      <path fill="url(#ckKnightGold)" stroke="#7a5a1b" stroke-width="1.2" stroke-linejoin="round"
+        d="M22 54 L42 54 L44 50 L44 46 C 48 44 50 40 50 34 C 50 26 46 18 38 14
+L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
+           L17 36 L22 38 L20 42 L24 42 L22 46 Z"/>
+      <!-- eye -->
+      <circle cx="36" cy="22" r="1.6" fill="#1a1a1a"/>
+      <!-- mane stroke -->
+      <path d="M30 14 C 28 18 26 22 24 26" stroke="#7a5a1b" stroke-width="1" fill="none"/>
+    </svg>
+  `;
+
+  // Display name for the difficulty level + colour theme
+  const _certLevelTheme = (lvl) => {
+    const map = {
+      Beginner:     { label: 'Beginner',     color: '#22c55e', bg: 'rgba(34,197,94,0.10)',  border: '#22c55e' },
+      Intermediate: { label: 'Intermediate', color: '#3b82f6', bg: 'rgba(59,130,246,0.10)', border: '#3b82f6' },
+      Advanced:     { label: 'Advanced',     color: '#a855f7', bg: 'rgba(168,85,247,0.10)', border: '#a855f7' },
+      Expert:       { label: 'Expert',       color: '#ef4444', bg: 'rgba(239,68,68,0.10)',  border: '#ef4444' },
+    };
+    return map[lvl] || map.Intermediate;
+  };
+
+  // Phase 1 — ask the player for their name and age. Resolves with { name, age } or null.
+  A._askPlayerNameAndAge = () => new Promise((resolve) => {
+    const overlay = document.getElementById('cert-overlay');
+    if (!overlay) return resolve(null);
+    const savedName = localStorage.getItem('ck_player_name') || '';
+    const savedAge = localStorage.getItem('ck_player_age') || '';
+    overlay.innerHTML = `
+      <div class="cert-prompt-card" role="dialog" aria-label="Enter your details">
+        <div class="cert-prompt-knight">${_certKnightSVG}</div>
+        <h2 class="cert-prompt-title">Almost There!</h2>
+        <p class="cert-prompt-sub">Enter your details to generate your Chess Completion Certificate.</p>
+        
+        <input type="text" id="cert-prompt-input-name" class="cert-prompt-input"
+               placeholder="Your Name (e.g. Aarav Sharma)" maxlength="40"
+               value="${_certEscape(savedName)}" autocomplete="off" />
+               
+        <input type="number" id="cert-prompt-input-age" class="cert-prompt-input"
+               placeholder="Age (e.g. 10)" min="3" max="120"
+               value="${_certEscape(savedAge)}" autocomplete="off" />
+
+        <div class="cert-prompt-hint">Your name and age will be displayed elegantly on the official diploma.</div>
+        <div class="cert-prompt-actions">
+          <button class="cert-prompt-btn cert-prompt-btn-cancel" id="cert-prompt-cancel">Cancel</button>
+          <button class="cert-prompt-btn cert-prompt-btn-ok" id="cert-prompt-ok">Continue →</button>
+        </div>
+      </div>
+    `;
+    overlay.classList.add('active');
+
+    const nameInput = document.getElementById('cert-prompt-input-name');
+    const ageInput = document.getElementById('cert-prompt-input-age');
+    setTimeout(() => { try { nameInput && nameInput.focus(); } catch(e){} }, 60);
+
+    const finish = (name, age) => {
+      try {
+        localStorage.setItem('ck_player_name', name);
+        localStorage.setItem('ck_player_age', age);
+      } catch(e){}
+      resolve({ name, age });
+    };
+
+    document.getElementById('cert-prompt-cancel').onclick = () => {
+      overlay.classList.remove('active');
+      overlay.innerHTML = '';
+      resolve(null);
+    };
+
+    document.getElementById('cert-prompt-ok').onclick = () => {
+      const nameVal = (nameInput && nameInput.value || '').trim();
+      const ageVal = (ageInput && ageInput.value || '').trim();
+      
+      let hasError = false;
+      if (!nameVal) {
+        nameInput.classList.add('cert-prompt-input-error');
+        setTimeout(() => nameInput.classList.remove('cert-prompt-input-error'), 600);
+        hasError = true;
+      }
+      if (!ageVal || isNaN(ageVal) || parseInt(ageVal) < 3) {
+        ageInput.classList.add('cert-prompt-input-error');
+        setTimeout(() => ageInput.classList.remove('cert-prompt-input-error'), 600);
+        hasError = true;
+      }
+
+      if (hasError) {
+        if (!nameVal) nameInput.focus();
+        else ageInput.focus();
+        return;
+      }
+
+      finish(nameVal, ageVal);
+    };
+
+    const handleKey = (e) => {
+      if (e.key === 'Enter') document.getElementById('cert-prompt-ok').click();
+      if (e.key === 'Escape') document.getElementById('cert-prompt-cancel').click();
+    };
+
+    if (nameInput) nameInput.addEventListener('keydown', handleKey);
+    if (ageInput) ageInput.addEventListener('keydown', handleKey);
+  });
+
+  // Phase 2 — render the finalized certificate using the supplied name and age.
+  A._renderCertificate = (playerName, playerAge, result, grade, accuracy) => {
     const overlay = document.getElementById('cert-overlay');
     if (!overlay) return;
 
     const now = new Date();
-    const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const dateStr = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
     const certId = 'CK-' + now.getFullYear() + '-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-    const savedName = localStorage.getItem('ck_player_name') || '';
-    
-    const isWin = result === 'win';
-    const titleText = isWin ? 'Certificate of Victory' : (result === 'draw' ? 'Certificate of Merit' : 'Certificate of Participation');
-    const ribbonColor = isWin ? '#d4af37' : (result === 'draw' ? '#b0b8c3' : '#e07a5f');
-    const gradeColor = grade === 'S' ? '#fbbf24' : (grade === 'A' ? '#a78bfa' : (grade === 'B' ? '#38bdf8' : (grade === 'C' ? '#4ade80' : '#f87171')));
 
-    const planMap = {
-      'Beginner': 'Pawn Vanguard (Beginner Class)', 
-      'Intermediate': 'Knight Riders (Intermediate Class)', 
-      'Advanced': 'Rook Castle (Advanced Class)', 
-      'Grandmaster': 'Master Class (Elite)', 
-      'Master': 'Master Class (Elite)'
-    };
-    const suggestedPlan = planMap[currentDifficulty] || 'Pawn Vanguard (Beginner Class)';
+    const isWin = result === 'win';
+    const titleText = 'Certificate of Completion';
+    
+    // Choose dynamic Achievement Badge Text
+    let badgeText = 'Strategic Thinker';
+    if (result === 'win') {
+      if (grade === 'S' || grade === 'A') {
+        badgeText = 'AI Arena Champion';
+      } else {
+        badgeText = 'Strategic Thinker';
+      }
+    } else {
+      if (currentDifficulty === 'Expert' || currentDifficulty === 'Advanced') {
+        badgeText = 'Rising Grandmaster';
+      } else {
+        badgeText = 'Brilliant Performance';
+      }
+    }
+
+    // Dynamic level tiers
+    let levelTier = 'Intermediate AI – Knight Tier';
+    if (currentDifficulty === 'Beginner') levelTier = 'Beginner AI – Pawn Tier';
+    else if (currentDifficulty === 'Intermediate') levelTier = 'Intermediate AI – Knight Tier';
+    else if (currentDifficulty === 'Advanced') levelTier = 'Advanced AI – Rook Tier';
+    else if (currentDifficulty === 'Expert') levelTier = 'Expert AI – Grandmaster Tier';
+
+    // Dynamic completion time
+    const duration = gameStartTime ? Math.floor((Date.now() - gameStartTime) / 1000) : 900; // default 15min
+    const durationMin = Math.floor(duration / 60);
+    const durationSec = duration % 60;
+    const timeStr = `${durationMin} Minutes ${durationSec} Seconds`;
+
+    // Dynamic result text
+    let resultText = 'Victory Against AI Opponent';
+    if (result === 'win') resultText = 'Victory Against AI Opponent';
+    else if (result === 'draw') resultText = 'Draw Against AI Opponent';
+    else resultText = 'Match Played vs AI Opponent';
+
+    const gradeColor = grade === 'S' ? '#fbbf24'
+                     : grade === 'A' ? '#a78bfa'
+                     : grade === 'B' ? '#38bdf8'
+                     : grade === 'C' ? '#4ade80' : '#f87171';
+    const level = _certLevelTheme(currentDifficulty);
+
+    // Build Move History Table rows
+    let movesHtml = '';
+    for (let i = 0; i < moveHistory.length; i += 2) {
+      const whiteMove = moveHistory[i] ? moveHistory[i].san : '';
+      const blackMove = moveHistory[i + 1] ? moveHistory[i + 1].san : '';
+      const moveNum = Math.floor(i / 2) + 1;
+      movesHtml += `
+        <tr>
+          <td>${moveNum}</td>
+          <td>${whiteMove}</td>
+          <td>${blackMove}</td>
+        </tr>
+      `;
+    }
+
+    // Badge SVG (trophy icon) inside the rosette
+    const badgeIconSVG = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px; height:28px; color:#fff; filter:drop-shadow(0px 1px 2px rgba(0,0,0,0.25));">
+        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+        <path d="M4 22h16"/>
+        <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"/>
+        <path d="M12 2a6 6 0 0 0-6 6v5a6 6 0 0 0 6 6 6 6 0 0 0 6-6V8a6 6 0 0 0-6-6z"/>
+      </svg>
+    `;
 
     overlay.innerHTML = `
-      <div class="cert-perspective-container">
-        <div class="cert-card">
-          <!-- Holographic specular layer -->
-          <div class="cert-holo-overlay"></div>
-          
-          <!-- Guilloche gold border -->
-          <svg class="cert-guilloche-border" viewBox="0 0 800 560" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#bf953f" />
-                <stop offset="25%" stop-color="#fcf6ba" />
-                <stop offset="50%" stop-color="#b38728" />
-                <stop offset="75%" stop-color="#fbf5b7" />
-                <stop offset="100%" stop-color="#aa771c" />
-              </linearGradient>
-            </defs>
-            <!-- Repeating geometric borders -->
-            <rect x="15" y="15" width="770" height="530" fill="none" stroke="url(#goldGradient)" stroke-width="2" rx="10"/>
-            <rect x="22" y="22" width="756" height="516" fill="none" stroke="url(#goldGradient)" stroke-width="0.75" stroke-dasharray="6,4" rx="8"/>
-            <rect x="26" y="26" width="748" height="508" fill="none" stroke="url(#goldGradient)" stroke-width="0.5" rx="6"/>
-            
-            <!-- Corner Accents -->
-            <!-- Top-Left -->
-            <path d="M 15,45 L 45,15 M 15,55 L 55,15 M 15,65 L 65,15" stroke="url(#goldGradient)" stroke-width="0.5" fill="none"/>
-            <!-- Top-Right -->
-            <path d="M 785,45 L 755,15 M 785,55 L 745,15 M 785,65 L 735,15" stroke="url(#goldGradient)" stroke-width="0.5" fill="none"/>
-            <!-- Bottom-Left -->
-            <path d="M 15,515 L 45,545 M 15,505 L 55,545 M 15,495 L 65,545" stroke="url(#goldGradient)" stroke-width="0.5" fill="none"/>
-            <!-- Bottom-Right -->
-            <path d="M 785,515 L 755,545 M 785,505 L 745,545 M 785,495 L 735,545" stroke="url(#goldGradient)" stroke-width="0.5" fill="none"/>
-            
-            <!-- Geometric Guilloche Waves -->
-            <!-- Top Wave -->
-            <path d="M 30,35 Q 80,25 130,35 T 230,35 T 330,35 T 430,35 T 530,35 T 630,35 T 730,35 T 770,35" fill="none" stroke="url(#goldGradient)" stroke-width="0.5" opacity="0.65"/>
-            <path d="M 30,38 Q 80,48 130,38 T 230,38 T 330,38 T 430,38 T 530,38 T 630,38 T 730,38 T 770,38" fill="none" stroke="url(#goldGradient)" stroke-width="0.5" opacity="0.65"/>
-            <!-- Bottom Wave -->
-            <path d="M 30,525 Q 80,515 130,525 T 230,525 T 330,525 T 430,525 T 530,525 T 630,525 T 730,525 T 770,525" fill="none" stroke="url(#goldGradient)" stroke-width="0.5" opacity="0.65"/>
-            <path d="M 30,522 Q 80,532 130,522 T 230,522 T 330,522 T 430,522 T 530,522 T 630,522 T 730,522 T 770,522" fill="none" stroke="url(#goldGradient)" stroke-width="0.5" opacity="0.65"/>
-          </svg>
+      <div class="cert-card-v2" id="cert-card">
+        <!-- Decorative double-line frame -->
+        <div class="cert-frame-outer"></div>
+        <div class="cert-frame-inner"></div>
+        <div class="cert-inner-border"></div>
+        <!-- Subtle watermark knight in the centre -->
+        <div class="cert-watermark">${_certKnightSVG}</div>
 
-          <!-- Academy Header -->
-          <div class="cert-academy-title">CHESSKIDOO ACADEMY</div>
-          <div class="cert-subtitle-top">Arena of Artificial Intelligence</div>
+        <!-- Knight emblem above title -->
+        <div class="cert-crest-wrap">
+          <div class="cert-crest">${_certKnightSVG}</div>
+        </div>
 
-          <!-- Crest -->
-          <svg class="cert-crest" viewBox="0 0 100 100">
-            <!-- Laurel Wreath -->
-            <path d="M 50,82 C 30,78 22,60 25,42 C 27,32 35,22 45,17" fill="none" stroke="url(#goldGradient)" stroke-width="1.8"/>
-            <path d="M 50,82 C 70,78 78,60 75,42 C 73,32 65,22 55,17" fill="none" stroke="url(#goldGradient)" stroke-width="1.8"/>
-            <path d="M 25,42 Q 21,39 24,35 Q 28,37 25,42 M 27,51 Q 23,48 26,44 Q 30,46 27,51 M 31,60 Q 27,57 30,53 Q 34,55 31,60 M 37,69 Q 33,66 36,62 Q 40,64 37,69 M 75,42 Q 79,39 76,35 Q 72,37 75,42 M 73,51 Q 77,48 74,44 Q 70,46 73,51 M 69,60 Q 73,57 70,53 Q 66,55 69,60 M 63,69 Q 67,66 64,62 Q 60,64 63,69" fill="url(#goldGradient)"/>
-            <!-- Shield -->
-            <path d="M 50,22 C 60,22 66,25 66,40 C 66,58 50,73 50,73 C 50,73 34,58 34,40 C 34,25 40,22 50,22 Z" fill="none" stroke="url(#goldGradient)" stroke-width="2"/>
-            <!-- Crossed Kings -->
-            <path d="M 44,53 L 48,53 L 47,40 L 50,42 L 44,32 L 39,42 L 42,40 Z" fill="url(#goldGradient)"/>
-            <path d="M 56,53 L 52,53 L 53,40 L 50,42 L 56,32 L 61,42 L 58,40 Z" fill="url(#goldGradient)"/>
-            <circle cx="50" cy="48" r="3" fill="url(#goldGradient)"/>
-          </svg>
+        <!-- Title block -->
+        <div class="cert-title-block">
+          <span class="cert-title-completion">Certificate of Completion</span>
+          <div class="cert-eyebrow">— This certificate is proudly awarded to —</div>
+        </div>
 
-          <!-- Document Title -->
-          <h1 class="cert-main-title">${titleText}</h1>
-
-          <p class="cert-congratulations">This diploma is proudly awarded to</p>
-
-          <!-- Input area for Name -->
-          <div class="cert-input-wrap">
-            <input type="text" id="cert-player-name" placeholder="Enter Your Name" value="${savedName.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}">
-            <div class="cert-input-line"></div>
+        <!-- Move History Table (top-right absolute) -->
+        <div class="cert-moves-table-wrap">
+          <div class="cert-moves-table-title">Complete Match Move History</div>
+          <div class="cert-moves-table-scroll">
+            <table class="cert-moves-table">
+              <thead>
+                <tr>
+                  <th>Move</th>
+                  <th>White</th>
+                  <th>Black</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${movesHtml || '<tr><td colspan="3">No moves recorded</td></tr>'}
+              </tbody>
+            </table>
           </div>
+        </div>
 
-          <!-- Description paragraph -->
-          <p class="cert-description">
-            For outstanding strategic performance in the Arena, defeating the <strong>${currentDifficulty}</strong> engine personality with a precision rating of <strong>${accuracy}%</strong> over a sequence of <strong>${moveHistory.length} moves</strong>.
+        <!-- Awardee block -->
+        <div class="cert-awardee">
+          <div class="cert-awardee-name">${_certEscape(playerName)}</div>
+          <div class="cert-awardee-age">Age: ${_certEscape(playerAge)} Years Old</div>
+          <div class="cert-awardee-line"></div>
+          <p class="cert-citation">
+            for successfully completing an AI Arena chess match in ChessKiddo and demonstrating strategic thinking, focus, and determination.
           </p>
+        </div>
 
-          <!-- Premium Statistics & Info Grid -->
-          <div class="cert-stats-grid">
-            <div class="cert-stat-box" style="text-align: right;">
-              <span class="cert-stat-label">Tactical Grade</span>
-              <span class="cert-stat-large" style="color: ${gradeColor};">${grade}</span>
-            </div>
-            <div class="cert-stat-divider"></div>
-            <div class="cert-stat-box" style="text-align: center;">
-              <span class="cert-stat-label">Next Rank Pathway</span>
-              <span class="cert-stat-value">${suggestedPlan}</span>
-            </div>
-            <div class="cert-stat-divider"></div>
-            <div class="cert-stat-box" style="text-align: left;">
-              <div style="margin-bottom: 8px;">
-                <span class="cert-stat-label" style="display:inline-block; margin-bottom:2px;">Awarded Date</span>
-                <span class="cert-stat-date-id">${dateStr}</span>
-              </div>
-              <div>
-                <span class="cert-stat-label" style="display:inline-block; margin-bottom:2px;">Verification Hash</span>
-                <span class="cert-stat-date-id" style="font-family: monospace; font-size: 0.75rem; letter-spacing: 0;">${certId}</span>
-              </div>
-            </div>
+        <!-- Stats row -->
+        <div class="cert-stats-v2">
+          <div class="cert-stat">
+            <div class="cert-stat-icon">🏆</div>
+            <div class="cert-stat-cap">Level Played</div>
+            <div class="cert-stat-num">${levelTier}</div>
           </div>
-
-          <!-- Signatures Footer -->
-          <div class="cert-footer-row">
-            <!-- Left Signature: Engine -->
-            <div class="cert-sig-block">
-              <div class="cert-sig-blank">
-                <span class="cert-ai-signature">Stockfish 10</span>
-              </div>
-              <div class="cert-sig-underline"></div>
-              <span class="cert-sig-title">AI Engine Arbitrator</span>
-            </div>
-
-            <!-- Central Seal (Foil & Ribbon) -->
-            <div class="cert-seal-wrap">
-              <div class="cert-foil-seal" style="border-color: ${ribbonColor}; box-shadow: 0 8px 20px rgba(0,0,0,0.15), inset 0 0 0 2px #fff, inset 0 0 20px ${ribbonColor};">
-                <div class="cert-seal-crown">♛</div>
-              </div>
-              <div class="cert-seal-ribbon-tail-1" style="background: ${ribbonColor};"></div>
-              <div class="cert-seal-ribbon-tail-2" style="background: ${ribbonColor};"></div>
-            </div>
-
-            <!-- Right Signature: Director -->
-            <div class="cert-sig-block">
-              <div class="cert-sig-blank" style="position: relative;">
-                <!-- Animated SVG Signature -->
-                <svg class="cert-sig-svg" viewBox="0 0 150 50">
-                  <path class="sig-path" d="M 15,28 C 25,8 35,12 30,32 C 27,42 20,48 30,38 C 40,28 55,18 50,32 C 48,38 52,35 60,28 C 67,20 73,25 70,32 C 68,35 72,33 77,29 C 82,25 87,26 85,32 C 83,35 87,32 93,29 C 99,26 105,27 103,32 C 101,35 110,27 120,22 C 130,17 135,24 130,34 C 125,44 115,48 125,40 C 135,32 150,30 145,38" fill="none" stroke="#2c3e50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </div>
-              <div class="cert-sig-underline"></div>
-              <span class="cert-sig-title">Academy Director</span>
-            </div>
+          <div class="cert-stat">
+            <div class="cert-stat-icon">🎯</div>
+            <div class="cert-stat-cap">Time Taken</div>
+            <div class="cert-stat-num">${timeStr}</div>
           </div>
+          <div class="cert-stat">
+            <div class="cert-stat-icon">⚡</div>
+            <div class="cert-stat-cap">Match Result</div>
+            <div class="cert-stat-num">${resultText}</div>
+          </div>
+          <div class="cert-stat">
+            <div class="cert-stat-icon">📅</div>
+            <div class="cert-stat-cap">Date Completed</div>
+            <div class="cert-stat-num cert-stat-date">${dateStr}</div>
+          </div>
+        </div>
+
+        <!-- Footer with verification seal + signatures -->
+        <footer class="cert-footer-v2">
+          <!-- Left Signature: AI Coach -->
+          <div class="cert-sig">
+            <div class="cert-sig-img cert-sig-coach">Tom AI</div>
+            <div class="cert-sig-line"></div>
+            <div class="cert-sig-role">AI Coach</div>
+            <div class="cert-sig-org">ChessKiddo AI Training System</div>
+          </div>
+          
+          <!-- Center: Achievement Rosette Badge -->
+          <div class="cert-badge-rosette">
+            <div class="cert-badge-glow"></div>
+            <div class="cert-badge-ribbon-l"></div>
+            <div class="cert-badge-ribbon-r"></div>
+            <div class="cert-badge-circle">
+              ${badgeIconSVG}
+            </div>
+            <div class="cert-badge-text-label">${badgeText}</div>
+          </div>
+          
+          <!-- Right Signature: Director -->
+          <div class="cert-sig">
+            <div class="cert-sig-img cert-sig-director">Ranjth A S</div>
+            <div class="cert-sig-line"></div>
+            <div class="cert-sig-role">Director</div>
+            <div class="cert-sig-org">ChessKidoo Academy Director</div>
+          </div>
+        </footer>
+        
+        <div class="cert-tagline">
+          <span class="cert-tagline-star">★</span> Building Brilliance Through Chess and AI <span class="cert-tagline-star">★</span>
         </div>
       </div>
 
       <div class="cert-action-bar">
         <button class="cert-action-btn btn-secondary" onclick="CK.arena.closeCertificate()">Close</button>
-        <button class="cert-action-btn btn-primary" onclick="CK.arena.printCertificate()">📥 Download Certificate</button>
+        <button class="cert-action-btn btn-tertiary"  onclick="CK.arena.changeCertName()">✎ Change Details</button>
+        <button class="cert-action-btn btn-primary"   onclick="CK.arena.printCertificate()">📥 Download Certificate</button>
       </div>
     `;
-
     overlay.classList.add('active');
+    A._lastCertCtx = { result, grade, accuracy };
+  };
 
-    // Trigger handwriting signature path animation after slight delay
-    setTimeout(() => {
-      const cardEl = document.querySelector('.cert-card');
-      if (cardEl) {
-        cardEl.classList.add('animate-sig');
-      }
-    }, 400);
-
-    // Dynamic 3D mouse tilt tracking and specular shimmer movement
-    const card = document.querySelector('.cert-card');
-    if (card) {
-      card.addEventListener('mousemove', (e) => {
-        const rect = card.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const w = rect.width;
-        const h = rect.height;
-
-        const px = x / w;
-        const py = y / h;
-
-        const rotateY = ((px - 0.5) * 16).toFixed(2);
-        const rotateX = (-(py - 0.5) * 16).toFixed(2);
-
-        card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-
-        const holo = card.querySelector('.cert-holo-overlay');
-        if (holo) {
-          holo.style.backgroundPosition = `${px * 100}% ${py * 100}%`;
-          const dist = Math.sqrt(Math.pow(px - 0.5, 2) + Math.pow(py - 0.5, 2));
-          holo.style.opacity = (0.1 + dist * 0.75).toFixed(2);
-        }
-      });
-
-      card.addEventListener('mouseleave', () => {
-        card.style.transform = 'rotateX(0deg) rotateY(0deg)';
-        const holo = card.querySelector('.cert-holo-overlay');
-        if (holo) {
-          holo.style.backgroundPosition = '0% 0%';
-          holo.style.opacity = '0';
-        }
-      });
+  // Public entry — orchestrates prompt → preview.
+  A.showCertificate = async (result, grade, gradeClass, accuracy) => {
+    const details = await A._askPlayerNameAndAge();
+    if (!details) {
+      const overlay = document.getElementById('cert-overlay');
+      if (overlay) { overlay.classList.remove('active'); overlay.innerHTML = ''; }
+      return;
     }
+    A._renderCertificate(details.name, details.age, result, grade, accuracy);
+  };
 
-    // Bind input listener to save the name to localStorage
-    const input = document.getElementById('cert-player-name');
-    if (input) {
-      input.addEventListener('input', (e) => {
-        localStorage.setItem('ck_player_name', e.target.value);
-      });
+  // "Change Name" button on the rendered cert — re-runs the prompt.
+  A.changeCertName = async () => {
+    const ctx = A._lastCertCtx;
+    if (!ctx) return;
+    const details = await A._askPlayerNameAndAge();
+    if (!details) {
+      // If the user cancels, restore the previous certificate instead of closing
+      const last = localStorage.getItem('ck_player_name') || '';
+      const lastAge = localStorage.getItem('ck_player_age') || '';
+      if (last && lastAge) A._renderCertificate(last, lastAge, ctx.result, ctx.grade, ctx.accuracy);
+      return;
     }
+    A._renderCertificate(details.name, details.age, ctx.result, ctx.grade, ctx.accuracy);
   };
 
   A.closeReport = () => {
@@ -1911,58 +2054,18 @@
   // Download certificate as PNG (mobile-safe). Falls back to a print window
   // if html2canvas isn't loaded yet.
   A.printCertificate = async () => {
-    const card = document.querySelector('#cert-overlay .cert-card');
+    const card = document.getElementById('cert-card');
     if (!card) return;
-    const nameInput = document.getElementById('cert-player-name');
 
-    // Require a name — prompt if missing so the certificate isn't anonymous.
-    let playerName = (nameInput && nameInput.value.trim()) || '';
-    if (!playerName) {
-      const stored = localStorage.getItem('ck_cert_name') || '';
-      const entered = window.prompt('Enter your name for the certificate:', stored);
-      if (entered === null) {
-        CK.showToast('Certificate download cancelled.', 'info');
-        return;
-      }
-      playerName = entered.trim();
-      if (!playerName) {
-        CK.showToast('A name is required to download the certificate.', 'warning');
-        if (nameInput) nameInput.focus();
-        return;
-      }
-      if (nameInput) nameInput.value = playerName;
-    }
-    try { localStorage.setItem('ck_cert_name', playerName); } catch(e){}
+    const nameText = card.querySelector('.cert-awardee-name')?.textContent || 'Champion';
 
-    // The cert is designed for ~800px width — on mobile its content collapses
-    // and the capture comes out blank/cut-off. Temporarily render the cert at
-    // its full design width (off-screen) so html2canvas captures it correctly.
-    const tmpDiv = document.createElement('div');
-    tmpDiv.style.cssText = 'font-family:"Cormorant Garamond",serif;font-size:2.4rem;font-weight:700;font-style:italic;color:#111;border-bottom:2px solid #d4af37;padding-bottom:4px;text-align:center;';
-    tmpDiv.textContent = playerName;
-    if (nameInput) {
-      nameInput.parentNode.insertBefore(tmpDiv, nameInput);
-      nameInput.style.display = 'none';
-    }
-    // Mobile CSS uses !important on cert-card width — we need setProperty with
-    // 'important' to actually override during capture.
+    // Mobile/capture override styling (lock design dimensions to render canvas perfectly)
     const restoreCard = card.getAttribute('style') || '';
-    const persp = card.parentElement && card.parentElement.classList.contains('cert-perspective-container') ? card.parentElement : null;
-    const restorePersp = persp ? (persp.getAttribute('style') || '') : '';
-    if (persp) {
-      persp.style.setProperty('width', '800px', 'important');
-      persp.style.setProperty('max-width', '800px', 'important');
-    }
-    card.style.setProperty('width', '800px', 'important');
-    card.style.setProperty('max-width', '800px', 'important');
-    card.style.setProperty('padding', '40px 56px', 'important');
+    
+    card.style.setProperty('width', '880px', 'important');
+    card.style.setProperty('max-width', '880px', 'important');
+    card.style.setProperty('min-width', '880px', 'important');
     card.style.setProperty('transform', 'none', 'important');
-    const restore = () => {
-      card.setAttribute('style', restoreCard);
-      if (persp) persp.setAttribute('style', restorePersp);
-      tmpDiv.remove();
-      if (nameInput) nameInput.style.display = '';
-    };
 
     if (typeof window.html2canvas === 'function') {
       try {
@@ -1970,15 +2073,23 @@
         // Give layout a frame to settle at the new width before capturing
         await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
         const canvas = await window.html2canvas(card, {
-          backgroundColor: '#fffdf6', scale: 2, useCORS: true,
-          logging: false, allowTaint: true,
-          width: 800, height: card.offsetHeight,
+          backgroundColor: '#fffdf6',
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          allowTaint: true,
+          width: 880,
+          height: card.offsetHeight,
           windowWidth: 1200
         });
-        const safeName = playerName.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'Champion';
+        const safeName = nameText.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'Champion';
         canvas.toBlob((blob) => {
-          restore();
-          if (!blob) { CK.showToast('Could not generate image, opening print view…', 'warning'); A._printCertificateFallback(); return; }
+          card.setAttribute('style', restoreCard);
+          if (!blob) {
+            CK.showToast('Could not generate image, opening print view…', 'warning');
+            A._printCertificateFallback();
+            return;
+          }
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
@@ -1993,56 +2104,192 @@
         console.warn('[Arena] html2canvas capture failed, falling back to print:', err);
       }
     }
-    restore();
+    card.setAttribute('style', restoreCard);
     A._printCertificateFallback();
   };
 
   // Fallback when html2canvas is unavailable / capture fails. Opens a print
   // window (may be blocked by popup blockers on some browsers).
   A._printCertificateFallback = () => {
-    const certHtml = document.querySelector('#cert-overlay .cert-card');
+    const certHtml = document.getElementById('cert-card');
     if (!certHtml) return;
     const printWindow = window.open('', '_blank');
     if (!printWindow) { CK.showToast('Please allow popups to print the certificate.', 'warning'); return; }
     const doc = printWindow.document;
     doc.open();
     doc.write(`<html><head><title>ChessKidoo Certificate</title><style>
-      @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Cormorant+Garamond:ital,wght@1,500;1,700&family=Montserrat:wght@400;600;700&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500;1,700&family=Montserrat:wght@400;500;600;700&family=Poppins:wght@600;800&family=Great+Vibes&family=Alex+Brush&display=swap');
       @page { size: landscape; margin: 0; }
-      body { font-family: 'Montserrat', sans-serif; margin: 0; padding: 40px; background: #fffcf5; display: flex; justify-content: center; align-items: center; min-height: 100vh; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .cert-card { background: #fffdf5; border-radius: 12px; position: relative; padding: 36px 48px; width: 800px; height: 560px; box-sizing: border-box; text-align: center; border: 2px solid rgba(212, 175, 55, 0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-      .cert-guilloche-border { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-      .cert-academy-title { font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: 700; color: #1a1a1a; letter-spacing: 4px; margin-bottom: 2px; }
-      .cert-subtitle-top { font-family: 'Montserrat', sans-serif; font-size: 0.75rem; text-transform: uppercase; color: #777; letter-spacing: 3px; margin-bottom: 12px; }
-      .cert-crest { width: 70px; height: 70px; margin-bottom: 10px; }
-      .cert-main-title { font-family: 'Cinzel', serif; font-size: 2.2rem; font-weight: 900; color: #d4af37; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 2px; }
-      .cert-congratulations { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.1rem; color: #555; margin: 0 0 10px 0; }
-      .cert-input-wrap { margin-bottom: 18px; width: 70%; text-align: center; }
-      .cert-input-wrap div { font-family: 'Cormorant Garamond', serif; font-size: 2.4rem; font-weight: 700; font-style: italic; color: #111; border-bottom: 2px solid #d4af37; padding-bottom: 4px; margin: 0 auto; width: 100%; text-align: center; }
-      .cert-description { font-family: 'Montserrat', sans-serif; font-size: 0.85rem; line-height: 1.6; color: #444; max-width: 580px; margin: 0 auto 20px; }
-      .cert-stats-grid { display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 24px; width: 100%; }
-      .cert-stat-box { display: flex; flex-direction: column; flex: 1; }
-      .cert-stat-label { font-size: 0.65rem; text-transform: uppercase; color: #888; letter-spacing: 1px; margin-bottom: 4px; }
-      .cert-stat-large { font-family: 'Cinzel', serif; font-size: 2rem; font-weight: 900; line-height: 1; }
-      .cert-stat-value { font-family: 'Montserrat', sans-serif; font-size: 0.9rem; font-weight: 700; color: #d4af37; }
-      .cert-stat-date-id { font-size: 0.8rem; font-weight: 600; color: #222; }
-      .cert-stat-divider { width: 1px; height: 45px; background: #e5e7eb; }
-      .cert-footer-row { display: flex; width: 100%; justify-content: space-between; align-items: flex-end; padding: 0 20px; margin-top: 10px; box-sizing: border-box; }
-      .cert-sig-block { display: flex; flex-direction: column; align-items: center; width: 150px; }
-      .cert-sig-blank { height: 40px; display: flex; align-items: flex-end; justify-content: center; width: 100%; }
-      .cert-ai-signature { font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 600; color: #555; }
-      .cert-sig-underline { width: 100%; height: 1px; background: #333; margin-top: 4px; margin-bottom: 4px; }
-      .cert-sig-title { font-size: 0.65rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
-      .cert-sig-svg { width: 120px; height: 40px; }
-      .sig-path { fill: none; stroke: #2c3e50; stroke-width: 2; }
-      .cert-seal-wrap { position: relative; width: 60px; height: 60px; margin-bottom: -10px; }
-      .cert-foil-seal { width: 50px; height: 50px; background: #d4af37; border-radius: 50%; border: 2px solid #d4af37; display: flex; align-items: center; justify-content: center; margin: 0 auto; }
-      .cert-seal-crown { font-size: 20px; color: #fff; }
-      .cert-seal-ribbon-tail-1, .cert-seal-ribbon-tail-2 { position: absolute; top: 35px; width: 10px; height: 25px; background: #d4af37; z-index: -1; }
-      .cert-seal-ribbon-tail-1 { left: 16px; transform: rotate(15deg); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%); }
-      .cert-seal-ribbon-tail-2 { right: 16px; transform: rotate(-15deg); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%); }
+      body {
+        font-family: 'Montserrat', sans-serif;
+        margin: 0;
+        padding: 40px;
+        background: #fffcf5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .cert-card-v2 {
+        background: linear-gradient(145deg, #fffdf6 0%, #fef9e7 40%, #fdf3d0 100%);
+        border-radius: 8px;
+        position: relative;
+        width: 880px;
+        min-height: 560px;
+        box-sizing: border-box;
+        text-align: center;
+        border: 3px solid #c5983a;
+        padding: 40px 52px 32px;
+        font-family: 'Montserrat', sans-serif;
+        color: #1a1a1a;
+        box-shadow: none;
+      }
+      .cert-card-v2::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: 
+          linear-gradient(rgba(197, 152, 58, 0.016) 1px, transparent 1px), 
+          linear-gradient(90deg, rgba(197, 152, 58, 0.016) 1px, transparent 1px);
+        background-size: 44px 44px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .cert-frame-outer::before,
+      .cert-frame-outer::after,
+      .cert-frame-inner::before,
+      .cert-frame-inner::after {
+        content: '';
+        position: absolute;
+        width: 90px;
+        height: 90px;
+        border: 3px solid #c5983a;
+        pointer-events: none;
+      }
+      .cert-frame-outer::before { top: 8px; left: 8px; border-right: none; border-bottom: none; border-radius: 6px 0 0 0; }
+      .cert-frame-outer::after  { top: 8px; right: 8px; border-left: none; border-bottom: none; border-radius: 0 6px 0 0; }
+      .cert-frame-inner::before { bottom: 8px; left: 8px; border-right: none; border-top: none; border-radius: 0 0 0 6px; }
+      .cert-frame-inner::after  { bottom: 8px; right: 8px; border-left: none; border-top: none; border-radius: 0 0 6px 0; }
+      .cert-inner-border {
+        position: absolute;
+        inset: 14px;
+        border: 1.5px solid rgba(197,152,58,0.35);
+        border-radius: 4px;
+        pointer-events: none;
+      }
+      .cert-watermark {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0.04;
+        pointer-events: none;
+      }
+      .cert-watermark svg { width: 300px; height: 300px; }
+      .cert-crest-wrap {
+        display: flex;
+        justify-content: flex-start;
+        margin-bottom: 8px;
+        position: relative;
+        z-index: 2;
+        width: 100%;
+      }
+      .cert-crest {
+        width: 72px;
+        height: 72px;
+        filter: drop-shadow(0 4px 10px rgba(197,152,58,0.25));
+      }
+      .cert-crest svg { width: 100%; height: 100%; }
+      .cert-title-completion {
+        font-family: 'Cinzel', serif;
+        font-size: 2.15rem;
+        font-weight: 900;
+        background: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 1px 1px 1px rgba(255,255,255,0.6), 0 1px 2px rgba(0,0,0,0.15);
+        margin: 4px 0 12px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        line-height: 1.1;
+        display: block;
+        text-align: left;
+      }
+      .cert-title-block { margin: 8px 0 4px; }
+      .cert-eyebrow { font-family: 'Cinzel', serif; font-size: 0.75rem; font-weight: 600; color: #94a3b8; letter-spacing: 3px; text-transform: uppercase; text-align: left; }
+      .cert-moves-table-wrap {
+        position: absolute;
+        top: 20px;
+        right: 24px;
+        background: #fff;
+        border: 1.5px solid #c5983a;
+        border-radius: 6px;
+        overflow: hidden;
+        max-height: 280px;
+        width: 200px;
+      }
+      .cert-moves-table-title {
+        background: linear-gradient(135deg, #1a365d, #1e3a5f);
+        color: #fff;
+        font-size: 0.6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 6px 10px;
+        text-align: center;
+      }
+      .cert-moves-table-scroll { max-height: 250px; overflow-y: auto; }
+      .cert-moves-table { width: 100%; border-collapse: collapse; font-size: 0.65rem; }
+      .cert-moves-table th { background: #f8f4e8; color: #64748b; font-weight: 700; padding: 4px 6px; text-transform: uppercase; font-size: 0.58rem; border-bottom: 1px solid #e8dfc0; }
+      .cert-moves-table td { padding: 3px 6px; text-align: center; border-bottom: 1px solid #f0ead6; color: #334155; font-weight: 500; font-family: monospace; }
+      .cert-moves-table tr:nth-child(even) td { background: #fefcf5; }
+      .cert-awardee { margin: 12px 0 8px; text-align: left; }
+      .cert-awardee-name { font-family: 'Cormorant Garamond', serif; font-size: 2.8rem; font-weight: 700; font-style: italic; color: #1a1a1a; margin-bottom: 2px; }
+      .cert-awardee-age { font-size: 0.85rem; color: #64748b; font-weight: 600; margin-bottom: 6px; }
+      .cert-awardee-line { width: 140px; height: 2px; background: #c5983a; margin: 0 0 12px; }
+      .cert-citation { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-style: italic; line-height: 1.6; color: #444; max-width: 520px; margin: 0; }
+      .cert-stats-v2 { display: flex; justify-content: center; margin: 20px 0; max-width: 600px; border: 1.5px solid #d4c48a; border-radius: 8px; overflow: hidden; background: #fff; }
+      .cert-stat { flex: 1; padding: 10px; text-align: center; border-right: 1px solid #e8dfc0; }
+      .cert-stat:last-child { border-right: none; }
+      .cert-stat-icon { font-size: 1.2rem; margin-bottom: 2px; }
+      .cert-stat-cap { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px; }
+      .cert-stat-num { font-size: 0.95rem; font-weight: 700; color: #1a365d; }
+      .cert-footer-v2 { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 24px; padding: 0 16px; width: 600px; }
+      .cert-sig { display: flex; flex-direction: column; align-items: center; min-width: 140px; flex: 1; }
+      .cert-sig-img {
+        font-size: 2.2rem;
+        font-weight: 400;
+        color: #1e3a8a;
+        margin-bottom: -12px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        width: 100%;
+      }
+      .cert-sig-coach { font-family: 'Alex Brush', cursive; transform: rotate(-3deg); opacity: 0.9; }
+      .cert-sig-director { font-family: 'Great Vibes', cursive; transform: rotate(-1.5deg); opacity: 0.95; }
+      .cert-sig-line { width: 100%; height: 1.5px; background: #c5983a; margin: 4px 0; }
+      .cert-sig-role { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: #c5983a; }
+      .cert-sig-org { font-size: 0.58rem; color: #94a3b8; }
+      
+      /* Rosette */
+      .cert-badge-rosette { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 90px; height: 110px; margin-bottom: -15px; flex-shrink: 0; }
+      .cert-badge-glow { position: absolute; width: 76px; height: 76px; background: radial-gradient(circle, rgba(246, 196, 90, 0.2) 0%, transparent 70%); z-index: 1; }
+      .cert-badge-ribbon-l, .cert-badge-ribbon-r { position: absolute; bottom: 8px; width: 14px; height: 38px; background: #bf953f; z-index: 1; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%); }
+      .cert-badge-ribbon-l { left: 28px; transform: rotate(12deg); }
+      .cert-badge-ribbon-r { right: 28px; transform: rotate(-12deg); }
+      .cert-badge-circle { position: relative; width: 58px; height: 58px; background: radial-gradient(circle at 35% 35%, #fff1c7 0%, #e8c366 30%, #c5983a 70%, #996e1b 100%); border-radius: 50%; z-index: 2; box-shadow: 0 4px 15px rgba(153,110,27,0.3), inset 0 1px 2px rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center; border: 1.5px solid rgba(255,255,255,0.4); }
+      .cert-badge-text-label { font-size: 0.52rem; font-weight: 800; text-transform: uppercase; color: #c5983a; letter-spacing: 0.5px; margin-top: 6px; z-index: 2; text-align: center; max-width: 110px; line-height: 1.25; }
+      
+      .cert-tagline { margin-top: 16px; font-size: 0.72rem; color: #94a3b8; font-style: italic; display: flex; align-items: center; justify-content: center; gap: 8px; width: 600px; }
+      .cert-tagline-star { color: #c5983a; }
     </style></head><body>
-      <div class="cert-card">${certHtml.innerHTML.replace(/<input[^>]*value="([^"]*)"[^>]*>/, '<div>$1</div>')}</div>
+      ${certHtml.outerHTML}
     </body></html>`);
     doc.close();
     printWindow.focus();

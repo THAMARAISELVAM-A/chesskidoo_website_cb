@@ -222,6 +222,38 @@
     }, 4000);
   };
 
+  /* ─── Theme switching (portal dark/light mode) ───────────────────────
+     Theme is stored in localStorage under 'ck_portal_theme' as either
+     'light' or 'dark' (default = dark). Applied via [data-theme] on <html>
+     so CSS variables defined under :root[data-theme="light"] take over. */
+  CK.applyTheme = (theme) => {
+    const t = theme === 'light' ? 'light' : 'dark';
+    if (t === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    // Update every visible toggle's aria-label so screen readers stay in sync
+    document.querySelectorAll('.p-theme-toggle').forEach(btn => {
+      btn.setAttribute('aria-label', t === 'light' ? 'Switch to dark theme' : 'Switch to light theme');
+      btn.setAttribute('title', t === 'light' ? 'Switch to dark theme' : 'Switch to light theme');
+    });
+  };
+  CK.toggleTheme = () => {
+    const cur = localStorage.getItem('ck_portal_theme') === 'light' ? 'light' : 'dark';
+    const next = cur === 'light' ? 'dark' : 'light';
+    try { localStorage.setItem('ck_portal_theme', next); } catch (e) {}
+    CK.applyTheme(next);
+    if (typeof CK.showToast === 'function') {
+      CK.showToast(next === 'light' ? '☀️ Light theme enabled' : '🌙 Dark theme enabled', 'info');
+    }
+  };
+  // Apply persisted theme as early as possible (before paint when script defers)
+  try {
+    const saved = localStorage.getItem('ck_portal_theme');
+    if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+  } catch (e) {}
+
   /* ─── Help & Support overlay ─── */
   CK.showHelp = (role = 'student') => {
     const tips = {

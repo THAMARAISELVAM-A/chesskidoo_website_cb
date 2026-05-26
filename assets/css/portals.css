@@ -13,6 +13,8 @@
   --p-rose: #f06292;
   --p-blue: #5b9cf6;
   --p-blue-glow: rgba(91,156,246,0.12);
+  --p-purple: #a855f7;
+  --p-purple-glow: rgba(168,85,247,0.12);
   --p-text: #e8edf5;
   --p-text-muted: #97a1b5;
   --p-online: #22d1a0;
@@ -22,11 +24,120 @@
   --p-radius: 14px;
   --p-transition: .22s cubic-bezier(.4,0,.2,1);
   --p-card-bg: #0f1318;
+  --p-bg-gradient: radial-gradient(circle at top right, #1a2235 0%, #080a0d 100%);
+  --p-shadow: 0 8px 24px rgba(0,0,0,0.35);
 }
+
+/* ─── LIGHT THEME (toggled via data-theme="light" on <html>) ─── */
+:root[data-theme="light"] {
+  --p-bg: #f5f7fb;
+  --p-surface: #ffffff;
+  --p-surface1: #f7f9fc;
+  --p-surface2: #eef2f7;
+  --p-surface3: #e2e8f0;
+  --p-border: #d8dee7;
+  --p-gold: #c89a38;
+  --p-gold-dim: #8a6a1f;
+  --p-gold-glow: rgba(200,154,56,0.14);
+  --p-teal: #0a9a85;
+  --p-teal-glow: rgba(10,154,133,0.14);
+  --p-rose: #e8527c;
+  --p-blue: #2f6fe0;
+  --p-blue-glow: rgba(47,111,224,0.14);
+  --p-text: #15191f;
+  --p-text-muted: #5a6577;
+  --p-online: #15a779;
+  --p-offline: #9aa3b2;
+  --p-danger: #d94343;
+  --p-warn: #d97e15;
+  --p-card-bg: #ffffff;
+  --p-bg-gradient: radial-gradient(circle at top right, #e6ecf5 0%, #f9fafc 100%);
+  --p-shadow: 0 6px 18px rgba(20, 30, 50, 0.08);
+}
+/* Smooth transitions between themes */
+.portal-body,
+.portal-body * {
+  transition: background-color .25s ease, color .25s ease, border-color .25s ease;
+}
+
+/* Light-theme overrides for hardcoded translucent dark surfaces */
+:root[data-theme="light"] .p-sidebar {
+  background: rgba(255, 255, 255, 0.78) !important;
+  border: 1px solid rgba(20, 30, 50, 0.08) !important;
+  box-shadow: 0 8px 24px rgba(20, 30, 50, 0.06);
+}
+:root[data-theme="light"] .p-topbar {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(20, 30, 50, 0.08) !important;
+  box-shadow: 0 2px 12px rgba(20, 30, 50, 0.05) !important;
+}
+:root[data-theme="light"] .p-icon-btn {
+  background: rgba(20, 30, 50, 0.04);
+  border: 1px solid rgba(20, 30, 50, 0.08);
+}
+:root[data-theme="light"] .p-icon-btn:hover {
+  background: rgba(20, 30, 50, 0.08);
+}
+:root[data-theme="light"] .p-card,
+:root[data-theme="light"] .p-stat-card {
+  background: var(--p-card-bg);
+  border: 1px solid var(--p-border);
+  box-shadow: var(--p-shadow);
+}
+:root[data-theme="light"] .p-btn-ghost {
+  background: rgba(20, 30, 50, 0.05);
+  color: var(--p-text);
+  border: 1px solid rgba(20, 30, 50, 0.1);
+}
+:root[data-theme="light"] .p-modal,
+:root[data-theme="light"] .ck-help-card {
+  background: var(--p-surface);
+  color: var(--p-text);
+}
+:root[data-theme="light"] .p-table tbody tr:hover {
+  background: rgba(20, 30, 50, 0.04);
+}
+:root[data-theme="light"] input,
+:root[data-theme="light"] textarea,
+:root[data-theme="light"] select {
+  background: var(--p-surface1);
+  color: var(--p-text);
+  border-color: var(--p-border);
+}
+:root[data-theme="light"] input::placeholder,
+:root[data-theme="light"] textarea::placeholder {
+  color: var(--p-text-muted);
+}
+
+/* Theme toggle button — sits inside .p-topbar-actions */
+.p-theme-toggle {
+  background: none;
+  border: 1px solid var(--p-border);
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  color: var(--p-text-muted);
+  cursor: pointer;
+  transition: background var(--p-transition), color var(--p-transition), transform .2s;
+  padding: 0;
+  flex-shrink: 0;
+}
+.p-theme-toggle:hover {
+  background: var(--p-surface3);
+  color: var(--p-text);
+  transform: rotate(15deg);
+}
+.p-theme-toggle .p-theme-sun  { display: none; }
+.p-theme-toggle .p-theme-moon { display: inline; }
+:root[data-theme="light"] .p-theme-toggle .p-theme-sun  { display: inline; }
+:root[data-theme="light"] .p-theme-toggle .p-theme-moon { display: none; }
 
 .portal-body {
   font-family: 'Inter', sans-serif;
-  background: radial-gradient(circle at top right, #1a2235 0%, #080a0d 100%);
+  background: var(--p-bg-gradient);
   color: var(--p-text);
   display: flex;
   height: 100vh;

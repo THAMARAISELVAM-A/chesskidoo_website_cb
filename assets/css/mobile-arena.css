@@ -92,26 +92,69 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   768px — MOBILE: FIX INLINE-STYLE OVERRIDES
+   768px — MOBILE: REPLACE FLEX WITH DETERMINISTIC GRID
+   ═══════════════════════════════════════════════════════════
+   Previous flex+wrap approach left empty vertical gaps because arena.css
+   mobile rules pinned hard pixel heights on eval-bar / coords-left while the
+   board became a 100%-width square. CSS Grid lets us pin the layout exactly:
+     row 1 = [eval | coords | board+files]   ← all share the row height
+     row 2 = moves-panel (spans all 3 cols)
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   .arena-board-container {
-    flex-direction: column !important;
+    display: grid !important;
+    grid-template-columns: auto auto 1fr !important;
+    grid-template-rows: auto auto !important;
+    grid-template-areas:
+      "eval coords board"
+      "moves moves moves" !important;
+    gap: 4px !important;
+    align-items: stretch !important;
+    padding: 0 !important;
   }
+  .arena-board-container > .eval-bar-container {
+    grid-area: eval;
+    align-self: stretch !important;
+    height: auto !important;
+    width: 14px !important;
+    margin-right: 0 !important;
+  }
+  .arena-board-container > .arena-coords-left {
+    grid-area: coords;
+    align-self: stretch !important;
+    height: auto !important;
+    padding-right: 2px !important;
+  }
+  /* The "fit-content" wrapper containing board + bottom-files coord strip */
+  .arena-board-container > div[style*="fit-content"] {
+    grid-area: board;
+    width: auto !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+  /* The moves-panel wrapper inline-styled with min-width: 250px */
   .arena-board-container > div[style*="min-width: 250px"] {
-    min-width: unset !important;
-    margin-left: 0 !important;
+    grid-area: moves;
     width: 100% !important;
-    max-height: 180px !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 12px 0 0 0 !important;
+    max-height: 220px !important;
+    height: auto !important;
   }
   .arena-board-wrapper {
     width: 100% !important;
   }
+  /* Force the chessboard to render as a true square sized from its column */
   .arena-board {
     width: 100% !important;
     max-width: 100% !important;
+    height: auto !important;
+    aspect-ratio: 1 / 1 !important;
   }
-  .arena-board-container > div[style*="fit-content"] {
+  /* Bottom files strip sits flush under the board */
+  .arena-coords-bottom {
     width: 100% !important;
   }
 

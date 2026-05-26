@@ -45,7 +45,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <!-- Poppins 400/600/800 + Inter 400/600 only — was 25 font files, now 5 -->
   <link
-    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=Inter:wght@400;600&family=Cinzel:wght@500;700;900&family=Cormorant+Garamond:ital,wght@1,500;1,700&family=Montserrat:wght@400;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=Inter:wght@400;600&family=Cinzel:wght@500;700;900&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500;1,700&family=Montserrat:wght@400;600;700&family=Great+Vibes&family=Alex+Brush&display=swap"
     rel="stylesheet">
   <!-- Razorpay Payment SDK -->
   <script defer src="https://checkout.razorpay.com/v1/checkout.js"></script>
@@ -1775,6 +1775,9 @@
                 oninput="CK.admin.handleSearch(this.value)" />
             </div>
             <div class="p-topbar-actions">
+              <button class="p-theme-toggle" title="Switch theme" aria-label="Switch theme" onclick="CK.toggleTheme&&CK.toggleTheme()">
+                <span class="p-theme-moon">🌙</span><span class="p-theme-sun">☀️</span>
+              </button>
               <div class="p-icon-btn notif-bell-wrap" title="Notifications"
                 onclick="CK.notifs&&CK.notifs.toggleDrawer('admin')" style="position:relative;cursor:pointer;">🔔<span
                   class="notif-bell-badge" style="display:none;"></span></div>
@@ -2598,9 +2601,14 @@
               <input type="text" placeholder="Search lessons, puzzles…" style="width:200px;" />
             </div>
             <div class="p-topbar-actions">
+              <button class="p-theme-toggle" title="Switch theme" aria-label="Switch theme" onclick="CK.toggleTheme&&CK.toggleTheme()">
+                <span class="p-theme-moon">🌙</span><span class="p-theme-sun">☀️</span>
+              </button>
               <div class="p-icon-btn notif-bell-wrap" title="Notifications"
                 onclick="CK.notifs&&CK.notifs.toggleDrawer('student')" style="position:relative;cursor:pointer;">🔔<span
                   class="notif-bell-badge" style="display:none;"></span></div>
+              <div class="p-icon-btn" title="Help & Support" onclick="CK.showHelp&&CK.showHelp('student')"
+                style="cursor:pointer;">❓</div>
               <div class="p-icon-btn" title="Arena"
                 onclick="CK.showPage('arena-page'); setTimeout(()=>CK.arena.init(),100)" style="cursor:pointer;"
                 title="AI Arena">⚡</div>
@@ -4212,9 +4220,14 @@
             </button>
             <div class="p-topbar-title" id="coachPanelTitle">My Dashboard</div>
             <div class="p-topbar-actions">
+              <button class="p-theme-toggle" title="Switch theme" aria-label="Switch theme" onclick="CK.toggleTheme&&CK.toggleTheme()">
+                <span class="p-theme-moon">🌙</span><span class="p-theme-sun">☀️</span>
+              </button>
               <div class="p-icon-btn notif-bell-wrap" title="Notifications"
                 onclick="CK.notifs&&CK.notifs.toggleDrawer('coach')" style="position:relative;cursor:pointer;">🔔<span
                   class="notif-bell-badge" style="display:none;"></span></div>
+              <div class="p-icon-btn" title="Help & Support" onclick="CK.showHelp&&CK.showHelp('coach')"
+                style="cursor:pointer;">❓</div>
               <button class="p-btn p-btn-teal p-btn-sm" id="coachTopBtn" onclick="CK.coach.topAction()">+ Add
                 Note</button>
             </div>
@@ -5234,9 +5247,14 @@
             </button>
             <div class="p-topbar-title" id="parPanelTitle">Dashboard</div>
             <div class="p-topbar-actions">
+              <button class="p-theme-toggle" title="Switch theme" aria-label="Switch theme" onclick="CK.toggleTheme&&CK.toggleTheme()">
+                <span class="p-theme-moon">🌙</span><span class="p-theme-sun">☀️</span>
+              </button>
               <div class="p-icon-btn notif-bell-wrap" title="Notifications"
                 onclick="CK.notifs&&CK.notifs.toggleDrawer('parent')" style="position:relative;cursor:pointer;">🔔<span
                   class="notif-bell-badge" style="display:none;"></span></div>
+              <div class="p-icon-btn" title="Help & Support" onclick="CK.showHelp&&CK.showHelp('parent')"
+                style="cursor:pointer;">❓</div>
             </div>
           </header>
           <div class="p-content">
