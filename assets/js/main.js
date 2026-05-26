@@ -96,8 +96,19 @@
       setTimeout(() => {
         CK.initGameParticles();
         if (CK.arcade && CK.arcade.renderScoreBadges) CK.arcade.renderScoreBadges();
-        // populate per-card best scores
-        const gameMap = { puzzle: 'puzzle', gm: 'gm', memory: 'memory', timing: 'timing', opening: 'opening', queenquest: 'queenquest', quiz: 'quiz' };
+        // populate per-card best scores (covers all 10 mini-games)
+        const gameMap = {
+          puzzle:      'puzzle',
+          gm:          'gm',
+          memory:      'memory',
+          timing:      'timing',       // Knight's Star Catcher
+          opening:     'opening',      // Pawn Storm Dodge (legacy save key)
+          queenquest:  'queenquest',
+          quiz:        'quiz',
+          coordinates: 'coordinates',
+          recall:      'recall',
+          escape:      'escape',       // 10th game: King's Escape
+        };
         const scores = JSON.parse(localStorage.getItem('ck_game_scores') || '{}');
         Object.entries(gameMap).forEach(([key, id]) => {
           const el = document.getElementById(`score-display-${key}`);

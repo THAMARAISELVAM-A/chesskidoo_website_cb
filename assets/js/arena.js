@@ -2296,7 +2296,9 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
       if (!certMoves.length) return '<tr><td colspan="3" style="text-align:center;padding:8px;color:#94a3b8;">—</td></tr>';
       let rows = '';
       for (let i = 0; i < certMoves.length && i < 30; i += 2) {
-        rows += `<tr><td>${Math.floor(i/2)+1}</td><td>${certMoves[i]?.san || ''}</td><td>${certMoves[i+1]?.san || ''}</td></tr>`;
+        const w = _certEscape(certMoves[i]?.san || '');
+        const b = _certEscape(certMoves[i+1]?.san || '');
+        rows += `<tr><td>${Math.floor(i/2)+1}</td><td>${w}</td><td>${b}</td></tr>`;
       }
       return rows;
     })();
