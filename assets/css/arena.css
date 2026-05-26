@@ -1793,6 +1793,16 @@
     0 0 0 6px rgba(255,255,255,0.03),
     0 0 0 1px rgba(0,0,0,0.4);
   position: relative;
+  /* Paint the checkerboard as ONE continuous background (a 2x2 conic tile tiled
+     across the board) instead of relying on 64 separate square divs — this
+     eliminates the sub-pixel seam lines that appear on high-DPR screens. */
+  background:
+    conic-gradient(
+      var(--arcade-board-light, #ebecd3) 0 25%,
+      var(--arcade-board-dark, #6f9c54) 0 50%,
+      var(--arcade-board-light, #ebecd3) 0 75%,
+      var(--arcade-board-dark, #6f9c54) 0
+    ) 0 0 / 25% 25%;
 }
 .arcade-sq {
   width: 100%;
@@ -1805,18 +1815,14 @@
   user-select: none;
   transition: filter 0.12s ease, outline 0.1s ease;
 }
-.arcade-sq.light {
-  background-color: var(--arcade-board-light, #ebecd3);
-  /* same-colour 1px spread fills sub-pixel grid seams so the board reads as a
-     clean continuous checkerboard instead of thin dark lines */
-  box-shadow: 0 0 0 1px var(--arcade-board-light, #ebecd3);
-}
+/* Squares are transparent — the board paints the checkerboard. They exist only
+   for click handling and highlight states (selected / valid-dest / hover). */
+.arcade-sq.light,
 .arcade-sq.dark {
-  background-color: var(--arcade-board-dark, #6f9c54);
-  box-shadow: 0 0 0 1px var(--arcade-board-dark, #6f9c54);
+  background-color: transparent;
 }
 .arcade-sq:hover {
-  filter: brightness(1.08);
+  background-color: rgba(255,255,255,0.14);
   outline: 2px solid rgba(255,255,255,0.4);
   outline-offset: -2px;
   z-index: 1;

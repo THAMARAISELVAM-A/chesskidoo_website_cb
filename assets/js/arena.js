@@ -1839,7 +1839,7 @@
 
       <div class="cert-action-bar">
         <button class="cert-action-btn btn-secondary" onclick="CK.arena.closeCertificate()">Close</button>
-        <button class="cert-action-btn btn-primary" onclick="CK.arena.printCertificate()">🖨️ Print Certificate</button>
+        <button class="cert-action-btn btn-primary" onclick="CK.arena.printCertificate()">📥 Download Certificate</button>
       </div>
     `;
 
@@ -1908,11 +1908,59 @@
     setTimeout(() => A.init(), 200);
   };
 
-  A.printCertificate = () => {
+  // Download certificate as PNG (mobile-safe). Falls back to a print window
+  // if html2canvas isn't loaded yet.
+  A.printCertificate = async () => {
+    const card = document.querySelector('#cert-overlay .cert-card');
+    if (!card) return;
+    const nameInput = document.getElementById('cert-player-name');
+    const playerName = (nameInput && nameInput.value.trim())
+      || (localStorage.getItem('ck_cert_name') || 'Champion');
+    try { localStorage.setItem('ck_cert_name', playerName); } catch(e){}
+    let restore = null;
+    if (nameInput) {
+      const tmp = document.createElement('div');
+      tmp.style.cssText = 'font-family:"Cormorant Garamond",serif;font-size:2.4rem;font-weight:700;font-style:italic;color:#111;border-bottom:2px solid #d4af37;padding-bottom:4px;text-align:center;';
+      tmp.textContent = playerName;
+      nameInput.parentNode.insertBefore(tmp, nameInput);
+      nameInput.style.display = 'none';
+      restore = () => { tmp.remove(); nameInput.style.display = ''; };
+    }
+    if (typeof window.html2canvas === 'function') {
+      try {
+        CK.showToast('📸 Rendering certificate…', 'info');
+        const canvas = await window.html2canvas(card, {
+          backgroundColor: '#fffdf6', scale: 2, useCORS: true, logging: false, allowTaint: true
+        });
+        const safeName = playerName.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'Champion';
+        canvas.toBlob((blob) => {
+          if (restore) restore();
+          if (!blob) { CK.showToast('Could not generate image, opening print view…', 'warning'); A._printCertificateFallback(); return; }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `ChessKidoo-Certificate-${safeName}.png`;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 300);
+          CK.showToast('✅ Certificate downloaded!', 'success');
+        }, 'image/png');
+        return;
+      } catch (err) {
+        console.warn('[Arena] html2canvas capture failed, falling back to print:', err);
+      }
+    }
+    if (restore) restore();
+    A._printCertificateFallback();
+  };
+
+  // Fallback when html2canvas is unavailable / capture fails. Opens a print
+  // window (may be blocked by popup blockers on some browsers).
+  A._printCertificateFallback = () => {
     const certHtml = document.querySelector('#cert-overlay .cert-card');
     if (!certHtml) return;
     const printWindow = window.open('', '_blank');
-    if (!printWindow) { CK.showToast('Please allow popups to print.', 'warning'); return; }
+    if (!printWindow) { CK.showToast('Please allow popups to print the certificate.', 'warning'); return; }
     const doc = printWindow.document;
     doc.open();
     doc.write(`<html><head><title>ChessKidoo Certificate</title><style>
