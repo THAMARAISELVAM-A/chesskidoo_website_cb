@@ -471,21 +471,43 @@ CK.student = {
 
     const _e = CK.esc || (s => s);
     list.innerHTML = docs.map(f => {
-      const downloadUrl = f.file_name
-        ? (window.supabaseClient
-            ? window.supabaseClient.storage.from('documents').getPublicUrl(f.file_name).data?.publicUrl
-            : null)
-        : null;
-      const dlAttr = downloadUrl
-        ? `onclick="window.open('${_e(downloadUrl)}','_blank')"`
-        : `onclick="CK.showToast('File not available yet.','error')"`;
+      // Resource may be a direct URL (kind:'link') OR an uploaded file
+      // stored in Supabase Storage (kind:'file' with file_name path)
+      let openUrl = '';
+      let icon = '📄';
+      let btnLabel = 'Download';
+
+      if (f.kind === 'link' || (f.url && /^https?:\/\//i.test(f.url))) {
+        openUrl = f.url || f.file_name;
+        icon = '🔗';
+        btnLabel = 'Open Link';
+      } else if (f.url && /^https?:\/\//i.test(f.url)) {
+        openUrl = f.url;
+      } else if (f.file_name && window.supabaseClient) {
+        const pub = window.supabaseClient.storage.from('documents').getPublicUrl(f.file_name);
+        openUrl = pub?.data?.publicUrl || '';
+      }
+
+      const safeUrl = openUrl ? _e(openUrl) : '';
+      const action = safeUrl
+        ? `onclick="window.open('${safeUrl}','_blank','noopener,noreferrer')"`
+        : `onclick="CK.showToast('Resource not available yet.','warning')"`;
+
+      // Choose icon by type
+      const type = (f.type || 'Material').toLowerCase();
+      if (type.includes('video')) icon = '🎬';
+      else if (type.includes('pgn'))   icon = '♟';
+      else if (type.includes('homework')) icon = '📝';
+      else if (type.includes('note'))  icon = '📔';
+      else if (type.includes('link'))  icon = '🔗';
+
       return `
         <div class="p-resource-item">
           <div>
-            <div class="p-resource-name">📄 ${_e(f.name)}</div>
+            <div class="p-resource-name">${icon} ${_e(f.name)}</div>
             <div class="p-resource-note">📝 ${_e(f.level || myLevel)} · ${_e(f.type || 'Material')}${f.notes ? ' · ' + _e(f.notes) : ''}</div>
           </div>
-          <button class="p-btn p-btn-blue p-btn-sm" ${dlAttr}>Download</button>
+          <button class="p-btn p-btn-blue p-btn-sm" ${action}>${btnLabel}</button>
         </div>`;
     }).join('');
   },

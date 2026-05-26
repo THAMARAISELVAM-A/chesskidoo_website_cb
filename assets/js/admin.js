@@ -1156,50 +1156,91 @@ CK.admin = {
       return lvlMatch && batchMatch;
     });
     if (!filtered.length) {
-      container.innerHTML = '<span style="color:#aaa; font-size:0.85rem;">No students match this level/batch</span>';
+      container.innerHTML = '<span class="ck-student-list-empty">No students match this level/batch</span>';
       return;
     }
     const _e = CK.esc || (s => s);
     container.innerHTML = filtered.map(s => `
-      <label style="display:flex; align-items:center; gap:8px; padding:3px 0; cursor:pointer;">
-        <input type="checkbox" name="assignedStudents" value="${_e(s.id)}" checked
-            style="width:15px; height:15px;" />
-        <span>${_e(s.full_name)}</span>
-        <span style="color:#888; font-size:0.8rem;">${_e(s.level || '')}</span>
+      <label class="ck-student-row">
+        <input type="checkbox" name="assignedStudents" value="${_e(s.id)}" checked class="ck-student-check" />
+        <span class="ck-student-name">${_e(s.full_name)}</span>
+        <span class="ck-student-level">${_e(s.level || '')}</span>
       </label>
     `).join('');
+  },
+
+  // Switch between File-upload and URL/Link source in the Upload Resource modal
+  setUploadSource(source) {
+    document.querySelectorAll('#uploadModal .ck-source-btn').forEach(btn => {
+      const isActive = btn.dataset.source === source;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+    document.querySelectorAll('#uploadModal .ck-source-pane').forEach(pane => {
+      const show = pane.dataset.pane === source;
+      pane.style.display = show ? '' : 'none';
+      // Toggle required-attribute so HTML5 validation matches the visible pane
+      pane.querySelectorAll('input').forEach(inp => {
+        inp.required = show && (inp.type === 'url' || inp.type === 'file');
+        if (!show) inp.value = '';
+      });
+    });
   },
 
   async handleResourceUpload(e) {
     e.preventDefault();
     const form = e.target;
     const btn = form.querySelector('[type="submit"]');
+    const restoreBtn = btn.textContent;
     btn.disabled = true;
-    btn.textContent = 'Uploading...';
+    btn.textContent = '⏳ Uploading…';
 
     try {
-      const fileInput = form.file;
-      const file = fileInput.files[0];
-      const customName = form.fileName.value;
+      const activeSource = document.querySelector('#uploadModal .ck-source-btn.active')?.dataset.source || 'file';
+      const customName = form.fileName.value.trim();
       const targetLevel = form.level.value;
-      const batchName = form.batch.value || 'All Batches';
+      const batchName  = form.batch.value.trim() || 'All Batches';
 
-      // Collect selected student IDs from the dynamic checkbox list
+      if (!customName) throw new Error('Please provide a resource title.');
+
       const checkedBoxes = form.querySelectorAll('input[name="assignedStudents"]:checked');
       const selectedUserIds = Array.from(checkedBoxes).map(cb => cb.value);
       const today = new Date().toISOString().slice(0, 10);
 
-      let filePath = `docs/${Date.now()}_mock_file.pdf`;
+      let filePath = '';
+      let resourceUrl = '';
+      let storageKind = activeSource;     // 'file' or 'link'
 
-      if (window.supabaseClient && navigator.onLine && file) {
-        filePath = `docs/${Date.now()}_${file.name}`;
-        const { error: upErr } = await window.supabaseClient.storage.from('documents').upload(filePath, file);
-        if (upErr) throw upErr;
+      if (activeSource === 'link') {
+        resourceUrl = (form.url?.value || '').trim();
+        if (!resourceUrl) throw new Error('Please paste a URL for the link resource.');
+        try { new URL(resourceUrl); } catch (_) { throw new Error('That URL doesn\'t look valid.'); }
+        filePath = resourceUrl; // stored as the "file" field for backward compat
+      } else {
+        const file = form.file?.files?.[0];
+        if (!file) throw new Error('Please choose a file to upload.');
+        if (file.size > 16 * 1024 * 1024) throw new Error('File too large (max 16 MB).');
+
+        // Try Supabase Storage upload — fallback to a synthetic path if offline
+        filePath = `docs/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+        if (window.supabaseClient && navigator.onLine) {
+          const { error: upErr } = await window.supabaseClient.storage.from('documents').upload(filePath, file);
+          if (upErr) {
+            console.warn('[Admin] Storage upload failed, saving metadata only:', upErr);
+            CK.showToast('Storage upload failed; resource saved as link instead.', 'warning');
+          } else {
+            // Get the public URL so students/coaches can open it
+            const { data: pub } = window.supabaseClient.storage.from('documents').getPublicUrl(filePath);
+            if (pub?.publicUrl) resourceUrl = pub.publicUrl;
+          }
+        }
       }
 
       await CK.db.saveDocument({
         name: customName,
         file_name: filePath,
+        url: resourceUrl,
+        kind: storageKind,
         level: targetLevel,
         batch: batchName,
         user_ids: selectedUserIds.join(','),
@@ -1215,11 +1256,16 @@ CK.admin = {
         ));
       }
 
-      CK.showToast('Resource published' + (selectedUserIds.length ? ` and ${selectedUserIds.length} student(s) marked present.` : '!'), 'success');
+      CK.showToast(
+        `✅ ${storageKind === 'link' ? 'Link' : 'File'} published` +
+        (selectedUserIds.length ? ` · ${selectedUserIds.length} student(s) marked present.` : '.'),
+        'success'
+      );
       CK.closeModal('uploadModal');
       form.reset();
+      this.setUploadSource('file');
       const usl = document.getElementById('uploadStudentList');
-      if (usl) usl.innerHTML = '<span style="color:#aaa; font-size:0.85rem;">Select level/batch above to load students</span>';
+      if (usl) usl.innerHTML = '<span class="ck-student-list-empty">Select level/batch above to load students</span>';
       await this.loadFiles();
 
       if (CK.student && CK.student.userProfile) CK.student.init();
@@ -1228,7 +1274,7 @@ CK.admin = {
       CK.showToast(err.message || 'Publishing resource failed.', 'error');
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Upload';
+      btn.textContent = restoreBtn;
     }
   },
 

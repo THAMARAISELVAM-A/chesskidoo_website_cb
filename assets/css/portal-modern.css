@@ -430,3 +430,229 @@
   -webkit-background-clip: text;
   background-clip: text;
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   UPLOAD-RESOURCE MODAL — theme-aware redesign + File/Link toggle
+   Used by Admin Portal → Files/Resources panel.
+   ════════════════════════════════════════════════════════════════════ */
+.ck-upload-card {
+  max-width: 640px !important;
+  background: var(--p-surface, #fff) !important;
+  color: var(--p-text, #15191f);
+  border: 1px solid var(--p-border, #d8dee7);
+  border-radius: 18px !important;
+  padding: 28px 32px !important;
+}
+.ck-upload-title {
+  font-family: var(--font-display, 'Poppins', sans-serif);
+  font-size: 1.45rem;
+  font-weight: 800;
+  margin: 0 0 4px;
+  color: var(--p-text, #15191f);
+}
+.ck-upload-subtitle {
+  margin: 0 0 18px;
+  font-size: 0.88rem;
+  color: var(--p-text-muted, #5a6577);
+}
+
+/* Source toggle pill */
+.ck-source-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--p-surface1, #14181f);
+  border: 1px solid var(--p-border, #252b35);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 18px;
+}
+.ck-source-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--p-text-muted, #97a1b5);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background .2s ease, color .2s ease, box-shadow .2s ease;
+}
+.ck-source-btn:hover {
+  color: var(--p-text);
+}
+.ck-source-btn.active {
+  background: linear-gradient(135deg, #e8b84b, #d4a035);
+  color: #1a1209;
+  box-shadow: 0 4px 12px rgba(232, 184, 75, 0.3);
+}
+:root[data-theme="light"] .ck-source-toggle {
+  background: rgba(20, 30, 50, 0.04);
+  border-color: rgba(20, 30, 50, 0.08);
+}
+
+/* Form fields */
+.ck-upload-form .form-group { margin-bottom: 14px; }
+.ck-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--p-text-muted, #97a1b5);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.ck-label-with-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: none;
+  font-size: 0.85rem;
+  letter-spacing: 0;
+  font-weight: 600;
+}
+.ck-hint {
+  font-size: 0.72rem;
+  color: var(--p-text-muted, #97a1b5);
+  margin-top: 5px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.ck-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--p-border, #252b35);
+  background: var(--p-surface1, #14181f);
+  color: var(--p-text, #e8edf5);
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+  box-sizing: border-box;
+}
+.ck-input:focus {
+  outline: none;
+  border-color: #e8b84b;
+  box-shadow: 0 0 0 3px rgba(232, 184, 75, 0.18);
+}
+.ck-input::placeholder { color: var(--p-text-muted); opacity: 0.6; }
+textarea.ck-input { height: auto; min-height: 80px; padding: 12px 14px; }
+.ck-file-input {
+  height: auto;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+.ck-file-input::-webkit-file-upload-button {
+  background: linear-gradient(135deg, #e8b84b, #d4a035);
+  color: #1a1209;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-right: 12px;
+}
+
+/* 2-column grid for level+batch and type+notes */
+.ck-form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 520px) {
+  .ck-form-grid-2 { grid-template-columns: 1fr; }
+}
+
+/* Student list box */
+.ck-student-list {
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1.5px solid var(--p-border, #252b35);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--p-surface1, #14181f);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ck-student-list-empty {
+  color: var(--p-text-muted, #97a1b5);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+.ck-student-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.ck-student-row:hover {
+  background: rgba(232, 184, 75, 0.08);
+}
+.ck-student-check {
+  width: 16px; height: 16px;
+  accent-color: #e8b84b;
+  cursor: pointer;
+}
+.ck-student-name {
+  flex: 1;
+  font-size: 0.92rem;
+  color: var(--p-text, #e8edf5);
+  font-weight: 500;
+}
+.ck-student-level {
+  font-size: 0.72rem;
+  color: var(--p-text-muted, #97a1b5);
+  padding: 2px 8px;
+  background: rgba(232, 184, 75, 0.12);
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* Actions row */
+.ck-form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--p-border, #252b35);
+}
+.ck-btn-cancel {
+  flex: 0 0 auto;
+  padding: 12px 22px;
+}
+.ck-btn-upload {
+  flex: 1;
+  padding: 12px 22px;
+  background: linear-gradient(135deg, #e8b84b, #d4a035) !important;
+  color: #1a1209 !important;
+  font-weight: 800;
+  box-shadow: 0 6px 16px rgba(232, 184, 75, 0.32);
+}
+.ck-btn-upload:hover {
+  box-shadow: 0 8px 22px rgba(232, 184, 75, 0.48);
+  transform: translateY(-1px);
+}
+
+/* Light-theme adjustments */
+:root[data-theme="light"] .ck-input {
+  background: #ffffff;
+  color: var(--p-text, #15191f);
+  border-color: var(--p-border, #d8dee7);
+}
+:root[data-theme="light"] .ck-student-list {
+  background: #fafbfc;
+  border-color: var(--p-border, #d8dee7);
+}
+:root[data-theme="light"] .ck-student-row:hover {
+  background: rgba(232, 184, 75, 0.12);
+}
