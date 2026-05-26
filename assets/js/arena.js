@@ -1914,27 +1914,70 @@
     const card = document.querySelector('#cert-overlay .cert-card');
     if (!card) return;
     const nameInput = document.getElementById('cert-player-name');
-    const playerName = (nameInput && nameInput.value.trim())
-      || (localStorage.getItem('ck_cert_name') || 'Champion');
-    try { localStorage.setItem('ck_cert_name', playerName); } catch(e){}
-    let restore = null;
-    if (nameInput) {
-      const tmp = document.createElement('div');
-      tmp.style.cssText = 'font-family:"Cormorant Garamond",serif;font-size:2.4rem;font-weight:700;font-style:italic;color:#111;border-bottom:2px solid #d4af37;padding-bottom:4px;text-align:center;';
-      tmp.textContent = playerName;
-      nameInput.parentNode.insertBefore(tmp, nameInput);
-      nameInput.style.display = 'none';
-      restore = () => { tmp.remove(); nameInput.style.display = ''; };
+
+    // Require a name — prompt if missing so the certificate isn't anonymous.
+    let playerName = (nameInput && nameInput.value.trim()) || '';
+    if (!playerName) {
+      const stored = localStorage.getItem('ck_cert_name') || '';
+      const entered = window.prompt('Enter your name for the certificate:', stored);
+      if (entered === null) {
+        CK.showToast('Certificate download cancelled.', 'info');
+        return;
+      }
+      playerName = entered.trim();
+      if (!playerName) {
+        CK.showToast('A name is required to download the certificate.', 'warning');
+        if (nameInput) nameInput.focus();
+        return;
+      }
+      if (nameInput) nameInput.value = playerName;
     }
+    try { localStorage.setItem('ck_cert_name', playerName); } catch(e){}
+
+    // The cert is designed for ~800px width — on mobile its content collapses
+    // and the capture comes out blank/cut-off. Temporarily render the cert at
+    // its full design width (off-screen) so html2canvas captures it correctly.
+    const tmpDiv = document.createElement('div');
+    tmpDiv.style.cssText = 'font-family:"Cormorant Garamond",serif;font-size:2.4rem;font-weight:700;font-style:italic;color:#111;border-bottom:2px solid #d4af37;padding-bottom:4px;text-align:center;';
+    tmpDiv.textContent = playerName;
+    if (nameInput) {
+      nameInput.parentNode.insertBefore(tmpDiv, nameInput);
+      nameInput.style.display = 'none';
+    }
+    // Mobile CSS uses !important on cert-card width — we need setProperty with
+    // 'important' to actually override during capture.
+    const restoreCard = card.getAttribute('style') || '';
+    const persp = card.parentElement && card.parentElement.classList.contains('cert-perspective-container') ? card.parentElement : null;
+    const restorePersp = persp ? (persp.getAttribute('style') || '') : '';
+    if (persp) {
+      persp.style.setProperty('width', '800px', 'important');
+      persp.style.setProperty('max-width', '800px', 'important');
+    }
+    card.style.setProperty('width', '800px', 'important');
+    card.style.setProperty('max-width', '800px', 'important');
+    card.style.setProperty('padding', '40px 56px', 'important');
+    card.style.setProperty('transform', 'none', 'important');
+    const restore = () => {
+      card.setAttribute('style', restoreCard);
+      if (persp) persp.setAttribute('style', restorePersp);
+      tmpDiv.remove();
+      if (nameInput) nameInput.style.display = '';
+    };
+
     if (typeof window.html2canvas === 'function') {
       try {
         CK.showToast('📸 Rendering certificate…', 'info');
+        // Give layout a frame to settle at the new width before capturing
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
         const canvas = await window.html2canvas(card, {
-          backgroundColor: '#fffdf6', scale: 2, useCORS: true, logging: false, allowTaint: true
+          backgroundColor: '#fffdf6', scale: 2, useCORS: true,
+          logging: false, allowTaint: true,
+          width: 800, height: card.offsetHeight,
+          windowWidth: 1200
         });
         const safeName = playerName.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'Champion';
         canvas.toBlob((blob) => {
-          if (restore) restore();
+          restore();
           if (!blob) { CK.showToast('Could not generate image, opening print view…', 'warning'); A._printCertificateFallback(); return; }
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -1950,7 +1993,7 @@
         console.warn('[Arena] html2canvas capture failed, falling back to print:', err);
       }
     }
-    if (restore) restore();
+    restore();
     A._printCertificateFallback();
   };
 
