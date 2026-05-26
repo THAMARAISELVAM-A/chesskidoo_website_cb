@@ -619,6 +619,7 @@ CK.student = {
     if (!p) return;
 
     this.activePuzzleId = id;
+    this._puzzleSelectedSq = null;  // reset piece selection between puzzles
 
     // Show active area, hide placeholder
     const placeholder = document.getElementById('pzPlaceholder');
@@ -735,6 +736,53 @@ CK.student = {
     if (!p) return;
 
     const fb = document.getElementById('puzzleFeedback');
+    const setup = this._PUZZLE_SETUPS[this.activePuzzleId] || {};
+
+    // PROPER CHESS-LIKE INPUT
+    // ─────────────────────────────────────────────────────────────
+    // If the user has a piece selected and clicks another square,
+    // treat it as a move attempt. If the destination matches the
+    // puzzle's solution square, fire success. Otherwise count as a
+    // mistake and clear the selection so they can try again.
+    if (this._puzzleSelectedSq) {
+      const fromSq = this._puzzleSelectedSq;
+      this._puzzleSelectedSq = null;
+      // Clear all hint highlights
+      document.querySelectorAll('#studentPuzzleBoardContainer [title]').forEach(el => {
+        el.style.boxShadow = '';
+        if (!el.style.background.includes('#3a6b2a')) {
+          el.style.background = '';
+        }
+      });
+      // Re-render the board to restore visuals
+      // (cheap re-render keeps UI clean)
+      // Then evaluate the destination
+      if (fromSq === squareId) {
+        // Same square clicked again = deselect; do nothing further
+        return;
+      }
+      // Treat the destination click the same as the simple-solver below
+      squareId = squareId; // fall through to solution check
+    } else {
+      // No selection yet — if user clicked a piece, SELECT it
+      const piece = setup[squareId];
+      if (piece) {
+        this._puzzleSelectedSq = squareId;
+        // Visual highlight on the selected square
+        const el = document.querySelector(`#studentPuzzleBoardContainer [title="${squareId}"]`);
+        if (el) {
+          el.style.boxShadow = 'inset 0 0 0 4px #e8b84b, 0 0 16px rgba(232,184,75,0.5)';
+        }
+        if (fb) {
+          fb.style.display = 'block';
+          fb.className = 'pz-feedback hint';
+          fb.textContent = `Selected ${piece} on ${squareId.toUpperCase()} — now click the target square to make the move.`;
+        }
+        return;
+      }
+      // Clicked empty square with no piece selected — just ignore (or treat
+      // as direct solution-square click for legacy compatibility).
+    }
 
     if (squareId === p.solution) {
       this.stopPuzzleTimer();
