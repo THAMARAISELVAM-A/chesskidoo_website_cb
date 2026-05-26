@@ -1,5 +1,8 @@
 /* mobile-arena.css — ChessKidoo Arena Mobile Optimization
-   Modern Fluid Layout for Tablets & Mobile
+   Works alongside arena.css base rules. The base now uses flex-wrap so
+   the moves panel naturally wraps below the board on narrow viewports;
+   these rules only fine-tune paddings, sizing budgets, and a few sticky
+   bits like the controls bar.
    ─────────────────────────────────────────────────────────── */
 
 /* ═══════════════════════════════════════════════════════════
@@ -15,7 +18,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   900px — TABLETS & MOBILE FLUID STACKING
+   900px — TABLETS & MOBILE
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 900px) {
   /* Arena header compact */
@@ -27,138 +30,69 @@
   .arena-header-left { width: 100%; justify-content: space-between; }
   .arena-header-right { width: 100%; justify-content: space-between; }
   .arena-header-settings { width: 100%; overflow-x: auto; padding-bottom: 4px; }
-  
+
   .difficulty-selector, .timer-selector, .personality-selector {
     flex-shrink: 0;
   }
 
-  /* Game layout: stack board + side panel */
+  /* Game layout: column stack centred — base is already flex column */
   .arena-game-layout {
-    display: flex !important;
-    flex-direction: column;
-    align-items: center;
-    gap: 24px;
-    padding: 16px 12px;
+    gap: 18px;
+    padding: 14px 12px;
   }
 
-  .arena-side-panel {
-    width: 100%;
-    max-width: 500px; /* Match board max-width visually */
-  }
-
-  /* Chessboard Fluid Sizing */
+  /* The board row keeps eval+board inline, moves panel wraps below */
   .arena-board-container {
     width: 100%;
-    max-width: 500px;
+    max-width: 560px;
     margin: 0 auto;
-    /* Ensure the container sizes relative to width */
-    height: auto;
+    gap: 8px;
   }
 
-  .arena-board-wrapper {
-    flex-grow: 1;
-    width: 100%;
-  }
-
-  .arena-board {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 1 / 1; /* Perfect square */
-  }
-
-  /* Coords and Eval Bar — Match Board Height Dynamically */
-  .arena-coords-left {
-    height: auto; 
-    aspect-ratio: 16 / 500; /* Approximate vertical height constraint */
-  }
+  /* Eval bar — thinner on touch screens, stretches to board height */
   .eval-bar-container {
-    height: auto;
-    /* Let the browser stretch it via flexbox stretch */
-    align-self: stretch;
-    width: 14px; /* Thinner on mobile */
-    margin-right: 4px;
-  }
-  
-  /* Analysis Panel Compact */
-  .arena-panel {
-    border-radius: 16px;
-  }
-  .arena-move-list {
-    max-height: 200px;
-  }
-  .engine-eval-value {
-    font-size: 1.8rem;
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   768px — MOBILE: REPLACE FLEX WITH DETERMINISTIC GRID
-   ═══════════════════════════════════════════════════════════
-   Previous flex+wrap approach left empty vertical gaps because arena.css
-   mobile rules pinned hard pixel heights on eval-bar / coords-left while the
-   board became a 100%-width square. CSS Grid lets us pin the layout exactly:
-     row 1 = [eval | coords | board+files]   ← all share the row height
-     row 2 = moves-panel (spans all 3 cols)
-   ═══════════════════════════════════════════════════════════ */
-@media (max-width: 768px) {
-  .arena-board-container {
-    display: grid !important;
-    grid-template-columns: auto auto 1fr !important;
-    grid-template-rows: auto auto !important;
-    grid-template-areas:
-      "eval coords board"
-      "moves moves moves" !important;
-    gap: 4px !important;
-    align-items: stretch !important;
-    padding: 0 !important;
-  }
-  .arena-board-container > .eval-bar-container {
-    grid-area: eval;
-    align-self: stretch !important;
-    height: auto !important;
     width: 14px !important;
     margin-right: 0 !important;
   }
-  .arena-board-container > .arena-coords-left {
-    grid-area: coords;
-    align-self: stretch !important;
-    height: auto !important;
-    padding-right: 2px !important;
-  }
-  /* The "fit-content" wrapper containing board + bottom-files coord strip */
-  .arena-board-container > div[style*="fit-content"] {
-    grid-area: board;
-    width: auto !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-  }
-  /* The moves-panel wrapper inline-styled with min-width: 250px */
+
+  /* Moves panel (inline-styled wrapper) wraps to its own row below board */
   .arena-board-container > div[style*="min-width: 250px"] {
-    grid-area: moves;
-    width: 100% !important;
+    flex: 1 1 100% !important;
     min-width: 0 !important;
-    max-width: 100% !important;
     margin: 12px 0 0 0 !important;
-    max-height: 220px !important;
-    height: auto !important;
-  }
-  .arena-board-wrapper {
-    width: 100% !important;
-  }
-  /* Force the chessboard to render as a true square sized from its column */
-  .arena-board {
     width: 100% !important;
     max-width: 100% !important;
+    max-height: 280px !important;
     height: auto !important;
-    aspect-ratio: 1 / 1 !important;
-  }
-  /* Bottom files strip sits flush under the board */
-  .arena-coords-bottom {
-    width: 100% !important;
   }
 
-  /* Game action buttons: wrap and fit */
+  /* Board cap */
+  .arena-board {
+    max-width: min(540px, 90vw) !important;
+  }
+
+  /* Analysis Panel compact */
+  .arena-panel { border-radius: 16px; }
+  .arena-move-list { max-height: 220px; }
+  .engine-eval-value { font-size: 1.8rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   768px — PHONES (tighter spacing, thinner eval bar)
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .arena-board-container {
+    gap: 6px;
+    padding: 0 !important;
+  }
+  .arena-board {
+    max-width: min(440px, 92vw) !important;
+  }
+  .arena-board-container > div[style*="min-width: 250px"] {
+    max-height: 220px !important;
+  }
+
+  /* Game action buttons: 2-column grid */
   .arena-controls {
     flex-wrap: wrap !important;
     gap: 6px !important;
@@ -175,25 +109,20 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   480px — SMALL PHONES (Tighter Paddings)
+   480px — SMALL PHONES (tightest)
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 480px) {
-  .arena-game-layout {
-    padding: 12px 8px;
-    gap: 16px;
-  }
+  .arena-game-layout { padding: 10px 6px; gap: 14px; }
 
   .btn-more-games { padding: 8px 12px; font-size: 0.75rem; }
   .arena-player-info { padding: 4px 8px; }
   .arena-player-avatar { width: 28px; height: 28px; font-size: 0.7rem; }
 
-  .arena-coord { display: none; }
-  .arena-coords-left, .arena-coords-bottom { display: none; }
-
-  .eval-bar-container { width: 10px; margin-right: 4px; }
-
+  .arena-board-container { gap: 4px; }
+  .eval-bar-container { width: 10px !important; }
+  .arena-board { max-width: 96vw !important; }
   .arena-board-container > div[style*="min-width: 250px"] {
-    max-height: 150px !important;
+    max-height: 180px !important;
   }
   .arena-ctrl-btn {
     font-size: 0.72rem !important;
@@ -202,7 +131,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   MORE GAMES — compact 2-up grid on phones (was 1 huge card per screen)
+   MORE GAMES — compact 2-up grid on phones
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 700px) {
   .games-grid {
@@ -216,7 +145,6 @@
   .card-badges { gap: 4px !important; flex-wrap: wrap !important; }
   .card-badges .badge { font-size: 0.6rem !important; padding: 3px 7px !important; }
   .card-best { font-size: 0.72rem !important; }
-  /* tame the heavy 3D hover/tilt on touch so taps feel snappy */
   .game-card:hover { transform: translateY(-4px) !important; }
 }
 @media (max-width: 360px) {
@@ -226,7 +154,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   TOUCH DEVICE — DISABLE HOVER EFFECTS
+   TOUCH DEVICE — disable hover-only effects
    ═══════════════════════════════════════════════════════════ */
 @media (hover: none) and (pointer: coarse) {
   .diff-btn:hover,

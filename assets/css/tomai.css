@@ -1,0 +1,461 @@
+/* ════════════════════════════════════════════════════════════════════
+   TOM AI — ChessKidoo intelligent chatbot widget
+   Floating launcher + slide-in chat panel, available site-wide.
+   ════════════════════════════════════════════════════════════════════ */
+
+#tom-ai-root {
+  position: fixed;
+  bottom: 0; right: 0;
+  /* Sit above portal sidebars (z 100), notifications drawer (z 500),
+     cert overlay (z 10001), arcade overlay (z 10000), but below modal-style
+     full-screen confirmations if any need to block it. */
+  z-index: 99990;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  pointer-events: none; /* children re-enable */
+}
+
+#tom-ai-root *,
+#tom-ai-root *::before,
+#tom-ai-root *::after {
+  box-sizing: border-box;
+}
+
+/* ─── Floating Launcher — matches scroll-to-top button (gold gradient, rounded) ─── */
+.tom-ai-launcher {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #E8A020 0%, #F5C842 100%);
+  border: none;
+  box-shadow: 0 6px 22px rgba(232,160,32,0.45), 0 0 0 0 rgba(245,200,66,0.55);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform .25s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow .25s ease;
+  animation: tomLauncherPulse 3s ease-in-out infinite;
+  color: #1A1209;
+  padding: 0;
+  font-size: 0;
+}
+.tom-ai-launcher:hover {
+  transform: scale(1.08) translateY(-2px);
+  box-shadow: 0 10px 28px rgba(232,160,32,0.6), 0 0 0 8px rgba(245,200,66,0.18);
+}
+.tom-ai-launcher svg { display: block; }
+.tom-ai-launcher .tom-launcher-knight {
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  color: #1A1209;
+}
+.tom-ai-launcher .tom-launcher-knight svg { width: 100%; height: 100%; }
+.tom-ai-launcher .tom-launcher-badge {
+  background: #22c55e !important;
+  box-shadow: 0 0 8px rgba(34,197,94,0.7) !important;
+  top: -3px !important; right: -3px !important;
+}
+.tom-ai-launcher .tom-launcher-badge {
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 0 rgba(34,197,94,0.6);
+  animation: tomDotPulse 1.4s ease-in-out infinite;
+}
+@keyframes tomLauncherPulse {
+  0%,100% { box-shadow: 0 6px 22px rgba(232,160,32,0.45), 0 0 0 0 rgba(245,200,66,0.55); }
+  50%     { box-shadow: 0 6px 22px rgba(232,160,32,0.55), 0 0 0 14px rgba(245,200,66,0); }
+}
+@keyframes tomDotPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); }
+  50%     { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+}
+.tom-ai-launcher.tom-hidden { display: none; }
+
+/* Tooltip "Chat with TOM" that fades in on hover */
+.tom-ai-launcher::after {
+  content: 'Chat with TOM';
+  position: absolute;
+  right: 78px; top: 50%;
+  transform: translateY(-50%) translateX(8px);
+  background: #0f172a;
+  color: #e8edf5;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all .22s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.tom-ai-launcher:hover::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* ─── Chat Panel — matches site's navy + gold theme ─── */
+.tom-ai-panel {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  height: 580px;
+  max-height: calc(100dvh - 48px);
+  background: linear-gradient(180deg, #0f172a 0%, #1a1f3a 100%);
+  border: 1px solid rgba(232, 184, 75, 0.18);
+  border-radius: 20px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(232,184,75,0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(20px) scale(0.96);
+  transform-origin: bottom right;
+  transition: opacity .25s ease, transform .25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.tom-ai-panel.tom-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Header — dark navy with gold knight avatar (reference-style) */
+.tom-ai-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(90deg, #0c1326 0%, #1a2348 100%);
+  border-bottom: 1px solid rgba(232,184,75,0.18);
+  flex-shrink: 0;
+}
+.tom-ai-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fde68a 0%, #f59e0b 55%, #b45309 100%);
+  border: 2px solid rgba(255,255,255,0.25);
+  box-shadow: 0 4px 10px rgba(180,83,9,0.4), inset 0 -2px 4px rgba(0,0,0,0.2);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  padding: 2px;
+}
+.tom-ai-avatar svg { width: 100%; height: 100%; display: block; object-fit: contain; }
+.tom-ai-title-name { color: #e8b84b !important; }   /* gold name like the reference */
+.tom-ai-title {
+  flex: 1;
+  color: #fff;
+  line-height: 1.15;
+}
+.tom-ai-title-name {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.tom-ai-title-status {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.78);
+  display: flex; align-items: center; gap: 5px;
+}
+.tom-ai-title-status::before {
+  content: ''; width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 6px #4ade80;
+}
+.tom-ai-header-actions { display: flex; gap: 4px; }
+.tom-ai-icon-btn {
+  width: 32px; height: 32px;
+  border: none; background: rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, transform .15s;
+}
+.tom-ai-icon-btn:hover {
+  background: rgba(255,255,255,0.2);
+  transform: scale(1.05);
+}
+
+/* Messages scroller */
+.tom-ai-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scroll-behavior: smooth;
+}
+.tom-ai-messages::-webkit-scrollbar { width: 6px; }
+.tom-ai-messages::-webkit-scrollbar-track { background: transparent; }
+.tom-ai-messages::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.12);
+  border-radius: 3px;
+}
+
+.tom-msg {
+  display: flex; gap: 8px;
+  max-width: 85%;
+  animation: tomMsgIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes tomMsgIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+.tom-msg-bot     { align-self: flex-start; }
+.tom-msg-user    { align-self: flex-end;   flex-direction: row-reverse; }
+
+.tom-msg-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.tom-msg-bot  .tom-msg-avatar {
+  background: radial-gradient(circle at 35% 30%, #fde68a 0%, #f59e0b 55%, #b45309 100%);
+  color: #1a1a1a;
+  padding: 2px;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.2), 0 2px 4px rgba(180,83,9,0.3);
+}
+.tom-msg-bot .tom-msg-knight {
+  display: flex; width: 100%; height: 100%;
+}
+.tom-msg-bot .tom-msg-knight svg { width: 100%; height: 100%; display: block; object-fit: contain; }
+.tom-msg-user .tom-msg-avatar {
+  background: rgba(255,255,255,0.08);
+  color: #e2e8f0;
+}
+
+.tom-msg-bubble {
+  background: #1f2937;
+  color: #e8edf5;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+/* Bot bubble — left-bordered gold accent matches the reference design */
+.tom-msg-bot .tom-msg-bubble {
+  background: #1c2440;
+  border-left: 3px solid #e8b84b;
+  border-bottom-left-radius: 4px;
+}
+.tom-msg-user .tom-msg-bubble {
+  background: linear-gradient(135deg, #1e3a8a, #4338ca);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.tom-msg-bubble a {
+  color: #60a5fa;
+  text-decoration: underline;
+}
+.tom-msg-bubble strong { color: #e8b84b; }
+.tom-msg-bubble code {
+  background: rgba(255,255,255,0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.82em;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Typing indicator (3 bouncing dots) */
+.tom-typing { display: flex; gap: 4px; padding: 6px 4px; }
+.tom-typing span {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.55);
+  animation: tomTypeBounce 1.2s infinite ease-in-out;
+}
+.tom-typing span:nth-child(2) { animation-delay: 0.18s; }
+.tom-typing span:nth-child(3) { animation-delay: 0.36s; }
+@keyframes tomTypeBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.55; }
+  30%           { transform: translateY(-5px); opacity: 1;  }
+}
+
+/* Quick-reply chips */
+.tom-quick-replies {
+  padding: 8px 14px;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  background: rgba(255,255,255,0.02);
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+.tom-quick-chip {
+  background: rgba(232,184,75,0.08);
+  border: 1px solid rgba(232,184,75,0.28);
+  color: #e8b84b;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .18s;
+  white-space: nowrap;
+}
+.tom-quick-chip:hover {
+  background: rgba(232,184,75,0.16);
+  border-color: #e8b84b;
+  color: #fde68a;
+  transform: translateY(-1px);
+}
+
+/* Input row */
+.tom-ai-input-row {
+  padding: 10px 12px 12px;
+  display: flex; gap: 8px;
+  background: rgba(0,0,0,0.18);
+  border-top: 1px solid rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+.tom-ai-input {
+  flex: 1;
+  background: rgba(255,255,255,0.05);
+  border: 1.5px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 11px 14px;
+  color: #fff;
+  font-size: 0.92rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  resize: none;
+  min-height: 42px;
+  max-height: 110px;
+  line-height: 1.4;
+}
+.tom-ai-input:focus {
+  border-color: #e8b84b;
+  box-shadow: 0 0 0 3px rgba(232,184,75,0.18);
+}
+.tom-ai-input::placeholder { color: rgba(255,255,255,0.35); }
+
+.tom-ai-send {
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 35% 30%, #fde68a 0%, #f59e0b 55%, #b45309 100%);
+  color: #1a1a1a;
+  border: none;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .15s, box-shadow .2s;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(180,83,9,0.35);
+}
+.tom-ai-send:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(180,83,9,0.5);
+}
+.tom-ai-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Footer credit */
+.tom-ai-footer {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.35);
+  text-align: center;
+  padding: 6px 10px 8px;
+  background: rgba(0,0,0,0.18);
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Mobile adjustments — fullscreen-ish */
+@media (max-width: 520px) {
+  .tom-ai-launcher { bottom: 16px; right: 16px; width: 56px; height: 56px; }
+  .tom-ai-launcher svg { width: 30px; height: 30px; }
+  .tom-ai-launcher .tom-launcher-knight { width: 32px; height: 36px; }
+  .tom-ai-launcher::after { display: none; }
+  .tom-ai-panel {
+    bottom: 0; right: 0; left: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border: none;
+  }
+  /* Keep scroll-to-top button to the LEFT of the smaller mobile launcher */
+  #scrollTopBtn {
+    bottom: 22px !important;
+    right: 82px !important;
+    width: 40px !important;
+    height: 40px !important;
+  }
+}
+/* Hide scroll-to-top when the chatbot panel is open (full-screen on mobile) */
+.tom-ai-panel.tom-open ~ #scrollTopBtn,
+body:has(.tom-ai-panel.tom-open) #scrollTopBtn {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* (Old `body:has(.overlay.active)` rule removed — it was unreliable on
+   Safari < 16.4 and was incorrectly hiding the launcher when overlays
+   had stale .active classes from a previous render. The arcade/cert
+   overlays use z-index 10000-10001 anyway; the launcher at 99990 still
+   sits above them, but the overlays' opaque backdrop visually covers it
+   without needing CSS to hide it.) */
+
+/* Belt-and-suspenders: force the launcher to ALWAYS be visible and
+   clickable regardless of any stray stylesheet rules elsewhere. */
+.tom-ai-launcher {
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+.tom-ai-launcher.tom-hidden {
+  display: none !important;
+}
+
+/* Light theme overrides */
+:root[data-theme="light"] .tom-ai-panel {
+  background: linear-gradient(180deg, #ffffff 0%, #f5f7fb 100%);
+  border-color: rgba(20,30,50,0.08);
+}
+:root[data-theme="light"] .tom-msg-bot .tom-msg-bubble {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+:root[data-theme="light"] .tom-msg-bubble code {
+  background: rgba(30,41,59,0.08);
+}
+:root[data-theme="light"] .tom-ai-input {
+  background: #ffffff;
+  color: #1e293b;
+  border-color: rgba(20,30,50,0.12);
+}
+:root[data-theme="light"] .tom-ai-input::placeholder { color: #94a3b8; }
+:root[data-theme="light"] .tom-ai-input-row,
+:root[data-theme="light"] .tom-quick-replies,
+:root[data-theme="light"] .tom-ai-footer {
+  background: rgba(20,30,50,0.03);
+}
+:root[data-theme="light"] .tom-quick-chip {
+  background: rgba(99,102,241,0.08);
+  color: #5b21b6;
+  border-color: rgba(99,102,241,0.25);
+}
+:root[data-theme="light"] .tom-ai-footer { color: #94a3b8; }
+:root[data-theme="light"] .tom-typing span { background: rgba(30,41,59,0.45); }

@@ -128,8 +128,28 @@ CK.engine = (() => {
       _sfWorker.postMessage('ucinewgame');
       _sfWorker.postMessage(`position fen ${fen}`);
       _sfWorker.postMessage(`go depth ${_sfDepth}`);
-      // Safety timeout: resolve null after 8s
-      setTimeout(() => { if (_sfResolve?.resolve === resolve) { resolve(null); _sfResolve = null; } }, 8000);
+      // Safety timeout: resolve best candidate found so far after 8s to prevent weak fallback
+      setTimeout(() => {
+        if (_sfResolve?.resolve === resolve) {
+          if (_sfResolve.pv) {
+            const firstMove = _sfResolve.pv.split(' ')[0];
+            const r = {
+              cp:     _sfResolve.cp,
+              mate:   _sfResolve.mate,
+              depth:  _sfResolve.depth,
+              knodes: _sfResolve.knodes,
+              pv:     _sfResolve.pv,
+              pvs:    _sfResolve.pvs  || [],
+              bestmove: firstMove,
+              source: 'local_timeout'
+            };
+            resolve(r);
+          } else {
+            resolve(null);
+          }
+          _sfResolve = null;
+        }
+      }, 8000);
     });
   }
 

@@ -53,6 +53,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/portals.css">
   <link rel="stylesheet" href="assets/css/arena.css">
@@ -60,6 +61,7 @@
   <link rel="stylesheet" href="assets/css/mobile-landing.css">
   <link rel="stylesheet" href="assets/css/mobile-portals.css">
   <link rel="stylesheet" href="assets/css/mobile-arena.css">
+  <link rel="stylesheet" href="assets/css/tomai.css">
 
   <!-- Backend: Supabase JS SDK -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
@@ -401,15 +403,19 @@
             <p data-translate="feature_feedback_desc">Every game is reviewed and discussed with the coach for continuous
               improvement.</p>
           </div>
-        </div>
-
-        <!-- Centered Bilingual Support (Perfectly matched with feat-card style) -->
-        <div style="display: flex; justify-content: center; margin-top: 30px;">
-          <div class="feat-card reveal" style="max-width: 400px; width: 100%; margin: 0; text-align: center;">
-            <div class="feat-icon-wrap" style="margin: 0 auto 20px;">🇮🇳</div>
+          <!-- 7th feat-card: Bilingual Support — same style as the others -->
+          <div class="feat-card reveal">
+            <div class="feat-icon-wrap">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 8h6"/><path d="M8 5v3"/>
+                <path d="M5 11c0 4 4 6 6 6"/>
+                <path d="M11 5c-1 4-3 6-6 7"/>
+                <path d="M13 21l3-8 3 8"/>
+                <path d="M14 18h4"/>
+              </svg>
+            </div>
             <h3 data-translate="feature_bilingual">Bilingual Support</h3>
-            <p data-translate="feature_bilingual_desc">Clear communication for students and parents in English & Tamil.
-            </p>
+            <p data-translate="feature_bilingual_desc">Coaching available in <strong>English</strong> &amp; <strong>தமிழ் (Tamil)</strong> — students and parents communicate comfortably in either language.</p>
           </div>
         </div>
       </section>
@@ -1558,15 +1564,19 @@
       </footer>
     </div>
 
-    <!-- Scroll-to-Top Button -->
-    <button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="
-      position:fixed; bottom:100px; right:28px; z-index:999;
-      width:40px; height:40px; border-radius:10px;
+    <!-- Scroll-to-Top Button — sits to the LEFT of the TOM launcher
+         so they don't stack on top of each other in the bottom-right corner. -->
+    <button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})"
+            aria-label="Scroll to top" title="Back to top"
+            style="
+      position:fixed; bottom:32px; right:100px; z-index:999;
+      width:44px; height:44px; border-radius:50%;
       background:linear-gradient(135deg,#E8A020,#F5C842);
-      border:none; cursor:pointer; font-size:1.1rem;
-      box-shadow:0 4px 16px rgba(232,160,32,.4);
+      border:none; cursor:pointer; font-size:1.15rem; font-weight:700;
+      box-shadow:0 6px 18px rgba(232,160,32,.45);
       opacity:0; transform:translateY(10px);
-      transition:all .3s ease; display:grid; place-items:center;
+      transition:opacity .3s ease, transform .3s ease, box-shadow .25s;
+      display:grid; place-items:center;
       color:#1A1209;
     ">↑</button>
 
@@ -5503,6 +5513,14 @@
                 </div>
                 <div class="arena-move-list" id="arena-move-list" style="flex:1;"></div>
                 <div class="arena-match-log" id="arena-match-log" style="display:none; flex:1; overflow-y:auto; padding:12px;"></div>
+                <div class="arena-coach-commentary-box">
+                  <div class="arena-coach-commentary-title">
+                    <span>🎙️</span> AI Coach Commentary
+                  </div>
+                  <div class="arena-coach-commentary-text" id="arena-coach-commentary-text">
+                    Coach Tom AI is watching your game. Start playing to get advice!
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -5670,7 +5688,28 @@
           <div class="ar-title" style="font-size:1.6rem; text-align:center; width:100%;">⚔️ Challenge Setup</div>
         </div>
         <div class="ar-body" style="padding:24px;">
-          
+
+          <!-- Game Mode: vs AI / vs Friend -->
+          <div style="margin-bottom:24px;">
+            <div style="color:var(--p-text-muted); font-size:0.85rem; font-weight:700; text-transform:uppercase; margin-bottom:12px; letter-spacing:0.05em;">Game Mode</div>
+            <div class="game-mode-selector" style="display:flex; gap:8px;">
+              <button class="game-mode-btn active" data-mode="ai" onclick="CK.arena.setGameMode('ai')"
+                      style="flex:1; padding:14px 12px; border-radius:12px; border:1.5px solid rgba(232,184,75,0.45); background:rgba(232,184,75,0.12); color:#fff; cursor:pointer; font-weight:700; transition:all .2s;">
+                <div style="font-size:1.4rem; margin-bottom:4px;">🤖</div>
+                <div style="font-size:0.78rem;">Play vs AI</div>
+                <div style="font-size:0.62rem; opacity:0.7; font-weight:500; margin-top:2px;">Single player vs Stockfish</div>
+              </button>
+              <button class="game-mode-btn" data-mode="friend" onclick="CK.arena.setGameMode('friend')"
+                      style="flex:1; padding:14px 12px; border-radius:12px; border:1.5px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04); color:#fff; cursor:pointer; font-weight:700; transition:all .2s;">
+                <div style="font-size:1.4rem; margin-bottom:4px;">👥</div>
+                <div style="font-size:0.78rem;">Play vs Friend</div>
+                <div style="font-size:0.62rem; opacity:0.7; font-weight:500; margin-top:2px;">Pass-and-play local match</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Hide difficulty/coach when in Friend mode -->
+          <div id="arena-ai-only-options">
           <div style="margin-bottom:24px;">
             <div style="color:var(--p-text-muted); font-size:0.85rem; font-weight:700; text-transform:uppercase; margin-bottom:12px; letter-spacing:0.05em;">Select Difficulty</div>
             <div class="difficulty-selector" style="display:flex; gap:8px; flex-wrap:wrap;">
@@ -5721,6 +5760,8 @@
               <button class="timer-btn" data-time="untimed" onclick="CK.arena.setTimeControl('untimed')">Untimed</button>
             </div>
           </div>
+
+          </div> <!-- /#arena-ai-only-options -->
 
           <button onclick="CK.arena.startCustomGame()" style="width:100%; padding:16px; border-radius:12px; background:var(--arena-gold); color:#111; font-weight:800; font-size:1.1rem; border:none; cursor:pointer; box-shadow:0 4px 15px rgba(232,184,75,0.3); transition:all 0.2s;">▶ START MATCH</button>
           <button onclick="CK.arena.closeChallengeModal()" style="width:100%; padding:12px; border-radius:12px; background:transparent; color:var(--p-text-muted); font-weight:600; font-size:0.9rem; border:none; cursor:pointer; margin-top:8px;">Cancel</button>
@@ -6706,6 +6747,8 @@
   <script defer type="module" src="assets/js/tournament-engine.js"></script>
   <script defer type="module" src="assets/js/ai-analysis.js"></script>
   <script defer type="module" src="assets/js/anti-cheat.js"></script>
+  <!-- TOM AI: classic script (not a module) so it always runs even if a sibling module errors -->
+  <script defer src="assets/js/tomai.js"></script>
   <script defer type="module" src="assets/js/main.js"></script>
   <script defer type="module" src="assets/js/admin.js"></script>
   <script defer type="module" src="assets/js/student.js"></script>
@@ -6932,6 +6975,120 @@
           .catch(e => console.warn('[ChessKidoo] SW registration failed:', e));
       });
     }
+  </script>
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       TOM — emergency inline launcher
+       Real chess-piece silhouette on a gold circle (matches reference).
+       Placed directly in <body> so the icon is always visible even if the
+       deferred tomai.js fails to load for any reason.
+       ════════════════════════════════════════════════════════════════════ -->
+  <div id="tom-ai-emergency-root" style="position:fixed; bottom:24px; right:24px; z-index:2147483647; pointer-events:none;">
+    <button id="tom-ai-emergency-launcher"
+            type="button"
+            aria-label="Open TOM chat"
+            title="Chat with TOM"
+            style="pointer-events:auto; position:relative; width:56px; height:56px; border-radius:14px; border:none; background:linear-gradient(135deg, #E8A020 0%, #F5C842 100%); box-shadow:0 6px 22px rgba(232,160,32,0.45), 0 0 0 0 rgba(245,200,66,0.45); cursor:pointer; display:grid; place-items:center; padding:0; font-size:0; transition:transform .25s, box-shadow .25s; animation:tomEmPulse 3s ease-in-out infinite;">
+      <!-- Clean, simple chess knight icon — matches the scroll-to-top button style -->
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="width:30px; height:30px; color:#1A1209;" fill="currentColor">
+        <path d="M22 27 H10 V25 C10 24 11 23 12 23 H20 C21 23 22 24 22 25 Z"/>
+        <path d="M11 23 H21 V21 C24 19 25 16 24 13 C23 9 21 7 18 5 L19 2 L16 3 L15 1 L12 4 C8 6 6 9 6 12 C6 13 6 14 7 14 L5 15 L8 17 L7 19 L9 19 L8 21 Z"/>
+        <circle cx="18" cy="11" r="0.9" fill="#F5C842"/>
+      </svg>
+      <span style="position:absolute; top:-3px; right:-3px; width:14px; height:14px; border-radius:50%; background:#22c55e; border:2px solid #fff; box-shadow:0 0 8px rgba(34,197,94,0.7);"></span>
+    </button>
+  </div>
+  <style>
+    @keyframes tomEmPulse {
+      0%, 100% { box-shadow: 0 6px 22px rgba(232,160,32,0.45), 0 0 0 0 rgba(245,200,66,0.55); }
+      50%      { box-shadow: 0 6px 22px rgba(232,160,32,0.55), 0 0 0 12px rgba(245,200,66,0); }
+    }
+    #tom-ai-emergency-launcher:hover {
+      transform: scale(1.08) translateY(-2px);
+      box-shadow: 0 10px 28px rgba(232,160,32,0.55) !important;
+    }
+  </style>
+
+  <!-- TOM AI bootstrap — loads the full chatbot on demand or in background -->
+  <script>
+    (function tomAiBootstrap() {
+      var loaded = false;
+      var loading = false;
+
+      function loadFullChatbot(thenOpen) {
+        if (window.CK && window.CK.tomai && window.CK.tomai._initialized && document.getElementById('tom-ai-launcher')) {
+          loaded = true;
+          if (thenOpen && window.CK.tomai.open) {
+            // Hide the emergency launcher — the real one is now in the DOM
+            var em = document.getElementById('tom-ai-emergency-root');
+            if (em) em.style.display = 'none';
+            window.CK.tomai.open();
+          }
+          return;
+        }
+        if (loading) {
+          // Already loading — poll until ready
+          var tries = 0;
+          var iv = setInterval(function() {
+            tries++;
+            if (window.CK && window.CK.tomai && window.CK.tomai._initialized && document.getElementById('tom-ai-launcher')) {
+              clearInterval(iv);
+              var em = document.getElementById('tom-ai-emergency-root');
+              if (em) em.style.display = 'none';
+              if (thenOpen && window.CK.tomai.open) window.CK.tomai.open();
+            } else if (tries > 40) { // 4s timeout
+              clearInterval(iv);
+              console.error('[TOM AI] failed to initialise within 4 seconds');
+            }
+          }, 100);
+          return;
+        }
+        loading = true;
+        var s = document.createElement('script');
+        s.src = 'assets/js/tomai.js?v=' + Date.now();
+        s.async = false;
+        s.onload = function() {
+          loaded = true;
+          var tries = 0;
+          var iv = setInterval(function() {
+            tries++;
+            if (window.CK && window.CK.tomai && window.CK.tomai._initialized && document.getElementById('tom-ai-launcher')) {
+              clearInterval(iv);
+              var em = document.getElementById('tom-ai-emergency-root');
+              if (em) em.style.display = 'none';
+              if (thenOpen && window.CK.tomai.open) window.CK.tomai.open();
+              console.log('[TOM AI] ✓ ready');
+            } else if (tries > 30) {
+              clearInterval(iv);
+            }
+          }, 80);
+        };
+        s.onerror = function() {
+          console.error('[TOM AI] tomai.js failed to load. Check Network tab / SW cache.');
+          loading = false;
+        };
+        document.body.appendChild(s);
+      }
+
+      // Wire the emergency launcher's click to load + open
+      var em = document.getElementById('tom-ai-emergency-launcher');
+      if (em) {
+        em.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          loadFullChatbot(true);
+        });
+        em.addEventListener('mouseenter', function() { em.style.transform = 'scale(1.08) rotate(-6deg)'; });
+        em.addEventListener('mouseleave', function() { em.style.transform = ''; });
+      }
+
+      // Also try to background-load the chatbot so it's hot when user clicks
+      if (document.readyState === 'complete') {
+        setTimeout(function() { loadFullChatbot(false); }, 800);
+      } else {
+        window.addEventListener('load', function() { setTimeout(function(){ loadFullChatbot(false); }, 800); });
+      }
+    })();
   </script>
 
 </body>

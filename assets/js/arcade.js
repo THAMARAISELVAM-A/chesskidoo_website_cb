@@ -1985,7 +1985,7 @@ CK.arcade = (() => {
       overlay.style.backdropFilter = 'blur(3px)';
       overlay.innerHTML = `
         <div style="font-size:3rem; margin-bottom:10px;">🌟</div>
-        <h3 style="color:#fff; font-family:\'Poppins\',sans-serif; font-size:1.5rem; font-weight:800; margin:0 0 5px;">Level ${level} Cleared!</h3>
+        <h3 style="color:#fff; font-family:'Poppins',sans-serif; font-size:1.5rem; font-weight:800; margin:0 0 5px;">Level ${level} Cleared!</h3>
         <p style="color:var(--p-blue); font-weight:700; margin:0 0 20px; font-size:0.95rem;">+${pts} Points (Score: ${score})</p>
         <button class="arcade-action-btn primary" style="min-width:140px;" onclick="CK.arcade.proceedToNextRecallLevel()">Next Level</button>
       `;

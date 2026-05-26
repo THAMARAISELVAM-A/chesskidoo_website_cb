@@ -346,6 +346,7 @@ CK.parents = (() => {
       id: 'fb-' + Date.now(),
       parent_name: _parentProfile?.full_name || 'Parent',
       fromName: _parentProfile?.full_name || 'Parent',
+      fromRole: 'parent',
       parent_email: _parentProfile?.email || '',
       student_email: _childProfile?.email || '',
       childName: _childProfile?.full_name || '',

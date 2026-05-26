@@ -115,6 +115,160 @@
     }
   };
 
+  /* ─── Coach commentary phrase banks ───────────────────────────────────
+     Each coach gets multiple variants per event so commentary doesn't
+     repeat every move. Picked at random via _coachPhrase().            */
+  const _COACH_PHRASES = {
+    magnus: {
+      greeting:    ["Hello! Let's play a careful, accurate match.", "Welcome. Think carefully before each move.", "Position over flash — let's see precise play."],
+      brilliant:   ["Brilliant! That's a Grandmaster-level idea.", "Outstanding — only one move worked there.", "Excellent! A truly precise tactical decision."],
+      best:        ["A solid, accurate choice.", "That's the top engine pick.", "Precise — keeps your edge intact."],
+      excellent:   ["Very good move.", "Nicely played.", "Sound choice."],
+      good:        ["A reasonable move.", "OK — keep an eye on the structure.", "Decent. Watch for tactics."],
+      inaccuracy:  ["Slight inaccuracy — there was something stronger.", "Hmm, not the cleanest. Stay focused.", "Could be sharper — find the principled move."],
+      mistake:     ["That's a mistake — be careful.", "Mistake. Slow down and check threats.", "Not ideal — your opponent gets chances now."],
+      blunder:     ["Blunder! Positional weaknesses get punished.", "Big mistake — careful with your pieces.", "Ouch. That drops material."],
+      engineCapture: ["I'll take that.", "Material wins games — I'm grabbing this.", "Capture incoming."],
+      engineCheck:   ["Check.", "Pressure on the king.", "You'll need to deal with this."],
+      engineQuiet:   ["I'll consolidate here.", "Quietly improving.", "Maintaining the pressure."],
+      yourCapture:   ["Good — material is the simplest plan.", "Capture noted.", "Take. Now coordinate the rest."],
+      yourCheck:     ["Check — make sure it has a follow-up.", "Check! Useful or premature?", "Check — what follows matters."],
+      yourCastle:    ["Smart — king safety first.", "Castled. Now activate the rook.", "Good — your king is tucked away."],
+      yourPromotion: ["Promotion! A new queen joins the fight.", "Excellent — promote and finish.", "Convert carefully now."],
+      win:           ["Checkmate! Well played.", "Mate! You played accurately.", "Convincing finish — good game."],
+      loss:          ["That is checkmate. Study the endgames.", "Mate. Review where it slipped.", "Good fight — work on the critical moments."],
+      draw:          ["A fair draw. The position simply balances.", "Drawn — neither side broke through.", "Draw. A solid result."],
+      hint:          ["Try to find a better move here.", "Look one ply deeper.", "Step back — what's the principled move?"],
+    },
+    tal: {
+      greeting:   ["Prepare for complications!", "Let the storm begin!", "Calm chess is boring chess!"],
+      brilliant:  ["Beautiful! A sacrifice worthy of Riga!", "Magnificent! Tactical wizardry!", "Brilliant! That's how chess should be played!"],
+      best:       ["Correct — but where's the fire?", "Solid. I'd have sacrificed something.", "Accurate, yet a touch dull."],
+      excellent:  ["Sharp!", "Energetic — I like it!", "Good attacking idea!"],
+      good:       ["Hmm — playable but tame.", "OK, but the position screams for attack!", "Reasonable… for now."],
+      inaccuracy: ["Hesitation! Seize the initiative!", "A timid move — chess punishes hesitation!", "Less safety, more boldness!"],
+      mistake:    ["A misstep! Calculate the storm!", "Careful! Tactics await!", "Mistake — and I'll find the tactic!"],
+      blunder:    ["Ah! A blunder! Now I attack!", "You gave me a target — magnificent!", "Disaster! Now the fireworks begin!"],
+      engineCapture: ["Grabbing this — material for the attack!", "Snap! Mine now.", "Take — and then attack!"],
+      engineCheck:   ["Check — and there's more!", "Check! The king is exposed!", "Feel the pressure!"],
+      engineQuiet:   ["Building the attack!", "Pieces converge!", "Patience — the sacrifice comes!"],
+      yourCapture:   ["A capture! Now press!", "Material taken — keep the fire!", "Take! And then the storm!"],
+      yourCheck:     ["Check! Yes — keep the tempo!", "Check — pressure!", "Keep the king nervous!"],
+      yourCastle:    ["Castled? In MY game? Surely you jest!", "Safety move — but the attack is coming!", "Tucked away — for now."],
+      yourPromotion: ["Promotion! A new queen for the storm!", "Promote — and attack!", "A new queen! Devastating!"],
+      win:           ["Yes, mate! What a wild battle!", "Mate! Magnificent!", "Checkmate — what a fight!"],
+      loss:          ["Magnificent! You attacked brilliantly!", "Bravo! You out-attacked the attacker!", "Defeated by your fire!"],
+      draw:          ["A draw? Where was the sacrifice?!", "Drawn — but the play was electric!", "Honourable draw."],
+      hint:          ["Look for the sacrifice!", "What if you give up material?", "Find the combination!"],
+    },
+    petrosian: {
+      greeting:    ["Welcome. Safety is the key.", "Let us build a secure position.", "Prophylaxis before all else."],
+      brilliant:   ["Impressive prophylaxis — all escape squares covered.", "A truly defensive masterstroke.", "Iron technique."],
+      best:        ["The most prudent choice.", "Safety first — well chosen.", "Solid and unbreakable."],
+      excellent:   ["Good prophylaxis.", "Sound move.", "You secured the position."],
+      good:        ["Reasonable — but mind the loose pieces.", "OK — keep the fortress strong.", "Decent. Watch the weak squares."],
+      inaccuracy:  ["A small leak in the defence.", "Careful — weak squares exposed.", "Imprecise — strengthen the structure."],
+      mistake:     ["Careful! You left a piece undefended.", "Mistake — fix the weakness.", "Your perimeter is breached."],
+      blunder:     ["A serious lapse! Patch the defence!", "Blunder — your fortress crumbles!", "Now I have a clear target."],
+      engineCapture: ["Cautious capture.", "Calculated take.", "I exchange — simplify the position."],
+      engineCheck:   ["A small check, nothing dramatic.", "Check — to improve my position.", "Check — testing your defence."],
+      engineQuiet:   ["I improve my pieces slowly.", "Defensive consolidation.", "Patience — every move counts."],
+      yourCapture:   ["Capture noted — simplify.", "Trade if it favours your structure.", "Fewer pieces, fewer threats."],
+      yourCheck:     ["Check — but does it improve your position?", "Check — must serve a purpose.", "Check noted."],
+      yourCastle:    ["Excellent — king safety is paramount!", "Castled. Now the fortress is whole.", "Good — your king is secure."],
+      yourPromotion: ["Patient play rewarded with a queen.", "Promotion — convert calmly.", "A new queen — now consolidate."],
+      win:           ["Checkmate. The fortress holds.", "Mate. Inevitable.", "Defence converted to attack."],
+      loss:          ["Congratulations. You found a crack.", "Mate. You broke through cleanly.", "Defence was not enough today."],
+      draw:          ["A draw — the natural result.", "Balanced play, balanced result.", "Drawn. Both fortresses held."],
+      hint:          ["Look for the defensive resource.", "Find the prophylactic move.", "What does your opponent want? Stop it first."],
+    },
+    beth: {
+      greeting:   ["Let's see what you've got.", "I'm playing to win.", "Bring your A-game."],
+      brilliant:  ["Wow, impressive — sharp tactic!", "Brilliant — Beth-approved!", "Outstanding move!"],
+      best:       ["Engine pick — clean.", "Solid choice.", "Sharp."],
+      excellent:  ["Nice find.", "Good move.", "Crisp."],
+      good:       ["Decent — I'd have looked deeper.", "OK move.", "Playable."],
+      inaccuracy: ["You can do better.", "Slightly off.", "Hmm — try harder."],
+      mistake:    ["That's a mistake. Did you miss the threat?", "Mistake noted.", "Sloppy."],
+      blunder:    ["Bad blunder. Did you miss the threat?", "Big one — I'll capitalize.", "Ouch — material gone."],
+      engineCapture: ["Snap it up.", "Take it — material wins.", "Capture."],
+      engineCheck:   ["Check.", "Pressure!", "Don't ignore this check."],
+      engineQuiet:   ["Quietly improving.", "Pressing the bind.", "Tactics brewing."],
+      yourCapture:   ["Capture. Now follow through.", "Material won.", "Take — and convert."],
+      yourCheck:     ["Check — calculate the consequences.", "Check — useful?", "Make it count."],
+      yourCastle:    ["King tucked away.", "Castled — finally.", "Smart safety."],
+      yourPromotion: ["Promote and convert.", "New queen!", "Crowning glory."],
+      win:           ["Checkmate. Clean.", "Mate. Good try.", "Convincing."],
+      loss:          ["Wow, you got me. Excellent.", "Sharp tactical play. Well done.", "Mate. You earned it."],
+      draw:          ["A draw — surprising.", "Drawn. Even fight.", "Both sides held."],
+      hint:          ["Look for the tactic.", "There's a sharp move here.", "Calculate forcing moves first."],
+    },
+  };
+
+  // Pick a random variant from the coach's bank, with safe fallback.
+  function _coachPhrase(coachId, key, fallback) {
+    const coach = _COACH_PHRASES[coachId] || _COACH_PHRASES.magnus;
+    const bank = coach[key];
+    if (Array.isArray(bank) && bank.length) {
+      return bank[Math.floor(Math.random() * bank.length)];
+    }
+    return fallback || '';
+  }
+
+  // Build commentary for a player move (classification + optional context).
+  function _buildPlayerCommentary(moveData, classification) {
+    const coachId = selectedCoachId || 'magnus';
+    const parts = [];
+    // Primary: classification verdict
+    const verdict = _coachPhrase(coachId, classification);
+    if (verdict) parts.push(verdict);
+    // Secondary: contextual flavour (only sometimes, to avoid spam)
+    const san = moveData && moveData.san || '';
+    if (san === 'O-O' || san === 'O-O-O') {
+      parts.push(_coachPhrase(coachId, 'yourCastle'));
+    } else if (san.includes('=')) {
+      parts.push(_coachPhrase(coachId, 'yourPromotion'));
+    } else if (moveData && moveData.captured && Math.random() < 0.4) {
+      parts.push(_coachPhrase(coachId, 'yourCapture'));
+    } else if (san.includes('+') && Math.random() < 0.5) {
+      parts.push(_coachPhrase(coachId, 'yourCheck'));
+    }
+    return parts.filter(Boolean).join(' ');
+  }
+
+  // Build commentary for an engine move (no classification — describe action).
+  function _buildEngineCommentary(moveData) {
+    const coachId = selectedCoachId || 'magnus';
+    const san = moveData && moveData.san || '';
+    if (moveData && moveData.captured) return _coachPhrase(coachId, 'engineCapture');
+    if (san.includes('+')) return _coachPhrase(coachId, 'engineCheck');
+    return _coachPhrase(coachId, 'engineQuiet');
+  }
+
+  // Public dispatcher used by all event sites.
+  A.coachComment = (eventKind, ctx) => {
+    ctx = ctx || {};
+    let text = '';
+    switch (eventKind) {
+      case 'playerMove':
+        text = _buildPlayerCommentary(ctx.move, ctx.classification);
+        break;
+      case 'engineMove':
+        text = _buildEngineCommentary(ctx.move);
+        break;
+      case 'greeting':
+      case 'win':
+      case 'loss':
+      case 'draw':
+      case 'hint':
+        text = _coachPhrase(selectedCoachId || 'magnus', eventKind);
+        break;
+      default:
+        text = ctx.fallback || '';
+    }
+    if (text) A.speakCoach(text);
+  };
+
   /* ─── Upgraded Audio System (Acoustic Physical Modeling) ─── */
   let audioCtx = null;
   A.initAudio = () => {
@@ -123,9 +277,9 @@
   };
 
   A.playMoveSound = (isCapture = false) => {
-    if (!audioCtx) return;
     try {
       A.initAudio();
+      if (!audioCtx) return;
       const now = audioCtx.currentTime;
       
       // Base wooden knock impact (sine sweep)
@@ -260,20 +414,52 @@
     } catch(e) {}
   };
 
-  /* ─── Upgraded Audio Coach (Text-to-Speech) ─── */
+  /* ─── Upgraded Audio Coach (Text-to-Speech) ─────────────────────────
+     Always updates the visible commentary box immediately so the user
+     sees the latest message even if TTS is off. TTS itself is throttled
+     so rapid consecutive moves don't queue an avalanche of speech. */
+  let _coachLastSpeakAt = 0;
+  let _coachPendingTimer = null;
+  const COACH_SPEAK_THROTTLE_MS = 1100;
+
   A.speakCoach = (text) => {
+    if (!text) return;
+
+    // 1. UI box update — always runs, even when TTS disabled.
+    const commentaryEl = document.getElementById('arena-coach-commentary-text');
+    if (commentaryEl) {
+      commentaryEl.textContent = text;
+      // Subtle flash animation to draw the eye to the new message.
+      commentaryEl.classList.remove('coach-flash');
+      // Force reflow to restart the CSS animation.
+      void commentaryEl.offsetWidth;
+      commentaryEl.classList.add('coach-flash');
+    }
+
     if (!audioCoachEnabled || !window.speechSynthesis) return;
+
+    // 2. Throttle TTS so quick consecutive moves don't pile up.
+    const now = Date.now();
+    const sinceLast = now - _coachLastSpeakAt;
+    if (sinceLast < COACH_SPEAK_THROTTLE_MS) {
+      if (_coachPendingTimer) clearTimeout(_coachPendingTimer);
+      _coachPendingTimer = setTimeout(() => {
+        _coachPendingTimer = null;
+        A.speakCoach(text); // re-enter with throttle window now open
+      }, COACH_SPEAK_THROTTLE_MS - sinceLast);
+      return;
+    }
+    _coachLastSpeakAt = now;
+
     try {
       window.speechSynthesis.cancel();
       const coach = COACHES[selectedCoachId] || COACHES.magnus;
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.pitch = coach.voicePitch || 1.0;
-      utterance.rate = coach.voiceRate || 1.0;
-      
+      utterance.rate  = coach.voiceRate  || 1.0;
       const voices = window.speechSynthesis.getVoices();
       const englishVoice = voices.find(v => v.lang.startsWith('en-'));
       if (englishVoice) utterance.voice = englishVoice;
-      
       window.speechSynthesis.speak(utterance);
     } catch(e) {
       console.warn("Speech synthesis failed:", e);
@@ -374,19 +560,27 @@
     memoryGameState = null;
     blunderReplayMode = false;
 
-    // Load visual/audio toggles
+     // Load visual/audio toggles
+    coachMode = localStorage.getItem('ck_coach_mode') === 'true';
     audioCoachEnabled = localStorage.getItem('ck_audio_coach') === 'true';
     threatMapEnabled = localStorage.getItem('ck_threat_map') === 'true';
     safetyRadarEnabled = localStorage.getItem('ck_safety_radar') === 'true';
     selectedCoachId = localStorage.getItem('ck_selected_coach_id') || 'magnus';
+    currentDifficulty = localStorage.getItem('ck_difficulty') || 'Intermediate';
     
     // Sync UI elements
+    const cEl = document.getElementById('arena-coach-mode');
     const acEl = document.getElementById('arena-audio-coach');
     const tmEl = document.getElementById('arena-threat-map');
     const srEl = document.getElementById('arena-safety-radar');
+    if (cEl) cEl.checked = coachMode;
     if (acEl) acEl.checked = audioCoachEnabled;
     if (tmEl) tmEl.checked = threatMapEnabled;
     if (srEl) srEl.checked = safetyRadarEnabled;
+
+    document.querySelectorAll('.diff-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.level === currentDifficulty);
+    });
 
     game = new Chess();
     boardEl = document.getElementById('arena-board');
@@ -430,9 +624,9 @@
     A.updateMinimaxAnalysis = () => {};
     A.updateMinimaxAnalysis();
     
-    // Speak coach greeting
+    // Speak coach greeting (pulled from the new phrase bank — varies)
     setTimeout(() => {
-      A.speakCoach(COACHES[selectedCoachId].commentaryGreeting);
+      A.coachComment('greeting');
     }, 600);
   };
 
@@ -697,6 +891,22 @@
           sqEl.appendChild(pieceEl);
         }
 
+        // Rank coordinate (8-1) on the left-most column (file === 0)
+        if (file === 0) {
+          const rankLabel = document.createElement('span');
+          rankLabel.className = 'board-coord board-coord-rank';
+          rankLabel.textContent = 8 - rank;
+          sqEl.appendChild(rankLabel);
+        }
+
+        // File coordinate (a-h) on the bottom-most row (rank === 7)
+        if (rank === 7) {
+          const fileLabel = document.createElement('span');
+          fileLabel.className = 'board-coord board-coord-file';
+          fileLabel.textContent = String.fromCharCode(97 + file);
+          sqEl.appendChild(fileLabel);
+        }
+
         sqEl.addEventListener('click', () => handleSquareClick(sq));
         boardEl.appendChild(sqEl);
       }
@@ -764,7 +974,9 @@
   /* ─── Click Handler ─── */
   function handleSquareClick(sq) {
     if (isGameOver || isThinking) return;
-    if (game.turn() !== playerColor) return;
+    // In Friend mode, BOTH colours are controlled by the player on this device.
+    // In AI mode, only the player's own colour can move.
+    if (A._gameMode !== 'friend' && game.turn() !== playerColor) return;
 
     const piece = game.get(sq);
 
@@ -866,13 +1078,14 @@
     // Await engine eval for classification
     const evalObj = await getEvalForPosition(fenBefore, moveResult.san);
 
-    // Speak commentary on major classifications
-    if (evalObj) {
-      if (evalObj.classification === 'blunder') {
-        A.speakCoach(COACHES[selectedCoachId].commentaryBlunder);
-      } else if (evalObj.classification === 'brilliant') {
-        A.speakCoach(COACHES[selectedCoachId].commentaryBrilliant);
-      }
+    // Commentary on EVERY classification (not just blunder/brilliant).
+    // The dispatcher picks a random phrase from the active coach's bank
+    // and adds context flavour for captures / checks / castling / promotion.
+    if (evalObj && evalObj.classification) {
+      A.coachComment('playerMove', {
+        move: moveResult,
+        classification: evalObj.classification
+      });
     }
 
     // COACH MODE CHECK
@@ -910,23 +1123,54 @@
       return;
     }
 
+    // Friend mode — DON'T summon the engine, just hand the turn over
+    if (A._gameMode === 'friend') {
+      isPlayerTurn = true;
+      isThinking = false;
+      const turnName = game.turn() === 'w' ? 'White' : 'Black';
+      updateStatus(`${turnName} to move`);
+      // Switch active clock to the other side
+      activeClock = game.turn();
+      lastTickTime = Date.now();
+      // Also clear any pending engine state
+      awaitingAIMove = false;
+      return;
+    }
+
     updateStatus('AI is thinking...');
-    
+
     setTimeout(() => {
       requestAIMove();
     }, 100);
   }
 
-  /* ─── AI Move ─── */
+  /* ─── AI Move ───────────────────────────────────────────────────────
+     Per-difficulty configuration. Previously every level pulled from
+     Lichess endgame tablebases (≤7 pieces, perfect play) and the
+     Lichess Masters opening book regardless of level, so Beginner
+     played perfect openings + endgames and felt as strong as Expert.
+     Now each level only gets the external aids it deserves, plus a
+     blunder/randomness layer at the lower levels so the engine
+     actually feels weaker. */
+  const DIFFICULTY_CONFIG = {
+    Beginner:     { depth: 2,  useBook: false, bookUntilMove: 0,  useTablebase: false, tbMaxPieces: 0, blunderRate: 0.35, randomFallbackRate: 0.20 },
+    Intermediate: { depth: 6,  useBook: true,  bookUntilMove: 4,  useTablebase: false, tbMaxPieces: 0, blunderRate: 0.12, randomFallbackRate: 0.05 },
+    Advanced:     { depth: 12, useBook: true,  bookUntilMove: 8,  useTablebase: true,  tbMaxPieces: 4, blunderRate: 0.00, randomFallbackRate: 0.00 },
+    Expert:       { depth: 18, useBook: true,  bookUntilMove: 12, useTablebase: true,  tbMaxPieces: 7, blunderRate: 0.00, randomFallbackRate: 0.00 },
+  };
+
   async function requestAIMove() {
     if (isGameOver) return;
 
     const fen = game.fen();
     awaitingAIMove = true;
 
-    // 1. Check Endgame Tablebases (if 7 or fewer pieces remain)
+    const cfg = DIFFICULTY_CONFIG[currentDifficulty] || DIFFICULTY_CONFIG.Intermediate;
+
+    // 1. Endgame Tablebases — only Advanced/Expert, and only down to the
+    //    configured piece count (Advanced ≤4-piece, Expert ≤7-piece).
     const pieceCount = fen.split(' ')[0].replace(/[^a-zA-Z]/g, '').length;
-    if (pieceCount <= 7) {
+    if (cfg.useTablebase && pieceCount <= cfg.tbMaxPieces) {
       updateStatus('🤖 Consulting Endgame Tablebases…');
       try {
         const res = await fetch(`https://tablebase.lichess.ovh/standard?fen=${encodeURIComponent(fen)}`);
@@ -940,16 +1184,20 @@
       } catch(e) {} // Silent fallback to engine
     }
 
-    // 2. Check Opening Book (first 10 moves)
+    // 2. Opening Book — only used until the difficulty's bookUntilMove.
+    //    Beginner skips this entirely so it can't play perfect theory.
     const fullMoves = parseInt(fen.split(' ')[5]) || 0;
-    if (fullMoves <= 10) {
+    if (cfg.useBook && fullMoves <= cfg.bookUntilMove) {
       updateStatus('🤖 Checking Master Openings…');
       try {
         const res = await fetch(`https://explorer.lichess.ovh/masters?fen=${encodeURIComponent(fen)}&moves=4`);
         if (res.ok) {
           const data = await res.json();
           if (data.moves && data.moves.length > 0) {
-            const topMoves = data.moves.slice(0, 2);
+            // Intermediate widens the choice to include sub-optimal lines
+            const breadth = currentDifficulty === 'Intermediate' ? 3
+                          : currentDifficulty === 'Advanced'     ? 2 : 1;
+            const topMoves = data.moves.slice(0, Math.max(1, breadth));
             const choice = topMoves[Math.floor(Math.random() * topMoves.length)];
             makeAIMove(choice.uci);
             return;
@@ -960,10 +1208,19 @@
 
     updateStatus('🤖 Computer is thinking…');
 
-    const depthLevels = { Beginner: 3, Intermediate: 8, Advanced: 14, Expert: 20 };
-    const engineDepth = depthLevels[currentDifficulty] || 8;
+    // Beginner-only: sometimes just play a random legal move. This is
+    // what actually makes Beginner FEEL like a beginner — humans see
+    // the engine pass up easy wins and miss obvious tactics.
+    if (cfg.randomFallbackRate > 0 && Math.random() < cfg.randomFallbackRate) {
+      const legalMoves = game.moves({ verbose: true });
+      if (legalMoves.length > 0) {
+        const r = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+        makeAIMove(r.from + r.to + (r.promotion || ''));
+        return;
+      }
+    }
 
-    CK.engine.setDepth(engineDepth);
+    CK.engine.setDepth(cfg.depth);
     const result = await CK.engine.evaluateLocal(fen);
 
     if (result && result.pvs && result.pvs.length > 0) {
@@ -975,11 +1232,14 @@
         let bestCandidate = result.pvs[0];
         let bestScore = -Infinity;
 
+        const difficultyMargins = { Beginner: 150, Intermediate: 70, Advanced: 30, Expert: 10 };
+        const maxCpMargin = difficultyMargins[currentDifficulty] || 70;
+
         for (let i = 0; i < result.pvs.length; i++) {
           const pvObj = result.pvs[i];
           const cp = pvObj.cp !== null ? pvObj.cp : (pvObj.mate ? pvObj.mate * 1000 : 0);
           
-          if (Math.abs(topCp - cp) <= 120) {
+          if (Math.abs(topCp - cp) <= maxCpMargin) {
             const firstMove = pvObj.pv.split(' ')[0];
             
             const testGame = new Chess(fen);
@@ -1023,6 +1283,16 @@
           }
         }
         chosenMoveStr = bestCandidate.pv.split(' ')[0];
+      }
+
+      // Beginner/Intermediate "blunder" layer — sometimes pick a clearly
+      // worse PV from the engine's MultiPV output so the AI actually drops
+      // material the player can punish. Skip on Advanced/Expert.
+      if (cfg.blunderRate > 0 && result.pvs.length > 1 && Math.random() < cfg.blunderRate) {
+        const worstPv = result.pvs[result.pvs.length - 1];
+        if (worstPv && worstPv.pv) {
+          chosenMoveStr = worstPv.pv.split(' ')[0];
+        }
       }
 
       makeAIMove(chosenMoveStr);
@@ -1118,6 +1388,9 @@
 
     isPlayerTurn = true;
     updateStatus('Your turn');
+
+    // Coach reacts to the engine's move (capture / check / quiet).
+    A.coachComment('engineMove', { move });
   }
 
   /* ─── Move Classification (Using Stockfish via CK.engine) ─── */
@@ -1434,6 +1707,17 @@
     else if (accuracy >= 40) { grade = 'C'; gradeClass = 'grade-c'; }
     else { grade = 'D'; gradeClass = 'grade-d'; }
 
+    // Cache game metrics for the certificate
+    A._lastCertCtx = {
+      result: result,
+      grade: grade,
+      accuracy: accuracy,
+      difficulty: currentDifficulty,
+      duration: duration,
+      date: new Date(),
+      moveHistory: JSON.parse(JSON.stringify(moveHistory))
+    };
+
     // Key moments
     const keyMoments = classificationHistory
       .map((c, i) => ({ ...c, moveNum: i + 1 }))
@@ -1698,7 +1982,7 @@
      the finalized certificate with the name baked in, the difficulty
      level shown prominently, and a knight as the verification mark.
      ────────────────────────────────────────────────────────────────── */
-  const _certEscape = (s) => String(s == null ? '' : s)
+  const _certEscape = (s) => String(s === null || s === undefined ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
@@ -1822,24 +2106,35 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
     const overlay = document.getElementById('cert-overlay');
     if (!overlay) return;
 
-    const now = new Date();
+    // Retrieve cached context or fallback to parameters/live-state
+    const ctx = A._lastCertCtx || {
+      result,
+      grade,
+      accuracy,
+      difficulty: currentDifficulty,
+      duration: gameStartTime ? Math.floor((Date.now() - gameStartTime) / 1000) : 900,
+      date: new Date(),
+      moveHistory: JSON.parse(JSON.stringify(moveHistory))
+    };
+
+    const now = ctx.date || new Date();
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const dateStr = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
     const certId = 'CK-' + now.getFullYear() + '-' + Math.random().toString(36).substring(2, 8).toUpperCase();
 
-    const isWin = result === 'win';
+    const isWin = ctx.result === 'win';
     const titleText = 'Certificate of Completion';
     
     // Choose dynamic Achievement Badge Text
     let badgeText = 'Strategic Thinker';
-    if (result === 'win') {
-      if (grade === 'S' || grade === 'A') {
+    if (ctx.result === 'win') {
+      if (ctx.grade === 'S' || ctx.grade === 'A') {
         badgeText = 'AI Arena Champion';
       } else {
         badgeText = 'Strategic Thinker';
       }
     } else {
-      if (currentDifficulty === 'Expert' || currentDifficulty === 'Advanced') {
+      if (ctx.difficulty === 'Expert' || ctx.difficulty === 'Advanced') {
         badgeText = 'Rising Grandmaster';
       } else {
         badgeText = 'Brilliant Performance';
@@ -1848,34 +2143,35 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
 
     // Dynamic level tiers
     let levelTier = 'Intermediate AI – Knight Tier';
-    if (currentDifficulty === 'Beginner') levelTier = 'Beginner AI – Pawn Tier';
-    else if (currentDifficulty === 'Intermediate') levelTier = 'Intermediate AI – Knight Tier';
-    else if (currentDifficulty === 'Advanced') levelTier = 'Advanced AI – Rook Tier';
-    else if (currentDifficulty === 'Expert') levelTier = 'Expert AI – Grandmaster Tier';
+    if (ctx.difficulty === 'Beginner') levelTier = 'Beginner AI – Pawn Tier';
+    else if (ctx.difficulty === 'Intermediate') levelTier = 'Intermediate AI – Knight Tier';
+    else if (ctx.difficulty === 'Advanced') levelTier = 'Advanced AI – Rook Tier';
+    else if (ctx.difficulty === 'Expert') levelTier = 'Expert AI – Grandmaster Tier';
 
     // Dynamic completion time
-    const duration = gameStartTime ? Math.floor((Date.now() - gameStartTime) / 1000) : 900; // default 15min
+    const duration = ctx.duration;
     const durationMin = Math.floor(duration / 60);
     const durationSec = duration % 60;
     const timeStr = `${durationMin} Minutes ${durationSec} Seconds`;
 
     // Dynamic result text
     let resultText = 'Victory Against AI Opponent';
-    if (result === 'win') resultText = 'Victory Against AI Opponent';
-    else if (result === 'draw') resultText = 'Draw Against AI Opponent';
+    if (ctx.result === 'win') resultText = 'Victory Against AI Opponent';
+    else if (ctx.result === 'draw') resultText = 'Draw Against AI Opponent';
     else resultText = 'Match Played vs AI Opponent';
 
-    const gradeColor = grade === 'S' ? '#fbbf24'
-                     : grade === 'A' ? '#a78bfa'
-                     : grade === 'B' ? '#38bdf8'
-                     : grade === 'C' ? '#4ade80' : '#f87171';
-    const level = _certLevelTheme(currentDifficulty);
+    const gradeColor = ctx.grade === 'S' ? '#fbbf24'
+                     : ctx.grade === 'A' ? '#a78bfa'
+                     : ctx.grade === 'B' ? '#38bdf8'
+                     : ctx.grade === 'C' ? '#4ade80' : '#f87171';
+    const level = _certLevelTheme(ctx.difficulty);
 
     // Build Move History Table rows
     let movesHtml = '';
-    for (let i = 0; i < moveHistory.length; i += 2) {
-      const whiteMove = moveHistory[i] ? moveHistory[i].san : '';
-      const blackMove = moveHistory[i + 1] ? moveHistory[i + 1].san : '';
+    const certMoves = ctx.moveHistory || [];
+    for (let i = 0; i < certMoves.length; i += 2) {
+      const whiteMove = certMoves[i] ? certMoves[i].san : '';
+      const blackMove = certMoves[i + 1] ? certMoves[i + 1].san : '';
       const moveNum = Math.floor(i / 2) + 1;
       movesHtml += `
         <tr>
@@ -1897,111 +2193,224 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
       </svg>
     `;
 
+    // ── Reusable inline SVGs that match the reference mockup ────────────
+    // Ornate corner flourish (gold scrollwork) — 4 copies rotated at the corners
+    const _certCornerFlourishSVG = `
+      <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <g fill="none" stroke="#c5983a" stroke-width="1.2" stroke-linecap="round">
+          <path d="M0,40 Q20,30 35,15 Q45,5 60,0"/>
+          <path d="M0,55 Q15,55 28,42 Q38,32 45,18"/>
+          <path d="M0,72 Q10,75 22,68 Q33,62 38,50"/>
+          <path d="M8,90 Q14,80 22,76 Q30,72 33,60"/>
+          <circle cx="40" cy="10" r="2.2" fill="#c5983a"/>
+          <circle cx="14" cy="60" r="1.8" fill="#c5983a"/>
+          <circle cx="55" cy="3"  r="1.2" fill="#c5983a"/>
+          <path d="M2,2 Q35,5 60,30" stroke-width="0.6" opacity="0.55"/>
+        </g>
+      </svg>
+    `;
+    // Knight-in-circle brand mark (matches the round logo emblem)
+    const _certBrandKnight = `
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="#c5983a" stroke-width="3"/>
+        <circle cx="50" cy="50" r="40" fill="#fbf8ee"/>
+        <g transform="translate(18,16) scale(1.05)">${_certKnightSVG}</g>
+      </svg>
+    `;
+    // Decorative center-divider flourish (line + gold ornament + line)
+    const _certDividerFlourish = `
+      <svg viewBox="0 0 300 22" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <line x1="0"   y1="11" x2="120" y2="11" stroke="#c5983a" stroke-width="1"/>
+        <line x1="180" y1="11" x2="300" y2="11" stroke="#c5983a" stroke-width="1"/>
+        <g transform="translate(150,11)" stroke="#c5983a" fill="#c5983a">
+          <circle r="3"/>
+          <path d="M-22,0 Q-14,-7 -8,0 Q-14,7 -22,0 M22,0 Q14,-7 8,0 Q14,7 22,0" fill="#c5983a" stroke-width="0.7"/>
+          <circle cx="-26" cy="0" r="1.4"/><circle cx="26" cy="0" r="1.4"/>
+        </g>
+      </svg>
+    `;
+    // Knight Ribbon Rosette (gold medal w/ blue ribbons hanging) — far-left + far-right of footer
+    const _certRibbonRosette = `
+      <svg viewBox="0 0 90 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <!-- Blue ribbon tails -->
+        <path d="M30,68 L22,128 L42,118 L45,80 Z" fill="#1e3a8a"/>
+        <path d="M60,68 L68,128 L48,118 L45,80 Z" fill="#1e40af"/>
+        <!-- Inner ribbon highlight -->
+        <path d="M30,68 L26,120 L34,114 L40,80 Z" fill="#3b5fb4" opacity="0.6"/>
+        <path d="M60,68 L64,120 L56,114 L50,80 Z" fill="#3b5fb4" opacity="0.6"/>
+        <!-- Gold rosette outer (12-pointed) -->
+        <g transform="translate(45,42)">
+          <g fill="#d4af37" stroke="#8a6a1f" stroke-width="0.6">
+            ${Array.from({length:12}).map((_,i)=>{
+              const a = (i*30)*Math.PI/180;
+              const x1=Math.cos(a)*30, y1=Math.sin(a)*30;
+              const a2=((i+0.5)*30)*Math.PI/180;
+              const x2=Math.cos(a2)*22, y2=Math.sin(a2)*22;
+              return `<polygon points="0,0 ${x1.toFixed(1)},${y1.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}"/>`;
+            }).join('')}
+          </g>
+          <circle r="22" fill="#fbf8ee" stroke="#c5983a" stroke-width="1.4"/>
+          <g transform="translate(-16,-15) scale(0.5)">${_certKnightSVG}</g>
+        </g>
+      </svg>
+    `;
+    // Round "CERTIFIED & AUTHENTIC" seal with circumferential text + knight in laurel
+    const _certAuthSeal = `
+      <svg viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <path id="cert-seal-arc-top" d="M 20,65 A 45,45 0 0,1 110,65"/>
+          <path id="cert-seal-arc-bot" d="M 20,65 A 45,45 0 0,0 110,65"/>
+        </defs>
+        <circle cx="65" cy="65" r="60" fill="none" stroke="#c5983a" stroke-width="1.2"/>
+        <circle cx="65" cy="65" r="55" fill="none" stroke="#c5983a" stroke-width="0.6" stroke-dasharray="2,2"/>
+        <circle cx="65" cy="65" r="40" fill="#fbf8ee" stroke="#c5983a" stroke-width="1.2"/>
+        <!-- Laurel wreath -->
+        <g stroke="#c5983a" stroke-width="1" fill="none" transform="translate(65,65)">
+          <path d="M -32,8 Q -36,-10 -22,-26"/>
+          <path d="M  32,8 Q  36,-10  22,-26"/>
+          <g fill="#c5983a">
+            <ellipse cx="-30" cy="0" rx="3.5" ry="1.6" transform="rotate(-65 -30 0)"/>
+            <ellipse cx="-28" cy="-9" rx="3.5" ry="1.6" transform="rotate(-55 -28 -9)"/>
+            <ellipse cx="-24" cy="-17" rx="3.5" ry="1.6" transform="rotate(-40 -24 -17)"/>
+            <ellipse cx="30" cy="0" rx="3.5" ry="1.6" transform="rotate(65 30 0)"/>
+            <ellipse cx="28" cy="-9" rx="3.5" ry="1.6" transform="rotate(55 28 -9)"/>
+            <ellipse cx="24" cy="-17" rx="3.5" ry="1.6" transform="rotate(40 24 -17)"/>
+          </g>
+        </g>
+        <!-- Knight in centre -->
+        <g transform="translate(50,42) scale(0.55)">${_certKnightSVG}</g>
+        <!-- Top arc text -->
+        <text font-family="Cinzel, serif" font-size="9.5" font-weight="700" fill="#1e293b" letter-spacing="2">
+          <textPath href="#cert-seal-arc-top" startOffset="50%" text-anchor="middle">CERTIFIED &#x2022; AUTHENTIC</textPath>
+        </text>
+        <!-- Bottom arc text -->
+        <text font-family="Cinzel, serif" font-size="8" font-weight="700" fill="#c5983a" letter-spacing="3">
+          <textPath href="#cert-seal-arc-bot" startOffset="50%" text-anchor="middle">CHESSKIDDO</textPath>
+        </text>
+      </svg>
+    `;
+
     overlay.innerHTML = `
       <div class="cert-card-v2" id="cert-card">
-        <!-- Decorative double-line frame -->
-        <div class="cert-frame-outer"></div>
-        <div class="cert-frame-inner"></div>
-        <div class="cert-inner-border"></div>
-        <!-- Subtle watermark knight in the centre -->
-        <div class="cert-watermark">${_certKnightSVG}</div>
+        <!-- Decorative chessboard texture on the corners -->
+        <div class="cert-chessboard-left"></div>
+        <div class="cert-chessboard-right"></div>
+        <!-- Thin inner gold border with rounded corners -->
+        <div class="cert-border-gold-inner"></div>
+        <!-- Ornate corner flourishes (4 corners) -->
+        <div class="cert-corner cert-corner-tl">${_certCornerFlourishSVG}</div>
+        <div class="cert-corner cert-corner-tr">${_certCornerFlourishSVG}</div>
+        <div class="cert-corner cert-corner-bl">${_certCornerFlourishSVG}</div>
+        <div class="cert-corner cert-corner-br">${_certCornerFlourishSVG}</div>
 
-        <!-- Knight emblem above title -->
-        <div class="cert-crest-wrap">
-          <div class="cert-crest">${_certKnightSVG}</div>
+        <!-- Header — ChessKiddo brand row (knight emblem + colored wordmark + tagline) -->
+        <header class="cert-header-v2 cert-header-centered">
+          <div class="cert-brand-row">
+            <div class="cert-brand-emblem">${_certBrandKnight}</div>
+            <div class="cert-brand-wordmark">
+              <div class="cert-brand-name-line">
+                <span class="logo-chess">CHESS</span><span class="logo-kiddo">KIDDO</span>
+              </div>
+              <div class="cert-brand-tagline">— BUILDING BRILLIANCE —</div>
+            </div>
+          </div>
+        </header>
+
+        <!-- Main certificate title -->
+        <h1 class="cert-title-v3">CERTIFICATE OF COMPLETION</h1>
+        <div class="cert-divider-flourish">${_certDividerFlourish}</div>
+
+        <!-- Awarded-to -->
+        <p class="cert-awarded-text">This certificate is proudly awarded to</p>
+
+        <!-- Player name (cursive) -->
+        <div class="cert-player-name">${_certEscape(playerName)}</div>
+        <div class="cert-player-underline"></div>
+
+        <!-- Citation -->
+        <p class="cert-citation-v2">
+          for successfully completing an AI Arena chess match in ChessKiddo against the
+          <strong>${_certEscape(currentDifficulty)}</strong> engine and demonstrating
+          strategic thinking, focus, tactical excellence, and determination throughout the game.
+        </p>
+
+        <!-- Stats grid (4 columns, gold dividers) -->
+        <div class="cert-details-panel">
+          <div class="cert-detail-item">
+            <div class="detail-icon">📊</div>
+            <div class="detail-label">Level Played</div>
+            <div class="detail-val">${levelTier}</div>
+          </div>
+          <div class="cert-detail-item">
+            <div class="detail-icon">⏱</div>
+            <div class="detail-label">Time Taken</div>
+            <div class="detail-val">${timeStr}</div>
+          </div>
+          <div class="cert-detail-item">
+            <div class="detail-icon">🏆</div>
+            <div class="detail-label">Match Result</div>
+            <div class="detail-val">${resultText}</div>
+          </div>
+          <div class="cert-detail-item">
+            <div class="detail-icon">📅</div>
+            <div class="detail-label">Date Completed</div>
+            <div class="detail-val">${dateStr}</div>
+          </div>
         </div>
 
-        <!-- Title block -->
-        <div class="cert-title-block">
-          <span class="cert-title-completion">Certificate of Completion</span>
-          <div class="cert-eyebrow">— This certificate is proudly awarded to —</div>
+        <!-- Footer band: ribbon rosette · sig · seal · sig · ribbon rosette -->
+        <div class="cert-footer-v3 cert-footer-aligned">
+          <!-- Far-left knight ribbon rosette -->
+          <div class="cert-ribbon-rosette cert-ribbon-rosette-l">${_certRibbonRosette}</div>
+
+          <div class="cert-sig-block cert-sig-block-l">
+            <div class="cert-sig-handwritten sig-coach">TOM</div>
+            <div class="cert-sig-line"></div>
+            <div class="cert-sig-role">AI COACH</div>
+            <div class="cert-sig-org">ChessKiddo AI Training System</div>
+          </div>
+
+          <!-- Centre: "CERTIFIED & AUTHENTIC" seal -->
+          <div class="cert-center-seal-wrapper">
+            <div class="cert-auth-seal">${_certAuthSeal}</div>
+          </div>
+
+          <div class="cert-sig-block cert-sig-block-r">
+            <div class="cert-sig-handwritten sig-director">Ranjith A S</div>
+            <div class="cert-sig-line"></div>
+            <div class="cert-sig-role">DIRECTOR</div>
+            <div class="cert-sig-org">ChessKidoo Academy Director</div>
+          </div>
+
+          <!-- Far-right knight ribbon rosette -->
+          <div class="cert-ribbon-rosette cert-ribbon-rosette-r">${_certRibbonRosette}</div>
         </div>
 
-        <!-- Move History Table (top-right absolute) -->
-        <div class="cert-moves-table-wrap">
-          <div class="cert-moves-table-title">Complete Match Move History</div>
-          <div class="cert-moves-table-scroll">
-            <table class="cert-moves-table">
+        <!-- Verification ID strip (small, monospace) -->
+        <div class="cert-verify-strip">VERIFY · ${certId}</div>
+
+        <!-- Tagline at the bottom -->
+        <div class="cert-tagline-v2">
+          <span class="star">❦</span> Building Brilliance Through Chess and AI <span class="star">❦</span>
+        </div>
+
+        <!-- Move History Box (absolute top-right) -->
+        <div class="cert-moves-history-box">
+          <div class="cert-moves-header">Match Move History</div>
+          <div class="cert-moves-scroll">
+            <table>
               <thead>
                 <tr>
-                  <th>Move</th>
+                  <th>#</th>
                   <th>White</th>
                   <th>Black</th>
                 </tr>
               </thead>
               <tbody>
-                ${movesHtml || '<tr><td colspan="3">No moves recorded</td></tr>'}
+                ${movesHtml || '<tr><td colspan="3" style="text-align:center;padding:8px;color:#94a3b8;">No moves recorded</td></tr>'}
               </tbody>
             </table>
           </div>
-        </div>
-
-        <!-- Awardee block -->
-        <div class="cert-awardee">
-          <div class="cert-awardee-name">${_certEscape(playerName)}</div>
-          <div class="cert-awardee-age">Age: ${_certEscape(playerAge)} Years Old</div>
-          <div class="cert-awardee-line"></div>
-          <p class="cert-citation">
-            for successfully completing an AI Arena chess match in ChessKiddo and demonstrating strategic thinking, focus, and determination.
-          </p>
-        </div>
-
-        <!-- Stats row -->
-        <div class="cert-stats-v2">
-          <div class="cert-stat">
-            <div class="cert-stat-icon">🏆</div>
-            <div class="cert-stat-cap">Level Played</div>
-            <div class="cert-stat-num">${levelTier}</div>
-          </div>
-          <div class="cert-stat">
-            <div class="cert-stat-icon">🎯</div>
-            <div class="cert-stat-cap">Time Taken</div>
-            <div class="cert-stat-num">${timeStr}</div>
-          </div>
-          <div class="cert-stat">
-            <div class="cert-stat-icon">⚡</div>
-            <div class="cert-stat-cap">Match Result</div>
-            <div class="cert-stat-num">${resultText}</div>
-          </div>
-          <div class="cert-stat">
-            <div class="cert-stat-icon">📅</div>
-            <div class="cert-stat-cap">Date Completed</div>
-            <div class="cert-stat-num cert-stat-date">${dateStr}</div>
-          </div>
-        </div>
-
-        <!-- Footer with verification seal + signatures -->
-        <footer class="cert-footer-v2">
-          <!-- Left Signature: AI Coach -->
-          <div class="cert-sig">
-            <div class="cert-sig-img cert-sig-coach">Tom AI</div>
-            <div class="cert-sig-line"></div>
-            <div class="cert-sig-role">AI Coach</div>
-            <div class="cert-sig-org">ChessKiddo AI Training System</div>
-          </div>
-          
-          <!-- Center: Achievement Rosette Badge -->
-          <div class="cert-badge-rosette">
-            <div class="cert-badge-glow"></div>
-            <div class="cert-badge-ribbon-l"></div>
-            <div class="cert-badge-ribbon-r"></div>
-            <div class="cert-badge-circle">
-              ${badgeIconSVG}
-            </div>
-            <div class="cert-badge-text-label">${badgeText}</div>
-          </div>
-          
-          <!-- Right Signature: Director -->
-          <div class="cert-sig">
-            <div class="cert-sig-img cert-sig-director">Ranjth A S</div>
-            <div class="cert-sig-line"></div>
-            <div class="cert-sig-role">Director</div>
-            <div class="cert-sig-org">ChessKidoo Academy Director</div>
-          </div>
-        </footer>
-        
-        <div class="cert-tagline">
-          <span class="cert-tagline-star">★</span> Building Brilliance Through Chess and AI <span class="cert-tagline-star">★</span>
         </div>
       </div>
 
@@ -2012,18 +2421,29 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
       </div>
     `;
     overlay.classList.add('active');
-    A._lastCertCtx = { result, grade, accuracy };
   };
 
   // Public entry — orchestrates prompt → preview.
   A.showCertificate = async (result, grade, gradeClass, accuracy) => {
+    if (!A._lastCertCtx || A._lastCertCtx.result !== result || A._lastCertCtx.grade !== grade) {
+      const duration = gameStartTime ? Math.floor((Date.now() - gameStartTime) / 1000) : 900;
+      A._lastCertCtx = {
+        result,
+        grade,
+        accuracy,
+        difficulty: currentDifficulty,
+        duration,
+        date: new Date(),
+        moveHistory: JSON.parse(JSON.stringify(moveHistory))
+      };
+    }
     const details = await A._askPlayerNameAndAge();
     if (!details) {
       const overlay = document.getElementById('cert-overlay');
       if (overlay) { overlay.classList.remove('active'); overlay.innerHTML = ''; }
       return;
     }
-    A._renderCertificate(details.name, details.age, result, grade, accuracy);
+    A._renderCertificate(details.name, details.age, A._lastCertCtx.result, A._lastCertCtx.grade, A._lastCertCtx.accuracy);
   };
 
   // "Change Name" button on the rendered cert — re-runs the prompt.
@@ -2051,25 +2471,27 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
     setTimeout(() => A.init(), 200);
   };
 
-  // Download certificate as PNG (mobile-safe). Falls back to a print window
-  // if html2canvas isn't loaded yet.
+  // Download certificate as PDF. Falls back to image download or print window
+  // if HTML-to-Canvas or jsPDF aren't loaded.
   A.printCertificate = async () => {
     const card = document.getElementById('cert-card');
     if (!card) return;
 
-    const nameText = card.querySelector('.cert-awardee-name')?.textContent || 'Champion';
+    // Player name is in .cert-player-name (v3 layout)
+    const nameText = (card.querySelector('.cert-player-name')?.textContent || 'Champion').trim();
 
-    // Mobile/capture override styling (lock design dimensions to render canvas perfectly)
+    // Lock to design dimensions during capture (defeats responsive --cert-scale).
     const restoreCard = card.getAttribute('style') || '';
-    
-    card.style.setProperty('width', '880px', 'important');
-    card.style.setProperty('max-width', '880px', 'important');
-    card.style.setProperty('min-width', '880px', 'important');
+    card.style.setProperty('width',  '900px', 'important');
+    card.style.setProperty('max-width', '900px', 'important');
+    card.style.setProperty('min-width', '900px', 'important');
+    card.style.setProperty('height', '600px', 'important');
     card.style.setProperty('transform', 'none', 'important');
+    card.style.setProperty('margin', '0', 'important');
 
     if (typeof window.html2canvas === 'function') {
       try {
-        CK.showToast('📸 Rendering certificate…', 'info');
+        CK.showToast('📸 Preparing your PDF Certificate…', 'info');
         // Give layout a frame to settle at the new width before capturing
         await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
         const canvas = await window.html2canvas(card, {
@@ -2078,30 +2500,44 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
           useCORS: true,
           logging: false,
           allowTaint: true,
-          width: 880,
-          height: card.offsetHeight,
+          width: 900,
+          height: 600,
           windowWidth: 1200
         });
-        const safeName = nameText.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'Champion';
-        canvas.toBlob((blob) => {
-          card.setAttribute('style', restoreCard);
-          if (!blob) {
-            CK.showToast('Could not generate image, opening print view…', 'warning');
-            A._printCertificateFallback();
-            return;
-          }
-          const url = URL.createObjectURL(blob);
+        
+        card.setAttribute('style', restoreCard);
+        
+        const imgData = canvas.toDataURL('image/png');
+        
+        // Find jsPDF UMD module
+        const { jsPDF } = window.jspdf || {};
+        if (!jsPDF) {
+          // Fallback to PNG download if jsPDF is missing
+          CK.showToast('PDF library not ready. Downloading as Image instead…', 'warning');
+          const safeName = nameText.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'Champion';
           const a = document.createElement('a');
-          a.href = url;
+          a.href = imgData;
           a.download = `ChessKidoo-Certificate-${safeName}.png`;
           document.body.appendChild(a);
           a.click();
-          setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 300);
-          CK.showToast('✅ Certificate downloaded!', 'success');
-        }, 'image/png');
+          a.remove();
+          return;
+        }
+
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'px',
+          format: [canvas.width, canvas.height]
+        });
+
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        
+        const safeName = nameText.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'Champion';
+        pdf.save(`ChessKidoo-Certificate-${safeName}.pdf`);
+        CK.showToast('✅ PDF Certificate downloaded!', 'success');
         return;
       } catch (err) {
-        console.warn('[Arena] html2canvas capture failed, falling back to print:', err);
+        console.warn('[Arena] html2canvas capture/PDF generation failed:', err);
       }
     }
     card.setAttribute('style', restoreCard);
@@ -2333,10 +2769,36 @@ A.newGame = () => {
 
   A.setDifficulty = (level) => {
     currentDifficulty = level;
+    localStorage.setItem('ck_difficulty', level);
     document.querySelectorAll('.diff-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.level === level);
     });
   };
+
+  // ─── Game Mode (vs AI / vs Friend pass-and-play) ──────────────────────
+  // When mode === 'friend', the engine never moves — both colours are
+  // controlled by the local player; the board flips after each move so
+  // whoever is on-move sees their pieces at the bottom.
+  A._gameMode = localStorage.getItem('ck_game_mode') === 'friend' ? 'friend' : 'ai';
+  A.setGameMode = (mode) => {
+    if (mode !== 'ai' && mode !== 'friend') return;
+    A._gameMode = mode;
+    localStorage.setItem('ck_game_mode', mode);
+
+    document.querySelectorAll('.game-mode-btn').forEach(b => {
+      const active = b.dataset.mode === mode;
+      b.classList.toggle('active', active);
+      b.style.background = active ? 'rgba(232,184,75,0.12)' : 'rgba(255,255,255,0.04)';
+      b.style.borderColor = active ? 'rgba(232,184,75,0.45)' : 'rgba(255,255,255,0.12)';
+    });
+    // Hide AI-only options (difficulty, coach, etc.) when in Friend mode
+    const aiOpts = document.getElementById('arena-ai-only-options');
+    if (aiOpts) aiOpts.style.display = mode === 'friend' ? 'none' : '';
+  };
+  // Apply on load
+  if (typeof window !== 'undefined') {
+    setTimeout(() => { try { A.setGameMode(A._gameMode); } catch(e) {} }, 100);
+  }
 
   A.setStyle = (style) => {
     currentStyle = style;
@@ -2347,6 +2809,7 @@ A.newGame = () => {
 
   A.toggleCoach = (enabled) => {
     coachMode = enabled;
+    localStorage.setItem('ck_coach_mode', enabled);
   };
 
   A.toggleAudioCoach = (enabled) => {
@@ -2543,7 +3006,7 @@ A.newGame = () => {
     }
     
     updateStatus(`Practice: Find a better move than ${blunder.playedMove}`);
-    A.speakCoach("Find a better move in this position.");
+    A.coachComment('hint');
   }
 
   A.exitBlunderReplay = () => {
@@ -2591,12 +3054,13 @@ A.newGame = () => {
     
     // Speak post-game result
     setTimeout(() => {
+      // From the coach's POV: if the PLAYER wins, the coach lost (and vice versa).
       if (result === 'win') {
-        A.speakCoach(COACHES[selectedCoachId].commentaryLoss);
+        A.coachComment('loss');  // coach speaks its "I lost" line
       } else if (result === 'loss') {
-        A.speakCoach(COACHES[selectedCoachId].commentaryWin);
+        A.coachComment('win');   // coach speaks its "I won" line
       } else {
-        A.speakCoach("The game is a draw. Good fight.");
+        A.coachComment('draw');
       }
     }, 800);
   }

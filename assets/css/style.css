@@ -3420,3 +3420,120 @@ body:has(.page.active:not(#landing-page)) #scrollTopBtn {
   color: #eeeed2 !important;
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   Bilingual Support — wide showcase card (replaces the lonely single
+   feat-card that sat below the 6-card features grid).
+   ════════════════════════════════════════════════════════════════════ */
+.bilingual-showcase {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr;
+  align-items: center;
+  gap: 24px;
+  margin: 36px auto 0;
+  max-width: 1100px;
+  padding: 28px 32px;
+  background: linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(251,191,36,0.06) 50%, rgba(239,68,68,0.08) 100%);
+  border: 1.5px solid rgba(251,191,36,0.22);
+  border-radius: 24px;
+  box-shadow: 0 16px 40px rgba(15,23,42,0.18);
+  position: relative;
+  overflow: hidden;
+}
+.bilingual-showcase::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(15,23,42,0.04) 100%);
+  pointer-events: none;
+}
+
+.bilingual-side {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.bilingual-side:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(15,23,42,0.18);
+}
+.bilingual-flag {
+  width: 48px; height: 48px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.18));
+}
+.bilingual-flag svg { width: 100%; height: 100%; display: block; }
+
+.bilingual-text h4 {
+  margin: 0 0 4px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text, #f5f7fa);
+}
+.bilingual-text p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted, #94a3b8);
+  font-style: italic;
+  line-height: 1.45;
+}
+.bilingual-side-ta .bilingual-text h4 {
+  font-family: 'Noto Sans Tamil', 'Poppins', sans-serif;
+}
+
+.bilingual-center {
+  text-align: center;
+  padding: 0 12px;
+}
+.bilingual-icon {
+  width: 84px; height: 84px;
+  margin: 0 auto 12px;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.2));
+}
+.bilingual-icon svg { width: 100%; height: 100%; display: block; }
+
+.bilingual-heading h3 {
+  margin: 0 0 8px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  background: linear-gradient(90deg, #3b82f6 0%, #fbbf24 50%, #ef4444 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.bilingual-heading p {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--muted, #94a3b8);
+  line-height: 1.55;
+}
+.bilingual-heading strong { color: var(--text, #f5f7fa); }
+
+/* Responsive — stack vertically below tablets */
+@media (max-width: 900px) {
+  .bilingual-showcase {
+    grid-template-columns: 1fr;
+    padding: 22px 18px;
+    gap: 16px;
+    max-width: 92%;
+  }
+  .bilingual-center { order: -1; }
+  .bilingual-icon { width: 68px; height: 68px; }
+  .bilingual-heading h3 { font-size: 1.25rem; }
+  .bilingual-heading p { font-size: 0.86rem; }
+}
+@media (max-width: 500px) {
+  .bilingual-showcase { padding: 18px 14px; }
+  .bilingual-side { padding: 12px; gap: 10px; }
+  .bilingual-flag { width: 42px; height: 42px; }
+  .bilingual-text h4 { font-size: 0.88rem; }
+  .bilingual-text p { font-size: 0.78rem; }
+}
+
