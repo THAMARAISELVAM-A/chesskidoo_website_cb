@@ -904,17 +904,84 @@
       return {};
     },
 
+    // SHA-256 password hash → hex
+    async _hashPassword(password) {
+      try {
+        const data = new TextEncoder().encode(password);
+        const buf  = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (e) {
+        console.warn('[Auth] hashPassword crypto.subtle failed:', e);
+        return null;
+      }
+    },
+
+    // Mirror the password into the localStorage SHA-256 credentials map so
+    // the login flow in auth.js can authenticate this user even when
+    // Supabase Auth is unavailable (offline, email-already-registered, etc).
+    async _saveLocalCredential(email, password) {
+      if (!email || !password) return false;
+      const hash = await this._hashPassword(password);
+      if (!hash) return false;
+      try {
+        const creds = JSON.parse(localStorage.getItem('ck_user_credentials') || '{}');
+        creds[email.toLowerCase()] = hash;
+        localStorage.setItem('ck_user_credentials', JSON.stringify(creds));
+        return true;
+      } catch (e) {
+        console.warn('[Auth] could not write local credentials:', e);
+        return false;
+      }
+    },
+
+    /* setCredential — best-effort: ALWAYS writes the local hash AND tries
+       Supabase Auth signUp. Success if EITHER succeeds. Email-already-
+       registered in Supabase is treated as success (admin is just resetting
+       the local password for an existing user). */
     async setCredential(email, password) {
+      if (!email || !password) {
+        return { error: new Error('Email and password required') };
+      }
+      email = email.toLowerCase();
+
+      // 1. ALWAYS save to local hash so the user can log in immediately
+      //    even if Supabase signUp fails or the email is already taken.
+      const localOk = await this._saveLocalCredential(email, password);
+
+      // 2. Try Supabase signUp (best effort — non-fatal if it fails).
+      let supabaseUser = null;
+      let supabaseError = null;
       const auth = this._getAdminAuth();
       if (auth) {
         try {
-          return await auth.signUp({ email: email.toLowerCase(), password });
+          const { data, error } = await auth.signUp({ email, password });
+          if (error) {
+            supabaseError = error;
+            // "User already registered" is fine — we still updated the local
+            // hash so login will work via the offline-mode fallthrough.
+            if (/already|registered|exist/i.test(error.message || '')) {
+              return {
+                data: { user: { id: 'local-' + Date.now(), email } },
+                warning: 'Supabase: user already exists; local credentials updated.'
+              };
+            }
+          } else {
+            supabaseUser = data?.user;
+          }
         } catch(e) {
-          console.error("Supabase Auth Error:", e);
-          return { error: e };
+          supabaseError = e;
+          console.warn('[Auth] Supabase signUp error:', e);
         }
       }
-      return { error: new Error('Supabase client unavailable') };
+
+      // Return success if EITHER path worked
+      if (supabaseUser || localOk) {
+        return {
+          data: { user: supabaseUser || { id: 'local-' + Date.now(), email } },
+          warning: supabaseError ? `Supabase: ${supabaseError.message || supabaseError}. Local credentials saved.` : null
+        };
+      }
+      return { error: supabaseError || new Error('Failed to save credentials') };
     },
 
     async removeCredential(email) {

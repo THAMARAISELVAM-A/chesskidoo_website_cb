@@ -1070,7 +1070,8 @@ CK.admin = {
     let existing = {};
     if (!isNew) existing = (await CK.db.getProfile(existingId)) || {};
 
-    // For new students, require email + password and create a Supabase Auth account
+    // For new students, require email + password; create credentials with the
+    // robust local-first flow (works even if Supabase Auth is unreachable).
     let authUid = existingId;
     if (isNew) {
       const email    = getV('admin_s_email');
@@ -1078,13 +1079,15 @@ CK.admin = {
       if (!email)    return CK.showToast('Student email is required for new enrollment', 'error');
       if (!password || password.length < 6) return CK.showToast('Initial password must be at least 6 characters', 'error');
 
-      if (window.supabaseClient) {
-        const { data, error } = await CK.accessManager.setCredential(email, password);
-        if (error) return CK.showToast('Auth account creation failed: ' + error.message, 'error');
-        authUid = data?.user?.id || ('student-' + Date.now());
-      } else {
-        authUid = 'student-' + Date.now();
+      // setCredential ALWAYS persists the local SHA-256 hash, so login works
+      // even if Supabase Auth fails (offline, email-already-registered, etc.)
+      const result = await CK.accessManager.setCredential(email, password);
+      if (result?.warning) console.info('[Admin] setCredential warning:', result.warning);
+      if (result?.error && !result?.data) {
+        // Hard failure even for local creds — extremely rare (crypto.subtle missing)
+        return CK.showToast('Could not save credentials: ' + result.error.message, 'error');
       }
+      authUid = result?.data?.user?.id || ('student-' + Date.now());
     }
 
     const studentData = {
@@ -1373,15 +1376,17 @@ CK.admin = {
     let existing = {};
     if (!isNew) existing = (await CK.db.getProfile(existingId)) || {};
 
+    // Robust credential creation — local SHA-256 fallback always succeeds
     let authUid = existingId;
-    if (isNew && window.supabaseClient) {
+    if (isNew) {
       const password = getV('admin_c_password');
       if (!password || password.length < 6) return CK.showToast('Initial password must be at least 6 characters', 'error');
-      const { data, error } = await CK.accessManager.setCredential(email, password);
-      if (error) return CK.showToast('Auth account creation failed: ' + error.message, 'error');
-      authUid = data?.user?.id || ('coach-' + Date.now());
-    } else if (isNew) {
-      authUid = 'coach-' + Date.now();
+      const result = await CK.accessManager.setCredential(email, password);
+      if (result?.warning) console.info('[Admin] setCredential warning:', result.warning);
+      if (result?.error && !result?.data) {
+        return CK.showToast('Could not save credentials: ' + result.error.message, 'error');
+      }
+      authUid = result?.data?.user?.id || ('coach-' + Date.now());
     }
 
     const coachData = {

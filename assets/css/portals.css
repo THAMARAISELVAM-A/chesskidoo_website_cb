@@ -193,31 +193,49 @@
   color: var(--p-text) !important;
 }
 
-/* Theme toggle button — sits inside .p-topbar-actions */
+/* ─── Theme toggle button — clean SVG icons + smooth swap ───
+   Lives in .p-topbar-actions. 40×40 rounded square that matches the
+   surrounding icon buttons. Shows a moon (dark theme) or sun (light theme)
+   SVG, NEVER both at once. */
 .p-theme-toggle {
-  background: none;
+  background: rgba(255,255,255,0.04);
   border: 1px solid var(--p-border);
   width: 40px; height: 40px;
   border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.05rem;
   color: var(--p-text-muted);
   cursor: pointer;
-  transition: background var(--p-transition), color var(--p-transition), transform .2s;
+  transition: background .2s ease, color .2s ease, border-color .2s ease;
   padding: 0;
   flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
 }
 .p-theme-toggle:hover {
-  background: var(--p-surface3);
-  color: var(--p-text);
-  transform: rotate(15deg);
+  background: rgba(232, 184, 75, 0.15);
+  color: #e8b84b;
+  border-color: rgba(232, 184, 75, 0.45);
 }
-.p-theme-toggle .p-theme-sun  { display: none; }
-.p-theme-toggle .p-theme-moon { display: inline; }
-:root[data-theme="light"] .p-theme-toggle .p-theme-sun  { display: inline; }
+:root[data-theme="light"] .p-theme-toggle {
+  background: rgba(20, 30, 50, 0.04);
+  color: #b45309;
+}
+:root[data-theme="light"] .p-theme-toggle:hover {
+  background: rgba(232, 184, 75, 0.2);
+  color: #8a6a1f;
+}
+/* SVGs inside — show ONE at a time */
+.p-theme-toggle .p-theme-moon,
+.p-theme-toggle .p-theme-sun {
+  width: 20px; height: 20px;
+  display: none;             /* default hidden */
+  flex-shrink: 0;
+}
+.p-theme-toggle .p-theme-moon { display: block; }   /* show moon in dark theme */
 :root[data-theme="light"] .p-theme-toggle .p-theme-moon { display: none; }
+:root[data-theme="light"] .p-theme-toggle .p-theme-sun  { display: block; }   /* show sun in light theme */
 
 .portal-body {
   font-family: 'Inter', sans-serif;
