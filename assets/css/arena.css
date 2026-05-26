@@ -518,7 +518,7 @@
   position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 0;
+  gap: 8px;
   perspective: 1000px;
 }
 
@@ -643,8 +643,10 @@
   display: flex;
   flex-direction: column;
   justify-content: space-around;
-  padding-right: 4px;
+  padding-right: 0;
   height: min(72vh, 100vw);
+  width: 20px;
+  flex-shrink: 0;
 }
 .arena-coords-bottom {
   display: flex;
@@ -662,6 +664,7 @@
 }
 .arena-coords-left .arena-coord {
   height: 12.5%;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -671,11 +674,12 @@
 .eval-bar-container {
   width: 24px;
   height: min(72vh, 100vw);
-  margin-right: 6px;
+  margin-right: 0;
   border-radius: 3px;
   overflow: hidden;
   position: relative;
   border: 1px solid rgba(255,255,255,0.05);
+  flex-shrink: 0;
 }
 .eval-bar {
   width: 100%;
@@ -2265,6 +2269,8 @@
 
 /* Custom Neon Led evaluation bar */
 .eval-bar-container {
+  width: 24px !important;
+  flex-shrink: 0 !important;
   border-radius: 8px !important;
   border: 1.5px solid rgba(255,255,255,0.06) !important;
   box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
