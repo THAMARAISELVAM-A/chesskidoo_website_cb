@@ -656,4 +656,39 @@
   // Belt-and-suspenders fallback in case anything above silently fails
   window.addEventListener('load', () => { if (!TOM._initialized) init(); }, { once: true });
   setTimeout(() => { if (!TOM._initialized) init(); }, 2000);
+
+  // ────────────────────────────────────────────────────────────────
+  // 8. Auto-hide launcher when a full-screen overlay is open
+  //    (cert, arcade, arena report). Uses a MutationObserver instead
+  //    of CSS :has() so it works on every browser including older Safari.
+  // ────────────────────────────────────────────────────────────────
+  function syncLauncherVisibility() {
+    const launcher = document.getElementById('tom-ai-launcher');
+    const emergency = document.getElementById('tom-ai-emergency-launcher');
+    const overlayActive = !!document.querySelector(
+      '.cert-overlay.active, .arcade-overlay.active, #arena-report-overlay.active'
+    );
+    const setHide = (el) => {
+      if (!el) return;
+      if (overlayActive) {
+        el.dataset._prevDisplay = el.style.display || '';
+        el.style.display = 'none';
+      } else if (el.dataset._prevDisplay !== undefined) {
+        el.style.display = el.dataset._prevDisplay;
+        delete el.dataset._prevDisplay;
+      }
+    };
+    setHide(launcher);
+    setHide(emergency);
+  }
+  // Watch for any class change on the body or its descendants
+  if (typeof MutationObserver !== 'undefined') {
+    const mo = new MutationObserver(syncLauncherVisibility);
+    const startObserver = () => {
+      if (!document.body) { setTimeout(startObserver, 50); return; }
+      mo.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+      syncLauncherVisibility();
+    };
+    startObserver();
+  }
 })();
