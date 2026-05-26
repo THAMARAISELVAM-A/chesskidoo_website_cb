@@ -2026,5 +2026,195 @@ CK.arcade = (() => {
     gameComplete('recall', score, 'Recall Game Over!', `Excellent spatial memory! You reconstructed complex piece layouts up to Level ${level} and scored ${score} points. Practice regularly to sharpen your chess memory!`, 'CK.arcade.startRecallGame()');
   }
 
+  /* ==========================================
+     GAME 10: KING'S ESCAPE
+     ──────────────────────────────────────────
+     White king must reach the 8th rank without ever being on a square
+     attacked by the Black Queen. Each turn: player moves king one square
+     (any direction), then the queen makes a chasing move toward the king.
+     Reach rank 8 = win the level. +1 level → faster queen, longer board.
+     ========================================== */
+  ARC.startKingEscapeGame = () => {
+    currentGameType = 'escape';
+    score = 0;
+    level = 1;
+    state = {
+      kingSq: 'e1',
+      queenSq: 'e8',
+      turns: 0,
+      gameOver: false,
+    };
+    showOverlay();
+    renderKingEscape();
+  };
+
+  function _kFile(sq) { return sq.charCodeAt(0) - 97; }
+  function _kRank(sq) { return parseInt(sq[1]); }
+  function _kSq(f, r) { return String.fromCharCode(97 + f) + r; }
+
+  function _queenAttacks(qSq, kSq) {
+    // queen attacks if on same rank, file, or diagonal AND no pieces between
+    // (no other pieces in this game, so distance check is enough)
+    const qf = _kFile(qSq), qr = _kRank(qSq);
+    const kf = _kFile(kSq), kr = _kRank(kSq);
+    if (qf === kf || qr === kr) return true;
+    if (Math.abs(qf - kf) === Math.abs(qr - kr)) return true;
+    return false;
+  }
+
+  function _kingLegalMoves(kSq, qSq) {
+    const moves = [];
+    const kf = _kFile(kSq), kr = _kRank(kSq);
+    for (let df = -1; df <= 1; df++) {
+      for (let dr = -1; dr <= 1; dr++) {
+        if (df === 0 && dr === 0) continue;
+        const nf = kf + df, nr = kr + dr;
+        if (nf < 0 || nf > 7 || nr < 1 || nr > 8) continue;
+        const nsq = _kSq(nf, nr);
+        // King cannot move adjacent to queen (would be in check after move)
+        const qf = _kFile(qSq), qr = _kRank(qSq);
+        if (Math.abs(qf - nf) <= 1 && Math.abs(qr - nr) <= 1) continue;
+        // King cannot move to a square attacked by queen
+        if (_queenAttacks(qSq, nsq)) continue;
+        moves.push(nsq);
+      }
+    }
+    return moves;
+  }
+
+  function _queenChaseMove(qSq, kSq) {
+    // Move queen one step toward king along same rank/file/diagonal if possible
+    const qf = _kFile(qSq), qr = _kRank(qSq);
+    const kf = _kFile(kSq), kr = _kRank(kSq);
+    const df = Math.sign(kf - qf);
+    const dr = Math.sign(kr - qr);
+    // Prefer staying on a line that attacks the king. Try diagonal step first.
+    let candidates = [];
+    if (df !== 0 && dr !== 0) candidates.push([df, dr]);
+    if (df !== 0) candidates.push([df, 0]);
+    if (dr !== 0) candidates.push([0, dr]);
+    for (const [a, b] of candidates) {
+      const nf = qf + a, nr = qr + b;
+      if (nf >= 0 && nf <= 7 && nr >= 1 && nr <= 8) {
+        const nsq = _kSq(nf, nr);
+        // Don't land on the king's square
+        if (nsq !== kSq) return nsq;
+      }
+    }
+    return qSq;
+  }
+
+  function renderKingEscape() {
+    const content = document.getElementById('arcade-cabinet-content');
+    if (!content) return;
+    const legal = state.gameOver ? [] : _kingLegalMoves(state.kingSq, state.queenSq);
+    const files = ['a','b','c','d','e','f','g','h'];
+
+    let boardHTML = '';
+    for (let r = 8; r >= 1; r--) {
+      for (let f = 0; f < 8; f++) {
+        const sq = files[f] + r;
+        const isDark = (f + r) % 2 === 0;
+        let piece = '';
+        let extra = '';
+        if (sq === state.kingSq) piece = '<span class="arcade-piece white" style="font-size:1.6rem;">♔</span>';
+        else if (sq === state.queenSq) piece = '<span class="arcade-piece black" style="font-size:1.6rem;">♛</span>';
+        else if (legal.includes(sq)) extra = ' valid-dest';
+        else if (!state.gameOver && _queenAttacks(state.queenSq, sq)) {
+          // subtle red tint for attacked squares (helps player plan)
+          extra = '';
+        }
+        const click = (legal.includes(sq) && !state.gameOver)
+          ? `onclick="CK.arcade.kingEscapeMove('${sq}')"` : '';
+        boardHTML += `<div class="arcade-sq ${isDark ? 'dark' : 'light'}${extra}" data-sq="${sq}" ${click}>${piece}</div>`;
+      }
+    }
+
+    const status = state.gameOver
+      ? '<span style="color:#ef4444;">⚠ Game over!</span>'
+      : `Turn ${state.turns + 1} · move your King to a glowing square`;
+
+    content.innerHTML = `
+      <div class="arcade-header">
+        <div class="arcade-title-area">
+          <span class="arcade-game-icon">🏃‍♂️</span>
+          <div class="arcade-title">King's <span>Escape</span></div>
+        </div>
+        <button class="arcade-exit-btn" onclick="CK.arcade.exitGame()">✕ Exit Arcade</button>
+      </div>
+      <div class="arcade-main">
+        <div class="arcade-play-area">
+          <div class="arcade-board-wrap">
+            <div class="arcade-board" id="escape-board">${boardHTML}</div>
+          </div>
+        </div>
+        <div class="arcade-dashboard">
+          <div class="arcade-hud-card">
+            <div class="arcade-game-title">Escape to Rank 8!</div>
+            <p class="arcade-game-desc">Walk your <strong>♔ White King</strong> from rank 1 to rank 8. The <strong>♛ Black Queen</strong> chases — if she ever attacks your square, you lose. Glowing squares are safe; click to move.</p>
+            <div class="arcade-stats-row">
+              <div class="arcade-stat-box">
+                <div class="arcade-stat-label">Level</div>
+                <div class="arcade-stat-val">${level}</div>
+              </div>
+              <div class="arcade-stat-box">
+                <div class="arcade-stat-label">Score</div>
+                <div class="arcade-stat-val">${score}</div>
+              </div>
+            </div>
+            <div style="text-align:center; font-size:0.85rem; color:var(--arena-text-muted); margin:8px 0;">${status}</div>
+            <div class="arcade-btn-group">
+              <button class="arcade-action-btn primary" onclick="CK.arcade.startKingEscapeGame()">${state.gameOver ? '🔄 New Game' : 'Restart'}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  ARC.kingEscapeMove = (toSq) => {
+    if (state.gameOver) return;
+    const legal = _kingLegalMoves(state.kingSq, state.queenSq);
+    if (!legal.includes(toSq)) return;
+    state.kingSq = toSq;
+    state.turns++;
+    playSFX('select');
+
+    // Win condition: king on rank 8
+    if (_kRank(state.kingSq) === 8) {
+      score += 100 - state.turns * 2;
+      level++;
+      // Reset position with queen closer for next level
+      state.kingSq = 'e1';
+      state.queenSq = level >= 4 ? 'd6' : level >= 2 ? 'd7' : 'e8';
+      state.turns = 0;
+      CK.showToast(`🏆 Escaped! Level ${level} begins — queen is closer!`, 'success');
+      playSFX('coin');
+      renderKingEscape();
+      return;
+    }
+
+    // Queen's turn — chase the king
+    const newQueenSq = _queenChaseMove(state.queenSq, state.kingSq);
+    state.queenSq = newQueenSq;
+
+    // If queen now attacks king OR king has no legal moves left → game over
+    const stillLegal = _kingLegalMoves(state.kingSq, state.queenSq);
+    if (_queenAttacks(state.queenSq, state.kingSq) || stillLegal.length === 0) {
+      state.gameOver = true;
+      playSFX('buzz');
+      renderKingEscape();
+      setTimeout(() => {
+        gameComplete('escape', score,
+          'King Captured!',
+          `The queen closed in after ${state.turns} moves. You escaped to level ${level} and scored ${score} points. Try again to reach a higher level!`,
+          'CK.arcade.startKingEscapeGame()');
+      }, 800);
+      return;
+    }
+
+    renderKingEscape();
+  };
+
   return ARC;
 })();

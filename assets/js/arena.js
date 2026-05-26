@@ -2290,128 +2290,110 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
       </svg>
     `;
 
+    // Build move history rows for the small moves box (top-right)
+    const cleanMovesHtml = (() => {
+      const certMoves = (ctx.moveHistory || []);
+      if (!certMoves.length) return '<tr><td colspan="3" style="text-align:center;padding:8px;color:#94a3b8;">—</td></tr>';
+      let rows = '';
+      for (let i = 0; i < certMoves.length && i < 30; i += 2) {
+        rows += `<tr><td>${Math.floor(i/2)+1}</td><td>${certMoves[i]?.san || ''}</td><td>${certMoves[i+1]?.san || ''}</td></tr>`;
+      }
+      return rows;
+    })();
+
+    // Clean reference-design certificate (user-supplied layout)
     overlay.innerHTML = `
-      <div class="cert-card-v2" id="cert-card">
-        <!-- Decorative chessboard texture on the corners -->
-        <div class="cert-chessboard-left"></div>
-        <div class="cert-chessboard-right"></div>
-        <!-- Thin inner gold border with rounded corners -->
-        <div class="cert-border-gold-inner"></div>
-        <!-- Ornate corner flourishes (4 corners) -->
-        <div class="cert-corner cert-corner-tl">${_certCornerFlourishSVG}</div>
-        <div class="cert-corner cert-corner-tr">${_certCornerFlourishSVG}</div>
-        <div class="cert-corner cert-corner-bl">${_certCornerFlourishSVG}</div>
-        <div class="cert-corner cert-corner-br">${_certCornerFlourishSVG}</div>
+      <div class="certificate" id="cert-card">
+        <!-- Corner brackets -->
+        <div class="corner top-left"></div>
+        <div class="corner top-right"></div>
+        <div class="corner bottom-left"></div>
+        <div class="corner bottom-right"></div>
 
-        <!-- Header — ChessKiddo brand row (knight emblem + colored wordmark + tagline) -->
-        <header class="cert-header-v2 cert-header-centered">
-          <div class="cert-brand-row">
-            <div class="cert-brand-emblem">${_certBrandKnight}</div>
-            <div class="cert-brand-wordmark">
-              <div class="cert-brand-name-line">
-                <span class="logo-chess">CHESS</span><span class="logo-kiddo">KIDDO</span>
-              </div>
-              <div class="cert-brand-tagline">— BUILDING BRILLIANCE —</div>
-            </div>
+        <!-- Top-right Move History box -->
+        <div class="moves-box">
+          <div class="moves-title">COMPLETE MATCH MOVE HISTORY</div>
+          <table class="moves-table">
+            <thead>
+              <tr><th>Move</th><th>White</th><th>Black</th></tr>
+            </thead>
+            <tbody>${cleanMovesHtml}</tbody>
+          </table>
+        </div>
+
+        <!-- Header: logo + brand wordmark + tagline -->
+        <div class="header">
+          <div class="logo-circle"><span>♞</span></div>
+          <div>
+            <div class="brand">CHESS<span>KIDDO</span></div>
+            <div class="tagline">BUILDING BRILLIANCE</div>
           </div>
-        </header>
+        </div>
 
-        <!-- Main certificate title -->
-        <h1 class="cert-title-v3">CERTIFICATE OF COMPLETION</h1>
-        <div class="cert-divider-flourish">${_certDividerFlourish}</div>
+        <!-- Title -->
+        <div class="title">
+          <h1>CERTIFICATE OF COMPLETION</h1>
+          <div class="divider"></div>
+          <p>This certificate is proudly awarded to</p>
+        </div>
 
-        <!-- Awarded-to -->
-        <p class="cert-awarded-text">This certificate is proudly awarded to</p>
+        <!-- Student name + citation -->
+        <div class="student-name">${_certEscape(playerName)}</div>
+        <div class="student-text">
+          for successfully completing an AI Arena chess match in ChessKiddo at age
+          <strong>${_certEscape(playerAge)}</strong> and demonstrating strategic
+          thinking, focus, tactical excellence, and determination throughout the game.
+        </div>
 
-        <!-- Player name (cursive) -->
-        <div class="cert-player-name">${_certEscape(playerName)}</div>
-        <div class="cert-player-underline"></div>
-
-        <!-- Citation -->
-        <p class="cert-citation-v2">
-          for successfully completing an AI Arena chess match in ChessKiddo against the
-          <strong>${_certEscape(currentDifficulty)}</strong> engine and demonstrating
-          strategic thinking, focus, tactical excellence, and determination throughout the game.
-        </p>
-
-        <!-- Stats grid (4 columns, gold dividers) -->
-        <div class="cert-details-panel">
-          <div class="cert-detail-item">
-            <div class="detail-icon">📊</div>
-            <div class="detail-label">Level Played</div>
-            <div class="detail-val">${levelTier}</div>
+        <!-- 4-cell details -->
+        <div class="details">
+          <div class="detail">
+            <div class="detail-icon">♖</div>
+            <div class="detail-title">LEVEL PLAYED</div>
+            <div class="detail-value">${levelTier}</div>
           </div>
-          <div class="cert-detail-item">
+          <div class="detail">
             <div class="detail-icon">⏱</div>
-            <div class="detail-label">Time Taken</div>
-            <div class="detail-val">${timeStr}</div>
+            <div class="detail-title">TIME TAKEN</div>
+            <div class="detail-value">${timeStr}</div>
           </div>
-          <div class="cert-detail-item">
+          <div class="detail">
             <div class="detail-icon">🏆</div>
-            <div class="detail-label">Match Result</div>
-            <div class="detail-val">${resultText}</div>
+            <div class="detail-title">MATCH RESULT</div>
+            <div class="detail-value">${resultText}</div>
           </div>
-          <div class="cert-detail-item">
+          <div class="detail">
             <div class="detail-icon">📅</div>
-            <div class="detail-label">Date Completed</div>
-            <div class="detail-val">${dateStr}</div>
+            <div class="detail-title">DATE COMPLETED</div>
+            <div class="detail-value">${dateStr}</div>
           </div>
         </div>
 
-        <!-- Footer band: ribbon rosette · sig · seal · sig · ribbon rosette -->
-        <div class="cert-footer-v3 cert-footer-aligned">
-          <!-- Far-left knight ribbon rosette -->
-          <div class="cert-ribbon-rosette cert-ribbon-rosette-l">${_certRibbonRosette}</div>
-
-          <div class="cert-sig-block cert-sig-block-l">
-            <div class="cert-sig-handwritten sig-coach">TOM</div>
-            <div class="cert-sig-line"></div>
-            <div class="cert-sig-role">AI COACH</div>
-            <div class="cert-sig-org">ChessKiddo AI Training System</div>
+        <!-- Signatures + central seal -->
+        <div class="signatures">
+          <div class="signature-box">
+            <div class="signature">TOM</div>
+            <div class="signature-line"></div>
+            <div class="signature-role">AI COACH</div>
+            <div class="signature-sub">ChessKiddo AI Training System</div>
           </div>
 
-          <!-- Centre: "CERTIFIED & AUTHENTIC" seal -->
-          <div class="cert-center-seal-wrapper">
-            <div class="cert-auth-seal">${_certAuthSeal}</div>
+          <div class="seal">
+            <div class="seal-knight">♞</div>
+            <div class="seal-text">CERTIFIED &amp;<br>AUTHENTIC</div>
           </div>
 
-          <div class="cert-sig-block cert-sig-block-r">
-            <div class="cert-sig-handwritten sig-director">Ranjith A S</div>
-            <div class="cert-sig-line"></div>
-            <div class="cert-sig-role">DIRECTOR</div>
-            <div class="cert-sig-org">ChessKidoo Academy Director</div>
-          </div>
-
-          <!-- Far-right knight ribbon rosette -->
-          <div class="cert-ribbon-rosette cert-ribbon-rosette-r">${_certRibbonRosette}</div>
-        </div>
-
-        <!-- Verification ID strip (small, monospace) -->
-        <div class="cert-verify-strip">VERIFY · ${certId}</div>
-
-        <!-- Tagline at the bottom -->
-        <div class="cert-tagline-v2">
-          <span class="star">❦</span> Building Brilliance Through Chess and AI <span class="star">❦</span>
-        </div>
-
-        <!-- Move History Box (absolute top-right) -->
-        <div class="cert-moves-history-box">
-          <div class="cert-moves-header">Match Move History</div>
-          <div class="cert-moves-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>White</th>
-                  <th>Black</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${movesHtml || '<tr><td colspan="3" style="text-align:center;padding:8px;color:#94a3b8;">No moves recorded</td></tr>'}
-              </tbody>
-            </table>
+          <div class="signature-box">
+            <div class="signature">Ranjith A S</div>
+            <div class="signature-line"></div>
+            <div class="signature-role">DIRECTOR</div>
+            <div class="signature-sub">ChessKiddo Academy Director</div>
           </div>
         </div>
+
+        <!-- Footer tagline + verify ID -->
+        <div class="footer">Building Brilliance Through Chess and AI</div>
+        <div class="cert-verify-strip-clean">VERIFY · ${certId}</div>
       </div>
 
       <div class="cert-action-bar">
@@ -2477,15 +2459,15 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
     const card = document.getElementById('cert-card');
     if (!card) return;
 
-    // Player name is in .cert-player-name (v3 layout)
-    const nameText = (card.querySelector('.cert-player-name')?.textContent || 'Champion').trim();
+    // Player name is in .student-name (clean layout)
+    const nameText = (card.querySelector('.student-name')?.textContent || 'Champion').trim();
 
     // Lock to design dimensions during capture (defeats responsive --cert-scale).
     const restoreCard = card.getAttribute('style') || '';
-    card.style.setProperty('width',  '900px', 'important');
-    card.style.setProperty('max-width', '900px', 'important');
-    card.style.setProperty('min-width', '900px', 'important');
-    card.style.setProperty('height', '600px', 'important');
+    card.style.setProperty('width',  '1500px', 'important');
+    card.style.setProperty('max-width', '1500px', 'important');
+    card.style.setProperty('min-width', '1500px', 'important');
+    card.style.setProperty('height', '980px', 'important');
     card.style.setProperty('transform', 'none', 'important');
     card.style.setProperty('margin', '0', 'important');
 
@@ -2495,14 +2477,14 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
         // Give layout a frame to settle at the new width before capturing
         await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
         const canvas = await window.html2canvas(card, {
-          backgroundColor: '#fffdf6',
-          scale: 2,
+          backgroundColor: '#fffdf8',
+          scale: 1.5,
           useCORS: true,
           logging: false,
           allowTaint: true,
-          width: 900,
-          height: 600,
-          windowWidth: 1200
+          width: 1500,
+          height: 980,
+          windowWidth: 1700
         });
         
         card.setAttribute('style', restoreCard);
