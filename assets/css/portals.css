@@ -109,6 +109,90 @@
   color: var(--p-text-muted);
 }
 
+/* ─── Light-theme overrides for elements that hard-code white text ───
+   These rules ONLY apply when [data-theme="light"]. They invert the
+   `color: #fff` baked into many cards/titles so they're readable on
+   light backgrounds. Gradient buttons keep their white text because
+   their background stays dark gold/blue/teal in both themes. */
+:root[data-theme="light"] .p-card-title,
+:root[data-theme="light"] .p-section-title,
+:root[data-theme="light"] .p-panel h1,
+:root[data-theme="light"] .p-panel h2,
+:root[data-theme="light"] .p-panel h3,
+:root[data-theme="light"] .p-panel h4,
+:root[data-theme="light"] .p-tournament-title,
+:root[data-theme="light"] .cls-hw-title,
+:root[data-theme="light"] .cls-lib-title,
+:root[data-theme="light"] .p-stat-val,
+:root[data-theme="light"] .p-live-name,
+:root[data-theme="light"] .p-user-name,
+:root[data-theme="light"] .p-welcome-text h2,
+:root[data-theme="light"] .p-welcome-text p,
+:root[data-theme="light"] .p-form-label,
+:root[data-theme="light"] .p-modal-title,
+:root[data-theme="light"] .cc-tab-btn,
+:root[data-theme="light"] .sc-tab-btn {
+  color: var(--p-text) !important;
+}
+:root[data-theme="light"] .p-table tbody td {
+  color: var(--p-text) !important;
+}
+:root[data-theme="light"] .p-table thead th {
+  color: var(--p-text-muted) !important;
+  background: var(--p-surface1) !important;
+}
+:root[data-theme="light"] .p-welcome-banner {
+  background: linear-gradient(135deg, rgba(232,184,75,0.1) 0%, rgba(59,130,246,0.05) 100%) !important;
+  border: 1px solid rgba(20,30,50,0.08) !important;
+}
+:root[data-theme="light"] .p-live-card,
+:root[data-theme="light"] .p-stat-card,
+:root[data-theme="light"] .p-data-card,
+:root[data-theme="light"] .cls-hw-card,
+:root[data-theme="light"] .cls-lib-card {
+  background: var(--p-card-bg) !important;
+  border: 1px solid var(--p-border) !important;
+  color: var(--p-text) !important;
+}
+/* Tab bars (.cc-tab-btn / .sc-tab-btn etc.) hover state */
+:root[data-theme="light"] .cc-tab-btn:hover,
+:root[data-theme="light"] .sc-tab-btn:hover {
+  background: rgba(20,30,50,0.05) !important;
+}
+/* Modal headers */
+:root[data-theme="light"] .p-modal-header {
+  background: var(--p-surface1) !important;
+  border-bottom: 1px solid var(--p-border) !important;
+}
+:root[data-theme="light"] .p-modal-header * {
+  color: var(--p-text) !important;
+}
+/* Section dividers */
+:root[data-theme="light"] .p-section-sep {
+  background: var(--p-border) !important;
+}
+/* Notification drawer in light mode */
+:root[data-theme="light"] .notif-drawer {
+  background: var(--p-surface) !important;
+  border-left: 1px solid var(--p-border) !important;
+}
+:root[data-theme="light"] .notif-drawer-title,
+:root[data-theme="light"] .notif-item-title {
+  color: var(--p-text) !important;
+}
+:root[data-theme="light"] .notif-item-text,
+:root[data-theme="light"] .notif-item-time {
+  color: var(--p-text-muted) !important;
+}
+/* Coach commentary box (arena) in light mode */
+:root[data-theme="light"] .arena-coach-commentary-box {
+  background: rgba(20,30,50,0.04) !important;
+  border-top: 1px solid var(--p-border) !important;
+}
+:root[data-theme="light"] .arena-coach-commentary-text {
+  color: var(--p-text) !important;
+}
+
 /* Theme toggle button — sits inside .p-topbar-actions */
 .p-theme-toggle {
   background: none;

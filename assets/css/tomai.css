@@ -20,17 +20,17 @@
   box-sizing: border-box;
 }
 
-/* ─── Floating Launcher — matches scroll-to-top button (gold gradient, rounded) ─── */
+/* ─── Floating Launcher — identical size + style to scroll-to-top ─── */
 .tom-ai-launcher {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
+  bottom: 32px;
+  right: 32px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
   background: linear-gradient(135deg, #E8A020 0%, #F5C842 100%);
   border: none;
-  box-shadow: 0 6px 22px rgba(232,160,32,0.45), 0 0 0 0 rgba(245,200,66,0.55);
+  box-shadow: 0 6px 18px rgba(232,160,32,0.45);
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -43,20 +43,22 @@
   font-size: 0;
 }
 .tom-ai-launcher:hover {
-  transform: scale(1.08) translateY(-2px);
-  box-shadow: 0 10px 28px rgba(232,160,32,0.6), 0 0 0 8px rgba(245,200,66,0.18);
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 9px 22px rgba(232,160,32,0.6);
 }
 .tom-ai-launcher svg { display: block; }
 .tom-ai-launcher .tom-launcher-knight {
-  width: 30px; height: 30px;
+  width: 22px; height: 22px;
   display: grid; place-items: center;
   color: #1A1209;
 }
 .tom-ai-launcher .tom-launcher-knight svg { width: 100%; height: 100%; }
 .tom-ai-launcher .tom-launcher-badge {
+  width: 11px !important; height: 11px !important;
   background: #22c55e !important;
-  box-shadow: 0 0 8px rgba(34,197,94,0.7) !important;
-  top: -3px !important; right: -3px !important;
+  box-shadow: 0 0 6px rgba(34,197,94,0.65) !important;
+  top: -2px !important; right: -2px !important;
+  border: 2px solid #fff !important;
 }
 .tom-ai-launcher .tom-launcher-badge {
   position: absolute;
@@ -69,8 +71,8 @@
   animation: tomDotPulse 1.4s ease-in-out infinite;
 }
 @keyframes tomLauncherPulse {
-  0%,100% { box-shadow: 0 6px 22px rgba(232,160,32,0.45), 0 0 0 0 rgba(245,200,66,0.55); }
-  50%     { box-shadow: 0 6px 22px rgba(232,160,32,0.55), 0 0 0 14px rgba(245,200,66,0); }
+  0%,100% { box-shadow: 0 6px 18px rgba(232,160,32,0.45), 0 0 0 0 rgba(245,200,66,0.55); }
+  50%     { box-shadow: 0 6px 18px rgba(232,160,32,0.55), 0 0 0 10px rgba(245,200,66,0); }
 }
 @keyframes tomDotPulse {
   0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); }

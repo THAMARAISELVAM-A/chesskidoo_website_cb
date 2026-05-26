@@ -1565,11 +1565,11 @@
     </div>
 
     <!-- Scroll-to-Top Button — sits to the LEFT of the TOM launcher
-         so they don't stack on top of each other in the bottom-right corner. -->
+         (matching size + gold gradient, pair-styled side-by-side). -->
     <button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})"
             aria-label="Scroll to top" title="Back to top"
             style="
-      position:fixed; bottom:32px; right:100px; z-index:999;
+      position:fixed; bottom:32px; right:88px; z-index:999;
       width:44px; height:44px; border-radius:50%;
       background:linear-gradient(135deg,#E8A020,#F5C842);
       border:none; cursor:pointer; font-size:1.15rem; font-weight:700;
@@ -6983,29 +6983,33 @@
        Placed directly in <body> so the icon is always visible even if the
        deferred tomai.js fails to load for any reason.
        ════════════════════════════════════════════════════════════════════ -->
-  <div id="tom-ai-emergency-root" style="position:fixed; bottom:24px; right:24px; z-index:2147483647; pointer-events:none;">
+  <!-- TOM emergency inline launcher — same 44px circular gold style as
+       the scroll-to-top button, with a clean Staunton chess-knight icon.
+       Sits at right:32px bottom:32px; scroll-to-top sits to its LEFT at
+       right:88px so they form a tidy pair instead of stacking. -->
+  <div id="tom-ai-emergency-root" style="position:fixed; bottom:32px; right:32px; z-index:2147483647; pointer-events:none;">
     <button id="tom-ai-emergency-launcher"
             type="button"
             aria-label="Open TOM chat"
             title="Chat with TOM"
-            style="pointer-events:auto; position:relative; width:56px; height:56px; border-radius:14px; border:none; background:linear-gradient(135deg, #E8A020 0%, #F5C842 100%); box-shadow:0 6px 22px rgba(232,160,32,0.45), 0 0 0 0 rgba(245,200,66,0.45); cursor:pointer; display:grid; place-items:center; padding:0; font-size:0; transition:transform .25s, box-shadow .25s; animation:tomEmPulse 3s ease-in-out infinite;">
-      <!-- Clean, simple chess knight icon — matches the scroll-to-top button style -->
-      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="width:30px; height:30px; color:#1A1209;" fill="currentColor">
-        <path d="M22 27 H10 V25 C10 24 11 23 12 23 H20 C21 23 22 24 22 25 Z"/>
-        <path d="M11 23 H21 V21 C24 19 25 16 24 13 C23 9 21 7 18 5 L19 2 L16 3 L15 1 L12 4 C8 6 6 9 6 12 C6 13 6 14 7 14 L5 15 L8 17 L7 19 L9 19 L8 21 Z"/>
-        <circle cx="18" cy="11" r="0.9" fill="#F5C842"/>
+            style="pointer-events:auto; position:relative; width:44px; height:44px; border-radius:50%; border:none; background:linear-gradient(135deg, #E8A020 0%, #F5C842 100%); box-shadow:0 6px 18px rgba(232,160,32,0.45); cursor:pointer; display:grid; place-items:center; padding:0; font-size:0; transition:transform .25s, box-shadow .25s; animation:tomEmPulse 3s ease-in-out infinite;">
+      <!-- Clean Staunton knight silhouette — sits centred in the 44px disc -->
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:22px; height:22px;" fill="#1A1209">
+        <path d="M15.5 21H4.5l1-3.5h9zM5 17.5 L4 15h12.5l-1 2.5z"/>
+        <path d="M17 14.5 c-.3-1-.6-1.9-1-2.8 c-.7-1.6-1.7-3-3-4.2 L14 5 L11.5 6 L11 3.5 L8.5 6.2 c-1.4 1-2.5 2.4-3.2 4 C4.8 12 4.7 13.4 5 14.5z"/>
+        <circle cx="14" cy="9.5" r=".7" fill="#F5C842"/>
       </svg>
-      <span style="position:absolute; top:-3px; right:-3px; width:14px; height:14px; border-radius:50%; background:#22c55e; border:2px solid #fff; box-shadow:0 0 8px rgba(34,197,94,0.7);"></span>
+      <span style="position:absolute; top:-2px; right:-2px; width:11px; height:11px; border-radius:50%; background:#22c55e; border:2px solid #fff; box-shadow:0 0 6px rgba(34,197,94,0.65);"></span>
     </button>
   </div>
   <style>
     @keyframes tomEmPulse {
-      0%, 100% { box-shadow: 0 6px 22px rgba(232,160,32,0.45), 0 0 0 0 rgba(245,200,66,0.55); }
-      50%      { box-shadow: 0 6px 22px rgba(232,160,32,0.55), 0 0 0 12px rgba(245,200,66,0); }
+      0%, 100% { box-shadow: 0 6px 18px rgba(232,160,32,0.45), 0 0 0 0 rgba(245,200,66,0.55); }
+      50%      { box-shadow: 0 6px 18px rgba(232,160,32,0.55), 0 0 0 10px rgba(245,200,66,0); }
     }
     #tom-ai-emergency-launcher:hover {
-      transform: scale(1.08) translateY(-2px);
-      box-shadow: 0 10px 28px rgba(232,160,32,0.55) !important;
+      transform: scale(1.1) translateY(-2px);
+      box-shadow: 0 9px 22px rgba(232,160,32,0.55) !important;
     }
   </style>
 

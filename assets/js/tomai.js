@@ -25,18 +25,17 @@
   TOM._svgInstance = 0;
 
   // ────────────────────────────────────────────────────────────────
-  // 0. Clean chess-knight SVG icon (matches scroll-to-top button style)
+  // 0. Staunton knight icon — clean, readable at 22px on gold disc
   // ────────────────────────────────────────────────────────────────
-  // Simple filled silhouette — reads clearly at small sizes, monochrome.
   TOM.knightSVG = function (variant) {
     variant = variant || 'dark';
     const fill = variant === 'light' ? '#fffdf6' : '#1A1209';
     const eye  = variant === 'light' ? '#1A1209' : '#F5C842';
     return `
-      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="${fill}">
-        <path d="M22 27 H10 V25 C10 24 11 23 12 23 H20 C21 23 22 24 22 25 Z"/>
-        <path d="M11 23 H21 V21 C24 19 25 16 24 13 C23 9 21 7 18 5 L19 2 L16 3 L15 1 L12 4 C8 6 6 9 6 12 C6 13 6 14 7 14 L5 15 L8 17 L7 19 L9 19 L8 21 Z"/>
-        <circle cx="18" cy="11" r="0.9" fill="${eye}"/>
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="${fill}">
+        <path d="M15.5 21H4.5l1-3.5h9zM5 17.5 L4 15h12.5l-1 2.5z"/>
+        <path d="M17 14.5 c-.3-1-.6-1.9-1-2.8 c-.7-1.6-1.7-3-3-4.2 L14 5 L11.5 6 L11 3.5 L8.5 6.2 c-1.4 1-2.5 2.4-3.2 4 C4.8 12 4.7 13.4 5 14.5z"/>
+        <circle cx="14" cy="9.5" r=".7" fill="${eye}"/>
       </svg>`;
   };
 
