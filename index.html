@@ -5035,6 +5035,24 @@
                               onclick="CK.classroom.coachStartLive()">🔴 Start Live</button>
                           </div>
                         </div>
+
+                        <!-- Google Meet URL — students see a "Join Meet" button when set -->
+                        <div style="margin-bottom:12px;">
+                          <label style="font-size:0.82rem;color:var(--p-text-muted);display:flex;align-items:center;gap:6px;margin-bottom:7px;">
+                            <span>📹</span> Google Meet / Zoom URL (optional — students get a Join button)
+                          </label>
+                          <div style="display:flex;gap:8px;">
+                            <input id="ccLiveMeetUrl" type="url"
+                              class="p-form-control"
+                              placeholder="https://meet.google.com/abc-defg-hij"
+                              style="flex:1;font-family:monospace;font-size:0.85rem;"/>
+                            <button type="button" class="p-btn p-btn-ghost p-btn-sm"
+                              onclick="window.open('https://meet.google.com/new','_blank','noopener')"
+                              title="Generate a new Google Meet link"
+                              style="white-space:nowrap;">➕ New Meet</button>
+                          </div>
+                        </div>
+
                         <div id="ccLiveBoard" class="lab-board-container"
                           style="border-color:var(--p-teal);margin-bottom:10px;"></div>
                         <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;align-items:center;">

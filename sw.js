@@ -1,5 +1,5 @@
 /* ChessKidoo Service Worker — offline-first static assets, network-first API */
-const CACHE = 'ck-v35';
+const CACHE = 'ck-v36';
 
 const PRECACHE = [
   '/',

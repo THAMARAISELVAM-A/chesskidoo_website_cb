@@ -412,8 +412,32 @@ CK.classroom = (() => {
     }
 
     if (wrap) wrap.style.display = 'block';
-    if (statusEl) statusEl.innerHTML = '<span class="cls-live-dot"></span>&nbsp;<strong>Live session in progress</strong>';
+    if (statusEl) {
+      const coachLabel = session.coachName ? ` with <strong>${session.coachName}</strong>` : '';
+      statusEl.innerHTML = `<span class="cls-live-dot"></span>&nbsp;<strong>Live session in progress${coachLabel}</strong>`;
+    }
     if (noteEl && session.coachNote) noteEl.textContent = session.coachNote;
+
+    // Surface a prominent "Join Google Meet" button if the coach provided
+    // a meeting URL. Idempotent — only injects once per active session.
+    if (session.meetUrl) {
+      let meetBtn = document.getElementById('scLiveMeetBtn');
+      if (!meetBtn && wrap && wrap.parentNode) {
+        meetBtn = document.createElement('a');
+        meetBtn.id = 'scLiveMeetBtn';
+        meetBtn.className = 'sc-live-meet-btn';
+        meetBtn.target = '_blank';
+        meetBtn.rel = 'noopener noreferrer';
+        meetBtn.innerHTML = '<span>📹</span> Join Google Meet';
+        // Insert right BEFORE the live board so it's the first thing students see
+        wrap.parentNode.insertBefore(meetBtn, wrap);
+      }
+      if (meetBtn) meetBtn.href = session.meetUrl;
+    } else {
+      // Coach didn't provide a meeting URL — remove any stale button
+      const stale = document.getElementById('scLiveMeetBtn');
+      if (stale) stale.remove();
+    }
 
     if (session.fen !== _lastLiveFen) {
       _lastLiveFen = session.fen;
@@ -553,6 +577,17 @@ CK.classroom = (() => {
 
   function coachStartLive() {
     const pgn = document.getElementById('ccLivePgn')?.value.trim() || '';
+    // Capture optional Google Meet / Zoom / Jitsi URL — shown to students
+    // as a prominent "Join Meet" button alongside the live board.
+    const meetUrlRaw = document.getElementById('ccLiveMeetUrl')?.value.trim() || '';
+    let meetUrl = '';
+    if (meetUrlRaw) {
+      try { new URL(meetUrlRaw); meetUrl = meetUrlRaw; }
+      catch (_) {
+        CK.showToast('Meeting URL doesn\'t look valid — starting without it.', 'warning');
+      }
+    }
+
     const g = new Chess();
     if (pgn && !g.load_pgn(pgn)) {
       CK.showToast('Invalid PGN — check the notation and try again.', 'warning');
@@ -574,17 +609,59 @@ CK.classroom = (() => {
       });
     });
 
-    saveLive({ active: true, pgn, fen: g.fen(), orientation: 'white', currentMove: _ccLiveMove, coachNote: '', updatedAt: Date.now() });
+    const coach = window.CK?.currentUser || {};
+    saveLive({
+      active: true,
+      pgn,
+      fen: g.fen(),
+      orientation: 'white',
+      currentMove: _ccLiveMove,
+      coachNote: '',
+      meetUrl,
+      coachName: coach.full_name || 'Coach',
+      coachId: coach.id || coach.userid || '',
+      startedAt: Date.now(),
+      updatedAt: Date.now()
+    });
+
+    // Push a notification to all assigned students of this coach so the
+    // "Join Live Class" prompt appears even if they aren't currently
+    // viewing the classroom tab.
+    if (window.CK?.db?.getProfiles) {
+      (async () => {
+        try {
+          const students = (await CK.db.getProfiles('student')) || [];
+          const mine = students.filter(s => (s.coach || '').toLowerCase() === (coach.full_name || '').toLowerCase());
+          const notifs = JSON.parse(localStorage.getItem('ck_notifications') || '{}');
+          mine.forEach(s => {
+            const key = s.id || s.userid;
+            if (!key) return;
+            notifs[key] = notifs[key] || [];
+            notifs[key].unshift({
+              id: 'live-' + Date.now() + '-' + key,
+              kind: 'live-class',
+              title: '🔴 Live class started!',
+              body: `${coach.full_name || 'Your coach'} just went live.${meetUrl ? ' Join Google Meet now.' : ''}`,
+              meetUrl,
+              ts: Date.now(),
+              read: false
+            });
+            notifs[key] = notifs[key].slice(0, 30);
+          });
+          localStorage.setItem('ck_notifications', JSON.stringify(notifs));
+        } catch (e) { console.warn('[Live] notify failed:', e); }
+      })();
+    }
 
     const statusEl = document.getElementById('ccLiveStatus');
-    if (statusEl) statusEl.innerHTML = '<span class="cls-live-dot"></span>&nbsp;<strong>Session is LIVE — students can see your board</strong>';
-    CK.showToast('🔴 Live session started! Students can join now.', 'success');
+    if (statusEl) statusEl.innerHTML = '<span class="cls-live-dot"></span>&nbsp;<strong>Session is LIVE — students can see your board' + (meetUrl ? ' and have a Meet join link' : '') + '</strong>';
+    CK.showToast(`🔴 Live session started! ${meetUrl ? 'Students notified with Meet link.' : 'Students can join now.'}`, 'success');
 
     // Auto-mark Coach Attendance
-    const coachId = window.CK?.currentUser?.id || window.CK?.currentUser?.userid || 'coach';
+    const coachIdSweep = coach.id || coach.userid || 'coach';
     const classId = window.CK?.coach?._liveClassId || 'general_classroom';
     if (window.CK?.db?.recordCoachAttendance) {
-      window.CK.db.recordCoachAttendance(coachId, classId).then();
+      window.CK.db.recordCoachAttendance(coachIdSweep, classId).then();
     }
   }
 
