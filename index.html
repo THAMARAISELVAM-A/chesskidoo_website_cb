@@ -1962,31 +1962,17 @@
                 </div>
               </div>
             </div>
-            <!-- ══ COACHES PANEL ══ -->
+            <!-- ══ COACHES PANEL — Expandable Card Grid ══ -->
             <div class="p-panel" id="p-panel-coaches">
               <div class="p-card">
                 <div class="p-card-header">
                   <div class="p-card-title">👨‍🏫 Coach Management</div>
                   <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.admin.openCoachModal()">+ Add Coach</button>
                 </div>
-                <div style="overflow-x:auto">
-                  <table class="p-table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Name</th>
-                        <th>FIDE Rating</th>
-                        <th>Speciality</th>
-                        <th>Batches</th>
-                        <th>Timetable</th>
-                        <th>Revenue</th>
-                        <th>Classes</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="adminCoachesTable"></tbody>
-                  </table>
-                </div>
+                <!-- Cards container — populated by CK.admin.loadCoaches() -->
+                <div id="adminCoachesGrid" class="ck-coach-grid"></div>
+                <!-- Legacy hidden table tbody kept so any code that targets it doesn't break -->
+                <tbody id="adminCoachesTable" style="display:none;"></tbody>
               </div>
             </div>
             <!-- ══ CLASSES PANEL ══ -->

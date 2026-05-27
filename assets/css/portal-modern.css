@@ -656,3 +656,293 @@ textarea.ck-input { height: auto; min-height: 80px; padding: 12px 14px; }
 :root[data-theme="light"] .ck-student-row:hover {
   background: rgba(232, 184, 75, 0.12);
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   EXPANDABLE COACH CARDS — Admin Portal → Coaches panel
+   Card grid where each coach expands inline to reveal their students
+   with add/remove buttons.
+   ════════════════════════════════════════════════════════════════════ */
+.ck-coach-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  padding: 14px 0;
+}
+@media (min-width: 900px) {
+  .ck-coach-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 1400px) {
+  .ck-coach-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.ck-coach-card {
+  background: var(--p-card-bg, #0f1318);
+  border: 1px solid var(--p-border, #252b35);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: border-color .25s ease, box-shadow .3s ease, transform .25s ease;
+  position: relative;
+}
+.ck-coach-card:hover {
+  border-color: rgba(232, 184, 75, 0.4);
+  box-shadow: 0 14px 32px rgba(0,0,0,0.22), 0 0 0 1px rgba(232,184,75,0.08);
+}
+.ck-coach-card.expanded {
+  border-color: rgba(232, 184, 75, 0.6);
+  box-shadow: 0 22px 50px rgba(0,0,0,0.28), 0 0 0 1px rgba(232,184,75,0.15);
+}
+
+.ck-coach-header {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 18px;
+  cursor: pointer;
+  user-select: none;
+  transition: background .2s ease;
+}
+.ck-coach-header:hover {
+  background: rgba(232, 184, 75, 0.04);
+}
+.ck-coach-photo,
+.ck-coach-initial {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(232, 184, 75, 0.35);
+  background: linear-gradient(135deg, rgba(232, 184, 75, 0.15), rgba(167, 139, 250, 0.08));
+  font-family: 'Poppins', sans-serif;
+  font-weight: 800;
+  font-size: 1.6rem;
+  color: #e8b84b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ck-coach-body { min-width: 0; }
+.ck-coach-name {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--p-text, #e8edf5);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ck-coach-spec {
+  font-size: 0.82rem;
+  color: var(--p-text-muted, #97a1b5);
+  margin-bottom: 10px;
+}
+.ck-coach-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+.ck-stat {
+  font-size: 0.85rem;
+  color: var(--p-text-muted);
+}
+.ck-stat strong {
+  color: var(--p-text);
+  font-weight: 700;
+  margin-left: 2px;
+}
+.ck-coach-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+}
+.ck-meta-text {
+  font-size: 0.75rem;
+  color: var(--p-text-muted);
+}
+
+.ck-coach-toggle {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(232, 184, 75, 0.1);
+  color: #e8b84b;
+  font-size: 1rem;
+  font-weight: 700;
+  transition: transform .3s cubic-bezier(0.16, 1, 0.3, 1), background .2s ease;
+  flex-shrink: 0;
+}
+.ck-coach-card.expanded .ck-coach-toggle {
+  transform: rotate(180deg);
+  background: rgba(232, 184, 75, 0.2);
+}
+
+/* Expandable body */
+.ck-coach-expand {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .4s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0 18px;
+  border-top: 1px solid transparent;
+}
+.ck-coach-card.expanded .ck-coach-expand {
+  max-height: 1200px;
+  padding: 0 18px 18px;
+  border-top: 1px solid var(--p-border);
+}
+
+.ck-expand-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0 12px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ck-expand-title {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--p-text);
+}
+.ck-expand-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.ck-coach-students-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+@media (min-width: 600px) {
+  .ck-coach-students-list { grid-template-columns: 1fr 1fr; }
+}
+.ck-coach-student {
+  display: grid;
+  grid-template-columns: 40px 1fr 28px;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--p-surface1, rgba(255,255,255,0.03));
+  border: 1px solid var(--p-border);
+  border-radius: 10px;
+  transition: border-color .2s ease, background .15s ease;
+}
+.ck-coach-student:hover {
+  border-color: rgba(232, 184, 75, 0.4);
+  background: rgba(232, 184, 75, 0.06);
+}
+.ck-cs-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #6d28d9);
+  color: #fff;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+}
+.ck-cs-avatar.small { width: 32px; height: 32px; font-size: 0.85rem; }
+.ck-cs-info { min-width: 0; }
+.ck-cs-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--p-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ck-cs-meta {
+  font-size: 0.74rem;
+  color: var(--p-text-muted);
+}
+.ck-cs-remove {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  transition: background .2s ease, transform .15s ease;
+}
+.ck-cs-remove:hover {
+  background: #ef4444;
+  color: #fff;
+  transform: scale(1.1);
+}
+
+.ck-coach-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--p-text-muted);
+  font-style: italic;
+  font-size: 0.88rem;
+  background: rgba(255,255,255,0.02);
+  border: 1px dashed var(--p-border);
+  border-radius: 10px;
+}
+
+/* Quick-pick assign student */
+.ck-quick-pick {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: 1px solid var(--p-border);
+  border-radius: 10px;
+  color: var(--p-text);
+  cursor: pointer;
+  text-align: left;
+  transition: all .2s ease;
+  margin-bottom: 6px;
+}
+.ck-quick-pick:hover {
+  border-color: #e8b84b;
+  background: rgba(232, 184, 75, 0.08);
+  transform: translateX(2px);
+}
+
+/* Light theme adjustments */
+:root[data-theme="light"] .ck-coach-card {
+  background: #ffffff;
+  border-color: var(--p-border);
+}
+:root[data-theme="light"] .ck-coach-student {
+  background: rgba(20, 30, 50, 0.02);
+}
+:root[data-theme="light"] .ck-coach-initial {
+  background: linear-gradient(135deg, rgba(232, 184, 75, 0.18), rgba(59, 130, 246, 0.08));
+  color: #8a6a1f;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   FINAL THEME COLOR AUDIT — catch lingering hardcoded colors
+   ════════════════════════════════════════════════════════════════════ */
+:root[data-theme="light"] {
+  /* Force any inline `style="color:#fff"` to be readable on light bg */
+}
+:root[data-theme="light"] td[style*="color:#fff"],
+:root[data-theme="light"] [style*="color: #fff"]:not(.p-btn-gold):not(.p-btn-blue):not(.p-btn-teal):not(.p-btn-green):not(.cert-card-v2 *):not(.certificate *) {
+  color: var(--p-text) !important;
+}
+:root[data-theme="light"] [style*="background:#0f1318"],
+:root[data-theme="light"] [style*="background: #0f1318"] {
+  background: var(--p-surface) !important;
+}
+:root[data-theme="light"] [style*="background:#181c22"],
+:root[data-theme="light"] [style*="background: #181c22"] {
+  background: var(--p-surface1) !important;
+}
+:root[data-theme="light"] [style*="background:#0a0c0f"] {
+  background: var(--p-bg) !important;
+}

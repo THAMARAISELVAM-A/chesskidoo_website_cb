@@ -664,17 +664,22 @@ CK.admin = {
   },
 
   async loadCoaches() {
-    const tbody = document.getElementById('adminCoachesTable');
-    if (!tbody) return;
+    const grid = document.getElementById('adminCoachesGrid');
+    if (!grid) return;
 
     const coaches = (await CK.db.getProfiles('coach')) || [];
     const allStudents = (await CK.db.getProfiles('student')) || [];
+    this._allStudentsCache = allStudents;
 
-    tbody.innerHTML = coaches.map(c => {
+    const _e = CK.esc || (s => s);
+    grid.innerHTML = coaches.map((c, idx) => {
+      const cId = c.id;
       const spec = c.specialization || c.specialty || (typeof c.puzzle === 'string' ? c.puzzle : '') || 'Chess Strategy';
       const fide = c.rating ? c.rating + ' ELO' : (c.fide_rating || '—');
       const batches = c.batches || c.schedule || '—';
       const timetable = c.timetable || c.availability || '—';
+      const photo = c.photo || '';
+
       const myStudents = allStudents.filter(s =>
         s.coach && s.coach.toLowerCase() === (c.full_name || '').toLowerCase()
       );
@@ -683,25 +688,131 @@ CK.admin = {
         return sum + (parseInt((s.fee || '0').toString().replace(/[^0-9]/g, '')) || 0);
       }, 0);
       const revenue = paidRevenue > 0 ? '₹' + paidRevenue.toLocaleString('en-IN') : '—';
-      const classesCount = myStudents.length;
 
-      const _e = CK.esc || (s => s);
+      // Get a stable initial from name for the avatar fallback
+      const initial = (c.full_name || '?').trim().charAt(0).toUpperCase();
+      const photoEl = photo
+        ? `<img src="${_e(photo)}" alt="${_e(c.full_name)}" class="ck-coach-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+           <div class="ck-coach-initial" style="display:none;">${initial}</div>`
+        : `<div class="ck-coach-initial">${initial}</div>`;
+
+      const studentList = myStudents.length
+        ? myStudents.map(s => `
+            <div class="ck-coach-student" data-student-id="${_e(s.id)}">
+              <div class="ck-cs-avatar">${_e((s.full_name || '?').charAt(0).toUpperCase())}</div>
+              <div class="ck-cs-info">
+                <div class="ck-cs-name">${_e(s.full_name)}</div>
+                <div class="ck-cs-meta">${_e(s.level || 'Beginner')} · ${_e(s.batch || '—')}</div>
+              </div>
+              <button class="ck-cs-remove" title="Remove from this coach"
+                      onclick="event.stopPropagation(); CK.admin.removeStudentFromCoach('${_e(s.id)}', ${JSON.stringify(c.full_name || '')})">×</button>
+            </div>
+          `).join('')
+        : '<div class="ck-coach-empty">No students assigned yet — click ➕ to add one.</div>';
+
       return `
-        <tr style="cursor:pointer;" onclick="CK.admin.viewCoachDetails(${JSON.stringify(c.id)})">
-          <td>#${_e(c.userid || 'C01')}</td>
-          <td style="font-weight:600; color:#fff;">${_e(c.full_name)}</td>
-          <td style="font-weight:700; color:var(--p-teal)">${_e(fide)}</td>
-          <td>${_e(spec)}</td>
-          <td><span class="p-badge p-badge-blue">${_e(batches)}</span></td>
-          <td style="color:var(--p-text-muted)">${_e(timetable)}</td>
-          <td style="font-weight:700; color:var(--p-gold)">${revenue}</td>
-          <td>${classesCount}</td>
-          <td>
-            <button class="p-btn p-btn-ghost p-btn-sm" onclick="event.stopPropagation(); CK.admin.editCoach(${JSON.stringify(c.id)})">Edit</button>
-            <button class="p-btn p-btn-teal p-btn-sm" onclick="event.stopPropagation(); CK.admin.viewCoachDetails(${JSON.stringify(c.id)})">View Details</button>
-          </td>
-        </tr>`;
-    }).join('');
+        <div class="ck-coach-card" data-coach-id="${_e(cId)}">
+          <div class="ck-coach-header" onclick="CK.admin.toggleCoachCard('${_e(cId)}')">
+            ${photoEl}
+            <div class="ck-coach-body">
+              <div class="ck-coach-name">${_e(c.full_name)}</div>
+              <div class="ck-coach-spec">${_e(spec)}</div>
+              <div class="ck-coach-stats">
+                <span class="ck-stat">🎯 <strong>${_e(fide)}</strong></span>
+                <span class="ck-stat">👥 <strong>${myStudents.length}</strong> students</span>
+                <span class="ck-stat">💰 <strong>${revenue}</strong></span>
+              </div>
+              <div class="ck-coach-meta">
+                <span class="p-badge p-badge-blue">${_e(batches)}</span>
+                <span class="ck-meta-text">⏰ ${_e(timetable)}</span>
+              </div>
+            </div>
+            <div class="ck-coach-toggle" aria-label="Expand students">▾</div>
+          </div>
+          <div class="ck-coach-expand">
+            <div class="ck-expand-header">
+              <span class="ck-expand-title">👥 Assigned Students (${myStudents.length})</span>
+              <div class="ck-expand-actions">
+                <button class="p-btn p-btn-teal p-btn-sm"
+                        onclick="CK.admin.openAddStudentToCoach(${JSON.stringify(c.full_name || '')})">➕ Add Student</button>
+                <button class="p-btn p-btn-ghost p-btn-sm"
+                        onclick="event.stopPropagation(); CK.admin.editCoach(${JSON.stringify(cId)})">✎ Edit Coach</button>
+              </div>
+            </div>
+            <div class="ck-coach-students-list">${studentList}</div>
+          </div>
+        </div>`;
+    }).join('') || '<div class="cls-empty">No coaches yet. Click <strong>+ Add Coach</strong> to create one.</div>';
+  },
+
+  // Toggle an individual coach card open/closed (only one open at a time)
+  toggleCoachCard(coachId) {
+    const cards = document.querySelectorAll('#adminCoachesGrid .ck-coach-card');
+    cards.forEach(c => {
+      if (c.dataset.coachId === coachId) c.classList.toggle('expanded');
+      else c.classList.remove('expanded');
+    });
+  },
+
+  // Remove a student's `coach` assignment (sets it to '')
+  async removeStudentFromCoach(studentId, coachName) {
+    if (!confirm(`Remove this student from ${coachName}?`)) return;
+    const s = await CK.db.getProfile(studentId);
+    if (!s) return;
+    s.coach = '';
+    await CK.db.saveProfile(s);
+    await this.loadCoaches();
+    CK.showToast('Student unassigned from coach.', 'success');
+  },
+
+  // Open a quick picker to assign an existing student to this coach
+  openAddStudentToCoach(coachName) {
+    const allStudents = this._allStudentsCache || [];
+    const candidates = allStudents.filter(s => (s.coach || '').toLowerCase() !== (coachName || '').toLowerCase());
+    if (!candidates.length) {
+      CK.showToast('No unassigned students available. Add a new student first.', 'info');
+      return;
+    }
+    const list = candidates.map(s => `
+      <button class="ck-quick-pick" onclick="CK.admin.assignStudentToCoach('${CK.esc(s.id)}', ${JSON.stringify(coachName)})">
+        <span class="ck-cs-avatar small">${CK.esc((s.full_name || '?').charAt(0).toUpperCase())}</span>
+        <div>
+          <div class="ck-cs-name">${CK.esc(s.full_name)}</div>
+          <div class="ck-cs-meta">${CK.esc(s.level || 'Beginner')} · current coach: ${CK.esc(s.coach || '—')}</div>
+        </div>
+      </button>
+    `).join('');
+
+    // Reuse the modal-overlay infrastructure with a quick inline picker
+    const overlay = document.getElementById('uploadModal') || document.body;
+    const dlg = document.createElement('div');
+    dlg.id = 'ck-quick-assign-overlay';
+    dlg.className = 'modal-overlay active';
+    dlg.style.zIndex = 10050;
+    dlg.innerHTML = `
+      <div class="modal-card ck-upload-card" style="max-width:520px;">
+        <div class="modal-header">
+          <h3 class="ck-upload-title">➕ Assign Student to ${CK.esc(coachName)}</h3>
+          <p class="ck-upload-subtitle">Pick a student to reassign to this coach.</p>
+        </div>
+        <div class="modal-body">
+          <div class="ck-student-list" style="max-height:340px;">${list}</div>
+          <div class="ck-form-actions">
+            <button class="btn btn-ghost ck-btn-cancel" onclick="document.getElementById('ck-quick-assign-overlay').remove()">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(dlg);
+  },
+
+  async assignStudentToCoach(studentId, coachName) {
+    const s = await CK.db.getProfile(studentId);
+    if (!s) return;
+    s.coach = coachName;
+    await CK.db.saveProfile(s);
+    document.getElementById('ck-quick-assign-overlay')?.remove();
+    await this.loadCoaches();
+    CK.showToast(`✅ ${s.full_name} is now coached by ${coachName}.`, 'success');
   },
 
   async loadAttendance() {
