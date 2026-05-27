@@ -1356,6 +1356,9 @@ CK.admin = {
         batch: batchName,
         user_ids: selectedUserIds.join(','),
         type: form.type ? form.type.value : 'Material',
+        difficulty: form.difficulty ? form.difficulty.value : '',
+        due_date: form.dueDate ? form.dueDate.value : '',
+        xp_reward: form.xpReward ? parseInt(form.xpReward.value) || 50 : 50,
         notes: form.notes ? form.notes.value : '',
         created_at: new Date().toISOString()
       });

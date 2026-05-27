@@ -6590,14 +6590,38 @@
               <option value="Class Notes">Class Notes</option>
               <option value="Video Lesson">Video Lesson</option>
               <option value="PGN Game">PGN Game</option>
+              <option value="Puzzle Set">Puzzle Set</option>
               <option value="External Link">External Link</option>
+              <option value="Reading">Reading Material</option>
               <option value="Other">Other</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="ck-label">Notes (optional)</label>
-            <input type="text" name="notes" placeholder="Review before Friday" class="ck-input">
+            <label class="ck-label">Difficulty</label>
+            <select name="difficulty" class="ck-input">
+              <option value="">— Auto —</option>
+              <option value="Easy">🌱 Easy</option>
+              <option value="Medium">⚡ Medium</option>
+              <option value="Hard">🔥 Hard</option>
+              <option value="Expert">💀 Expert</option>
+            </select>
           </div>
+        </div>
+
+        <div class="ck-form-grid-2">
+          <div class="form-group">
+            <label class="ck-label">Due Date (optional)</label>
+            <input type="date" name="dueDate" class="ck-input">
+          </div>
+          <div class="form-group">
+            <label class="ck-label">XP Reward</label>
+            <input type="number" name="xpReward" min="0" max="500" value="50" class="ck-input" placeholder="50">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="ck-label">Notes (optional)</label>
+          <input type="text" name="notes" placeholder="e.g. Review before Friday, focus on king safety…" class="ck-input">
         </div>
 
         <!-- File-source pane -->

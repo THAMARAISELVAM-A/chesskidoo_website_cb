@@ -946,3 +946,43 @@ textarea.ck-input { height: auto; min-height: 80px; padding: 12px 14px; }
 :root[data-theme="light"] [style*="background:#0a0c0f"] {
   background: var(--p-bg) !important;
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   RESOURCE BADGES — student "My Resources" panel
+   ════════════════════════════════════════════════════════════════════ */
+.ck-res-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.ck-res-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ck-res-badge-easy   { background: rgba(34,197,94,0.15);  color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+.ck-res-badge-medium { background: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid rgba(59,130,246,0.3); }
+.ck-res-badge-hard   { background: rgba(168,85,247,0.15); color: #a855f7; border: 1px solid rgba(168,85,247,0.3); }
+.ck-res-badge-expert { background: rgba(239,68,68,0.15);  color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+.ck-res-badge-due    { background: rgba(232,184,75,0.12); color: #e8b84b; border: 1px solid rgba(232,184,75,0.3); }
+.ck-res-badge-overdue { background: rgba(239,68,68,0.18); color: #ef4444; border: 1px solid rgba(239,68,68,0.4); animation: ckResOverduePulse 1.5s ease-in-out infinite; }
+.ck-res-badge-xp     { background: linear-gradient(135deg, rgba(232,184,75,0.18), rgba(245,158,11,0.18)); color: #f5c842; border: 1px solid rgba(245,200,66,0.4); }
+@keyframes ckResOverduePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+  50%      { box-shadow: 0 0 0 4px rgba(239,68,68,0.18); }
+}
+
+.p-resource-item.ck-res-done {
+  opacity: 0.6;
+  border-color: rgba(34,197,94,0.4) !important;
+}
+.p-resource-item.ck-res-done .p-resource-name::before {
+  content: '✓ ';
+  color: #22c55e;
+}

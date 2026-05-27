@@ -267,7 +267,16 @@ CK.classroom = (() => {
       submittedAt:  new Date().toISOString()
     };
     await saveSubmission(submission);
-    CK.showToast(`✓ Homework submitted! Accuracy: ${accuracy}%`, 'success');
+
+    // Award XP based on accuracy: 50 base + bonus for high accuracy
+    if (CK.db && CK.db.awardXP && userId) {
+      let xp = 50;
+      if (accuracy >= 90) xp = 100;
+      else if (accuracy >= 75) xp = 75;
+      try { await CK.db.awardXP(userId, xp, `Homework: ${_hwAssignment.title || 'Assignment'} (${accuracy}%)`); } catch(e){}
+    }
+
+    CK.showToast(`✅ Homework submitted! Accuracy ${accuracy}% · +${accuracy >= 90 ? 100 : accuracy >= 75 ? 75 : 50} XP earned`, 'success');
     await closeHomework();
   }
 

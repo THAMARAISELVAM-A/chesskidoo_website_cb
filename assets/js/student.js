@@ -469,10 +469,12 @@ CK.student = {
       return;
     }
 
+    // Track which docs the current student has already marked complete
+    const completedMap = JSON.parse(localStorage.getItem('ck_resource_completions') || '{}');
+    const completed = completedMap[myId] || {};
+
     const _e = CK.esc || (s => s);
     list.innerHTML = docs.map(f => {
-      // Resource may be a direct URL (kind:'link') OR an uploaded file
-      // stored in Supabase Storage (kind:'file' with file_name path)
       let openUrl = '';
       let icon = '📄';
       let btnLabel = 'Download';
@@ -498,18 +500,63 @@ CK.student = {
       if (type.includes('video')) icon = '🎬';
       else if (type.includes('pgn'))   icon = '♟';
       else if (type.includes('homework')) icon = '📝';
+      else if (type.includes('puzzle')) icon = '🧩';
+      else if (type.includes('reading')) icon = '📖';
       else if (type.includes('note'))  icon = '📔';
       else if (type.includes('link'))  icon = '🔗';
 
+      // Optional badges: difficulty, due date, XP reward
+      const badges = [];
+      if (f.difficulty) {
+        const dIcon = { Easy:'🌱', Medium:'⚡', Hard:'🔥', Expert:'💀' }[f.difficulty] || '';
+        badges.push(`<span class="ck-res-badge ck-res-badge-${f.difficulty.toLowerCase()}">${dIcon} ${_e(f.difficulty)}</span>`);
+      }
+      if (f.due_date) {
+        const dueDate = new Date(f.due_date);
+        const today = new Date(); today.setHours(0,0,0,0);
+        const overdue = dueDate < today;
+        badges.push(`<span class="ck-res-badge ${overdue ? 'ck-res-badge-overdue' : 'ck-res-badge-due'}">📅 ${overdue ? 'Overdue' : 'Due'} ${_e(f.due_date)}</span>`);
+      }
+      const xp = parseInt(f.xp_reward) || 0;
+      if (xp > 0) badges.push(`<span class="ck-res-badge ck-res-badge-xp">⭐ +${xp} XP</span>`);
+
+      const isDone = !!completed[f.id || f.name];
+      const completeBtn = isDone
+        ? `<button class="p-btn p-btn-ghost p-btn-sm" disabled>✓ Completed</button>`
+        : `<button class="p-btn p-btn-teal p-btn-sm" onclick="CK.student.markResourceComplete('${_e(f.id || f.name)}', ${xp})">✓ Mark Complete</button>`;
+
       return `
-        <div class="p-resource-item">
-          <div>
+        <div class="p-resource-item ${isDone ? 'ck-res-done' : ''}">
+          <div style="flex:1;min-width:0;">
             <div class="p-resource-name">${icon} ${_e(f.name)}</div>
             <div class="p-resource-note">📝 ${_e(f.level || myLevel)} · ${_e(f.type || 'Material')}${f.notes ? ' · ' + _e(f.notes) : ''}</div>
+            ${badges.length ? `<div class="ck-res-badges">${badges.join('')}</div>` : ''}
           </div>
-          <button class="p-btn p-btn-blue p-btn-sm" ${action}>${btnLabel}</button>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="p-btn p-btn-blue p-btn-sm" ${action}>${btnLabel}</button>
+            ${completeBtn}
+          </div>
         </div>`;
     }).join('');
+  },
+
+  /* Mark a resource as completed and award the configured XP */
+  async markResourceComplete(resourceKey, xpReward) {
+    const myId = this.userProfile.id || this.userProfile.userid || '';
+    const completedMap = JSON.parse(localStorage.getItem('ck_resource_completions') || '{}');
+    completedMap[myId] = completedMap[myId] || {};
+    if (completedMap[myId][resourceKey]) {
+      CK.showToast('Already marked complete.', 'info');
+      return;
+    }
+    completedMap[myId][resourceKey] = new Date().toISOString();
+    localStorage.setItem('ck_resource_completions', JSON.stringify(completedMap));
+    if (CK.db && CK.db.awardXP && xpReward > 0) {
+      await CK.db.awardXP(myId, xpReward, 'Completed assignment');
+    } else {
+      CK.showToast('✅ Marked complete!', 'success');
+    }
+    this.renderResources();
   },
 
   _PUZZLE_SETUPS: {

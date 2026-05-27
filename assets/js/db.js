@@ -591,6 +591,57 @@
       localStorage.setItem('ck_tournaments', JSON.stringify(list.filter(x => x.id !== id)));
       return true;
     },
+
+    /* Tournament-join — atomic-ish update of the participants[] array on a
+       tournament row. Awards XP on join + extra XP on completion. */
+    async joinTournament(tournamentId, student) {
+      if (!student || !student.id) return { error: new Error('Student required') };
+      const list = await this.getTournaments();
+      const t = list.find(x => x.id === tournamentId);
+      if (!t) return { error: new Error('Tournament not found') };
+      t.participants = Array.isArray(t.participants) ? t.participants : [];
+      if (t.participants.find(p => p.id === student.id)) {
+        return { warning: 'Already joined' };
+      }
+      t.participants.push({
+        id: student.id,
+        name: student.full_name || student.email || 'Student',
+        level: student.level || 'Beginner',
+        joinedAt: new Date().toISOString(),
+        status: 'registered'
+      });
+      await this.saveTournament(t);
+      // Award join XP
+      await this.awardXP(student.id, 25, `Joined tournament: ${t.title || t.name}`);
+      return { data: t };
+    },
+
+    /* Award XP points to a student (used for tournament join, homework
+       completion, puzzle solving, etc.). Persists `xp` field on profile
+       AND adds an event log entry for the student's progress trail. */
+    async awardXP(studentId, amount, reason) {
+      if (!studentId || !amount) return;
+      const profile = await this.getProfile(studentId);
+      if (!profile) return;
+      profile.xp = (parseInt(profile.xp) || 0) + amount;
+      profile.star = Math.min(5, 1 + Math.floor(profile.xp / 200));
+      await this.saveProfile(profile);
+
+      // Event log
+      const log = JSON.parse(localStorage.getItem('ck_xp_log') || '[]');
+      log.unshift({
+        userId: studentId,
+        amount,
+        reason: reason || 'XP earned',
+        ts: new Date().toISOString()
+      });
+      localStorage.setItem('ck_xp_log', JSON.stringify(log.slice(0, 500)));
+
+      if (CK && CK.showToast) {
+        CK.showToast(`⭐ +${amount} XP — ${reason || 'Great work!'}`, 'success');
+      }
+      return profile;
+    },
     // New: Classes Management (for Admin Portal)
     async getClasses() {
       if (canUseSupabase()) {

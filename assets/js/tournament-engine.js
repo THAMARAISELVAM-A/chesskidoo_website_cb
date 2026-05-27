@@ -630,7 +630,13 @@ CK.tournament = (() => {
     const user = JSON.parse(localStorage.getItem('ck_auth_user') || '{}');
     const res = await T.registerPlayer(id, user);
     if (res.error) { CK.showToast(res.error, 'error'); return; }
-    CK.showToast('Successfully joined tournament!', 'success');
+    CK.showToast('🏆 Successfully joined tournament!', 'success');
+
+    // Award XP for joining a tournament (CK.db.awardXP handles toast too)
+    if (CK.db && CK.db.awardXP && user.id) {
+      try { await CK.db.awardXP(user.id, 25, 'Joined a tournament'); } catch(e){}
+    }
+
     document.getElementById('tournamentDetailModal')?.remove();
     await T.showDetail(id);
     if (CK.student && CK.student.renderTournamentsTab) CK.student.renderTournamentsTab();
