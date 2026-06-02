@@ -924,6 +924,24 @@ ta: {
     _sparMoveIdx: 0,
     _sparFollowing: true,
 
+    /* chessboard.js sizes itself from the container width at creation time.
+       When the Lab panel is still hidden/transitioning, that width is 0, so the
+       board renders at 0px and the PGN Studio looks broken/unusable. Retry the
+       resize on each animation frame until the container actually has a width. */
+    _resizeBoardWhenReady(attempts) {
+      attempts = attempts || 0;
+      if (!this.board) return;
+      const el = document.getElementById(this._activeBoardId);
+      const w = el ? el.getBoundingClientRect().width : 0;
+      if (w > 20) {
+        try { this.board.resize(); } catch (e) {}
+        // one more on the next frame in case fonts/scrollbars shift layout
+        requestAnimationFrame(() => { try { if (this.board) this.board.resize(); } catch (e) {} });
+      } else if (attempts < 60) {
+        requestAnimationFrame(() => this._resizeBoardWhenReady(attempts + 1));
+      }
+    },
+
     initBoard(containerId) {
       this._activeBoardId = containerId;
       this._mode = 'analysis';
@@ -944,7 +962,7 @@ ta: {
       this._resetModeBtns();
       this.renderMoveList();
       this.updateAnalysis(this.game.fen(), null);
-      setTimeout(() => { if (this.board) this.board.resize(); }, 80);
+      this._resizeBoardWhenReady();
     },
 
     loadPreset(pgnText, boardId) {
@@ -1060,7 +1078,7 @@ ta: {
       });
       this.renderMoveList();
       this.updateAnalysis(this.game.fen(), this.history[this.history.length - 1] || null);
-      setTimeout(() => { if (this.board) this.board.resize(); }, 80);
+      this._resizeBoardWhenReady();
     },
 
     _autoAnnotate() {
