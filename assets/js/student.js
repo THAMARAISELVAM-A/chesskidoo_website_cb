@@ -136,6 +136,10 @@ CK.student = {
     if (targetPanelId === 'schedule' && CK.schedulePro) CK.schedulePro.renderStudentSchedule('studentScheduleList', this.userProfile);
     if (targetPanelId === 'puzzles' && CK.puzzlesPro) CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', this.userProfile?.id, this.userProfile?.full_name);
     if (targetPanelId === 'vault') this.renderReplayVault();
+    if (targetPanelId === 'openings' && CK.openingTrainer) { CK.openingTrainer.renderOpeningList('otGrid', this.userProfile?.id, 'all'); CK.openingTrainer.renderMasteryOverview('otMasteryOverview', this.userProfile?.id); }
+    if (targetPanelId === 'games' && CK.gameTracker) { CK.gameTracker.renderStatsBanner('gtStatsBanner', this.userProfile?.id); CK.gameTracker.renderSubmitForm('gtSubmitForm', this.userProfile?.id); CK.gameTracker.renderGameList('gtGameList', this.userProfile?.id); }
+    if (targetPanelId === 'path') this.renderSkillTree();
+    if (targetPanelId === 'lab' && CK.lab) setTimeout(() => CK.lab.initBoard('studentLabBoard'), 100);
     if (targetPanelId === 'classroom' && window.CK && CK.classroom) {
       if (isSessionRedirect) {
         CK.classroom.studentTab('live');
@@ -445,10 +449,17 @@ CK.student = {
     const list = document.getElementById('studentResourcesList');
     if (!list) return;
 
-    const myId    = this.userProfile.id    || this.userProfile.userid || '';
-    const myLevel = this.userProfile.level || 'Beginner';
-    const myBatch = this.userProfile.batch || '';
-    const myCoach = this.userProfile.coach || '';
+    // Guard: profile may not be loaded yet (e.g. panel rendered before init
+    // finished, or after a session reset). Fall back to the cached user.
+    const prof = this.userProfile || CK.currentUser || JSON.parse(localStorage.getItem('ck_user') || 'null');
+    if (!prof) {
+      list.innerHTML = '<div style="opacity:0.6; padding:20px; text-align:center;">Loading your resources…</div>';
+      return;
+    }
+    const myId    = prof.id    || prof.userid || '';
+    const myLevel = prof.level || 'Beginner';
+    const myBatch = prof.batch || '';
+    const myCoach = prof.coach || '';
 
     const allDocs = await CK.db.getDocuments();
     const docs = (allDocs || []).filter(f => {
@@ -478,17 +489,22 @@ CK.student = {
       let openUrl = '';
       let icon = '📄';
       let btnLabel = 'Download';
+      const refLink = f.link && /^https?:\/\//i.test(f.link) ? f.link : '';
 
       if (f.kind === 'link' || (f.url && /^https?:\/\//i.test(f.url))) {
         openUrl = f.url || f.file_name;
         icon = '🔗';
         btnLabel = 'Open Link';
-      } else if (f.url && /^https?:\/\//i.test(f.url)) {
-        openUrl = f.url;
+      } else if (f.file_name && /^https?:\/\//i.test(f.file_name || '')) {
+        openUrl = f.file_name;
+        icon = '🔗';
+        btnLabel = 'Open Link';
       } else if (f.file_name && window.supabaseClient) {
         const pub = window.supabaseClient.storage.from('documents').getPublicUrl(f.file_name);
         openUrl = pub?.data?.publicUrl || '';
       }
+      // If no file/url but a reference link exists, use it as the primary action
+      if (!openUrl && refLink) { openUrl = refLink; icon = '🔗'; btnLabel = 'Open Link'; }
 
       const safeUrl = openUrl ? _e(openUrl) : '';
       const action = safeUrl
@@ -534,6 +550,7 @@ CK.student = {
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <button class="p-btn p-btn-blue p-btn-sm" ${action}>${btnLabel}</button>
+            ${refLink && openUrl !== refLink ? `<button class="p-btn p-btn-ghost p-btn-sm" onclick="window.open('${_e(refLink)}','_blank','noopener,noreferrer')">🔗 Reference</button>` : ''}
             ${completeBtn}
           </div>
         </div>`;
@@ -1020,8 +1037,11 @@ CK.student = {
   },
 
   async renderAchievementsTab() {
-    const stars = this.userProfile.star || 0;
-    
+    // Guard: profile may not be loaded yet (rapid nav before init completes).
+    const prof = this.userProfile || CK.currentUser || JSON.parse(localStorage.getItem('ck_user') || 'null');
+    if (!prof) return;
+    const stars = prof.star || 0;
+
     // Star display
     let starStr = '';
     for (let i = 0; i < 5; i++) {
@@ -1033,7 +1053,7 @@ CK.student = {
     if (progressEl) progressEl.innerText = `You have earned ${stars} out of 5 stars!`;
 
     // Fetch actual attendance stats for dynamic milestone unlock
-    const logs = (await CK.db.getAttendance(this.userProfile.id)) || [];
+    const logs = (await CK.db.getAttendance(prof.id)) || [];
     const presentCount = logs.filter(l => l.status === 'present').length;
     const totalCount = logs.length;
     const attendancePercentage = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 100;
@@ -2596,5 +2616,88 @@ CK.student = {
     this.userProfile = merged;
     CK.showToast(`FIDE ${idStr} saved!${updates.fide_rating ? ' Rating: ' + updates.fide_rating : ''}`, 'success');
     this.renderLinkedAccounts();
+  },
+
+  /* ── Dynamic Mastery Skill Tree ── */
+  async renderSkillTree() {
+    const container = document.getElementById('student-panel-path');
+    if (!container) return;
+    const body = container.querySelector('.p-card-body') || container;
+    const p = this.userProfile;
+    if (!p) return;
+
+    body.innerHTML = '<div style="text-align:center;padding:40px;"><div class="p-spinner" style="margin:0 auto 12px;width:30px;height:30px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--p-gold);border-radius:50%;animation:spin 1s linear infinite;"></div>Building your skill tree...</div>';
+
+    const _e = CK.esc || (s => s);
+    let analysis = null;
+    if (CK.ai) {
+      try { analysis = await CK.ai.analyzeStudent(p.id); } catch(e) {}
+    }
+
+    const rc = p.report_card || {};
+    const scores = analysis ? analysis.scores : {
+      opening: rc.opening || 40,
+      tactics: rc.tactics || 50,
+      endgame: rc.endgame || 30,
+      time_mgmt: rc.time || 35,
+      king_safety: 45,
+      pawn_struct: 25,
+      calculation: 30
+    };
+
+    const nodes = [
+      { id: 'basics',      name: 'Chess Basics',        icon: '♟', score: Math.min(100, (parseInt(p.rating) || 800) >= 800 ? 100 : 60), deps: [] },
+      { id: 'opening',     name: 'Opening Theory',      icon: '📖', score: scores.opening || 0, deps: ['basics'] },
+      { id: 'tactics',     name: 'Tactical Vision',     icon: '⚔️', score: scores.tactics || 0, deps: ['basics'] },
+      { id: 'endgame',     name: 'Endgame Technique',   icon: '♔',  score: scores.endgame || 0, deps: ['basics'] },
+      { id: 'time_mgmt',   name: 'Time Management',     icon: '⏱️', score: scores.time_mgmt || 0, deps: ['tactics'] },
+      { id: 'king_safety', name: 'King Safety',         icon: '🛡️', score: scores.king_safety || 0, deps: ['opening'] },
+      { id: 'pawn_struct', name: 'Pawn Structure',      icon: '♙',  score: scores.pawn_struct || 0, deps: ['opening', 'endgame'] },
+      { id: 'calculation', name: 'Deep Calculation',    icon: '🧠', score: scores.calculation || 0, deps: ['tactics', 'time_mgmt'] },
+      { id: 'strategy',    name: 'Positional Strategy', icon: '🎯', score: Math.round(((scores.pawn_struct || 0) + (scores.king_safety || 0)) / 2), deps: ['pawn_struct', 'king_safety'] },
+      { id: 'mastery',     name: 'Chess Mastery',       icon: '👑', score: analysis ? analysis.overall : Math.round(Object.values(scores).reduce((a,b) => a+b, 0) / Object.keys(scores).length), deps: ['strategy', 'calculation'] }
+    ];
+
+    const getStatus = (node) => {
+      if (node.score >= 75) return { label: 'Mastered', cls: 'mastered', color: '#22c55e' };
+      if (node.score >= 40) return { label: 'In Progress', cls: 'progress', color: '#f59e0b' };
+      const allDepsMet = node.deps.every(d => (nodes.find(n => n.id === d)?.score || 0) >= 40);
+      if (allDepsMet || node.deps.length === 0) return { label: 'Available', cls: 'available', color: '#3b82f6' };
+      return { label: 'Locked', cls: 'locked', color: '#64748b' };
+    };
+
+    const overallPct = analysis ? analysis.overall : Math.round(nodes.reduce((s, n) => s + n.score, 0) / nodes.length);
+    const masteredCount = nodes.filter(n => n.score >= 75).length;
+
+    body.innerHTML = `
+      <div style="margin-bottom:24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+        <div style="text-align:center;">
+          <div style="font-size:2.5rem;font-weight:900;color:var(--p-gold);">${overallPct}%</div>
+          <div style="font-size:0.8rem;color:var(--p-text-muted);">Overall Mastery</div>
+        </div>
+        <div style="flex:1;min-width:200px;">
+          <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px;">
+            <span>${masteredCount}/${nodes.length} skills mastered</span>
+            <span style="color:var(--p-gold);">${overallPct}%</span>
+          </div>
+          <div style="height:10px;background:rgba(255,255,255,0.08);border-radius:6px;overflow:hidden;">
+            <div style="height:100%;width:${overallPct}%;background:linear-gradient(90deg,var(--p-gold),var(--p-teal));border-radius:6px;transition:width 0.8s;"></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;">
+        ${nodes.map(node => {
+          const st = getStatus(node);
+          return `
+            <div style="padding:18px 14px;border-radius:14px;background:${st.color}11;border:1px solid ${st.color}33;text-align:center;transition:transform 0.2s;${st.cls === 'locked' ? 'opacity:0.45;filter:grayscale(0.6);' : ''}" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''">
+              <div style="font-size:2rem;margin-bottom:6px;">${node.icon}</div>
+              <div style="font-weight:700;font-size:0.9rem;margin-bottom:4px;">${_e(node.name)}</div>
+              <div style="height:6px;background:rgba(255,255,255,0.1);border-radius:3px;margin-bottom:6px;overflow:hidden;">
+                <div style="height:100%;width:${node.score}%;background:${st.color};border-radius:3px;"></div>
+              </div>
+              <div style="font-size:0.75rem;color:${st.color};font-weight:600;">${st.label} · ${node.score}%</div>
+            </div>`;
+        }).join('')}
+      </div>`;
   }
 };

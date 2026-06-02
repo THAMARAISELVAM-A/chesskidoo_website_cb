@@ -1,102 +1,91 @@
-/* ChessKidoo Service Worker — offline-first static assets, network-first API */
-const CACHE = 'ck-v36';
-
-const PRECACHE = [
-  '/',
-  '/assets/css/style.css',
-  '/assets/css/portals.css',
-  '/assets/css/arena.css',
-  '/assets/css/dashboard.css',
-  '/assets/css/mobile-landing.css',
-  '/assets/css/mobile-portals.css',
-  '/assets/css/mobile-arena.css',
-  '/assets/css/portal-modern.css',
-  '/assets/css/tomai.css',
-  '/assets/js/config.js',
-  '/assets/js/db.js',
-  '/assets/js/auth.js',
-  '/assets/js/router.js',
-  '/assets/js/main.js',
-  '/assets/js/admin.js',
-  '/assets/js/student.js',
-  '/assets/js/coach.js',
-  '/assets/js/parents.js',
-  '/assets/js/arena.js',
-  '/assets/js/arcade.js',
-  '/assets/js/tomai.js',
-  '/assets/js/notifications.js',
-  '/assets/js/gamification.js',
-  '/assets/js/tournament-engine.js',
-  '/assets/js/ai-analysis.js',
-  '/assets/js/anti-cheat.js',
-  '/assets/js/engine.js',
-  '/assets/js/engine-play.js',
-  '/assets/js/classroom.js',
-  '/assets/js/classes-system.js',
-  '/assets/js/schedule-pro.js',
-  '/assets/js/puzzles-pro.js',
-  '/assets/js/reports-system.js',
-  '/assets/js/game-tracker.js',
-  '/assets/js/opening-trainer.js',
-  '/assets/js/pgn-library.js',
-  '/assets/js/chessboard.js',
-  '/assets/js/certs.js',
-  '/assets/js/webrtc-stream.js',
-  '/assets/js/multiplayer.js',
-  '/manifest.json',
+/* ChessKidoo Service Worker
+   ──────────────────────────────────────────────────────────────────────
+   STRATEGY
+   - HTML navigations + same-origin JS/CSS  → NETWORK-FIRST
+       Always fetch the freshest code when online so a deploy is picked up
+       immediately; fall back to cache only when offline. (The previous
+       cache-first SW froze returning users on stale JS after every deploy.)
+   - Images / fonts / other static GETs      → CACHE-FIRST (stale-while-OK)
+       These rarely change and benefit from instant loads.
+   - Cross-origin (CDNs, Supabase, fonts)     → bypass (let the network handle)
+   Bump CACHE_VERSION on any release to purge everything old.
+   ────────────────────────────────────────────────────────────────────── */
+const CACHE_VERSION = 'ck-v4';
+const CORE = [
+  '/', '/index.html',
+  '/assets/css/style.css', '/assets/css/portals.css',
+  '/assets/js/config.js', '/assets/js/db.js', '/assets/js/main.js'
 ];
 
-self.addEventListener('install', e => {
-  self.skipWaiting();
+self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(PRECACHE)).catch(() => {})
+    caches.open(CACHE_VERSION)
+      .then((c) => c.addAll(CORE).catch(() => {}))   // don't fail install if one asset 404s
+      .then(() => self.skipWaiting())
   );
 });
 
-self.addEventListener('activate', e => {
+self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
-self.addEventListener('fetch', e => {
-  const { request } = e;
-  const url = new URL(request.url);
+// Allow the page to tell a waiting SW to take over immediately.
+self.addEventListener('message', (e) => {
+  if (e.data === 'SKIP_WAITING') self.skipWaiting();
+});
 
-  // Skip non-HTTP(S) schemes (chrome-extension://, etc.)
-  if (!url.protocol.startsWith('http')) return;
+function isCode(url) {
+  return url.pathname.endsWith('.js') || url.pathname.endsWith('.css');
+}
+function isStaticAsset(url) {
+  return /\.(png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot|mp4|webm)$/i.test(url.pathname);
+}
 
-  // Never intercept Supabase, Razorpay, CDN, or non-GET requests
-  if (request.method !== 'GET') return;
-  if (url.hostname.includes('supabase.co'))   return;
-  if (url.hostname.includes('razorpay.com'))  return;
-  if (url.hostname.includes('lichess.org'))   return;
-  if (url.hostname.includes('googleapis.com')) return;
-  if (url.hostname.includes('jsdelivr.net'))  return;
-  if (url.hostname.includes('cdnjs'))         return;
+self.addEventListener('fetch', (e) => {
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
 
-  // HTML navigation — network first, fall back to cached index
-  if (request.mode === 'navigate') {
+  // Only handle our own origin; let CDNs / Supabase / Google Fonts go direct.
+  if (url.origin !== location.origin) return;
+
+  const navigation = req.mode === 'navigate';
+
+  // NETWORK-FIRST for HTML + JS + CSS — guarantees fresh code post-deploy.
+  // Use cache:'no-cache' so the browser HTTP cache is always revalidated against
+  // the server (dev servers like python http.server send no Cache-Control, which
+  // otherwise lets the browser serve stale JS/CSS even after a deploy).
+  if (navigation || isCode(url)) {
     e.respondWith(
-      fetch(request).catch(() => caches.match('/'))
+      fetch(req, { cache: 'no-cache' })
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE_VERSION).then((c) => c.put(req, copy)).catch(() => {});
+          return res;
+        })
+        .catch(() => caches.match(req).then((r) => r || caches.match('/index.html')))
     );
     return;
   }
 
-  // Static assets — cache first, update in background (stale-while-revalidate)
-  e.respondWith(
-    caches.open(CACHE).then(cache =>
-      cache.match(request).then(hit => {
-        const fresh = fetch(request).then(res => {
-          if (res && res.status === 200 && res.type !== 'opaque') {
-            cache.put(request, res.clone());
-          }
+  // CACHE-FIRST for static assets (images/fonts) — fast, rarely change.
+  if (isStaticAsset(url)) {
+    e.respondWith(
+      caches.match(req).then((cached) =>
+        cached || fetch(req).then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE_VERSION).then((c) => c.put(req, copy)).catch(() => {});
           return res;
-        }).catch(() => hit);
-        return hit || fresh;
-      })
-    )
-  );
+        })
+      )
+    );
+    return;
+  }
+
+  // Everything else same-origin: network-first, cache fallback.
+  e.respondWith(fetch(req).catch(() => caches.match(req)));
 });

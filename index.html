@@ -63,6 +63,7 @@
   <link rel="stylesheet" href="assets/css/mobile-arena.css">
   <link rel="stylesheet" href="assets/css/portal-modern.css">
   <link rel="stylesheet" href="assets/css/tomai.css">
+  <link rel="stylesheet" href="assets/css/enterprise.css">
 
   <!-- Backend: Supabase JS SDK -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
@@ -1754,6 +1755,10 @@
             <button class="p-nav-item" onclick="CK.admin.showPanel('audit')">
               <span class="icon">🛡️</span><span>Audit Logs</span>
             </button>
+            <button class="p-nav-item" onclick="CK.admin.showPanel('logs')">
+              <span class="icon">📋</span><span>System Logs</span>
+              <span class="p-live-indicator"><span class="p-live-dot"></span>LIVE</span>
+            </button>
             <div class="p-section-sep"></div>
             <button class="p-nav-item" onclick="CK.admin.showPanel('settings')">
               <span class="icon">⚙️</span><span>Settings</span>
@@ -1786,6 +1791,7 @@
                 oninput="CK.admin.handleSearch(this.value)" />
             </div>
             <div class="p-topbar-actions">
+              <span class="ck-cmdk-hint" onclick="CK.commandBar&&CK.commandBar.show()" title="Command Palette (Ctrl+K)"><kbd>⌘K</kbd> Commands</span>
               <button class="p-theme-toggle" title="Switch theme" aria-label="Switch theme" onclick="CK.toggleTheme&&CK.toggleTheme()">
                 <svg class="p-theme-moon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg><svg class="p-theme-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
               </button>
@@ -2032,7 +2038,7 @@
               <div class="p-card">
                 <div class="p-card-header">
                   <div class="p-card-title">📁 Learning Materials</div>
-                  <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.openModal('uploadModal')">+ Upload File</button>
+                  <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.admin.openUploadModal('admin')">+ Upload File</button>
                 </div>
                 <div style="overflow-x:auto">
                   <table class="p-table">
@@ -2307,6 +2313,22 @@
                   <div class="p-card-body" id="adminRBACOverview" style="padding:16px;">
                     <div style="text-align:center;opacity:.4;padding:30px;">Loading access data...</div>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ══ SYSTEM LOGS PANEL (Enterprise Live Log Viewer) ══ -->
+            <div class="p-panel" id="p-panel-logs">
+              <div class="p-card">
+                <div class="p-card-header">
+                  <div class="p-card-title">📋 Real-Time System Logs</div>
+                  <div style="display:flex;gap:8px;align-items:center">
+                    <span class="p-live-indicator"><span class="p-live-dot"></span>STREAMING</span>
+                    <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.stockfishPanel&&CK.stockfishPanel.toggle()">♟️ Stockfish</button>
+                  </div>
+                </div>
+                <div class="p-card-body" id="adminLiveLogsContainer" style="padding:16px;">
+                  <div style="text-align:center;opacity:.4;padding:30px;">Initializing log stream...</div>
                 </div>
               </div>
             </div>
@@ -3174,69 +3196,8 @@
                 </div>
                 <div class="p-card-body" style="padding: 30px;">
                   <p style="color: var(--p-text-muted); margin-bottom: 24px; font-size: 1.05rem;">Your customized AI
-                    learning roadmap based on recent tactical analysis and blunder heatmaps.</p>
-
-                  <div style="display: flex; flex-direction: column; gap: 20px; position: relative;">
-                    <!-- Line connecting modules -->
-                    <div
-                      style="position: absolute; left: 38px; top: 30px; bottom: 30px; width: 4px; background: rgba(255,255,255,0.1); z-index: 1;">
-                    </div>
-
-                    <!-- Module 1: Mastered -->
-                    <div
-                      style="display: flex; align-items: center; gap: 20px; z-index: 2; background: rgba(255,255,255,0.03); padding: 16px 24px; border-radius: 12px; border: 1px solid rgba(0,201,167,0.3);">
-                      <div
-                        style="width: 48px; height: 48px; border-radius: 50%; background: #00c9a7; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #000; font-weight: bold; box-shadow: 0 0 15px rgba(0,201,167,0.5);">
-                        ✓</div>
-                      <div style="flex: 1;">
-                        <h4 style="font-size: 1.2rem; color: #fff; margin-bottom: 4px;">Module 1: Basic Tactics & Piece
-                          Geometry</h4>
-                        <p style="font-size: 0.9rem; color: var(--p-text-muted);">Pins, Forks, Skewers, and Discovered
-                          Attacks.</p>
-                      </div>
-                      <span class="p-badge p-badge-green">Mastered</span>
-                    </div>
-
-                    <!-- Module 2: In Progress (Adaptive Focus) -->
-                    <div
-                      style="display: flex; align-items: center; gap: 20px; z-index: 2; background: linear-gradient(90deg, rgba(212,175,55,0.1), rgba(0,0,0,0)); padding: 16px 24px; border-radius: 12px; border: 1px solid rgba(212,175,55,0.5); box-shadow: 0 0 20px rgba(212,175,55,0.15);">
-                      <div
-                        style="width: 48px; height: 48px; border-radius: 50%; background: #d4af37; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #000; font-weight: bold; box-shadow: 0 0 15px rgba(212,175,55,0.5);">
-                        ⚡</div>
-                      <div style="flex: 1;">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                          <h4 style="font-size: 1.2rem; color: #fff; margin-bottom: 4px;">Module 2: Thematic Endgame
-                            Dominance</h4>
-                          <span
-                            style="font-size:0.75rem; background:#3b82f6; color:#fff; padding:2px 8px; border-radius:10px; font-weight:bold;">AI
-                            Unlocked</span>
-                        </div>
-                        <p style="font-size: 0.9rem; color: var(--p-text-muted);">Focus: Rook Activity & Lucena/Philidor
-                          Positions. AI detected 40% accuracy drop here.</p>
-                        <div
-                          style="margin-top:10px; width:100%; background:rgba(255,255,255,0.1); height:6px; border-radius:3px; overflow:hidden;">
-                          <div style="width:65%; background:#d4af37; height:100%;"></div>
-                        </div>
-                      </div>
-                      <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.student.nav('puzzles')">Continue
-                        (65%)</button>
-                    </div>
-
-                    <!-- Module 3: Locked -->
-                    <div
-                      style="display: flex; align-items: center; gap: 20px; z-index: 2; background: rgba(255,255,255,0.02); padding: 16px 24px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); opacity: 0.6;">
-                      <div
-                        style="width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #fff;">
-                        🔒</div>
-                      <div style="flex: 1;">
-                        <h4 style="font-size: 1.2rem; color: #fff; margin-bottom: 4px;">Module 3: Advanced Pawn
-                          Structures & Outposts</h4>
-                        <p style="font-size: 0.9rem; color: var(--p-text-muted);">Isolated Queen's Pawn, Hanging Pawns,
-                          and Minority Attacks.</p>
-                      </div>
-                      <span class="p-badge" style="background:rgba(255,255,255,0.1); color:#94a3b8;">Locked</span>
-                    </div>
-                  </div>
+                    learning roadmap based on recent tactical analysis and performance data.</p>
+                  <div style="text-align:center;padding:40px;opacity:0.5;">Loading skill tree...</div>
                 </div>
               </div>
             </div>
@@ -3741,33 +3702,29 @@
                 </div>
                 <div class="p-card-body" style="padding:20px 25px;">
 
-                  <!-- Presets + Lichess URL Import -->
-                  <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px;align-items:center;">
-                    <span
-                      style="font-size:0.78rem;color:var(--p-text-muted);font-weight:700;letter-spacing:.05em;">PRESETS:</span>
+                  <!-- PGN Library Browser + Quick Import + URL Import -->
+                  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:13px;align-items:center;">
+                    <button class="p-btn p-btn-gold p-btn-sm"
+                            onclick="CK.lab.openPgnLibraryBrowser('studentLabBoard')"
+                            title="Browse 35+ curated famous games organized by level">
+                      📚 PGN Library (35+ Famous Games)
+                    </button>
                     <button class="p-btn p-btn-ghost p-btn-sm"
-                      onclick="CK.lab.loadPreset('1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. b4 Bxb4 5. c3 Ba5 6. d4 exd4 7. O-O Nge7 8. cxd4 d5 9. exd5 Nxd5 10. Ba3 Be6 11. Nbd2 Bb4 12. Bxb4 Ndxb4 13. Bxe6 fxe6 14. Qb3 O-O 15. Qxe6+ Kh8 16. Nb3 Rxf3 17. gxf3 Nxd4 18. Nxd4 Qxd4 19. Qe4 Qd6 20. Rfd1 Qf8 21. Qxb7 Re8 22. Qxc7 Nd5 23. Rxd5','studentLabBoard')">Evans
-                      Gambit</button>
-                    <button class="p-btn p-btn-ghost p-btn-sm"
-                      onclick="CK.lab.loadPreset('1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Bg5 e6 7. f4 Be7 8. Qf3 Qc7 9. O-O-O Nbd7 10. g4 b5 11. Bxf6 Nxf6 12. g5 Nd7 13. f5 Ne5 14. Qh5 b4 15. fxe6 fxe6 16. Nd5 exd5 17. exd5+ Kd8','studentLabBoard')">Sicilian
-                      Najdorf</button>
-                    <button class="p-btn p-btn-ghost p-btn-sm"
-                      onclick="CK.lab.loadPreset('1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5 d5 5. exd5 Na5 6. Bb5+ c6 7. dxc6 bxc6 8. Be2 h6 9. Nf3 e4 10. Ne5 Bd6 11. f4 exf3 12. Nxf3 O-O 13. d4 Re8 14. Kf1 Bg4','studentLabBoard')">Italian
-                      Game</button>
-                    <button class="p-btn p-btn-ghost p-btn-sm"
-                      onclick="CK.lab.loadPreset('1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7 5. e3 O-O 6. Nf3 Nbd7 7. Rc1 c6 8. Bd3 dxc4 9. Bxc4 Nd5 10. Bxe7 Qxe7 11. O-O Nxc3 12. Rxc3 e5 13. dxe5 Nxe5 14. Nxe5 Qxe5','studentLabBoard')">Queen&#39;s
-                      Gambit</button>
-                    <button class="p-btn p-btn-ghost p-btn-sm"
-                      onclick="CK.lab.loadPreset('1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. Ne1 Nd7 10. Be3 f5 11. f3 f4 12. Bf2 g5 13. Nd3 Nf6 14. c5 Ng6','studentLabBoard')">King&#39;s
-                      Indian</button>
+                            onclick="CK.lab.loadRandomPuzzle('studentLabBoard')"
+                            title="Load a random tactical puzzle">
+                      🧩 Random Puzzle
+                    </button>
                     <div style="display:flex;gap:5px;margin-left:auto;flex-shrink:0;">
                       <input id="labUrlInput" class="p-form-control"
-                        style="font-size:0.8rem;height:30px;padding:0 10px;width:200px;min-width:0;"
+                        style="font-size:0.8rem;height:30px;padding:0 10px;width:220px;min-width:0;"
                         placeholder="🔗 Lichess game URL…">
                       <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.lab.importUrl()"
                         style="white-space:nowrap;">⬇ Import</button>
                     </div>
                   </div>
+
+                  <!-- PGN Library Browser drawer (populated on demand) -->
+                  <div id="studentPgnLibraryBrowser" class="ck-pgn-lib-browser" style="display:none;"></div>
 
                   <!-- Mode Status Banner -->
                   <div id="labModeBanner" class="lab-mode-banner lab-mode-banner-analysis" style="display:none;"></div>
@@ -4426,7 +4383,7 @@
               <div class="p-card">
                 <div class="p-card-header">
                   <div class="p-card-title">📁 Homework & Class Notes</div>
-                  <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.openModal('uploadModal')">+ Upload
+                  <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.admin.openUploadModal('coach')">+ Upload
                     Material</button>
                 </div>
                 <div class="p-card-body" id="coachResourcesContainer">
@@ -4800,33 +4757,29 @@
                 </div>
                 <div class="p-card-body" style="padding:20px 25px;">
 
-                  <!-- Presets + URL Import -->
-                  <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px;align-items:center;">
-                    <span
-                      style="font-size:0.78rem;color:var(--p-text-muted);font-weight:700;letter-spacing:.05em;">PRESETS:</span>
+                  <!-- PGN Library Browser + Quick Import + URL Import -->
+                  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:13px;align-items:center;">
+                    <button class="p-btn p-btn-gold p-btn-sm"
+                            onclick="CK.lab.openPgnLibraryBrowser('coachLabBoard')"
+                            title="Browse 35+ curated famous games organized by level">
+                      📚 PGN Library (35+ Famous Games)
+                    </button>
                     <button class="p-btn p-btn-ghost p-btn-sm"
-                      onclick="CK.lab.loadPreset('1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. e3 O-O 5. Bd3 d5 6. Nf3 c5 7. O-O dxc4 8. Bxc4 Nbd7 9. Qb3 Ba5 10. Rd1 Qe7 11. d5 exd5 12. Nxd5 Nxd5 13. Bxd5 Ndf6 14. Bc4 Bc7 15. Bd2 Ne4 16. Be1 a6 17. a4 Rb8 18. Nd2 Nd6','coachLabBoard')">Nimzo-Indian</button>
-                    <button class="p-btn p-btn-ghost p-btn-sm"
-                      onclick="CK.lab.loadPreset('1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Nxe4 6. d4 b5 7. Bb3 d5 8. dxe5 Be6 9. Nbd2 Nc5 10. c3 d4 11. Bxe6 Nxe6 12. cxd4 Ncxd4 13. a4 Be7 14. Nxd4 Nxd4 15. Ne4 Ne6 16. Be3 O-O 17. f4','coachLabBoard')">Ruy
-                      Lopez</button>
-                    <button class="p-btn p-btn-ghost p-btn-sm"
-                      onclick="CK.lab.loadPreset('1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7 5. e3 O-O 6. Nf3 Nbd7 7. Rc1 c6 8. Bd3 dxc4 9. Bxc4 Nd5 10. Bxe7 Qxe7 11. O-O Nxc3 12. Rxc3 e5 13. dxe5 Nxe5 14. Nxe5 Qxe5','coachLabBoard')">Queen&#39;s
-                      Gambit</button>
-                    <button class="p-btn p-btn-ghost p-btn-sm"
-                      onclick="CK.lab.loadPreset('1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. b4 Bxb4 5. c3 Ba5 6. d4 exd4 7. O-O Nge7 8. cxd4 d5 9. exd5 Nxd5 10. Ba3 Be6 11. Nbd2 Bb4 12. Bxb4 Ndxb4 13. Bxe6 fxe6 14. Qb3 O-O','coachLabBoard')">Evans
-                      Gambit</button>
-                    <button class="p-btn p-btn-ghost p-btn-sm"
-                      onclick="CK.lab.loadPreset('1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. Ne1 Nd7 10. Be3 f5 11. f3 f4 12. Bf2 g5 13. Nd3 Nf6 14. c5','coachLabBoard')">King&#39;s
-                      Indian</button>
+                            onclick="CK.lab.loadRandomPuzzle('coachLabBoard')"
+                            title="Load a random tactical puzzle">
+                      🧩 Random Puzzle
+                    </button>
                     <div style="display:flex;gap:5px;margin-left:auto;flex-shrink:0;">
                       <input id="coachLabUrlInput" class="p-form-control"
-                        style="font-size:0.8rem;height:30px;padding:0 10px;width:200px;min-width:0;"
+                        style="font-size:0.8rem;height:30px;padding:0 10px;width:220px;min-width:0;"
                         placeholder="🔗 Lichess game URL…">
                       <button class="p-btn p-btn-ghost p-btn-sm"
-                        onclick="CK.lab._importUrlFor('coachLabUrlInput','coachLabBoard')" style="white-space:nowrap;">⬇
-                        Import</button>
+                        onclick="CK.lab._importUrlFor('coachLabUrlInput','coachLabBoard')" style="white-space:nowrap;">⬇ Import</button>
                     </div>
                   </div>
+
+                  <!-- PGN Library Browser drawer (populated on demand) -->
+                  <div id="coachPgnLibraryBrowser" class="ck-pgn-lib-browser" style="display:none;"></div>
 
                   <!-- Lichess Study / Game Embed for Teaching -->
                   <div style="background:rgba(232,184,75,0.04);border:1px solid rgba(232,184,75,0.15);border-radius:10px;padding:14px 16px;margin-bottom:14px;">
@@ -6512,35 +6465,46 @@
 
   <!-- Demo/Contact Modal -->
   <div id="contactModal" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 style="font-family: var(--font-display); font-size: 1.5rem; margin-bottom: 8px;">Book a Free Demo</h3>
-        <p style="font-size: 0.9rem; opacity: 0.7;">Our FIDE experts will reach out to you shortly.</p>
+    <div class="modal-card" style="max-width:480px; border-radius:24px; overflow:hidden;">
+      <div class="modal-header" style="background:linear-gradient(135deg,#D97706 0%,#f59e0b 100%); padding:28px 24px; text-align:center;">
+        <div style="font-size:2.5rem; margin-bottom:8px;">♟</div>
+        <h3 style="font-family: var(--font-display); font-size: 1.5rem; margin-bottom: 8px; color:#fff;">Book a Free Demo Class</h3>
+        <p style="font-size: 0.88rem; color:rgba(255,255,255,0.85);">30-min FIDE-certified coaching session. No payment required.</p>
       </div>
-      <form class="modal-body" onsubmit="CK.handleDemoSubmit(event)">
-        <div class="form-group">
-          <label>Full Name</label>
-          <input type="text" name="fullName" required placeholder="Parent's Name"
-            style="width:100%; height:48px; border-radius:8px; border:1px solid #ddd; padding:0 12px; margin-top:4px;">
+      <form class="modal-body" onsubmit="CK.handleDemoSubmit(event)" style="padding:24px;">
+        <div class="form-group" style="margin-bottom:16px;">
+          <label style="font-weight:600; font-size:0.85rem; margin-bottom:6px; display:block; color:#334155;">Parent's Name *</label>
+          <input type="text" name="fullName" required placeholder="e.g. Ravi Kumar"
+            style="width:100%; height:48px; border-radius:12px; border:1.5px solid #e2e8f0; padding:0 14px; font-size:16px; transition:border-color 0.2s; outline:none; background:#f8fafc;"
+            onfocus="this.style.borderColor='#D97706'" onblur="this.style.borderColor='#e2e8f0'">
         </div>
-        <div class="form-group">
-          <label>Phone Number</label>
-          <input type="tel" name="phone" required placeholder="WhatsApp Number"
-            style="width:100%; height:48px; border-radius:8px; border:1px solid #ddd; padding:0 12px; margin-top:4px;">
+        <div class="form-group" style="margin-bottom:16px;">
+          <label style="font-weight:600; font-size:0.85rem; margin-bottom:6px; display:block; color:#334155;">WhatsApp Number *</label>
+          <input type="tel" name="phone" required placeholder="+91 98765 43210" pattern="[0-9+\s\-]{10,15}"
+            style="width:100%; height:48px; border-radius:12px; border:1.5px solid #e2e8f0; padding:0 14px; font-size:16px; transition:border-color 0.2s; outline:none; background:#f8fafc;"
+            onfocus="this.style.borderColor='#D97706'" onblur="this.style.borderColor='#e2e8f0'">
         </div>
-        <div class="form-group">
-          <label>Child's Age</label>
-          <input type="number" name="age" required placeholder="e.g. 8"
-            style="width:100%; height:48px; border-radius:8px; border:1px solid #ddd; padding:0 12px; margin-top:4px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+          <div class="form-group">
+            <label style="font-weight:600; font-size:0.85rem; margin-bottom:6px; display:block; color:#334155;">Child's Age *</label>
+            <input type="number" name="age" required min="4" max="18" placeholder="e.g. 8"
+              style="width:100%; height:48px; border-radius:12px; border:1.5px solid #e2e8f0; padding:0 14px; font-size:16px; outline:none; background:#f8fafc;"
+              onfocus="this.style.borderColor='#D97706'" onblur="this.style.borderColor='#e2e8f0'">
+          </div>
+          <div class="form-group">
+            <label style="font-weight:600; font-size:0.85rem; margin-bottom:6px; display:block; color:#334155;">City</label>
+            <input type="text" name="city" placeholder="e.g. Chennai"
+              style="width:100%; height:48px; border-radius:12px; border:1.5px solid #e2e8f0; padding:0 14px; font-size:16px; outline:none; background:#f8fafc;"
+              onfocus="this.style.borderColor='#D97706'" onblur="this.style.borderColor='#e2e8f0'">
+          </div>
         </div>
-        <div class="form-group">
-          <label>City</label>
-          <input type="text" name="city" placeholder="e.g. Chennai"
-            style="width:100%; height:48px; border-radius:8px; border:1px solid #ddd; padding:0 12px; margin-top:4px;">
+        <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:12px 14px; margin-bottom:20px; display:flex; align-items:center; gap:10px;">
+          <span style="font-size:1.3rem;">🎯</span>
+          <span style="font-size:0.82rem; color:#92400e; line-height:1.4;">You'll be redirected to WhatsApp for instant booking confirmation with our coach.</span>
         </div>
-        <div style="display:flex; gap:12px; margin-top:20px;">
-          <button type="button" class="btn btn-ghost" onclick="CK.closeModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary" style="flex:1">Confirm Booking</button>
+        <div style="display:flex; gap:12px;">
+          <button type="button" class="btn btn-ghost" onclick="CK.closeModal()" style="border-radius:12px; padding:14px 20px;">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="flex:1; border-radius:12px; padding:14px 20px; font-weight:700; font-size:1rem; background:linear-gradient(135deg,#D97706,#f59e0b); border:none; color:#fff; box-shadow:0 4px 16px rgba(217,119,6,0.35);">Book Free Demo</button>
         </div>
       </form>
     </div>
@@ -6642,6 +6606,16 @@
           <input type="text" name="notes" placeholder="e.g. Review before Friday, focus on king safety…" class="ck-input">
         </div>
 
+        <!-- Reference Link (always available — works alongside file or link) -->
+        <div class="form-group">
+          <label class="ck-label ck-label-with-hint">
+            🔗 Reference Link (optional)
+            <span class="ck-hint">website, Lichess study, YouTube, article…</span>
+          </label>
+          <input type="url" name="refLink" class="ck-input"
+                 placeholder="https://lichess.org/study/...  or  https://youtube.com/...">
+        </div>
+
         <!-- File-source pane -->
         <div class="form-group ck-source-pane" data-pane="file">
           <label class="ck-label">Choose File</label>
@@ -6665,20 +6639,7 @@
       </form>
     </div>
   </div>
-  <div id="bot-window" class="bot-window" style="display:none;">
-    <div class="bot-header">
-      <h4>♟ ChessKidoo AI</h4>
-      <button onclick="CK.toggleBot()" style="font-size:1.4rem; line-height:1;">×</button>
-    </div>
-    <div id="bot-messages" class="bot-messages">
-      <div class="bot-msg bot-msg--bot">👋 Hi! Ask me about chess lessons, fees, schedules, or coaches!</div>
-    </div>
-    <div class="bot-input">
-      <input type="text" id="bot-input-field" placeholder="Ask about chess..." autocomplete="off"
-        onkeydown="if(event.key==='Enter') CK.sendBotMessage()">
-      <button onclick="CK.sendBotMessage()">➤</button>
-    </div>
-  </div>
+  <!-- Old bot-window removed — TOM AI chatbot replaces it globally -->
 
   <!-- Guess Grandmaster Game Modal -->
   <div id="gameModal" class="modal-overlay">
@@ -6838,6 +6799,7 @@
   <!-- TOM AI: classic script (not a module) so it always runs even if a sibling module errors -->
   <script defer src="assets/js/tomai.js"></script>
   <script defer type="module" src="assets/js/main.js"></script>
+  <script defer src="assets/js/enterprise.js"></script>
   <script defer type="module" src="assets/js/admin.js"></script>
   <script defer type="module" src="assets/js/student.js"></script>
   <script defer type="module" src="assets/js/coach.js"></script>
@@ -7080,14 +7042,14 @@
             type="button"
             aria-label="Open TOM chat"
             title="Chat with TOM"
-            style="pointer-events:auto; position:relative; width:44px; height:44px; border-radius:50%; border:none; background:linear-gradient(135deg, #E8A020 0%, #F5C842 100%); box-shadow:0 6px 18px rgba(232,160,32,0.45); cursor:pointer; display:grid; place-items:center; padding:0; font-size:0; transition:transform .25s, box-shadow .25s; animation:tomEmPulse 3s ease-in-out infinite;">
-      <!-- Clean Staunton knight silhouette — sits centred in the 44px disc -->
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:22px; height:22px;" fill="#1A1209">
-        <path d="M15.5 21H4.5l1-3.5h9zM5 17.5 L4 15h12.5l-1 2.5z"/>
-        <path d="M17 14.5 c-.3-1-.6-1.9-1-2.8 c-.7-1.6-1.7-3-3-4.2 L14 5 L11.5 6 L11 3.5 L8.5 6.2 c-1.4 1-2.5 2.4-3.2 4 C4.8 12 4.7 13.4 5 14.5z"/>
-        <circle cx="14" cy="9.5" r=".7" fill="#F5C842"/>
+            style="pointer-events:auto; position:relative; width:58px; height:58px; border-radius:50%; border:2px solid rgba(255,255,255,0.35); background:linear-gradient(135deg, #E8A020 0%, #F5C842 100%); box-shadow:0 8px 22px rgba(232,160,32,0.5); cursor:pointer; display:grid; place-items:center; padding:0; font-size:0; transition:transform .25s, box-shadow .25s; animation:tomEmPulse 3s ease-in-out infinite;">
+      <!-- Clean Staunton PAWN silhouette — centred in the 58px gold disc -->
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:30px; height:30px;" fill="#1A1209">
+        <circle cx="12" cy="6" r="3.25"/>
+        <path d="M9.15 8.55c-.62.72-1.02 1.55-1.02 2.5 0 1.12.62 2.05 1.55 2.66-.72.5-1.24 1.6-1.55 2.94-.3 1.28-.62 2.62-1.28 3.6h9.3c-.66-.98-.98-2.32-1.28-3.6-.31-1.34-.83-2.44-1.55-2.94.93-.61 1.55-1.54 1.55-2.66 0-.95-.4-1.78-1.02-2.5z"/>
+        <path d="M6.4 20.05h11.2c.42 0 .78.29.88.7l.32 1.35c.1.42-.22.82-.66.82H5.86c-.44 0-.76-.4-.66-.82l.32-1.35c.1-.41.46-.7.88-.7z"/>
       </svg>
-      <span style="position:absolute; top:-2px; right:-2px; width:11px; height:11px; border-radius:50%; background:#22c55e; border:2px solid #fff; box-shadow:0 0 6px rgba(34,197,94,0.65);"></span>
+      <span style="position:absolute; top:-2px; right:-2px; width:12px; height:12px; border-radius:50%; background:#22c55e; border:2px solid #fff; box-shadow:0 0 6px rgba(34,197,94,0.65);"></span>
     </button>
   </div>
   <style>

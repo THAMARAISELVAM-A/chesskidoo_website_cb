@@ -13,7 +13,7 @@
   const DEFAULT_DB = {
     users: [
       {
-        id: "a007b0b0-9b30-478f-a147-1af18dff20ce", // ADMIN_UUID from config
+        id: "a0000000-0000-4000-8000-000000000001", // ADMIN_UUID — must match Supabase + config.js
         email: "admin@gmail.com",
         full_name: "Academy Admin",
         role: "admin",
@@ -110,7 +110,26 @@
             new Promise((_, reject) => setTimeout(() => reject(new Error('Supabase timeout')), 6000))
           ]);
           const { data, error } = result;
-          if (!error) return data || [];
+          if (!error) {
+            const rows = data || [];
+            // Mirror live data to localStorage so a later Supabase cooldown still
+            // has real data to fall back on (prevents portals going blank / looking
+            // "hardcoded" the moment a single request times out). A role-filtered
+            // fetch only returns that one role's rows, so MERGE by id — never
+            // replace the whole cache with one role's subset.
+            try {
+              if (role) {
+                const byId = {};
+                getLocal('users').forEach(u => { if (u && u.id != null) byId[u.id] = u; });
+                rows.forEach(u => { if (u && u.id != null) byId[u.id] = u; });
+                const liveIds = new Set(rows.map(u => u.id));
+                setLocal('users', Object.values(byId).filter(u => u.role !== role || liveIds.has(u.id)));
+              } else {
+                setLocal('users', rows);
+              }
+            } catch (_) { /* localStorage full / disabled — non-fatal */ }
+            return rows;
+          }
           console.warn("[ChessKidoo DB] Supabase query failed, falling back to local storage:", error.message || error);
           markSupabaseFailed();
         } catch (e) {
@@ -135,7 +154,18 @@
           const { data, error } = result;
           // No error = successful query. data may be null (user simply not found) —
           // that is NOT a connection failure, so return it without disabling Supabase.
-          if (!error) return data;
+          if (!error) {
+            // Keep the localStorage mirror fresh for offline/cooldown fallback.
+            if (data && data.id != null) {
+              try {
+                const cache = getLocal('users');
+                const i = cache.findIndex(u => u && u.id === data.id);
+                if (i !== -1) cache[i] = { ...cache[i], ...data }; else cache.push(data);
+                setLocal('users', cache);
+              } catch (_) { /* non-fatal */ }
+            }
+            return data;
+          }
           console.warn("[ChessKidoo DB] Supabase profile query error, falling back:", error.message || error);
           markSupabaseFailed();
         } catch (e) {
@@ -857,6 +887,72 @@
       const all = JSON.parse(localStorage.getItem('ck_feedback') || '[]').filter(x => x.id !== id);
       localStorage.setItem('ck_feedback', JSON.stringify(all));
       return true;
+    },
+
+    // --- AUDIT LOG OPERATIONS ---
+    async getAuditLogs(limit = 100) {
+      if (canUseSupabase()) {
+        try {
+          const { data, error } = await window.supabaseClient
+            .from('audit_logs').select('*')
+            .order('timestamp', { ascending: false })
+            .limit(limit);
+          if (!error && data) { localStorage.setItem('ck_audit_logs', JSON.stringify(data)); return data; }
+          markSupabaseFailed();
+        } catch (e) { markSupabaseFailed(); }
+      }
+      return JSON.parse(localStorage.getItem('ck_audit_logs') || '[]');
+    },
+    async saveAuditLog(log) {
+      if (!log.id) log.id = 'al-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+      if (!log.timestamp) log.timestamp = new Date().toISOString();
+      if (!log.severity) log.severity = 'INFO';
+      const prevLogs = JSON.parse(localStorage.getItem('ck_audit_logs') || '[]');
+      log.hash_prev = prevLogs.length > 0 ? prevLogs[0].id : null;
+
+      if (canUseSupabase()) {
+        try {
+          const { error } = await window.supabaseClient.from('audit_logs').upsert(log);
+          if (error) console.warn('[CK DB] Audit log save error:', error);
+        } catch (e) { console.warn('[CK DB] Audit log save error:', e); }
+      }
+      prevLogs.unshift(log);
+      localStorage.setItem('ck_audit_logs', JSON.stringify(prevLogs.slice(0, 500)));
+      return log;
+    },
+
+    // --- CREDENTIALS SYNC (Supabase credentials table) ---
+    async getCredentials() {
+      if (canUseSupabase()) {
+        try {
+          const { data, error } = await window.supabaseClient.from('credentials').select('*');
+          if (!error && data) {
+            const map = {};
+            data.forEach(c => { map[c.email] = c.password; });
+            localStorage.setItem('ck_user_credentials', JSON.stringify(map));
+            return map;
+          }
+        } catch (e) { }
+      }
+      return JSON.parse(localStorage.getItem('ck_user_credentials') || '{}');
+    },
+    async saveCredential(email, hash) {
+      if (canUseSupabase()) {
+        try {
+          await window.supabaseClient.from('credentials').upsert({ email, password: hash });
+        } catch (e) { }
+      }
+      const creds = JSON.parse(localStorage.getItem('ck_user_credentials') || '{}');
+      creds[email] = hash;
+      localStorage.setItem('ck_user_credentials', JSON.stringify(creds));
+    },
+    async deleteCredential(email) {
+      if (canUseSupabase()) {
+        try { await window.supabaseClient.from('credentials').delete().eq('email', email); } catch (e) { }
+      }
+      const creds = JSON.parse(localStorage.getItem('ck_user_credentials') || '{}');
+      delete creds[email];
+      localStorage.setItem('ck_user_credentials', JSON.stringify(creds));
     }
   };
 
@@ -950,9 +1046,14 @@
       return this._tempClient ? this._tempClient.auth : null;
     },
 
+    /* Returns a map of { email: hash } for all users with portal access.
+       Reads from the Supabase `credentials` table (synced to localStorage). */
     async getCreds() {
-      console.warn("getCreds() is deprecated. Passwords are securely managed by Supabase Auth and cannot be extracted.");
-      return {};
+      try {
+        return (CK.db && CK.db.getCredentials) ? await CK.db.getCredentials() : {};
+      } catch (e) {
+        return JSON.parse(localStorage.getItem('ck_user_credentials') || '{}');
+      }
     },
 
     // SHA-256 password hash → hex
@@ -975,12 +1076,10 @@
       const hash = await this._hashPassword(password);
       if (!hash) return false;
       try {
-        const creds = JSON.parse(localStorage.getItem('ck_user_credentials') || '{}');
-        creds[email.toLowerCase()] = hash;
-        localStorage.setItem('ck_user_credentials', JSON.stringify(creds));
+        await CK.db.saveCredential(email.toLowerCase(), hash);
         return true;
       } catch (e) {
-        console.warn('[Auth] could not write local credentials:', e);
+        console.warn('[Auth] could not write credentials:', e);
         return false;
       }
     },
@@ -1036,7 +1135,17 @@
     },
 
     async removeCredential(email) {
-      console.warn("User deletion must be performed securely in the Supabase Auth Dashboard.");
+      if (!email) return false;
+      email = email.toLowerCase();
+      if (CK.db && CK.db.deleteCredential) await CK.db.deleteCredential(email);
+      if (CK.db && CK.db.saveAuditLog) {
+        CK.db.saveAuditLog({
+          user_id: CK.currentUser?.id || 'admin', user_name: CK.currentUser?.full_name || 'Admin',
+          action: 'REVOKE_ACCESS', resource: 'credentials',
+          detail: `Revoked portal access for ${email}`, severity: 'WARN'
+        });
+      }
+      return true;
     },
 
     /* Give all students/coaches their own access using their email + a shared password */
@@ -1063,30 +1172,56 @@
     async renderAccessTable(containerId) {
       const el = document.getElementById(containerId);
       if (!el) return;
+      this._lastContainerId = containerId;
+      el.innerHTML = '<div style="text-align:center;opacity:.45;padding:30px;">⟳ Syncing access from Supabase…</div>';
+
       const users = (await CK.db.getProfiles()) || [];
       const nonAdmin = users.filter(u => u.role !== 'admin');
       const creds = await this.getCreds();
+
+      // Compute live stats
+      const withAccess = nonAdmin.filter(u => u.email && creds[u.email.toLowerCase()]).length;
+      const noAccess = nonAdmin.length - withAccess;
+      const byRole = { student: 0, coach: 0, parent: 0 };
+      nonAdmin.forEach(u => { byRole[u.role] = (byRole[u.role] || 0) + 1; });
+      const online = (window.supabaseClient && navigator.onLine);
+
+      const statCard = (icon, val, label, color) => `
+        <div class="acc-stat-card">
+          <div class="acc-stat-icon" style="background:${color}1a;color:${color}">${icon}</div>
+          <div><div class="acc-stat-val">${val}</div><div class="acc-stat-label">${label}</div></div>
+        </div>`;
+
       el.innerHTML = `
+        <div class="acc-stats-row">
+          ${statCard('👥', nonAdmin.length, 'Total Users', '#3b82f6')}
+          ${statCard('✅', withAccess, 'Active Access', '#22c55e')}
+          ${statCard('🔒', noAccess, 'No Access', '#ef4444')}
+          ${statCard(online ? '🟢' : '🔴', online ? 'Supabase' : 'Offline', online ? 'Live Sync' : 'Local Only', online ? '#22c55e' : '#f59e0b')}
+        </div>
         <div class="acc-search-row">
-          <input class="p-input" id="accSearch" placeholder="Search by name or email…" oninput="CK.accessManager._filter(this.value)">
-          <select class="p-input" id="accRoleFilter" style="width:140px" onchange="CK.accessManager._filter(document.getElementById('accSearch').value)">
-            <option value="">All Roles</option>
-            <option value="student">Students</option>
-            <option value="coach">Coaches</option>
-            <option value="parent">Parents</option>
+          <input class="p-input" id="accSearch" placeholder="🔍 Search by name or email…" oninput="CK.accessManager._filter(this.value)">
+          <select class="p-input" id="accRoleFilter" style="width:150px" onchange="CK.accessManager._filter(document.getElementById('accSearch').value)">
+            <option value="">All Roles (${nonAdmin.length})</option>
+            <option value="student">Students (${byRole.student})</option>
+            <option value="coach">Coaches (${byRole.coach})</option>
+            <option value="parent">Parents (${byRole.parent})</option>
           </select>
+          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.accessManager.renderAccessTable('${containerId}')" title="Refresh from Supabase">🔄</button>
         </div>
         <div class="acc-bulk-row">
-          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.accessManager.bulkDialog('student')">🔑 Set Password for All Students</button>
-          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.accessManager.bulkDialog('coach')">🔑 Set Password for All Coaches</button>
+          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.accessManager.bulkDialog('student')">🔑 Set Password — All Students</button>
+          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.accessManager.bulkDialog('coach')">🔑 Set Password — All Coaches</button>
           <button class="p-btn p-btn-blue p-btn-sm" onclick="CK.accessManager.addParentDialog()">➕ Add Parent Account</button>
         </div>
-        <table class="p-table" style="width:100%;margin-top:12px" id="accTable">
-          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Has Access</th><th>Actions</th></tr></thead>
-          <tbody id="accTableBody">
-            ${this._rows(nonAdmin, creds)}
-          </tbody>
-        </table>`;
+        <div style="overflow-x:auto;">
+          <table class="p-table" style="width:100%;margin-top:12px" id="accTable">
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Access</th><th>Actions</th></tr></thead>
+            <tbody id="accTableBody">
+              ${this._rows(nonAdmin, creds)}
+            </tbody>
+          </table>
+        </div>`;
     },
 
     _rows(users, creds) {
@@ -1149,27 +1284,84 @@
       });
     },
 
+    // Modern modal-based password setter (replaces window.prompt)
     setDialog(email, name) {
-      const pass = prompt(`Set password for ${name} (${email}):`);
-      if (!pass) return;
-      this.setCredential(email, pass);
-      CK.showToast(`Access granted to ${name}!`, 'success');
-      this.renderAccessTable('adminAccessTable');
+      const _e = CK.esc || (s => s);
+      const modal = document.createElement('div');
+      modal.className = 'p-modal-overlay open';
+      modal.innerHTML = `
+        <div class="p-modal" style="max-width:440px">
+          <div class="p-modal-header"><div class="p-modal-title">🔑 Set Password — ${_e(name)}</div><button class="p-modal-close" onclick="this.closest('.p-modal-overlay').remove()">✕</button></div>
+          <div class="p-modal-body">
+            <div class="p-form-group"><label class="p-form-label">Account Email</label><input class="p-form-control" value="${_e(email)}" disabled style="opacity:.7"></div>
+            <div class="p-form-group"><label class="p-form-label">New Password</label>
+              <input class="p-form-control" type="text" id="setpw_input" placeholder="Min 6 characters" autocomplete="off">
+              <div style="font-size:.72rem;opacity:.55;margin-top:6px">The user logs in with this email + password. Synced to Supabase instantly.</div>
+            </div>
+          </div>
+          <div class="p-modal-footer">
+            <button class="p-btn p-btn-ghost" onclick="this.closest('.p-modal-overlay').remove()">Cancel</button>
+            <button class="p-btn p-btn-blue" id="setpw_save">💾 Grant Access</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+      const input = modal.querySelector('#setpw_input');
+      input?.focus();
+      modal.querySelector('#setpw_save').onclick = async () => {
+        const pass = input.value.trim();
+        if (pass.length < 6) { CK.showToast('Password must be at least 6 characters.', 'warning'); return; }
+        const btn = modal.querySelector('#setpw_save');
+        btn.disabled = true; btn.textContent = '⏳ Saving…';
+        await this.setCredential(email, pass);
+        if (CK.db && CK.db.saveAuditLog) CK.db.saveAuditLog({
+          user_id: CK.currentUser?.id || 'admin', user_name: CK.currentUser?.full_name || 'Admin',
+          action: 'SET_PASSWORD', resource: 'credentials', detail: `Set/updated portal access for ${email}`, severity: 'INFO'
+        });
+        CK.showToast(`✅ Access granted to ${name}!`, 'success');
+        modal.remove();
+        this.renderAccessTable(this._lastContainerId || 'adminAccessTable');
+      };
     },
 
-    revokeAccess(email) {
-      if (!confirm(`Revoke access for ${email}?`)) return;
-      this.removeCredential(email);
-      CK.showToast('Access revoked.', 'success');
-      this.renderAccessTable('adminAccessTable');
+    async revokeAccess(email) {
+      if (!confirm(`Revoke portal access for ${email}?\n\nThey will no longer be able to log in until a new password is set.`)) return;
+      await this.removeCredential(email);
+      CK.showToast('🔒 Access revoked.', 'success');
+      this.renderAccessTable(this._lastContainerId || 'adminAccessTable');
     },
 
     async bulkDialog(role) {
-      const pass = prompt(`Set one password for ALL ${role}s:`);
-      if (!pass) return;
-      const count = await this.bulkSetRolePassword(role, pass);
-      CK.showToast(`Password set for ${count} ${role}s!`, 'success');
-      this.renderAccessTable('adminAccessTable');
+      const _e = CK.esc || (s => s);
+      const modal = document.createElement('div');
+      modal.className = 'p-modal-overlay open';
+      modal.innerHTML = `
+        <div class="p-modal" style="max-width:440px">
+          <div class="p-modal-header"><div class="p-modal-title">🔑 Bulk Password — All ${_e(role)}s</div><button class="p-modal-close" onclick="this.closest('.p-modal-overlay').remove()">✕</button></div>
+          <div class="p-modal-body">
+            <div style="padding:10px 12px;background:rgba(245,158,11,.1);border-left:3px solid #f59e0b;border-radius:6px;font-size:.8rem;margin-bottom:14px">⚠️ This sets the <strong>same password</strong> for every ${_e(role)} account. Use for quick onboarding, then have users change it.</div>
+            <div class="p-form-group"><label class="p-form-label">Shared Password</label><input class="p-form-control" type="text" id="bulkpw_input" placeholder="Min 6 characters"></div>
+          </div>
+          <div class="p-modal-footer">
+            <button class="p-btn p-btn-ghost" onclick="this.closest('.p-modal-overlay').remove()">Cancel</button>
+            <button class="p-btn p-btn-blue" id="bulkpw_save">Apply to All ${_e(role)}s</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+      modal.querySelector('#bulkpw_input')?.focus();
+      modal.querySelector('#bulkpw_save').onclick = async () => {
+        const pass = modal.querySelector('#bulkpw_input').value.trim();
+        if (pass.length < 6) { CK.showToast('Password must be at least 6 characters.', 'warning'); return; }
+        const btn = modal.querySelector('#bulkpw_save');
+        btn.disabled = true; btn.textContent = '⏳ Applying…';
+        const count = await this.bulkSetRolePassword(role, pass);
+        if (CK.db && CK.db.saveAuditLog) CK.db.saveAuditLog({
+          user_id: CK.currentUser?.id || 'admin', user_name: CK.currentUser?.full_name || 'Admin',
+          action: 'BULK_SET_PASSWORD', resource: 'credentials', detail: `Set password for ${count} ${role}s`, severity: 'WARN'
+        });
+        CK.showToast(`✅ Password set for ${count} ${role}s!`, 'success');
+        modal.remove();
+        this.renderAccessTable(this._lastContainerId || 'adminAccessTable');
+      };
     },
 
     addParentDialog() {

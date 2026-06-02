@@ -956,6 +956,28 @@ ta: {
       this.analyzePgn(pgnText.trim(), targetBoard);
     },
 
+    /* Toggle the PGN Library browser panel and render the curated game cards
+       into it. Wired to the "📚 PGN Library" button in both the student and
+       coach Lab. Was referenced in HTML but never implemented → dead button. */
+    openPgnLibraryBrowser(boardId) {
+      const isCoach = (boardId || this._activeBoardId || '').startsWith('coach');
+      const browserId = isCoach ? 'coachPgnLibraryBrowser' : 'studentPgnLibraryBrowser';
+      const el = document.getElementById(browserId);
+      if (!el) { CK.showToast('PGN library panel not found.', 'error'); return; }
+      const isHidden = el.style.display === 'none' || !el.style.display;
+      if (isHidden) {
+        el.style.display = 'block';
+        if (window.CK && CK.pgnLibrary && CK.pgnLibrary.renderCards) {
+          CK.pgnLibrary.renderCards(browserId, boardId);
+        } else {
+          el.innerHTML = '<div style="padding:20px;text-align:center;opacity:.6;">PGN library is loading…</div>';
+        }
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else {
+        el.style.display = 'none';
+      }
+    },
+
     loadRandomPuzzle(boardId) {
       if (window.CK && CK.puzzlesPro && CK.puzzlesPro.PUZZLES) {
         const puzzles = CK.puzzlesPro.PUZZLES;

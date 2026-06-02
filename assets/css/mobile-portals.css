@@ -1,6 +1,11 @@
 /* mobile-portals.css — ChessKidoo Portal Mobile Optimization
-   Breakpoints: 900px → 768px → 600px → 480px → 390px
-   Applies to Admin, Coach, Student portals (portal-body)
+   ───────────────────────────────────────────────────────────
+   SIDEBAR STRATEGY: off-canvas drawer (handled in portals.css @900px
+   via .p-sidebar / .p-sidebar.open + .p-nav-backdrop + .p-menu-toggle).
+   This file ONLY handles content density (grids, tables, modals, forms,
+   touch targets). It must NOT re-layout the sidebar — that caused the
+   bottom-nav vs drawer conflict.
+   Breakpoints: 768px → 600px → 480px → 390px
    ─────────────────────────────────────────────────────────── */
 
 /* ═══════════════════════════════════════════════════════════
@@ -12,124 +17,37 @@
 }
 .portal-body * {
   -webkit-tap-highlight-color: transparent;
+}
+.portal-body button,
+.portal-body a,
+.portal-body .p-nav-item,
+.portal-body .p-btn {
   touch-action: manipulation;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   900px — TABLETS LANDSCAPE / SMALL LAPTOPS
+   900px — ICON-STRIP SIDEBAR (layout owned by portals.css)
+   portals.css collapses the sidebar to a 72px icon rail here and owns
+   the .p-topbar margins/padding. We ONLY tighten content here.
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 900px) {
-  /* Sidebar collapses to icon-only strip */
-  .portal-sidebar {
-    width: 64px;
-    min-width: 64px;
-  }
-  .portal-sidebar .sidebar-logo-text,
-  .portal-sidebar .nav-label,
-  .portal-sidebar .sidebar-user-info {
-    display: none;
-  }
-  .portal-sidebar .nav-item {
-    justify-content: center;
-    padding: 12px 0;
-  }
-  .portal-sidebar .nav-icon {
-    margin-right: 0;
-  }
-  .portal-content {
-    margin-left: 64px;
-    width: calc(100% - 64px);
-  }
   .p-stat-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  /* Hide the desktop search box on tablet/phone to free top-bar space */
+  .p-topbar-search { display: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════
    768px — TABLETS PORTRAIT / LARGE PHONES
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  /* ── Layout: bottom navigation replaces sidebar ── */
-  .portal-body {
-    flex-direction: column;
-    height: 100dvh;
-    overflow: hidden;
-  }
-  .portal-sidebar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100% !important;
-    min-width: 100% !important;
-    height: 60px;
-    z-index: 900;
-    flex-direction: row;
-    justify-content: space-around;
-    align-items: center;
-    border-top: 1px solid var(--p-border);
-    border-right: none;
-    padding: 0;
-    overflow: hidden;
-  }
-  .portal-sidebar .sidebar-header,
-  .portal-sidebar .sidebar-user,
-  .portal-sidebar .sidebar-logo-text,
-  .portal-sidebar .nav-label,
-  .portal-sidebar .sidebar-user-info,
-  .portal-sidebar .sidebar-footer {
-    display: none !important;
-  }
-  .portal-sidebar .sidebar-nav {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    height: 100%;
-    gap: 0;
-    padding: 0;
-    overflow: hidden;
-  }
-  .portal-sidebar .nav-item {
-    flex: 1;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 6px 2px 4px;
-    gap: 3px;
-    border-radius: 0;
-    min-height: 60px;
-    font-size: 0.6rem;
-  }
-  .portal-sidebar .nav-item .nav-icon {
-    font-size: 1.25rem;
-    margin: 0;
-  }
-  .portal-sidebar .nav-item.active {
-    background: rgba(232,184,75,0.12);
-    border-left: none;
-    border-top: 2px solid var(--p-gold);
-  }
-  /* Show condensed label on bottom nav */
-  .portal-sidebar .nav-item .nav-label {
-    display: block !important;
-    font-size: 0.58rem;
-    font-weight: 600;
-    line-height: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 56px;
-    text-align: center;
-  }
-
-  /* ── Content area fills above bottom nav ── */
-  .portal-content {
-    margin-left: 0 !important;
-    width: 100% !important;
-    height: calc(100dvh - 60px);
-    overflow-y: auto;
+  /* ── Content area ── */
+  .p-main {
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 0;
+  }
+  .p-content {
+    padding: 14px 14px 32px !important;
   }
 
   /* ── Panel header ── */
@@ -154,7 +72,6 @@
   .p-stat-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
-    padding: 12px 14px;
   }
   .p-stat-card {
     padding: 14px 12px;
@@ -163,9 +80,16 @@
     font-size: 1.7rem;
   }
 
+  /* ── Charts row stacks ── */
+  .p-charts-row,
+  .p-charts-grid {
+    grid-template-columns: 1fr !important;
+  }
+
   /* ── Tables: horizontal scroll ── */
   .p-table-wrap,
-  .p-table-container {
+  .p-table-container,
+  .p-data-table-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -201,7 +125,7 @@
     padding: 16px 20px 12px;
   }
 
-  /* ── Forms: prevent iOS zoom ── */
+  /* ── Forms: prevent iOS zoom (font must be ≥16px) ── */
   .p-input,
   .p-select,
   .p-textarea,
@@ -210,6 +134,8 @@
   input[type="number"],
   input[type="password"],
   input[type="search"],
+  input[type="date"],
+  input[type="tel"],
   select,
   textarea {
     font-size: 16px !important;
@@ -221,7 +147,6 @@
     min-height: 44px;
     padding: 10px 16px;
   }
-  /* Icon buttons must stay square (don't inherit text-button padding) */
   .p-icon-btn {
     width: 40px;
     height: 40px;
@@ -248,38 +173,28 @@
     padding: 12px 14px;
   }
 
-  /* ── Attendance table ── */
-  .att-table-wrap {
+  /* ── Attendance / reports tables ── */
+  .att-table-wrap,
+  .rpt-table-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
-  .att-table {
-    min-width: 480px;
-  }
-
-  /* ── Reports table ── */
-  .rpt-table-wrap {
-    overflow-x: auto;
-  }
-  .rpt-table {
-    min-width: 540px;
-  }
+  .att-table { min-width: 480px; }
+  .rpt-table { min-width: 540px; }
 
   /* ── Chart containers: cap height ── */
   .p-chart-wrap,
   .chart-container {
-    height: 220px !important;
-    max-height: 220px !important;
+    height: 240px !important;
+    max-height: 240px !important;
   }
 
-  /* ── Notification drawer ── */
+  /* ── Notification drawer: full width ── */
   .notif-drawer {
     width: 100%;
     right: -100%;
   }
-  .notif-drawer.open {
-    right: 0;
-  }
+  .notif-drawer.open { right: 0; }
 
   /* ── Profile header ── */
   .p-profile-header {
@@ -295,66 +210,26 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   600px — PHONES LANDSCAPE / SMALL TABLETS
+   600px — PHONES
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 600px) {
-  /* ── Portal top bar ── */
-  .portal-topbar {
-    padding: 10px 14px;
-  }
-  .portal-topbar-title {
-    font-size: 1rem;
-  }
+  /* .p-topbar layout (margins, hamburger spacing) owned by portals.css */
+  .p-topbar-title { font-size: 1rem; }
 
-  /* ── Panels ── */
-  .p-panel {
-    padding: 14px 12px;
-  }
+  .p-panel { padding: 14px 12px; }
+  .p-content { padding: 12px 12px 28px !important; }
 
-  /* ── Stat grid stays 2-col but smaller ── */
-  .p-stat-card {
-    padding: 12px 10px;
-  }
-  .p-stat-val {
-    font-size: 1.5rem;
-  }
-  .p-stat-label {
-    font-size: 0.72rem;
-  }
+  .p-stat-card { padding: 12px 10px; }
+  .p-stat-val { font-size: 1.5rem; }
+  .p-stat-label { font-size: 0.72rem; }
 
-  /* ── Leaderboard ── */
-  .leaderboard-row {
-    padding: 8px 10px;
-    gap: 8px;
-  }
+  .leaderboard-row { padding: 8px 10px; gap: 8px; }
+  .progress-card   { padding: 12px; }
+  .srs-card        { padding: 12px 14px; }
+  .goal-item       { padding: 10px 12px; }
+  .activity-item   { padding: 8px 10px; gap: 8px; }
+  .session-card    { padding: 12px; }
 
-  /* ── Progress cards ── */
-  .progress-card {
-    padding: 12px;
-  }
-
-  /* ── SRS queue ── */
-  .srs-card {
-    padding: 12px 14px;
-  }
-
-  /* ── Goals ── */
-  .goal-item {
-    padding: 10px 12px;
-  }
-
-  /* ── Timeline / activity ── */
-  .activity-item {
-    padding: 8px 10px;
-    gap: 8px;
-  }
-
-  /* ── Session cards ── */
-  .session-card {
-    padding: 12px;
-  }
-
-  /* ── 4-tile admin live summary: keep 2-col ── */
   .admin-live-summary {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
@@ -365,114 +240,53 @@
    480px — STANDARD PHONES
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 480px) {
-  /* ── Bottom nav: smaller items ── */
-  .portal-sidebar {
-    height: 56px;
-  }
-  .portal-sidebar .nav-item {
-    min-height: 56px;
-    padding: 4px 2px 2px;
-  }
-  .portal-sidebar .nav-item .nav-icon {
-    font-size: 1.1rem;
-  }
-  .portal-sidebar .nav-item .nav-label {
-    font-size: 0.52rem;
-  }
-  .portal-content {
-    height: calc(100dvh - 56px);
-  }
+  .p-panel { padding: 12px 10px; }
 
-  /* ── Content padding ── */
-  .p-panel {
-    padding: 12px 10px;
-  }
-
-  /* ── Stat grid: 2-col still but minimal padding ── */
   .p-stat-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
-    padding: 10px 10px;
   }
-  .p-stat-card {
-    padding: 10px 8px;
-  }
-  .p-stat-val {
-    font-size: 1.3rem;
-  }
-  .p-stat-icon {
-    font-size: 1.4rem;
-  }
+  .p-stat-card { padding: 10px 8px; }
+  .p-stat-val  { font-size: 1.3rem; }
+  .p-stat-icon { font-size: 1.4rem; }
 
-  /* ── Table font ── */
   .p-table th,
   .p-table td {
     font-size: 0.74rem;
     padding: 8px 8px;
   }
 
-  /* ── Buttons ── */
-  .p-btn {
-    font-size: 0.8rem;
-    padding: 9px 14px;
-  }
+  .p-btn { font-size: 0.8rem; padding: 9px 14px; }
 
-  /* ── Modals ── */
-  .p-modal {
-    max-height: 92dvh;
-  }
-  .p-modal-body {
-    padding: 14px 16px;
-  }
+  .p-modal { max-height: 92dvh; }
+  .p-modal-body { padding: 14px 16px; }
 
-  /* ── Panel section headers ── */
-  .p-section-title {
-    font-size: 0.95rem;
-  }
+  .p-section-title { font-size: 0.95rem; }
 
-  /* ── Coach student cards: compact ── */
   .coach-student-card .student-card-actions {
     flex-wrap: wrap;
     gap: 6px;
   }
 
-  /* ── Attendance inline buttons ── */
   .att-btn {
     padding: 5px 8px;
     font-size: 0.72rem;
     min-height: 32px;
   }
 
-  /* ── Admin: coach scorecards ── */
-  .adm-coach-card {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
+  .adm-coach-card { flex-wrap: wrap; gap: 8px; }
   .adm-coach-stats {
     width: 100%;
     justify-content: space-around;
     gap: 8px;
   }
-  .adm-coach-stat-val {
-    font-size: 0.95rem;
-  }
+  .adm-coach-stat-val { font-size: 0.95rem; }
 
-  /* ── Live panel tiles ── */
-  .admin-live-summary {
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-  }
-  .admin-live-tile {
-    padding: 10px 8px;
-  }
-  .admin-live-tile-val {
-    font-size: 1.3rem;
-  }
+  .admin-live-summary { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .admin-live-tile { padding: 10px 8px; }
+  .admin-live-tile-val { font-size: 1.3rem; }
 
-  /* ── Notification items ── */
-  .notif-item {
-    padding: 10px 12px;
-  }
+  .notif-item { padding: 10px 12px; }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -482,50 +296,29 @@
   .p-stat-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 6px;
-    padding: 8px;
   }
-  .p-stat-val {
-    font-size: 1.2rem;
-  }
-  .p-stat-card {
-    padding: 8px 6px;
-  }
-  .portal-topbar-title {
-    font-size: 0.88rem;
-  }
-  .p-modal-header h3 {
-    font-size: 1rem;
-  }
-  /* Admin live: 1-col for very small screens */
-  .admin-live-summary {
-    grid-template-columns: 1fr 1fr;
-    gap: 4px;
-  }
-  .admin-live-tile-val {
-    font-size: 1.1rem;
-  }
+  .p-stat-val { font-size: 1.2rem; }
+  .p-stat-card { padding: 8px 6px; }
+  .p-topbar-title { font-size: 0.88rem; }
+  .p-modal-header h3 { font-size: 1rem; }
+  .admin-live-summary { grid-template-columns: 1fr 1fr; gap: 4px; }
+  .admin-live-tile-val { font-size: 1.1rem; }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   iOS SAFE AREA INSETS (home indicator, notch)
+   iOS SAFE AREA INSETS (notch / home indicator)
    ═══════════════════════════════════════════════════════════ */
 @supports (padding: max(0px)) {
-  .portal-sidebar {
-    padding-bottom: max(0px, env(safe-area-inset-bottom));
-  }
-  .portal-content {
-    padding-left: max(0px, env(safe-area-inset-left));
-    padding-right: max(0px, env(safe-area-inset-right));
-  }
-  @media (max-width: 768px) {
-    .portal-sidebar {
-      height: calc(60px + env(safe-area-inset-bottom));
-    }
-    .portal-content {
-      height: calc(100dvh - 60px - env(safe-area-inset-bottom));
+  @media (max-width: 900px) {
+    .p-sidebar {
+      padding-bottom: max(0px, env(safe-area-inset-bottom));
     }
     .p-modal {
       padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+    .p-content {
+      padding-left: max(14px, env(safe-area-inset-left)) !important;
+      padding-right: max(14px, env(safe-area-inset-right)) !important;
     }
   }
 }
@@ -544,9 +337,7 @@
   .cc-live-layout { grid-template-columns: 1fr; }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   STUDENT DASHBOARD — MAIN + SIDEBAR LAYOUT
-   ═══════════════════════════════════════════════════════════ */
+/* Student dashboard main + sidebar */
 .st-dash-layout {
   display: grid;
   grid-template-columns: 1fr 320px;
@@ -562,10 +353,9 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   TOUCH DEVICE — DISABLE HOVER ANIMATIONS
+   TOUCH DEVICE — DISABLE HOVER LIFTS, ADD TAP FEEDBACK
    ═══════════════════════════════════════════════════════════ */
 @media (hover: none) and (pointer: coarse) {
-  .portal-sidebar .nav-item:hover,
   .p-stat-card:hover,
   .coach-student-card:hover,
   .adm-coach-card:hover,
@@ -577,7 +367,8 @@
     transform: none !important;
     box-shadow: none !important;
   }
-  .p-btn:active {
+  .p-btn:active,
+  .p-nav-item:active {
     transform: scale(0.97);
     opacity: 0.85;
     transition: transform 0.1s, opacity 0.1s;
@@ -588,24 +379,16 @@
    LANDSCAPE PHONE OVERRIDES
    ═══════════════════════════════════════════════════════════ */
 @media (max-height: 500px) and (orientation: landscape) {
-  .portal-sidebar {
-    height: 52px;
-  }
-  .portal-sidebar .nav-item .nav-label {
-    display: none !important;
-  }
-  .portal-sidebar .nav-item {
-    min-height: 52px;
-    padding: 6px 2px;
-  }
-  .portal-content {
-    height: calc(100dvh - 52px);
-  }
   .p-stat-grid {
     grid-template-columns: repeat(4, 1fr);
   }
   .p-modal {
     max-height: 95dvh;
     overflow-y: auto;
+  }
+  .p-chart-wrap,
+  .chart-container {
+    height: 200px !important;
+    max-height: 200px !important;
   }
 }

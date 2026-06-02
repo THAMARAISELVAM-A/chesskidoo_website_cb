@@ -23,14 +23,14 @@
 /* ─── Floating Launcher — identical size + style to scroll-to-top ─── */
 .tom-ai-launcher {
   position: fixed;
-  bottom: 32px;
-  right: 32px;
-  width: 44px;
-  height: 44px;
+  bottom: 28px;
+  right: 28px;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
   background: linear-gradient(135deg, #E8A020 0%, #F5C842 100%);
-  border: none;
-  box-shadow: 0 6px 18px rgba(232,160,32,0.45);
+  border: 2px solid rgba(255,255,255,0.35);
+  box-shadow: 0 8px 22px rgba(232,160,32,0.5);
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -44,11 +44,12 @@
 }
 .tom-ai-launcher:hover {
   transform: scale(1.1) translateY(-2px);
-  box-shadow: 0 9px 22px rgba(232,160,32,0.6);
+  box-shadow: 0 12px 28px rgba(232,160,32,0.65);
 }
+.tom-ai-launcher:active { transform: scale(0.95); }
 .tom-ai-launcher svg { display: block; }
 .tom-ai-launcher .tom-launcher-knight {
-  width: 22px; height: 22px;
+  width: 32px; height: 32px;
   display: grid; place-items: center;
   color: #1A1209;
 }

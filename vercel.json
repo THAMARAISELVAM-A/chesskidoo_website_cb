@@ -3,15 +3,10 @@
   "framework": null,
   "buildCommand": null,
   "outputDirectory": ".",
-  "routes": [
-    { "src": "/sw.js",          "dest": "/sw.js" },
-    { "src": "/manifest.json",  "dest": "/manifest.json" },
-    { "src": "/robots.txt",     "dest": "/robots.txt" },
-    { "src": "/sitemap.xml",    "dest": "/sitemap.xml" },
-    { "src": "/assets/(.*)", "dest": "/assets/$1" },
-    { "src": "/public/(.*)",  "dest": "/public/$1" },
-    { "src": "/(.*)\\.html", "dest": "/$1.html" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/((?!assets/|public/|sw\\.js|manifest\\.json|robots\\.txt|sitemap\\.xml|.*\\.[a-zA-Z0-9]+$).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
@@ -25,7 +20,7 @@
         { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://js.razorpay.com https://checkout.razorpay.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://hcjuyqicftkgpiyrkscr.supabase.co https://lichess.org https://app.fide.com https://ratings.fide.com https://api.emailjs.com wss://hcjuyqicftkgpiyrkscr.supabase.co; frame-src https://lichess.org https://js.razorpay.com https://checkout.razorpay.com; worker-src 'self' blob:; manifest-src 'self'"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://js.razorpay.com https://checkout.razorpay.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://bqlnsununvsyksvhczrm.supabase.co https://lichess.org https://explorer.lichess.ovh https://tablebase.lichess.ovh https://api.chess.com https://app.fide.com https://ratings.fide.com https://api.emailjs.com wss://bqlnsununvsyksvhczrm.supabase.co; frame-src https://lichess.org https://js.razorpay.com https://checkout.razorpay.com; worker-src 'self' blob:; manifest-src 'self'"
         }
       ]
     },
@@ -45,6 +40,12 @@
       "source": "/assets/img/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    },
+    {
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
       ]
     }
   ]

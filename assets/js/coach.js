@@ -376,21 +376,29 @@ CK.coach = {
       const _e = CK.esc || (s => s);
       files.forEach(f => {
         const typeBadge = f.type === 'Homework' ? 'p-badge-rose' : 'p-badge-blue';
-        const publicUrl = f.file_name && window.supabaseClient
+        // Resolve the openable URL: explicit url > Supabase storage public url > stored file_name-as-link
+        const storageUrl = f.file_name && window.supabaseClient && !/^https?:/i.test(f.file_name || '')
           ? (window.supabaseClient.storage.from('documents').getPublicUrl(f.file_name).data?.publicUrl || '')
           : '';
-        const dlAttr = publicUrl
-          ? `onclick="window.open('${_e(publicUrl)}','_blank')"`
-          : `onclick="CK.showToast('File not available yet.','error')"`;
+        const fileUrl = f.url || storageUrl || (/^https?:/i.test(f.file_name || '') ? f.file_name : '');
+        const refLink = f.link || '';
+        const fileBtn = fileUrl
+          ? `<button class="p-btn p-btn-ghost p-btn-sm" onclick="window.open('${_e(fileUrl)}','_blank')">📄 Open</button>`
+          : `<button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.showToast('File not available yet.','error')">📄 Open</button>`;
+        const linkBtn = refLink
+          ? `<button class="p-btn p-btn-blue p-btn-sm" onclick="window.open('${_e(refLink)}','_blank')">🔗 Link</button>`
+          : '';
         html += `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; background:var(--p-surface3); border-radius:8px;">
-              <div>
-                <div style="font-weight:600; color:var(--p-text); display:flex; align-items:center; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:15px; background:var(--p-surface3); border-radius:8px;">
+              <div style="min-width:0;">
+                <div style="font-weight:600; color:var(--p-text); display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                   📄 ${_e(f.name)} <span class="p-badge ${typeBadge}" style="font-size:0.7rem; padding: 2px 6px;">${_e(f.type || 'Material')}</span>
+                  ${f.difficulty ? `<span class="p-badge p-badge-gold" style="font-size:0.7rem;padding:2px 6px;">${_e(f.difficulty)}</span>` : ''}
                 </div>
-                <div style="font-size:0.85rem; color:var(--p-text-muted); margin-top:4px;">📝 ${_e(f.notes || '')}</div>
+                ${f.notes ? `<div style="font-size:0.85rem; color:var(--p-text-muted); margin-top:4px;">📝 ${_e(f.notes)}</div>` : ''}
+                ${refLink ? `<div style="font-size:0.78rem; color:var(--p-blue); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:320px;">🔗 ${_e(refLink)}</div>` : ''}
               </div>
-              <button class="p-btn p-btn-ghost p-btn-sm" ${dlAttr}>Download</button>
+              <div style="display:flex; gap:6px; flex-shrink:0;">${linkBtn}${fileBtn}</div>
             </div>
         `;
       });
@@ -951,6 +959,17 @@ CK.coach = {
 
     // Effectiveness scorecard
     const cardEl = document.getElementById('coachEffectivenessCard');
+    if (cardEl && !CK.ai) {
+      const myStudents = allStudents.filter(s => (s.coach || '').toLowerCase() === coachName.toLowerCase());
+      const avgRating = myStudents.length ? Math.round(myStudents.reduce((s, u) => s + (parseInt(u.rating) || 800), 0) / myStudents.length) : 0;
+      const paidPct = myStudents.length ? Math.round(myStudents.filter(s => s.status === 'Paid').length / myStudents.length * 100) : 0;
+      cardEl.innerHTML = `
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:16px; text-align:center;">
+          <div style="padding:16px;border-radius:10px;background:rgba(255,255,255,0.03);"><div style="font-size:2rem;font-weight:900;color:var(--p-teal);">${myStudents.length}</div><div style="font-size:0.75rem;color:var(--p-text-muted);">Students</div></div>
+          <div style="padding:16px;border-radius:10px;background:rgba(255,255,255,0.03);"><div style="font-size:2rem;font-weight:900;color:var(--p-gold);">${avgRating}</div><div style="font-size:0.75rem;color:var(--p-text-muted);">Avg ELO</div></div>
+          <div style="padding:16px;border-radius:10px;background:rgba(255,255,255,0.03);"><div style="font-size:2rem;font-weight:900;">${paidPct}%</div><div style="font-size:0.75rem;color:var(--p-text-muted);">Retention</div></div>
+        </div>`;
+    }
     if (cardEl && CK.ai) {
       const eff = await CK.ai.getCoachEffectiveness(coachName);
       if (!eff) { cardEl.innerHTML = '<div style="text-align:center;opacity:.4;padding:30px;">No students assigned yet</div>'; return; }
@@ -1002,6 +1021,9 @@ CK.coach = {
 
     // Weakness overview
     const weakEl = document.getElementById('coachWeaknessOverview');
+    if (weakEl && !CK.ai) {
+      weakEl.innerHTML = '<div style="text-align:center;opacity:.4;padding:20px;">AI analysis engine loading...</div>';
+    }
     if (weakEl && CK.ai) {
       const myStudents = allStudents.filter(s => (s.coach || '').toLowerCase() === coachName.toLowerCase());
       if (myStudents.length) {

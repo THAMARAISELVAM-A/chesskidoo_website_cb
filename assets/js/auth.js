@@ -85,9 +85,15 @@
         isOfflineMode = true;
       }
 
-      // 2. Per-user credential check (SHA-256 hashes stored in localStorage)
+      // 2. Per-user credential check (Supabase credentials table → localStorage fallback)
       if (!profile && isOfflineMode) {
-        const creds = JSON.parse(localStorage.getItem('ck_user_credentials') || '{}');
+        let creds = {};
+        if (CK.db && CK.db.getCredentials) {
+          try { creds = await CK.db.getCredentials(); } catch (_) {}
+        }
+        if (!creds || Object.keys(creds).length === 0) {
+          creds = JSON.parse(localStorage.getItem('ck_user_credentials') || '{}');
+        }
         const storedHash = creds[email];
         if (storedHash) {
           const encoder = new TextEncoder();
@@ -95,10 +101,10 @@
           const hashBuffer = await crypto.subtle.digest('SHA-256', data);
           const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
           if (hashHex === storedHash) {
-            const allUsers = JSON.parse(localStorage.getItem('ck_db_users') || '[]');
+            const allUsers = (CK.db && CK.db.getProfiles) ? await CK.db.getProfiles() : JSON.parse(localStorage.getItem('ck_db_users') || '[]');
             profile = allUsers.find(u => (u.email || '').toLowerCase() === email) || null;
             if (!profile && email === 'admin@gmail.com') {
-              profile = { id: window.APP_CONFIG?.ADMIN_UUID || 'admin', full_name: 'Academy Admin', email, role: 'admin', userid: 'admin' };
+              profile = { id: window.APP_CONFIG?.ADMIN_UUID || 'a0000000-0000-4000-8000-000000000001', full_name: 'Academy Admin', email, role: 'admin', userid: 'admin' };
             }
           }
         }
@@ -115,6 +121,15 @@
       const role = (profile.role || 'student').toLowerCase();
       CK.showToast(`Welcome back, ${profile.full_name || 'Champion'}! ♟`, 'success');
 
+      if (CK.db && CK.db.saveAuditLog) {
+        CK.db.saveAuditLog({
+          user_id: profile.id, user_name: profile.full_name || email,
+          action: 'LOGIN', resource: 'auth',
+          detail: `${profile.full_name || email} logged in as ${role}`,
+          severity: 'INFO'
+        });
+      }
+
       setTimeout(() => {
         CK.showPage(`${role}-page`);
         if (CK.notifs) CK.notifs.init(profile);
@@ -126,6 +141,14 @@
 
     } catch (err) {
       _recordFail(email);
+      if (CK.db && CK.db.saveAuditLog) {
+        CK.db.saveAuditLog({
+          user_id: 'unknown', user_name: email,
+          action: 'FAILED_LOGIN', resource: 'auth',
+          detail: `Failed login attempt for ${email}`,
+          severity: 'WARN'
+        });
+      }
       CK.showToast(err.message || 'Invalid credentials. Please try again.', 'error');
     } finally {
       btn.textContent = 'Sign In';

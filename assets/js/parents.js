@@ -38,6 +38,25 @@ CK.parents = (() => {
      INIT
   ═════════════════════════════════════════════════════════ */
 
+  let _parentRefreshTimer = null;
+
+  function startAutoRefresh() {
+    stopAutoRefresh();
+    _parentRefreshTimer = setInterval(async () => {
+      if (!_childProfile) return;
+      const activePanel = document.querySelector('#parent-page .par-panel.active');
+      if (!activePanel) return;
+      const panelId = activePanel.id.replace('par-panel-', '');
+      if (panelId === 'dashboard') { await renderChildProfile(); }
+      if (panelId === 'progress') { await renderProgress(); }
+      if (panelId === 'attendance') { await renderAttendance(); }
+    }, 45000);
+  }
+
+  function stopAutoRefresh() {
+    if (_parentRefreshTimer) { clearInterval(_parentRefreshTimer); _parentRefreshTimer = null; }
+  }
+
   async function init() {
     const currentUser = CK.currentUser || JSON.parse(localStorage.getItem('ck_user') || 'null');
     if (!currentUser || currentUser.role !== 'parent') {
@@ -56,6 +75,7 @@ CK.parents = (() => {
       renderReports();
       renderFees();
       renderFeedbackList();
+      startAutoRefresh();
     } else {
       const content = document.getElementById('parentMainContent');
       if (content) content.innerHTML = `
@@ -94,7 +114,12 @@ CK.parents = (() => {
 
   /* ── AI Weekly Report ── */
   async function renderAIWeekly() {
-    if (!_childProfile || !CK.ai) return;
+    if (!_childProfile) return;
+    if (!CK.ai) {
+      const el = document.getElementById('parAIWeeklyReport');
+      if (el) el.innerHTML = '<div class="cls-empty">AI analysis engine is loading. Please try again in a moment.</div>';
+      return;
+    }
     try {
       const report = await CK.ai.generateWeeklyReport(_childProfile.id);
       CK.ai.renderWeeklyReport('parAIWeeklyReport', report);
@@ -901,7 +926,7 @@ CK.parents = (() => {
     renderSchedule, renderReports, renderFeedbackList, submitFeedback,
     renderAllFeedback, replyFeedback, renderFees, payChildFeesApp,
     copyAcademyUpi, confirmChildPayment, downloadReceipt,
-    generateAIReport: renderAIWeekly
+    generateAIReport: renderAIWeekly, startAutoRefresh, stopAutoRefresh
   };
 })();
 

@@ -25,19 +25,20 @@
   TOM._svgInstance = 0;
 
   // ────────────────────────────────────────────────────────────────
-  // 0. Staunton knight icon — clean, readable at 22px on gold disc
+  // 0. Staunton PAWN icon — clean, bold, instantly readable on the gold disc
   // ────────────────────────────────────────────────────────────────
   TOM.knightSVG = function (variant) {
     variant = variant || 'dark';
     const fill = variant === 'light' ? '#fffdf6' : '#1A1209';
-    const eye  = variant === 'light' ? '#1A1209' : '#F5C842';
     return `
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="${fill}">
-        <path d="M15.5 21H4.5l1-3.5h9zM5 17.5 L4 15h12.5l-1 2.5z"/>
-        <path d="M17 14.5 c-.3-1-.6-1.9-1-2.8 c-.7-1.6-1.7-3-3-4.2 L14 5 L11.5 6 L11 3.5 L8.5 6.2 c-1.4 1-2.5 2.4-3.2 4 C4.8 12 4.7 13.4 5 14.5z"/>
-        <circle cx="14" cy="9.5" r=".7" fill="${eye}"/>
+        <circle cx="12" cy="6" r="3.25"/>
+        <path d="M9.15 8.55c-.62.72-1.02 1.55-1.02 2.5 0 1.12.62 2.05 1.55 2.66-.72.5-1.24 1.6-1.55 2.94-.3 1.28-.62 2.62-1.28 3.6h9.3c-.66-.98-.98-2.32-1.28-3.6-.31-1.34-.83-2.44-1.55-2.94.93-.61 1.55-1.54 1.55-2.66 0-.95-.4-1.78-1.02-2.5z"/>
+        <path d="M6.4 20.05h11.2c.42 0 .78.29.88.7l.32 1.35c.1.42-.22.82-.66.82H5.86c-.44 0-.76-.4-.66-.82l.32-1.35c.1-.41.46-.7.88-.7z"/>
       </svg>`;
   };
+  // Backward-compatible alias for any new call sites
+  TOM.pawnSVG = TOM.knightSVG;
 
   // ────────────────────────────────────────────────────────────────
   // 1. Context detector — which portal/page is the user on?

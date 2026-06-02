@@ -12,6 +12,28 @@ CK.schedulePro = (() => {
   const uid  = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
   const today = () => new Date().toISOString().split('T')[0];
 
+  /* Robust date+time parser — handles both 24h ("17:00") and 12h ("5:00 PM")
+     time strings so meetings never render as "Invalid Date". */
+  const parseDateTime = (dateStr, timeStr) => {
+    if (!dateStr) return new Date(NaN);
+    let t = (timeStr || '12:00').trim();
+    const ampm = t.match(/(\d{1,2}):(\d{2})\s*([AaPp][Mm])/);
+    if (ampm) {
+      let h = parseInt(ampm[1], 10);
+      const min = ampm[2];
+      const isPM = /[Pp]/.test(ampm[3]);
+      if (isPM && h < 12) h += 12;
+      if (!isPM && h === 12) h = 0;
+      t = String(h).padStart(2, '0') + ':' + min;
+    } else {
+      // Strip any stray "AM/PM" or extra text, keep HH:MM
+      const hm = t.match(/(\d{1,2}):(\d{2})/);
+      t = hm ? hm[1].padStart(2, '0') + ':' + hm[2] : '12:00';
+    }
+    const dt = new Date(`${dateStr}T${t}`);
+    return isNaN(dt) ? new Date(`${dateStr}T12:00`) : dt;
+  };
+
   // No seed data — meetings are created by real coaches via the Add Session form
 
   /* ═══════════════════════════════════════════════════════
@@ -33,7 +55,7 @@ CK.schedulePro = (() => {
     const _e = CK.esc || (s => s);
     const renderMeeting = (m, isPast) => {
       const typeIcon = { class:'🎓', oneOnOne:'👤', tournament:'🏆', review:'📋' }[m.type] || '📅';
-      const dt = new Date(`${m.date}T${m.time}`);
+      const dt = parseDateTime(m.date, m.time);
       const dateStr = dt.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
       const timeStr = dt.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
       return `
@@ -196,7 +218,7 @@ CK.schedulePro = (() => {
 
     const _e2 = CK.esc || (s => s);
     el.innerHTML = upcoming.map(m => {
-      const dt = new Date(`${m.date}T${m.time}`);
+      const dt = parseDateTime(m.date, m.time);
       const isToday = m.date === today();
       const isTomorrow = m.date === new Date(Date.now()+86400000).toISOString().split('T')[0];
       const dayLabel = isToday ? '🔴 TODAY' : isTomorrow ? '🟡 TOMORROW' : dt.toLocaleDateString('en-US',{weekday:'long'});

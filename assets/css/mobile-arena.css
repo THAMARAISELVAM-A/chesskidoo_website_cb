@@ -47,12 +47,26 @@
     max-width: 560px;
     margin: 0 auto;
     gap: 8px;
+    align-items: stretch;
   }
 
   /* Eval bar — thinner on touch screens, stretches to board height */
   .eval-bar-container {
     width: 14px !important;
     margin-right: 0 !important;
+    min-height: 0 !important;       /* don't force its own tall row when wrapped */
+  }
+
+  /* CRITICAL FIX: stop the board from wrapping below the eval bar.
+     The desktop rule pins width:min(640px,75vh) which is too wide to sit
+     beside the eval bar on a narrow row, so the board wrapped to row 2 and
+     the eval bar floated alone above it. Make the board flex-shrink to fill
+     the remaining row width instead. */
+  .arena-board-container > div[style*="fit-content"] {
+    width: auto !important;
+    max-width: calc(100% - 30px) !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
   }
 
   /* Moves panel (inline-styled wrapper) wraps to its own row below board */

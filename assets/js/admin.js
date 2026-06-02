@@ -210,7 +210,8 @@ CK.admin = {
       coachattendance: 'Coach Attendance',
       analytics: 'AI Analytics & Insights',
       leaderboard: 'Leaderboard & XP',
-      audit: 'Security & Audit Logs'
+      audit: 'Security & Audit Logs',
+      logs: 'Real-Time System Logs'
     };
     const titleEl = document.getElementById('adminPanelTitle');
     if (titleEl) titleEl.innerText = titles[panelId] || 'Admin';
@@ -247,6 +248,7 @@ CK.admin = {
     if (panelId === 'analytics') this.renderAIAnalytics();
     if (panelId === 'leaderboard') this.renderLeaderboardPanel();
     if (panelId === 'audit') this.renderAuditPanel();
+    if (panelId === 'logs') { CK.liveLogViewer?.render('adminLiveLogsContainer'); }
     if (panelId === 'settings') this.loadSettings();
   },
 
@@ -1281,6 +1283,24 @@ CK.admin = {
   },
 
   // Switch between File-upload and URL/Link source in the Upload Resource modal
+  // Open the shared Upload Resource modal with a context tag ('admin' | 'coach')
+  openUploadModal(context = 'admin') {
+    this._uploadContext = context;
+    const form = document.querySelector('#uploadModal form');
+    if (form) {
+      form.reset();
+      // Pre-fill coach's batch/level if a coach is uploading
+      if (context === 'coach' && CK.coach?.coachProfile) {
+        const cp = CK.coach.coachProfile;
+        if (form.level && cp.level) form.level.value = cp.level;
+        if (form.batch && cp.batches) form.batch.value = (cp.batches.split(',')[0] || '').trim();
+        this.refreshUploadStudentList(form);
+      }
+    }
+    this.setUploadSource('file');
+    CK.openModal('uploadModal');
+  },
+
   setUploadSource(source) {
     document.querySelectorAll('#uploadModal .ck-source-btn').forEach(btn => {
       const isActive = btn.dataset.source === source;
@@ -1347,10 +1367,17 @@ CK.admin = {
         }
       }
 
+      // Optional reference link — always captured, works alongside file or link
+      const refLink = (form.refLink?.value || '').trim();
+      if (refLink) {
+        try { new URL(refLink); } catch (_) { throw new Error('The reference link doesn\'t look like a valid URL.'); }
+      }
+
       await CK.db.saveDocument({
         name: customName,
         file_name: filePath,
         url: resourceUrl,
+        link: refLink,
         kind: storageKind,
         level: targetLevel,
         batch: batchName,
@@ -1360,6 +1387,7 @@ CK.admin = {
         due_date: form.dueDate ? form.dueDate.value : '',
         xp_reward: form.xpReward ? parseInt(form.xpReward.value) || 50 : 50,
         notes: form.notes ? form.notes.value : '',
+        coach: (this._uploadContext === 'coach' && CK.coach?.coachProfile?.full_name) || '',
         created_at: new Date().toISOString()
       });
 
@@ -1961,6 +1989,12 @@ CK.admin = {
   async renderAIAnalytics() {
     const students = (await CK.db.getProfiles('student')) || [];
     const _e = CK.esc || (s => s);
+
+    if (!CK.ai) {
+      const ids = ['adminEngagementOverview', 'adminDropoutRisk', 'adminCoachEffectiveness'];
+      ids.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = '<div style="text-align:center;opacity:.4;padding:20px;">AI analytics engine loading... Please revisit this panel shortly.</div>'; });
+      return;
+    }
 
     // Engagement Overview
     const engEl = document.getElementById('adminEngagementOverview');

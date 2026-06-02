@@ -1,0 +1,195 @@
+/* enterprise.css — Premium Enterprise UI Components
+   Command Bar, Live Log Viewer, Stockfish Panel
+   ---------------------------------------------------------- */
+
+/* ═══ COMMAND BAR (Cmd+K) ═══ */
+.ck-cmd-overlay {
+  position: fixed; inset: 0; z-index: 99999;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding-top: 15vh; opacity: 0; pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+.ck-cmd-overlay.open { opacity: 1; pointer-events: all; }
+.ck-cmd-container {
+  width: 580px; max-width: 92vw;
+  background: var(--p-card-bg, #1e1e2e); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 16px; box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+  overflow: hidden; transform: translateY(-10px) scale(0.97);
+  transition: transform 0.15s ease;
+}
+.ck-cmd-overlay.open .ck-cmd-container { transform: translateY(0) scale(1); }
+.ck-cmd-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.ck-cmd-icon { font-size: 1.1rem; opacity: 0.5; }
+.ck-cmd-input {
+  flex: 1; background: transparent; border: none; outline: none;
+  font-size: 1rem; color: var(--p-text, #e2e8f0);
+  font-family: inherit;
+}
+.ck-cmd-input::placeholder { color: rgba(255,255,255,0.35); }
+.ck-cmd-kbd {
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 5px; padding: 2px 8px; font-size: 0.7rem;
+  color: rgba(255,255,255,0.5); font-family: monospace;
+}
+.ck-cmd-results {
+  max-height: 340px; overflow-y: auto; padding: 8px 0;
+}
+.ck-cmd-group-label {
+  padding: 6px 18px 4px; font-size: 0.7rem; text-transform: uppercase;
+  letter-spacing: 0.06em; color: rgba(255,255,255,0.4); font-weight: 600;
+}
+.ck-cmd-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 18px; cursor: pointer; transition: background 0.1s;
+}
+.ck-cmd-item:hover, .ck-cmd-item.active {
+  background: rgba(217,119,6,0.12);
+}
+.ck-cmd-item.active { border-left: 3px solid var(--p-gold, #d97706); }
+.ck-cmd-item-icon { font-size: 1.1rem; width: 24px; text-align: center; }
+.ck-cmd-item-label { font-size: 0.88rem; color: var(--p-text, #e2e8f0); }
+.ck-cmd-empty { padding: 30px; text-align: center; opacity: 0.4; font-size: 0.9rem; }
+.ck-cmd-footer {
+  display: flex; gap: 16px; padding: 10px 18px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  font-size: 0.72rem; color: rgba(255,255,255,0.4);
+}
+.ck-cmd-footer kbd {
+  background: rgba(255,255,255,0.08); border-radius: 3px;
+  padding: 1px 5px; font-family: monospace; margin-right: 3px;
+}
+
+/* ═══ LIVE LOG VIEWER ═══ */
+.ck-log-controls {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+  margin-bottom: 14px; padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.ck-log-filters { display: flex; gap: 4px; }
+.ck-log-filter-btn {
+  padding: 5px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
+  background: transparent; color: var(--p-text, #e2e8f0); cursor: pointer;
+  font-size: 0.75rem; transition: all 0.15s;
+}
+.ck-log-filter-btn:hover { background: rgba(255,255,255,0.05); }
+.ck-log-filter-btn.active { background: rgba(217,119,6,0.15); border-color: var(--p-gold, #d97706); color: var(--p-gold); }
+.ck-log-search { flex: 1; min-width: 150px; }
+.ck-log-actions { display: flex; gap: 6px; align-items: center; }
+.ck-log-count { font-size: 0.75rem; opacity: 0.5; margin-left: 8px; }
+.ck-log-table-wrap { overflow-x: auto; max-height: 500px; overflow-y: auto; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); }
+.ck-log-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.ck-log-table thead th {
+  position: sticky; top: 0; z-index: 2;
+  background: rgba(15,15,30,0.95); padding: 10px 12px;
+  text-align: left; font-size: 0.72rem; text-transform: uppercase;
+  letter-spacing: 0.04em; color: rgba(255,255,255,0.5); font-weight: 600;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.ck-log-row { border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.1s; }
+.ck-log-row:hover { background: rgba(255,255,255,0.03); }
+.ck-log-row td { padding: 8px 12px; vertical-align: middle; }
+.ck-log-sev {
+  display: inline-block; padding: 2px 7px; border-radius: 4px;
+  font-size: 0.65rem; font-weight: 700; color: #fff; text-transform: uppercase;
+}
+.ck-log-ts { font-family: monospace; font-size: 0.72rem; opacity: 0.7; white-space: nowrap; }
+.ck-log-user { font-weight: 500; }
+.ck-log-action {
+  background: rgba(59,130,246,0.1); padding: 2px 8px; border-radius: 4px;
+  font-size: 0.72rem; font-family: monospace; white-space: nowrap;
+}
+.ck-log-detail { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ck-log-resource { font-size: 0.72rem; opacity: 0.6; font-family: monospace; }
+
+/* Log row severity-specific highlight */
+.ck-log-row[data-severity="WARN"] { border-left: 3px solid #f59e0b; }
+.ck-log-row[data-severity="SECURITY_ALERT"] { border-left: 3px solid #ef4444; background: rgba(239,68,68,0.03); }
+.ck-log-row[data-severity="ENGINE_CRITICAL"] { border-left: 3px solid #8b5cf6; }
+
+/* ═══ STOCKFISH PANEL ═══ */
+.ck-sf-panel {
+  position: fixed; bottom: 20px; right: 20px; z-index: 9990;
+  width: 420px; max-width: 92vw;
+  background: var(--p-card-bg, #1e1e2e); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  transform: translateY(20px) scale(0.95); opacity: 0; pointer-events: none;
+  transition: all 0.2s ease;
+}
+.ck-sf-panel.open { transform: translateY(0) scale(1); opacity: 1; pointer-events: all; }
+.ck-sf-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-weight: 600; font-size: 0.9rem;
+}
+.ck-sf-close {
+  background: none; border: none; color: var(--p-text, #e2e8f0);
+  font-size: 1.2rem; cursor: pointer; opacity: 0.5;
+}
+.ck-sf-close:hover { opacity: 1; }
+.ck-sf-body { padding: 16px 18px; }
+.ck-sf-fen-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.ck-sf-fen-row input { flex: 1; }
+.ck-sf-eval {
+  background: rgba(0,0,0,0.3); border-radius: 10px;
+  padding: 20px; text-align: center; margin-bottom: 12px;
+}
+.ck-sf-eval-score { font-size: 2.2rem; font-weight: 800; font-family: monospace; }
+.ck-sf-eval-detail { font-size: 0.78rem; opacity: 0.6; margin-top: 6px; }
+.ck-sf-pv {
+  font-family: monospace; font-size: 0.75rem; padding: 10px;
+  background: rgba(0,0,0,0.2); border-radius: 6px;
+  color: rgba(255,255,255,0.6); max-height: 60px; overflow-y: auto;
+  word-break: break-all;
+}
+
+/* ═══ LIGHT THEME OVERRIDES ═══ */
+[data-theme="light"] .ck-cmd-overlay { background: rgba(0,0,0,0.4); }
+[data-theme="light"] .ck-cmd-container { background: #fff; border-color: rgba(0,0,0,0.1); }
+[data-theme="light"] .ck-cmd-input { color: #1e293b; }
+[data-theme="light"] .ck-cmd-item:hover, [data-theme="light"] .ck-cmd-item.active { background: rgba(217,119,6,0.08); }
+[data-theme="light"] .ck-cmd-item-label { color: #1e293b; }
+[data-theme="light"] .ck-sf-panel { background: #fff; }
+[data-theme="light"] .ck-log-table thead th { background: #f8fafc; color: #475569; }
+[data-theme="light"] .ck-log-row:hover { background: rgba(0,0,0,0.02); }
+[data-theme="light"] .ck-sf-eval { background: #f1f5f9; }
+[data-theme="light"] .ck-sf-pv { background: #f1f5f9; color: #475569; }
+
+/* ═══ Cmd+K hint badge in topbar ═══ */
+.ck-cmdk-hint {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 6px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.72rem; color: rgba(255,255,255,0.5); cursor: pointer;
+  transition: all 0.15s;
+}
+.ck-cmdk-hint:hover { background: rgba(217,119,6,0.1); border-color: var(--p-gold, #d97706); color: var(--p-gold); }
+.ck-cmdk-hint kbd { font-family: monospace; font-size: 0.68rem; }
+
+/* ═══ ACCESS MANAGEMENT STAT CARDS ═══ */
+.acc-stats-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px;
+}
+.acc-stat-card {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--p-surface, rgba(255,255,255,0.03));
+  border: 1px solid var(--p-border, rgba(255,255,255,0.08));
+  border-radius: 12px; padding: 14px 16px;
+}
+.acc-stat-icon {
+  width: 42px; height: 42px; border-radius: 10px;
+  display: grid; place-items: center; font-size: 1.2rem; flex-shrink: 0;
+}
+.acc-stat-val { font-size: 1.35rem; font-weight: 800; color: var(--p-text, #e8edf5); line-height: 1.1; }
+.acc-stat-label { font-size: 0.72rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* ═══ Responsive ═══ */
+@media (max-width: 768px) {
+  .ck-cmd-container { width: 96vw; border-radius: 12px; }
+  .ck-sf-panel { width: 95vw; right: 2.5vw; bottom: 10px; }
+  .ck-log-controls { flex-direction: column; align-items: stretch; }
+  .acc-stats-row { grid-template-columns: repeat(2, 1fr); }
+}

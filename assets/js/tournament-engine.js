@@ -455,21 +455,34 @@ CK.tournament = (() => {
     }
 
     el.innerHTML = tournaments.map(t => {
-      const fmt = FORMATS[t.format] || FORMATS.swiss;
-      const statusColors = { registration: '#3b82f6', active: '#22c55e', completed: '#9ca3af' };
+      // Tournaments can arrive in two shapes: the engine's native model
+      // (players[], maxPlayers, timeControl, currentRound) OR the admin/
+      // localStorage model (participants, format string, no players array).
+      // Normalise everything defensively so a missing field never throws.
+      const fmtKey  = (t.format || 'swiss').toString().toLowerCase();
+      const fmt     = FORMATS[fmtKey] || FORMATS[t.format] || FORMATS.swiss || { icon: '🏆', name: t.format || 'Swiss' };
+      const status  = (t.status || 'registration').toString().toLowerCase();
+      const statusColors = { registration: '#3b82f6', upcoming: '#3b82f6', active: '#22c55e', completed: '#9ca3af', cancelled: '#ef4444' };
+      const playerCount = Array.isArray(t.players) ? t.players.length
+                        : Array.isArray(t.participants) ? t.participants.length
+                        : (parseInt(t.participants) || 0);
+      const maxPlayers  = t.maxPlayers || t.max || '∞';
+      const rounds      = t.rounds || '—';
+      const tc          = t.timeControl || t.time_control || t.format || '';
+      const tid         = _e(String(t.id == null ? '' : t.id));
       return `
-        <div class="p-card" style="margin-bottom:12px; cursor:pointer;" onclick="CK.tournament.showDetail('${t.id}')">
+        <div class="p-card" style="margin-bottom:12px; cursor:pointer;" onclick="CK.tournament.showDetail('${tid}')">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div>
-              <div style="font-size:1.1rem; font-weight:700;">${fmt.icon} ${_e(t.name)}</div>
-              <div style="font-size:0.8rem; opacity:0.6;">${_e(fmt.name)} · ${t.rounds} rounds · ${_e(t.timeControl)}</div>
+              <div style="font-size:1.1rem; font-weight:700;">${fmt.icon || '🏆'} ${_e(t.name || 'Tournament')}</div>
+              <div style="font-size:0.8rem; opacity:0.6;">${_e(fmt.name || 'Swiss')} · ${_e(String(rounds))} rounds${tc ? ' · ' + _e(String(tc)) : ''}</div>
             </div>
             <div style="text-align:right;">
-              <span class="p-badge" style="background:${statusColors[t.status]}">${t.status.toUpperCase()}</span>
-              <div style="font-size:0.8rem; opacity:0.6; margin-top:4px;">${t.players.length}/${t.maxPlayers} players</div>
+              <span class="p-badge" style="background:${statusColors[status] || '#9ca3af'}">${_e(status.toUpperCase())}</span>
+              <div style="font-size:0.8rem; opacity:0.6; margin-top:4px;">${playerCount}/${_e(String(maxPlayers))} players</div>
             </div>
           </div>
-          ${t.status === 'active' ? `<div style="font-size:0.8rem; margin-top:8px; color:var(--p-gold);">Round ${t.currentRound}/${t.rounds}</div>` : ''}
+          ${status === 'active' && t.currentRound ? `<div style="font-size:0.8rem; margin-top:8px; color:var(--p-gold);">Round ${_e(String(t.currentRound))}/${_e(String(rounds))}</div>` : ''}
         </div>`;
     }).join('');
   };
