@@ -739,6 +739,8 @@ CK.admin = {
                         onclick="CK.admin.openAddStudentToCoach(${JSON.stringify(c.full_name || '')})">➕ Add Student</button>
                 <button class="p-btn p-btn-ghost p-btn-sm"
                         onclick="event.stopPropagation(); CK.admin.editCoach(${JSON.stringify(cId)})">✎ Edit Coach</button>
+                <button class="p-btn p-btn-ghost p-btn-sm" style="color:var(--p-danger)"
+                        onclick="event.stopPropagation(); CK.admin.deleteCoach(${JSON.stringify(cId)}, ${JSON.stringify(c.full_name || '')})">🗑 Delete</button>
               </div>
             </div>
             <div class="ck-coach-students-list">${studentList}</div>
@@ -1641,6 +1643,34 @@ CK.admin = {
   },
 
   editCoach(id) { this.openCoachModal(id); },
+
+  /* Delete a coach. Unassigns their students (sets coach='') so those students
+     aren't orphaned, removes the coach profile + login credential, then refreshes. */
+  async deleteCoach(id, name) {
+    if (!id) return;
+    const label = name || 'this coach';
+    if (!confirm(`Delete ${label}?\n\nTheir students will be unassigned (not deleted). This cannot be undone.`)) return;
+    try {
+      const coach = await CK.db.getProfile(id);
+      // Unassign students who belonged to this coach
+      const students = (await CK.db.getProfiles('student')) || [];
+      const mine = students.filter(s => s.coach && coach && s.coach.toLowerCase() === (coach.full_name || '').toLowerCase());
+      for (const s of mine) { s.coach = ''; await CK.db.saveProfile(s); }
+      // Remove the coach profile + credential
+      await CK.db.deleteProfile(id);
+      if (coach?.email && CK.accessManager?.removeCredential) await CK.accessManager.removeCredential(coach.email);
+      if (CK.db.saveAuditLog) CK.db.saveAuditLog({
+        user_id: CK.currentUser?.id || 'admin', user_name: CK.currentUser?.full_name || 'Admin',
+        action: 'DELETE_COACH', resource: 'users', detail: `Deleted coach ${label}; unassigned ${mine.length} student(s)`, severity: 'WARN'
+      });
+      await this.loadCoaches();
+      this.updateStats();
+      CK.showToast(`Coach ${label} deleted · ${mine.length} student(s) unassigned.`, 'success');
+    } catch (e) {
+      console.error('[Admin] deleteCoach error:', e);
+      CK.showToast('Could not delete coach: ' + (e.message || e), 'error');
+    }
+  },
 
   async viewCoachDetails(id) {
     const c = await CK.db.getProfile(id);
