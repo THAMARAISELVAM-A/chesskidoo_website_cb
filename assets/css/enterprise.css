@@ -186,6 +186,28 @@
 .acc-stat-val { font-size: 1.35rem; font-weight: 800; color: var(--p-text, #e8edf5); line-height: 1.1; }
 .acc-stat-label { font-size: 0.72rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.04em; }
 
+/* ═══ PGN DATABASE — expandable game cards ═══ */
+.lab-db-item-wrap { border-bottom: 1px solid rgba(255,255,255,0.05); }
+.lab-db-item { display: flex; align-items: center; gap: 8px; }
+.lab-db-expand {
+  background: none; border: none; cursor: pointer; flex-shrink: 0;
+  color: var(--p-gold, #e8b84b); font-size: 0.85rem; width: 18px;
+  transition: transform 0.15s; padding: 4px;
+}
+.lab-db-expand:hover { color: #fff; }
+.lab-db-details {
+  padding: 8px 12px 12px 30px; font-size: 0.72rem;
+  background: rgba(0,0,0,0.18);
+}
+.lab-db-detail-row {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding: 3px 0; border-bottom: 1px dashed rgba(255,255,255,0.04);
+}
+.lab-db-detail-row span:first-child { color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.66rem; }
+.lab-db-detail-row span:last-child { color: var(--p-text, #e8edf5); font-weight: 500; text-align: right; word-break: break-word; }
+[data-theme="light"] .lab-db-details { background: rgba(0,0,0,0.03); }
+[data-theme="light"] .lab-db-detail-row span:first-child { color: #64748b; }
+
 /* ═══ Responsive ═══ */
 @media (max-width: 768px) {
   .ck-cmd-container { width: 96vw; border-radius: 12px; }

@@ -1614,6 +1614,9 @@ CK.student = {
     let classTime = null;
     let classTitle = `${p.level || 'Intermediate'} Strategy Session`;
     let classCoach = p.coach || '—';
+    let classDuration = null;
+    let classStudents = null;
+    let classDate = null;
 
     if (meetings.length) {
       const next = meetings[0];
@@ -1622,7 +1625,12 @@ CK.student = {
         classTime = new Date(next.date + 'T' + match[1].padStart(2,'0') + ':' + match[2] + ':00');
       }
       classTitle = next.title || next.type || classTitle;
-      classCoach = next.coach || classCoach;
+      classCoach = next.coachName || next.coach || classCoach;
+      classDuration = next.duration || null;
+      classDate = next.date || null;
+      // Real student count: explicit count, studentIds array length, or batch headcount
+      if (typeof next.students === 'number') classStudents = next.students;
+      else if (Array.isArray(next.studentIds)) classStudents = next.studentIds.length;
     } else {
       // Fallback: parse from profile schedule
       const scheduleRaw = p.schedule || '17:00';
@@ -1642,7 +1650,32 @@ CK.student = {
     const subEl   = document.getElementById('nextClassSub');
     if (nameEl) nameEl.innerText = displayTime;
     if (classEl) classEl.innerText = classTitle;
-    if (subEl)   subEl.innerText  = `with Coach ${classCoach}`;
+    if (subEl)   subEl.innerText  = classCoach && classCoach !== '—' ? `with Coach ${classCoach}` : 'Check your schedule';
+
+    // Duration chip — from the meeting's real duration
+    const durEl = document.getElementById('studentSessionDuration');
+    if (durEl) durEl.innerText = `⏱ ${classDuration || 60} mins`;
+
+    // Student count chip — real count; fall back to headcount of this batch/coach
+    const studEl = document.getElementById('studentSessionStudents');
+    if (studEl) {
+      if (classStudents == null) {
+        try {
+          const all = (await CK.db.getProfiles('student')) || [];
+          classStudents = all.filter(s =>
+            (p.batch && s.batch === p.batch) || (p.coach && s.coach === classCoach)
+          ).length;
+        } catch (_) { classStudents = 0; }
+      }
+      studEl.innerText = `👥 ${classStudents} student${classStudents === 1 ? '' : 's'}`;
+    }
+
+    // LIVE badge — only "LIVE TODAY" when the class is actually today
+    const badgeEl = document.getElementById('studentLiveBadge');
+    if (badgeEl) {
+      const isToday = classDate === todayStr || (classTime && classTime.toDateString() === new Date().toDateString());
+      badgeEl.innerText = meetings.length ? (isToday ? '● LIVE TODAY' : '● UPCOMING') : '● NO CLASS';
+    }
 
     if (window.studentCountdownTimer) clearInterval(window.studentCountdownTimer);
 

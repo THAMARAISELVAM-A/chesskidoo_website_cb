@@ -2669,22 +2669,22 @@
                   <div class="sd-session-card">
                     <div class="sd-session-glow"></div>
                     <div class="sd-session-top">
-                      <div class="sd-session-live-badge">● LIVE TODAY</div>
+                      <div class="sd-session-live-badge" id="studentLiveBadge">● UPCOMING</div>
                       <div class="sd-session-countdown-wrap">
                         <span class="sd-session-countdown-label">Starts in</span>
-                        <span class="sd-session-countdown-val" id="studentCountdown">43m</span>
+                        <span class="sd-session-countdown-val" id="studentCountdown">—</span>
                       </div>
                     </div>
                     <div class="sd-session-body">
                       <div class="sd-session-icon">♟</div>
                       <div class="sd-session-info">
-                        <div class="sd-session-time" id="nextClassTime">4:00 PM</div>
-                        <div class="sd-session-name" id="nextClassName">Intermediate Strategy Session</div>
-                        <div class="sd-session-coach" id="nextClassSub">with your Coach</div>
+                        <div class="sd-session-time" id="nextClassTime">—</div>
+                        <div class="sd-session-name" id="nextClassName">No upcoming class</div>
+                        <div class="sd-session-coach" id="nextClassSub">Check your schedule</div>
                         <div class="sd-session-meta-row">
-                          <span class="sd-meta-chip">⏱ 60 mins</span>
+                          <span class="sd-meta-chip" id="studentSessionDuration">⏱ 60 mins</span>
                           <span class="sd-meta-chip">📡 Live Video</span>
-                          <span class="sd-meta-chip">👥 12 students</span>
+                          <span class="sd-meta-chip" id="studentSessionStudents">👥 — students</span>
                         </div>
                       </div>
                       <button class="sd-join-btn" onclick="CK.student.nav('session')">Join Class <span>→</span></button>

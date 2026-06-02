@@ -1655,14 +1655,27 @@ ta: {
           headers[match[1]] = match[2];
         }
         
-        const lastTagIndex = rawGame.lastIndexOf(']');
+        // Move-text = everything after the last header line; count full moves
+        const moveText = rawGame.replace(/\[[^\]]*\]\s*/g, '').trim();
+        const moveCount = (moveText.match(/\d+\./g) || []).length;
+
         const game = {
-          id: 'uploaded_' + index + '_' + Date.now(),
+          id: 'uploaded_' + index + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
           title: headers.Event || 'Game ' + (games.length + 1),
           white: headers.White || 'Unknown White',
           black: headers.Black || 'Unknown Black',
-          year: headers.Date ? headers.Date.split('.')[0] : '?',
+          whiteElo: headers.WhiteElo || '',
+          blackElo: headers.BlackElo || '',
+          year: headers.Date ? headers.Date.split('.')[0] : (headers.UTCDate ? headers.UTCDate.split('.')[0] : '?'),
+          date: headers.Date || headers.UTCDate || '',
+          site: headers.Site || '',
+          round: headers.Round || '',
+          eco: headers.ECO || '',
+          opening: headers.Opening || '',
+          timeControl: headers.TimeControl || '',
+          termination: headers.Termination || '',
           result: headers.Result || '*',
+          moves: moveCount,
           pgn: rawGame.trim()
         };
         games.push(game);
@@ -1698,16 +1711,47 @@ ta: {
       if (!gamesList.length) {
         return '<div style="color:var(--p-text-muted);font-size:0.75rem;text-align:center;padding:10px;">No games match search</div>';
       }
+      const esc = (CK.esc || (s => s));
       const showGames = gamesList.slice(0, 100);
-      return showGames.map(g => `
-        <div class="lab-db-item" onclick="CK.lab.loadUploadedGame('${g.id}', '${boardId}')">
-          <div class="lab-db-item-info">
-            <div class="lab-db-item-players">${g.white} vs ${g.black}</div>
-            <div class="lab-db-item-details">${g.title} (${g.year}) · Result: ${g.result}</div>
+      const row = (label, val) => val ? `<div class="lab-db-detail-row"><span>${label}</span><span>${esc(String(val))}</span></div>` : '';
+      return showGames.map(g => {
+        const wElo = g.whiteElo ? ` (${esc(g.whiteElo)})` : '';
+        const bElo = g.blackElo ? ` (${esc(g.blackElo)})` : '';
+        return `
+        <div class="lab-db-item-wrap" data-gid="${esc(g.id)}">
+          <div class="lab-db-item">
+            <button class="lab-db-expand" aria-label="Toggle details" onclick="CK.lab.toggleGameDetails('${esc(g.id)}')">▸</button>
+            <div class="lab-db-item-info" onclick="CK.lab.loadUploadedGame('${esc(g.id)}', '${esc(boardId)}')" style="cursor:pointer;flex:1;min-width:0;">
+              <div class="lab-db-item-players">${esc(g.white)}${wElo} vs ${esc(g.black)}${bElo}</div>
+              <div class="lab-db-item-details">${esc(g.title)} · ${esc(g.year)} · ${esc(g.result)}${g.moves ? ' · ' + g.moves + ' moves' : ''}</div>
+            </div>
+            <button class="lab-db-item-btn" onclick="CK.lab.loadUploadedGame('${esc(g.id)}', '${esc(boardId)}')">Load</button>
           </div>
-          <button class="lab-db-item-btn">Load</button>
-        </div>
-      `).join('');
+          <div class="lab-db-details" id="lab-db-details-${esc(g.id)}" style="display:none;">
+            ${row('Event', g.title)}
+            ${row('Site', g.site)}
+            ${row('Date', g.date)}
+            ${row('Round', g.round)}
+            ${row('Opening', g.opening || g.eco)}
+            ${row('ECO', g.eco)}
+            ${row('Time control', g.timeControl)}
+            ${row('Result', g.result)}
+            ${row('Moves', g.moves)}
+            ${row('Termination', g.termination)}
+          </div>
+        </div>`;
+      }).join('');
+    },
+
+    /* Expand/collapse the full PGN header details for a game in the DB explorer. */
+    toggleGameDetails(gid) {
+      const panel = document.getElementById('lab-db-details-' + gid);
+      const wrap = document.querySelector(`.lab-db-item-wrap[data-gid="${gid}"]`);
+      if (!panel) return;
+      const open = panel.style.display !== 'none';
+      panel.style.display = open ? 'none' : 'block';
+      const btn = wrap ? wrap.querySelector('.lab-db-expand') : null;
+      if (btn) btn.textContent = open ? '▸' : '▾';
     },
 
     filterUploadedGames(query, boardId) {
