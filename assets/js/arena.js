@@ -1171,7 +1171,7 @@
     //    configured piece count (Advanced ≤4-piece, Expert ≤7-piece).
     const pieceCount = fen.split(' ')[0].replace(/[^a-zA-Z]/g, '').length;
     if (cfg.useTablebase && pieceCount <= cfg.tbMaxPieces) {
-      updateStatus('♔ Consulting Endgame Tablebases…');
+      updateStatus('🤖 Consulting Endgame Tablebases…');
       try {
         const res = await fetch(`https://tablebase.lichess.ovh/standard?fen=${encodeURIComponent(fen)}`);
         if (res.ok) {
@@ -1188,7 +1188,7 @@
     //    Beginner skips this entirely so it can't play perfect theory.
     const fullMoves = parseInt(fen.split(' ')[5]) || 0;
     if (cfg.useBook && fullMoves <= cfg.bookUntilMove) {
-      updateStatus('♔ Checking Master Openings…');
+      updateStatus('🤖 Checking Master Openings…');
       try {
         const res = await fetch(`https://explorer.lichess.ovh/masters?fen=${encodeURIComponent(fen)}&moves=4`);
         if (res.ok) {
@@ -1206,7 +1206,7 @@
       } catch(e) {} // Silent fallback
     }
 
-    updateStatus('♔ Computer is thinking…');
+    updateStatus('🤖 Computer is thinking…');
 
     // Beginner-only: sometimes just play a random legal move. This is
     // what actually makes Beginner FEEL like a beginner — humans see
@@ -2401,7 +2401,7 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
       <div class="cert-action-bar">
         <button class="cert-action-btn btn-secondary" onclick="CK.arena.closeCertificate()">Close</button>
         <button class="cert-action-btn btn-tertiary"  onclick="CK.arena.changeCertName()">✎ Change Details</button>
-        <button class="cert-action-btn btn-primary"   onclick="CK.arena.printCertificate()">Download Certificate</button>
+        <button class="cert-action-btn btn-primary"   onclick="CK.arena.printCertificate()">📥 Download Certificate</button>
       </div>
     `;
     overlay.classList.add('active');
@@ -2482,8 +2482,8 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
           backgroundColor: '#fffdf8',
           scale: 1.5,
           useCORS: true,
-          logging: true,
-          allowTaint: false,
+          logging: false,
+          allowTaint: true,
           width: 1500,
           height: 980,
           windowWidth: 1700
@@ -2537,10 +2537,7 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
     if (!printWindow) { CK.showToast('Please allow popups to print the certificate.', 'warning'); return; }
     const doc = printWindow.document;
     doc.open();
-    doc.write(`<html><head><title>ChessKidoo Certificate</title>
-      <link rel="stylesheet" href="assets/css/style.css">
-      <link rel="stylesheet" href="assets/css/arena.css">
-      <style>
+    doc.write(`<html><head><title>ChessKidoo Certificate</title><style>
       @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500;1,700&family=Montserrat:wght@400;500;600;700&family=Poppins:wght@600;800&family=Great+Vibes&family=Alex+Brush&display=swap');
       @page { size: landscape; margin: 0; }
       body {
@@ -2897,7 +2894,7 @@ A.newGame = () => {
       html += `
         <div class="match-log-item">
           <div class="ml-left">
-            <span style="font-size:1.3rem;">${h.avatar || '♔'}</span>
+            <span style="font-size:1.3rem;">${h.avatar || '🤖'}</span>
             <div>
               <div class="ml-opponent">${h.opponent}</div>
               <div class="ml-meta">${h.difficulty} · ${h.moves} moves · ${h.date}</div>
@@ -3160,7 +3157,7 @@ A.newGame = () => {
 A.showHint = async () => {
   if (isGameOver || isThinking || !isPlayerTurn) return;
   
-  CK.showToast('♔ Finding the best move...', 'info');
+  CK.showToast('🤖 Finding the best move...', 'info');
   
   const fen = game.fen();
   const depth = DIFFICULTY_DEPTH[currentDifficulty] || 2;

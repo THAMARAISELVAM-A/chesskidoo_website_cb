@@ -40,44 +40,23 @@ CK.admin = {
   },
 
   /* ── Real-Time Auto Refresh ── */
-  _realtimeChannel: null,
+  _autoRefreshTimer: null,
+  _autoRefreshInterval: 30000,
 
   startAutoRefresh() {
+    this.stopAutoRefresh();
     this._updatePresence();
-
-    // Still use a slow heartbeat for presence/stats, but let WebSockets handle instant data
     this._autoRefreshTimer = setInterval(async () => {
       this._updatePresence();
+      await this.updateStats();
+      await this.renderActivity();
+      // Refresh live panel if visible
+      const livePanel = document.getElementById('p-panel-live');
+      if (livePanel && livePanel.classList.contains('active')) await this.renderLive();
+      // Refresh live indicator in header
       const liveEl = document.getElementById('adminLiveRefreshTs');
       if (liveEl) liveEl.textContent = 'Updated ' + new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    }, 60000); // reduced to 60s since realtime handles the heavy lifting
-
-    // Setup Supabase Realtime if available
-    if (window.supabaseClient && !this._realtimeChannel) {
-      try {
-        this._realtimeChannel = window.supabaseClient.channel('admin_global_sync')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, async (payload) => {
-            console.log('[Admin] Live users update:', payload);
-            await this.loadStudents();
-            await this.loadCoaches();
-            await this.updateStats();
-            await this.renderActivity();
-          })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'meetings' }, async (payload) => {
-            console.log('[Admin] Live meetings update:', payload);
-            const livePanel = document.getElementById('p-panel-live');
-            if (livePanel && livePanel.classList.contains('active')) await this.renderLive();
-          })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, async (payload) => {
-            await this.updateStats();
-            const panel = document.getElementById('p-panel-attendance');
-            if (panel && panel.classList.contains('active')) await this.loadAttendance();
-          })
-          .subscribe();
-      } catch(e) {
-        console.warn('Realtime sync failed, relying on manual refresh:', e);
-      }
-    }
+    }, this._autoRefreshInterval);
   },
 
   stopAutoRefresh() {

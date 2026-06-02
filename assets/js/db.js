@@ -84,17 +84,12 @@
   // to localStorage and never reached Supabase). Instead we back off for a short
   // cooldown and then automatically retry, so the connection self-heals.
   let _supabaseCooldownUntil = 0;
-  let isSupabaseFailed = false;
   const _COOLDOWN_MS = 12000;
   const canUseSupabase = () => {
     if (Date.now() < _supabaseCooldownUntil) return false;
     return !!(window.supabaseClient && navigator.onLine);
   };
   const markSupabaseFailed = () => {
-    if (!isSupabaseFailed && window.CK && CK.showToast) {
-      CK.showToast("Network issue: switching to offline mode.", "warning");
-    }
-    isSupabaseFailed = true;
     _supabaseCooldownUntil = Date.now() + _COOLDOWN_MS;
     console.warn(`[ChessKidoo DB] Supabase temporarily unreachable; retrying in ${_COOLDOWN_MS/1000}s. Using local storage meanwhile.`);
   };
@@ -1038,32 +1033,6 @@
      ACCESS MANAGEMENT — Admin sets per-user credentials
   ───────────────────────────────────────────────────────── */
   CK.accessManager = {
-    _realtimeInitialized: false,
-
-    _initRealtime() {
-      if (this._realtimeInitialized || !window.supabaseClient) return;
-      this._realtimeInitialized = true;
-      try {
-        const channel = window.supabaseClient.channel('access_manager_sync');
-        channel
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'credentials' }, payload => {
-            console.log('[AccessManager] Live credential update:', payload);
-            if (this._lastContainerId && document.getElementById(this._lastContainerId)) {
-              this.renderAccessTable(this._lastContainerId, true);
-            }
-          })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, payload => {
-            console.log('[AccessManager] Live users update:', payload);
-            if (this._lastContainerId && document.getElementById(this._lastContainerId)) {
-              this.renderAccessTable(this._lastContainerId, true);
-            }
-          })
-          .subscribe();
-      } catch (e) {
-        console.warn('[AccessManager] Failed to init Realtime:', e);
-      }
-    },
-
     _getAdminAuth() {
       if (!window.APP_CONFIG?.SUPABASE_URL || !window.APP_CONFIG?.SUPABASE_ANON_KEY) return null;
       if (!this._tempClient && window.supabase) {
@@ -1200,15 +1169,11 @@
       return parent;
     },
 
-    async renderAccessTable(containerId, isLiveSync = false) {
+    async renderAccessTable(containerId) {
       const el = document.getElementById(containerId);
       if (!el) return;
       this._lastContainerId = containerId;
-      this._initRealtime();
-
-      if (!isLiveSync) {
-        el.innerHTML = '<div style="text-align:center;opacity:.45;padding:30px;">⟳ Syncing access from Supabase…</div>';
-      }
+      el.innerHTML = '<div style="text-align:center;opacity:.45;padding:30px;">⟳ Syncing access from Supabase…</div>';
 
       const users = (await CK.db.getProfiles()) || [];
       const nonAdmin = users.filter(u => u.role !== 'admin');
@@ -1234,31 +1199,24 @@
           ${statCard('🔒', noAccess, 'No Access', '#ef4444')}
           ${statCard(online ? '🟢' : '🔴', online ? 'Supabase' : 'Offline', online ? 'Live Sync' : 'Local Only', online ? '#22c55e' : '#f59e0b')}
         </div>
-        <div class="acc-search-row" style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px;">
-          <input class="p-input" id="accSearch" placeholder="🔍 Search students, coaches…" oninput="CK.accessManager._filter(this.value)" style="flex:1; min-width:200px;">
-          <select class="p-input" id="accRoleFilter" style="width:140px" onchange="CK.accessManager._filter(document.getElementById('accSearch').value)">
+        <div class="acc-search-row">
+          <input class="p-input" id="accSearch" placeholder="🔍 Search by name or email…" oninput="CK.accessManager._filter(this.value)">
+          <select class="p-input" id="accRoleFilter" style="width:150px" onchange="CK.accessManager._filter(document.getElementById('accSearch').value)">
             <option value="">All Roles (${nonAdmin.length})</option>
             <option value="student">Students (${byRole.student})</option>
             <option value="coach">Coaches (${byRole.coach})</option>
             <option value="parent">Parents (${byRole.parent})</option>
           </select>
-          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.accessManager.renderAccessTable('${containerId}')" title="Refresh from Supabase" style="padding: 0 10px;">🔄</button>
-          
-          <div style="width: 1px; height: 24px; background: rgba(255,255,255,0.1); margin: 0 4px;"></div>
-          
-          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.accessManager.bulkDialog('student')">🔑 Set Pw (Students)</button>
-          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.accessManager.bulkDialog('coach')">🔑 Set Pw (Coaches)</button>
-          <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.accessManager.addParentDialog()">+ Add Parent</button>
+          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.accessManager.renderAccessTable('${containerId}')" title="Refresh from Supabase">🔄</button>
+        </div>
+        <div class="acc-bulk-row">
+          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.accessManager.bulkDialog('student')">🔑 Set Password — All Students</button>
+          <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.accessManager.bulkDialog('coach')">🔑 Set Password — All Coaches</button>
+          <button class="p-btn p-btn-blue p-btn-sm" onclick="CK.accessManager.addParentDialog()">➕ Add Parent Account</button>
         </div>
         <div style="overflow-x:auto;">
           <table class="p-table" style="width:100%;margin-top:12px" id="accTable">
-            <thead><tr>
-              <th style="color:var(--p-text-muted); font-weight:600; font-size:0.8rem; letter-spacing:0.5px;">NAME</th>
-              <th style="color:var(--p-text-muted); font-weight:600; font-size:0.8rem; letter-spacing:0.5px;">EMAIL</th>
-              <th style="color:var(--p-text-muted); font-weight:600; font-size:0.8rem; letter-spacing:0.5px;">ROLE</th>
-              <th style="color:var(--p-text-muted); font-weight:600; font-size:0.8rem; letter-spacing:0.5px;">ACCESS</th>
-              <th style="color:var(--p-text-muted); font-weight:600; font-size:0.8rem; letter-spacing:0.5px;">ACTIONS</th>
-            </tr></thead>
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Access</th><th>Actions</th></tr></thead>
             <tbody id="accTableBody">
               ${this._rows(nonAdmin, creds)}
             </tbody>
