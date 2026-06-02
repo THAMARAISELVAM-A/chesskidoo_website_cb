@@ -10,10 +10,13 @@ CK.coach = {
 
   async init() {
 
-    // 1. Fetch current coach profile dynamically
-    const currentUser = CK.currentUser || JSON.parse(localStorage.getItem('ck_user'));
+    // 1. Fetch current coach profile dynamically (trust cached ck_user; no scary toast)
+    let currentUser = CK.currentUser;
     if (!currentUser) {
-      CK.showToast("Session expired. Please log in again.", "error");
+      try { currentUser = JSON.parse(localStorage.getItem('ck_user') || 'null'); } catch (_) {}
+      if (currentUser) CK.currentUser = currentUser;
+    }
+    if (!currentUser) {
       CK.showPage('login-page');
       return;
     }

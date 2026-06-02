@@ -21,10 +21,17 @@ CK.student = {
 
   async init() {
     
-    // 1. Fetch current user profile dynamically from DB layer
-    const currentUser = CK.currentUser || JSON.parse(localStorage.getItem('ck_user'));
+    // 1. Fetch current user profile dynamically from DB layer.
+    //    Trust the cached ck_user — credential-login users have no Supabase Auth
+    //    session, so we must rely on the cached profile and NOT show an alarming
+    //    "session expired" message (which fired spuriously on refresh/race).
+    let currentUser = CK.currentUser;
+    if (!currentUser) {
+      try { currentUser = JSON.parse(localStorage.getItem('ck_user') || 'null'); } catch (_) {}
+      if (currentUser) CK.currentUser = currentUser;
+    }
     if (!currentUser || currentUser.role !== 'student') {
-      CK.showToast("Session expired. Please log in again.", "error");
+      // Quietly send to login — no scary toast.
       CK.showPage('login-page');
       return;
     }

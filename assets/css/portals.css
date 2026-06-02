@@ -3040,6 +3040,20 @@
 
 .sd-join-btn:hover span { transform: translateX(3px); }
 
+/* LIGHT THEME — the session card holds white text, so in light mode give it a
+   dark accent background (instead of the faint light-blue that made the text
+   invisible). One rule keeps every child (time/name/coach/chips/countdown)
+   perfectly readable. */
+:root[data-theme="light"] .sd-session-card {
+  background: linear-gradient(135deg, #1f2a44 0%, #143b4d 100%);
+  border-color: rgba(91,156,246,0.45);
+}
+:root[data-theme="light"] .sd-session-icon {
+  background: linear-gradient(135deg, rgba(91,156,246,0.35), rgba(45,212,191,0.2));
+  border-color: rgba(91,156,246,0.4);
+}
+:root[data-theme="light"] .sd-session-countdown-wrap { background: rgba(255,255,255,0.1); }
+
 /* =====================================================================
    STUDENT DASHBOARD — Recommended Learning Cards
    ===================================================================== */
