@@ -72,26 +72,61 @@ CK.student = {
 
   /* ── Auto Refresh ── */
   _studentRefreshTimer: null,
+  _realtimeChannel: null,
 
   startAutoRefresh() {
     if (this._studentRefreshTimer) clearInterval(this._studentRefreshTimer);
+
+    // Heartbeat for presence
     this._studentRefreshTimer = setInterval(async () => {
-      await this._renderLeaderboard();
-      this.renderDailyGoals();
-      this.renderSRSQueue();
-      // Refresh dashboard if active
-      const homePanel = document.getElementById('student-panel-home');
-      if (homePanel && homePanel.classList.contains('active')) {
-        await this.renderDashboard();
-      }
-      // Refresh presence in localStorage so admin can see student is active
       const presence = JSON.parse(localStorage.getItem('ck_live_presence') || '{}');
       const userId = this.userProfile?.id;
       if (userId) {
         presence[userId] = { name: this.userProfile.full_name, role: 'student', lastSeen: Date.now() };
         localStorage.setItem('ck_live_presence', JSON.stringify(presence));
       }
-    }, 45000);
+    }, 60000);
+
+    // Supabase Realtime for instant sync
+    if (window.supabaseClient && !this._realtimeChannel) {
+      try {
+        this._realtimeChannel = window.supabaseClient.channel('student_global_sync')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, async (payload) => {
+            await this._renderLeaderboard();
+            const homePanel = document.getElementById('student-panel-home');
+            if (homePanel && homePanel.classList.contains('active')) {
+              await this.renderDashboard();
+            }
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'meetings' }, async (payload) => {
+            // Re-render dashboard instantly to show/hide the "Join Live Class" button
+            const homePanel = document.getElementById('student-panel-home');
+            if (homePanel && homePanel.classList.contains('active')) {
+              await this.renderDashboard();
+            }
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'assignments' }, async (payload) => {
+            if (CK.hw) await CK.hw.renderList('student', this.userProfile?.id);
+            const homePanel = document.getElementById('student-panel-home');
+            if (homePanel && homePanel.classList.contains('active')) {
+              await this.renderDashboard();
+            }
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'coach_notes' }, async (payload) => {
+            const revPanel = document.getElementById('student-panel-reviews');
+            if (revPanel && revPanel.classList.contains('active')) {
+              await this.renderCoachReviews();
+            }
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments' }, async (payload) => {
+            const trnPanel = document.getElementById('student-panel-tournaments');
+            if (trnPanel && trnPanel.classList.contains('active')) {
+              await this.renderTournamentHistory();
+            }
+          })
+          .subscribe();
+      } catch(e) {}
+    }
   },
 
   stopAutoRefresh() {

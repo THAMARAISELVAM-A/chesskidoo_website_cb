@@ -55,13 +55,6 @@
 }
 .tom-ai-launcher .tom-launcher-knight svg { width: 100%; height: 100%; }
 .tom-ai-launcher .tom-launcher-badge {
-  width: 11px !important; height: 11px !important;
-  background: #22c55e !important;
-  box-shadow: 0 0 6px rgba(34,197,94,0.65) !important;
-  top: -2px !important; right: -2px !important;
-  border: 2px solid #fff !important;
-}
-.tom-ai-launcher .tom-launcher-badge {
   position: absolute;
   top: 6px; right: 6px;
   width: 14px; height: 14px;
@@ -418,6 +411,11 @@
     width: 40px !important;
     height: 40px !important;
   }
+}
+
+/* Avoid blocking the chessboard on AI Arena */
+body:has(#arena-page.active) .tom-ai-launcher {
+  bottom: 80px;
 }
 /* Hide scroll-to-top when the chatbot panel is open (full-screen on mobile) */
 .tom-ai-panel.tom-open ~ #scrollTopBtn,

@@ -99,11 +99,11 @@ CK.certs = (() => {
       doc.setDrawColor(...GOLD);
       doc.setLineWidth(0.3);
       doc.circle(x + cornerSize/2, y + cornerSize/2, 8, 'S');
-      // Center icon
-      doc.setFont('times', 'normal');
+      // Center text (fallback for Unicode icons in standard jsPDF)
+      doc.setFont('times', 'bold');
       doc.setFontSize(14);
       doc.setTextColor(...GOLD);
-      doc.text('♛', x + cornerSize/2, y + cornerSize/2 + 4, { align: 'center' });
+      doc.text('CK', x + cornerSize/2, y + cornerSize/2 + 5, { align: 'center' });
     });
 
     // ─── Typography & Content ───
@@ -191,9 +191,9 @@ CK.certs = (() => {
     doc.setFillColor(15, 23, 42);
     doc.circle(sealX, sealY, 11, 'F');
     doc.setFont('times', 'bold');
-    doc.setFontSize(24);
+    doc.setFontSize(20);
     doc.setTextColor(...GOLD);
-    doc.text('♚', sealX, sealY + 8, { align: 'center' });
+    doc.text('CK', sealX, sealY + 7, { align: 'center' });
 
     // Right Signature
     doc.setDrawColor(120, 130, 150);
@@ -223,9 +223,19 @@ CK.certs = (() => {
 
   /* ─── Lazy-load jsPDF from CDN ─── */
   function _loadJsPDF(callback) {
-    if (document.getElementById('jspdf-cdn')) { callback && callback(); return; }
-    const s = document.createElement('script');
-    s.id = 'jspdf-cdn';
+    if (window.jspdf || window.jsPDF) { callback && callback(); return; }
+    
+    const scriptId = 'jspdf-cdn';
+    let s = document.getElementById(scriptId);
+    if (s) {
+      // Script is already in the document but maybe not loaded yet.
+      // Wait for it instead of firing callback immediately and causing a loop.
+      s.addEventListener('load', () => callback && callback(), { once: true });
+      return;
+    }
+    
+    s = document.createElement('script');
+    s.id = scriptId;
     s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
     s.onload = () => callback && callback();
     document.head.appendChild(s);

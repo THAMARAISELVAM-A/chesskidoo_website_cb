@@ -47,8 +47,6 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=Inter:wght@400;600&family=Cinzel:wght@500;700;900&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500;1,700&family=Montserrat:wght@400;600;700&family=Great+Vibes&family=Alex+Brush&display=swap"
     rel="stylesheet">
-  <!-- Razorpay Payment SDK -->
-  <script defer src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
@@ -997,7 +995,7 @@
           </div>
           <div class="why-grid reveal">
             <div class="why-item">
-              <div class="why-icon">🤖</div>
+              <div class="why-icon">♔</div>
               <div class="why-body">
                 <h4>AI Game Analysis</h4>
                 <p>AI flags mistakes and strengths after every practice game, so students improve faster with
@@ -1934,18 +1932,13 @@
             <!-- ══ STUDENTS PANEL ══ -->
             <div class="p-panel" id="p-panel-students">
               <div class="p-card">
-                <div class="p-card-header">
-                  <div class="p-card-title">🎓 Student Registry</div>
-                  <div style="display:flex;gap:8px">
-                    <input type="text" class="p-form-control" style="width:180px;padding:6px 10px;font-size:.78rem"
-                      placeholder="Filter by name/coach..." id="adminStudentSearch"
+                <div class="p-card-body" style="padding:16px;">
+                  <div style="display:flex; gap:12px; margin-bottom:16px; align-items:center;">
+                    <input type="text" class="p-form-control" style="flex:1; max-width:300px; padding:8px 12px; font-size:.85rem;"
+                      placeholder="🔍 Filter registry by name or coach..." id="adminStudentSearch"
                       oninput="CK.admin.filterStudents()" />
-                    <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.admin.openStudentModal()">+ New
-                      Enrollment</button>
-                    <button class="p-btn p-btn-blue p-btn-sm" onclick="CK.admin.exportStudentsCSV()">📥 Export
-                      CSV</button>
+                    <button class="p-btn p-btn-blue p-btn-sm" onclick="CK.admin.exportStudentsCSV()">📥 Export CSV</button>
                   </div>
-                </div>
                 <div style="overflow-x:auto">
                   <table class="p-table">
                     <thead>
@@ -1971,25 +1964,14 @@
             <!-- ══ COACHES PANEL — Expandable Card Grid ══ -->
             <div class="p-panel" id="p-panel-coaches">
               <div class="p-card">
-                <div class="p-card-header">
-                  <div class="p-card-title">👨‍🏫 Coach Management</div>
-                  <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.admin.openCoachModal()">+ Add Coach</button>
-                </div>
-                <!-- Cards container — populated by CK.admin.loadCoaches() -->
-                <div id="adminCoachesGrid" class="ck-coach-grid"></div>
-                <!-- Legacy hidden table tbody kept so any code that targets it doesn't break -->
+                <div class="p-card-body" id="adminCoachesGrid" class="ck-coach-grid"></div>
                 <tbody id="adminCoachesTable" style="display:none;"></tbody>
               </div>
             </div>
             <!-- ══ CLASSES PANEL ══ -->
             <div class="p-panel" id="p-panel-classes">
               <div class="p-card">
-                <div class="p-card-header">
-                  <div class="p-card-title">📅 Class Schedule</div>
-                  <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.admin.openClassModal()">+ Schedule
-                    Class</button>
-                </div>
-                <div style="overflow-x:auto">
+                <div class="p-card-body">
                   <table class="p-table">
                     <thead>
                       <tr>
@@ -2011,11 +1993,6 @@
             <!-- ══ ATTENDANCE PANEL ══ -->
             <div class="p-panel" id="p-panel-attendance">
               <div class="p-card">
-                <div class="p-card-header">
-                  <div class="p-card-title">✅ Attendance Records</div>
-                  <input type="date" class="p-form-control" style="width:auto" id="adminAttendanceDate"
-                    onchange="CK.admin.loadAttendance()" />
-                </div>
                 <div style="overflow-x:auto">
                   <table class="p-table">
                     <thead>
@@ -2088,11 +2065,6 @@
                 </div>
               </div>
               <div class="p-card">
-                <div class="p-card-header">
-                  <div class="p-card-title">💸 Operational Expenditure Register</div>
-                  <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.openModal('adminExpenseModal')">+ Add
-                    Expense</button>
-                </div>
                 <div style="overflow-x:auto">
                   <table class="p-table">
                     <thead>
@@ -2116,16 +2088,13 @@
             <div class="p-panel" id="p-panel-tournaments">
               <div class="p-card" style="margin-bottom:20px;">
                 <div class="p-card-header">
-                  <div class="p-card-title">🏆 Tournament Engine</div>
-                  <div style="display:flex;gap:8px;">
-                    <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.tournament&&CK.tournament.showCreateForm('adminTournamentCreate')">+ Create Tournament</button>
-                  </div>
+                  <div></div>
+                  <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.admin.newTournament()">🏆 New Tournament</button>
                 </div>
                 <div class="p-card-body" id="adminTournamentCreate"></div>
               </div>
               <div class="p-card">
-                <div class="p-card-header">
-                  <div class="p-card-title">Active & Past Tournaments</div>
+                <div class="p-card-header" style="display:none;">
                 </div>
                 <div class="p-card-body" id="adminTournamentList" style="padding:16px;">
                   <div style="text-align:center;opacity:.4;padding:30px;">Loading tournaments...</div>
@@ -2137,7 +2106,7 @@
             <div class="p-panel" id="p-panel-achievements">
               <div class="p-card">
                 <div class="p-card-header">
-                  <div class="p-card-title">⭐ Awards & Certificates</div>
+                  <div></div>
                   <button class="p-btn p-btn-blue p-btn-sm"
                     onclick="CK.admin.openIssueCertModal()">+ Issue Certificate</button>
                 </div>
@@ -2432,8 +2401,8 @@
                   </div>
                   <div class="p-settings-row" style="margin-top:4px;">
                     <div>
-                      <div class="p-settings-label">Razorpay Gateway</div>
-                      <div class="p-settings-desc">Online fee payment via UPI/card</div>
+                      <div class="p-settings-label">Fee Gateway</div>
+                      <div class="p-settings-desc">Online fee payment via Direct UPI</div>
                     </div>
                     <div class="p-toggle on" onclick="this.classList.toggle('on')"></div>
                   </div>
@@ -2475,11 +2444,6 @@
             <!-- ══ ACCESS MANAGEMENT PANEL ══ -->
             <div class="p-panel" id="p-panel-access">
               <div class="p-card">
-                <div class="p-card-header">
-                  <div class="p-card-title">🔑 User Access Management</div>
-                  <button class="p-btn p-btn-gold p-btn-sm"
-                    onclick="CK.accessManager && CK.accessManager.addParentDialog()">+ Add Parent</button>
-                </div>
                 <div class="p-card-body" id="adminAccessTable" style="padding:16px;">
                   <div style="text-align:center;opacity:.45;padding:30px;">Loading access table…</div>
                 </div>
@@ -2889,8 +2853,7 @@
             <!-- RESOURCES -->
             <div class="p-panel" id="student-panel-resources">
               <div class="p-card">
-                <div class="p-card-header">
-                  <div class="p-card-title">📚 Learning Resources</div>
+                <div class="p-card-header" style="display:none;">
                 </div>
                 <div class="p-card-body" id="studentResourcesList">
                   <div style="opacity:0.6; padding:20px; text-align:center;">No resources assigned to your batch.</div>
@@ -2902,7 +2865,7 @@
             <div class="p-panel" id="student-panel-tournaments">
               <div class="p-card">
                 <div class="p-card-header">
-                  <div class="p-card-title">🏅 Upcoming Tournaments</div>
+                  <div></div>
                   <span class="p-badge p-badge-gold">2 Events Open</span>
                 </div>
                 <div class="p-card-body" style="display:grid; gap:16px;">
@@ -3129,8 +3092,7 @@
                 </div>
               </div>
               <div class="p-card" style="margin-bottom:18px;">
-                <div class="p-card-header">
-                  <div class="p-card-title">✅ Attendance Calendar</div>
+                <div class="p-card-header" style="display:none;">
                 </div>
                 <div class="p-card-body" id="studentAttendanceCalendar"
                   style="display:grid; grid-template-columns:repeat(7, minmax(36px, 1fr)); gap:6px; padding:16px;">
@@ -3139,8 +3101,7 @@
 
               <!-- Puzzle Leaderboard -->
               <div class="p-card" style="margin-bottom:18px;">
-                <div class="p-card-header">
-                  <div class="p-card-title">🏆 Puzzle Leaderboard</div>
+                <div class="p-card-header" style="display:none;">
                 </div>
                 <div class="p-card-body" id="progLeaderboard" style="padding:16px;">
                   <div style="text-align:center;opacity:.4;padding:20px;">Loading leaderboard…</div>
@@ -3152,8 +3113,7 @@
 
               <!-- Monthly Reports -->
               <div class="p-card" style="margin-top:18px;">
-                <div class="p-card-header">
-                  <div class="p-card-title">📋 My Monthly Reports</div>
+                <div class="p-card-header" style="display:none;">
                 </div>
                 <div class="p-card-body" id="progReportsList" style="padding:16px;">
                   <div style="text-align:center;opacity:.4;padding:20px;">Loading reports…</div>
@@ -3165,9 +3125,6 @@
             <!-- SCHEDULE -->
             <div class="p-panel" id="student-panel-schedule">
               <div class="p-card">
-                <div class="p-card-header">
-                  <div class="p-card-title">📅 My Class Schedule</div>
-                </div>
                 <div class="p-card-body" id="studentScheduleList" style="padding:16px;">
                   <div style="text-align:center;opacity:.45;padding:30px;">Loading schedule…</div>
                 </div>
@@ -3191,9 +3148,6 @@
             <div class="p-panel" id="student-panel-path">
               <div class="p-card"
                 style="background: linear-gradient(135deg, rgba(15,23,42,0.6), rgba(30,41,59,0.8)); border: 1px solid rgba(212,175,55,0.3);">
-                <div class="p-card-header">
-                  <div class="p-card-title">🗺️ Adaptive Mastery Skill Tree</div>
-                </div>
                 <div class="p-card-body" style="padding: 30px;">
                   <p style="color: var(--p-text-muted); margin-bottom: 24px; font-size: 1.05rem;">Your customized AI
                     learning roadmap based on recent tactical analysis and performance data.</p>
@@ -3205,9 +3159,6 @@
             <!-- REPLAY VAULT -->
             <div class="p-panel" id="student-panel-vault">
               <div class="p-card">
-                <div class="p-card-header">
-                  <div class="p-card-title">📼 The Replay Vault (Synced Class Archives)</div>
-                </div>
                 <div class="p-card-body"
                   style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
                   <!-- Session Card 1 -->
@@ -3390,8 +3341,7 @@
             <!-- COACH REVIEWS -->
             <div class="p-panel" id="student-panel-reviews">
               <div class="p-card">
-                <div class="p-card-header">
-                  <div class="p-card-title">📝 Coach Reviews & Feedback</div>
+                <div class="p-card-header" style="display:none;">
                 </div>
                 <div class="p-card-body" id="studentReviewsContainer" style="padding:20px;">
                   <div style="opacity:0.6; padding:20px; text-align:center;">No coach reviews posted yet.</div>
@@ -3406,8 +3356,7 @@
               <div id="studentCertSection" style="margin-bottom:18px;"></div>
 
               <div class="p-card" style="margin-bottom:20px;">
-                <div class="p-card-header">
-                  <div class="p-card-title">⭐ My Stars & Trophies</div>
+                <div class="p-card-header" style="display:none;">
                 </div>
                 <div class="p-card-body" style="text-align:center; padding:30px;">
                   <div id="achievementStarsDisplay" style="font-size:2.5rem; letter-spacing:10px; margin-bottom:10px;">
@@ -3501,7 +3450,7 @@
                   <!-- Header -->
                   <div class="pay-form-header">
                     <div class="pay-form-title">Complete Payment</div>
-                    <div class="pay-form-sub">Secure &amp; instant · No hidden charges</div>
+                    <div class="pay-form-sub">Secure &amp; instant via direct UPI transfer</div>
                   </div>
 
                   <!-- Amount card -->
@@ -3695,7 +3644,7 @@
                     <button class="lab-mode-btn active" id="labModeAnalysis" onclick="CK.lab.setMode('analysis')">📊
                       Analysis</button>
                     <button class="lab-mode-btn" id="labModeGuess" onclick="CK.lab.setMode('guess')">🎯 Guess</button>
-                    <button class="lab-mode-btn" id="labModeSpar" onclick="CK.lab.setMode('spar')">🤖 Sparring</button>
+                    <button class="lab-mode-btn" id="labModeSpar" onclick="CK.lab.setMode('spar')">♔ Sparring</button>
                     <button class="lab-mode-btn" id="labModePlay" onclick="CK.lab.setMode('play')">♟ Play vs AI</button>
                     <button class="lab-mode-btn" id="labModeLichess" onclick="CK.lab.setMode('lichess')">🌐 Lichess</button>
                   </div>
@@ -3940,7 +3889,6 @@
               <div class="p-card" style="border-color:rgba(91,156,246,0.28);">
                 <div class="p-card-header">
                   <div>
-                    <div class="p-card-title">🎓 My Classroom</div>
                     <div style="font-size:0.83rem;color:var(--p-text-muted);">Coach-assigned PGN homework · Live class
                       sync · Study &amp; Guess modes</div>
                   </div>
@@ -4058,7 +4006,6 @@
               <div class="p-card" style="border-color:rgba(232,184,75,0.3);">
                 <div class="p-card-header">
                   <div>
-                    <div class="p-card-title">📖 Opening Trainer</div>
                     <div style="font-size:0.83rem;color:var(--p-text-muted);">Master chess openings · Interactive drills
                       · Track mastery for 12 openings</div>
                   </div>
@@ -4083,7 +4030,6 @@
               <div class="p-card" style="border-color:rgba(0,201,167,0.3);">
                 <div class="p-card-header">
                   <div>
-                    <div class="p-card-title">♟ Game Tracker</div>
                     <div style="font-size:0.83rem;color:var(--p-text-muted);">Log your games · Import from Lichess ·
                       Track wins, losses &amp; accuracy</div>
                   </div>
@@ -4368,8 +4314,7 @@
             <!-- STUDENTS -->
             <div class="p-panel" id="coach-panel-students">
               <div class="p-card">
-                <div class="p-card-header">
-                  <div class="p-card-title">🎓 My Students</div>
+                <div class="p-card-header" style="display:none;">
                 </div>
                 <div class="p-card-body">
                   <div id="coachStudentsSummary" style="font-size:.82rem;color:var(--p-text-muted);margin-bottom:12px;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;"></div>
@@ -4382,7 +4327,7 @@
             <div class="p-panel" id="coach-panel-resources">
               <div class="p-card">
                 <div class="p-card-header">
-                  <div class="p-card-title">📁 Homework & Class Notes</div>
+                  <div></div>
                   <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.admin.openUploadModal('coach')">+ Upload
                     Material</button>
                 </div>
@@ -4444,7 +4389,7 @@
             <div class="p-panel" id="coach-panel-schedule">
               <div class="p-card">
                 <div class="p-card-header">
-                  <div class="p-card-title">📅 My Schedule & Meetings</div>
+                  <div></div>
                   <button class="p-btn p-btn-teal p-btn-sm"
                     onclick="CK.coach.createMeeting && CK.coach.createMeeting()">+ Create Meeting</button>
                 </div>
@@ -4457,8 +4402,7 @@
             <!-- NOTES -->
             <div class="p-panel" id="coach-panel-notes">
               <div class="p-card" style="margin-bottom:20px;">
-                <div class="p-card-header">
-                  <div class="p-card-title">📝 Send Personalized Notes</div>
+                <div class="p-card-header" style="display:none;">
                 </div>
                 <div class="p-card-body" style="padding:20px;">
                   <div style="display:grid; gap:15px;">
@@ -4575,7 +4519,7 @@
 
               <div class="p-card">
                 <div class="p-card-header">
-                  <div class="p-card-title">🧩 Puzzle Library — Assign to Batches</div>
+                  <div></div>
                   <div style="display:flex;gap:8px;">
                     <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.coach.openPuzzleCreator()">➕ Create
                       Puzzle</button>
@@ -4746,7 +4690,6 @@
               <div class="p-card" style="border-color:rgba(232,184,75,0.3);">
                 <div class="p-card-header">
                   <div>
-                    <div class="p-card-title">🔬 Coach PGN Studio & Live Broadcast</div>
                     <div style="font-size:0.83rem;color:var(--p-text-muted);">Real Stockfish · Lichess Import ·
                       Broadcast to Students</div>
                   </div>
@@ -4896,7 +4839,6 @@
               <div class="p-card" style="border-color:rgba(232,184,75,0.28);">
                 <div class="p-card-header">
                   <div>
-                    <div class="p-card-title">🎓 Classroom Manager</div>
                     <div style="font-size:0.83rem;color:var(--p-text-muted);">Assign PGN homework · Live broadcast ·
                       Grade submissions · PGN Library</div>
                   </div>
@@ -5100,7 +5042,6 @@
               <div class="p-card">
                 <div class="p-card-header">
                   <div>
-                    <div class="p-card-title">📋 Class Manager</div>
                     <div style="font-size:0.83rem;color:var(--p-text-muted);">Create & manage your classes · Assign
                       students · Mark attendance via class link</div>
                   </div>
@@ -5145,7 +5086,7 @@
             <div class="p-panel" id="coach-panel-reports">
               <div class="p-card">
                 <div class="p-card-header">
-                  <div class="p-card-title">📊 Monthly Student Reports</div>
+                  <div></div>
                   <span style="font-size:.8rem;color:var(--p-text-muted);">Write per-student monthly performance
                     reports</span>
                 </div>
@@ -5303,8 +5244,7 @@
             <!-- ATTENDANCE -->
             <div class="p-panel par-panel" id="par-panel-attendance">
               <div class="p-card">
-                <div class="p-card-header">
-                  <div class="p-card-title">✅ Attendance Calendar</div>
+                <div class="p-card-header" style="display:none;">
                 </div>
                 <div class="p-card-body" id="parAttendanceContent" style="padding:20px;">
                   <div style="text-align:center;opacity:.45;padding:30px;">Loading attendance…</div>
@@ -5315,8 +5255,7 @@
             <!-- PROGRESS -->
             <div class="p-panel par-panel" id="par-panel-progress">
               <div class="p-card">
-                <div class="p-card-header">
-                  <div class="p-card-title">📈 Progress Overview</div>
+                <div class="p-card-header" style="display:none;">
                 </div>
                 <div class="p-card-body" id="parProgressContent" style="padding:20px;">
                   <div style="text-align:center;opacity:.45;padding:30px;">Loading progress…</div>
@@ -5327,8 +5266,7 @@
             <!-- SCHEDULE -->
             <div class="p-panel par-panel" id="par-panel-schedule">
               <div class="p-card">
-                <div class="p-card-header">
-                  <div class="p-card-title">📅 Upcoming Classes</div>
+                <div class="p-card-header" style="display:none;">
                 </div>
                 <div class="p-card-body" id="parScheduleContent" style="padding:20px;">
                   <div style="text-align:center;opacity:.45;padding:30px;">Loading schedule…</div>
@@ -5339,8 +5277,7 @@
             <!-- REPORTS -->
             <div class="p-panel par-panel" id="par-panel-reports">
               <div class="p-card">
-                <div class="p-card-header">
-                  <div class="p-card-title">📋 Monthly Coach Reports</div>
+                <div class="p-card-header" style="display:none;">
                 </div>
                 <div class="p-card-body" id="parReportsContent" style="padding:20px;">
                   <div style="text-align:center;opacity:.45;padding:30px;">Loading reports…</div>
@@ -5353,7 +5290,7 @@
             <div class="p-panel par-panel" id="par-panel-aiweekly">
               <div class="p-card" style="margin-bottom:20px;">
                 <div class="p-card-header">
-                  <div class="p-card-title">🧠 AI Weekly Report</div>
+                  <div></div>
                   <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.parents.generateAIReport()">🔄 Generate New Report</button>
                 </div>
                 <div class="p-card-body" id="parAIWeeklyReport" style="padding:20px;">
@@ -5375,8 +5312,7 @@
 
             <div class="p-panel par-panel" id="par-panel-feedback">
               <div class="p-card">
-                <div class="p-card-header">
-                  <div class="p-card-title">💬 Share Your Feedback</div>
+                <div class="p-card-header" style="display:none;">
                 </div>
                 <div class="p-card-body" id="parFeedbackContent" style="padding:20px;">
                   <div style="text-align:center;opacity:.45;padding:30px;">Loading feedback form…</div>
@@ -5434,52 +5370,8 @@
               <div class="eval-bar eval-bar-white" id="eval-bar-white" style="height: 50%"></div>
               <div class="eval-bar eval-bar-black" id="eval-bar-black" style="height: 50%"></div>
             </div>
-            <!-- Left coordinates (rendered on the left of the board) -->
-            <div class="arena-coords-left">
-              <span class="arena-coord">8</span>
-              <span class="arena-coord">7</span>
-              <span class="arena-coord">6</span>
-              <span class="arena-coord">5</span>
-              <span class="arena-coord">4</span>
-              <span class="arena-coord">3</span>
-              <span class="arena-coord">2</span>
-              <span class="arena-coord">1</span>
-            </div>
-            <!-- Board with coords -->
-            <div style="width: fit-content; display: flex; flex-direction: column;">
-              <div class="arena-board-wrapper">
-                <div class="arena-board" id="arena-board"></div>
-              </div>
-              <div class="arena-coords-bottom">
-                <span class="arena-coord">a</span>
-                <span class="arena-coord">b</span>
-                <span class="arena-coord">c</span>
-                <span class="arena-coord">d</span>
-                <span class="arena-coord">e</span>
-                <span class="arena-coord">f</span>
-                <span class="arena-coord">g</span>
-                <span class="arena-coord">h</span>
-              </div>
-            </div>
-            <div style="flex: 1; min-width: 250px; margin-left: 16px; display: flex; flex-direction: column; height: 100%; max-height: min(500px, 80vw);">          <!-- Move List & Match Log -->
-              <div class="arena-panel" style="display:flex; flex-direction:column; height:100%;">
-                <div class="arena-panel-header" style="display:flex; justify-content:space-between; align-items:center; padding: 4px 8px;">
-                  <div class="arena-tabs" style="display:flex; gap:6px;">
-                    <button class="arena-tab-btn active" id="arena-tab-moves" onclick="CK.arena.switchTab('moves')">Moves</button>
-                    <button class="arena-tab-btn" id="arena-tab-history" onclick="CK.arena.switchTab('history')">Match Log</button>
-                  </div>
-                </div>
-                <div class="arena-move-list" id="arena-move-list" style="flex:1;"></div>
-                <div class="arena-match-log" id="arena-match-log" style="display:none; flex:1; overflow-y:auto; padding:12px;"></div>
-                <div class="arena-coach-commentary-box">
-                  <div class="arena-coach-commentary-title">
-                    <span>🎙️</span> AI Coach Commentary
-                  </div>
-                  <div class="arena-coach-commentary-text" id="arena-coach-commentary-text">
-                    Coach Tom AI is watching your game. Start playing to get advice!
-                  </div>
-                </div>
-              </div>
+            <div class="arena-board-wrapper">
+              <div class="arena-board" id="arena-board"></div>
             </div>
           </div>
 
@@ -5521,6 +5413,26 @@
 
         <!-- Analysis Column -->
         <div class="arena-analysis-col">
+          <!-- Move List & Match Log -->
+          <div class="arena-panel" style="display:flex; flex-direction:column; height:300px; margin-bottom: 16px;">
+            <div class="arena-panel-header" style="display:flex; justify-content:space-between; align-items:center; padding: 4px 8px;">
+              <div class="arena-tabs" style="display:flex; gap:6px;">
+                <button class="arena-tab-btn active" id="arena-tab-moves" onclick="CK.arena.switchTab('moves')">Moves</button>
+                <button class="arena-tab-btn" id="arena-tab-history" onclick="CK.arena.switchTab('history')">Match Log</button>
+              </div>
+            </div>
+            <div class="arena-move-list" id="arena-move-list" style="flex:1;"></div>
+            <div class="arena-match-log" id="arena-match-log" style="display:none; flex:1; overflow-y:auto; padding:12px;"></div>
+            <div class="arena-coach-commentary-box">
+              <div class="arena-coach-commentary-title">
+                <span>🎙️</span> AI Coach Commentary
+              </div>
+              <div class="arena-coach-commentary-text" id="arena-coach-commentary-text">
+                Coach Tom AI is watching your game. Start playing to get advice!
+              </div>
+            </div>
+          </div>
+
           <!-- AI Settings -->
           <div class="arena-panel" style="padding: 16px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
@@ -5653,7 +5565,7 @@
             <div class="game-mode-selector" style="display:flex; gap:8px;">
               <button class="game-mode-btn active" data-mode="ai" onclick="CK.arena.setGameMode('ai')"
                       style="flex:1; padding:14px 12px; border-radius:12px; border:1.5px solid rgba(232,184,75,0.45); background:rgba(232,184,75,0.12); color:#fff; cursor:pointer; font-weight:700; transition:all .2s;">
-                <div style="font-size:1.4rem; margin-bottom:4px;">🤖</div>
+                <div style="font-size:1.4rem; margin-bottom:4px;">♔</div>
                 <div style="font-size:0.78rem;">Play vs AI</div>
                 <div style="font-size:0.62rem; opacity:0.7; font-weight:500; margin-top:2px;">Single player vs Stockfish</div>
               </button>
@@ -5919,8 +5831,6 @@
           <!-- ======================== ARCADE OVERLAY ======================== -->
           <div id="arcade-overlay" class="arcade-overlay">
             <div class="arcade-cabinet" style="position:relative;">
-              <div class="crt-scanline"></div>
-              <div class="crt-glow"></div>
               <div id="arcade-cabinet-content">
                 <!-- Dynamically populated by JS depending on selected game -->
               </div>

@@ -60,22 +60,66 @@ CK.coach = {
   _coachRefreshTimer: null,
   _sessionTimerInterval: null,
   _sessionSeconds: 0,
+  _realtimeChannel: null,
 
   startAutoRefresh() {
     if (this._coachRefreshTimer) clearInterval(this._coachRefreshTimer);
-    // Heartbeat presence
     this._updateCoachPresence();
+
+    // Heartbeat for presence
     this._coachRefreshTimer = setInterval(async () => {
       this._updateCoachPresence();
-      // Refresh student grid if on home or students panel
-      const homePanel = document.getElementById('coach-panel-home');
-      const studPanel = document.getElementById('coach-panel-students');
-      if ((homePanel && homePanel.classList.contains('active')) ||
-          (studPanel && studPanel.classList.contains('active'))) {
-        await this._refreshStudentGrid();
-      }
-      await this.updateProfile();
-    }, 30000);
+    }, 60000);
+
+    // Supabase Realtime for instant sync
+    if (window.supabaseClient && !this._realtimeChannel) {
+      try {
+        this._realtimeChannel = window.supabaseClient.channel('coach_global_sync')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, async (payload) => {
+            const homePanel = document.getElementById('coach-panel-home');
+            const studPanel = document.getElementById('coach-panel-students');
+            if ((homePanel && homePanel.classList.contains('active')) ||
+                (studPanel && studPanel.classList.contains('active'))) {
+              await this._refreshStudentGrid();
+            }
+            await this.updateProfile();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'assignments' }, async (payload) => {
+            if (CK.hw) await CK.hw.renderList('coach');
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'meetings' }, async (payload) => {
+            const _meetings = await CK.db.getMeetings();
+            const _coachName = this.coachProfile?.full_name;
+            const _todayMeetings = _meetings.filter(m =>
+              (m.coach === _coachName || !m.coach) &&
+              (m.date === new Date().toISOString().split('T')[0])
+            );
+            if (_todayMeetings.length > 0) {
+              this.classesDb = _todayMeetings.map((m, i) => ({
+                id: m.id || `C${i + 1}`,
+                class: m.title || m.type || 'Chess Class',
+                level: m.level || 'Intermediate',
+                time: m.time || '4:00 PM',
+                students: m.students || 0,
+                status: 'Upcoming',
+                batch: m.batch
+              }));
+            }
+            const homePanel = document.getElementById('coach-panel-home');
+            if (homePanel && homePanel.classList.contains('active')) {
+              await this.renderDashboard();
+            }
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, async (payload) => {
+            const attPanel = document.getElementById('coach-panel-attendance');
+            if (attPanel && attPanel.classList.contains('active')) {
+              await this.loadAttendance();
+              await this.loadAttendanceAdvanced();
+            }
+          })
+          .subscribe();
+      } catch(e) {}
+    }
   },
 
   stopAutoRefresh() {

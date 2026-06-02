@@ -19,10 +19,7 @@ window.APP_CONFIG = {
   // Admin UUID — matches the seeded admin user in the users table
   ADMIN_UUID:       "a0000000-0000-4000-8000-000000000001",
 
-  // Razorpay — replace with your live key from dashboard.razorpay.com
-  // Test key format: rzp_test_XXXXXXXXXXXXXXXX
-  // Live key format: rzp_live_XXXXXXXXXXXXXXXX
-  RAZORPAY_KEY:     "rzp_test_REPLACE_WITH_YOUR_KEY",
+
 
   // Academy display info
   ACADEMY_NAME:     "ChessKidoo Academy",
@@ -43,8 +40,7 @@ window.APP_CONFIG = {
   EMAILJS_KEY:      "1EuHvvzi2H9RnaBF6"
 };
 
-// Expose Razorpay key via global for student.js payment gateway
-window.CK_RAZORPAY_KEY = window.APP_CONFIG.RAZORPAY_KEY;
+
 
 // HTML-escape helper — use CK.esc(str) inside any innerHTML template
 // to prevent XSS from user-supplied names, notes, and descriptions.

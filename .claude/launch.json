@@ -3,9 +3,10 @@
   "configurations": [
     {
       "name": "chesskidoo",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 5173
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8761"],
+      "port": 8761,
+      "autoPort": false
     }
   ]
 }

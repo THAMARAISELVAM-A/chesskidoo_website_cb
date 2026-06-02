@@ -494,22 +494,23 @@
   --card-color-b: 6, 182, 212;
 }
 /* ─── Game Layout ─── */
-/* The previous rule used `grid-template-columns: auto 350px` but the second
-   column was never filled by any child — it created an invisible 350px gap
-   on the right of the board that shifted everything off-centre. Simplified
-   to a flex column that just centres the single board-col child. */
 .arena-game-layout {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  align-items: start;
+  gap: 24px;
   padding: 24px 20px;
   max-width: 1280px;
   margin: 0 auto;
   min-height: calc(100vh - 80px);
   width: 100%;
   box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+  .arena-game-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 .arena-board-col {
@@ -541,13 +542,16 @@
    against. Without this the board can collapse to 0×0 in some browsers
    and squares become invisible/unclickable (pieces "won't move"). */
 .arena-board-container > div[style*="fit-content"] {
-  flex: 1 1 auto;
+  /* grow:0 so the wrapper never expands wider than the board (that left a big
+     empty gap between the eval bar and the board on desktop); shrink:1 so it
+     can still narrow on tight viewports instead of overflowing. */
+  flex: 0 1 auto;
   width: min(640px, 75vh) !important;
   max-width: 100%;
   min-width: 240px;
   display: flex !important;
   flex-direction: column !important;
-  align-self: stretch;
+  align-self: center;            /* match the board height, not the full row */
   /* Ensure clicks reach children — defensive against any inherited blocking */
   pointer-events: auto;
 }
@@ -555,7 +559,12 @@
 .arena-board-wrapper {
   position: relative;
   width: 100%;
-  max-width: 100%;
+  /* Cap the wrapper by the SAME value the board uses (min(640px,75vh)) and
+     centre it. Previously the wrapper stretched to the full column width while
+     the board was height-capped by 75vh, so the board floated inside an
+     oversized wrapper — that produced the big empty gap beside the eval bar. */
+  max-width: min(640px, 75vh);
+  margin: 0 auto;
   aspect-ratio: 1 / 1;            /* keeps the wrapper a definite height */
   border-radius: 8px;
   overflow: hidden;
@@ -1860,10 +1869,10 @@
      eliminates the sub-pixel seam lines that appear on high-DPR screens. */
   background:
     conic-gradient(
-      var(--arcade-board-light, #ebecd3) 0 25%,
-      var(--arcade-board-dark, #6f9c54) 0 50%,
-      var(--arcade-board-light, #ebecd3) 0 75%,
-      var(--arcade-board-dark, #6f9c54) 0
+      var(--arcade-board-dark, #6f9c54) 0 25%,
+      var(--arcade-board-light, #ebecd3) 0 50%,
+      var(--arcade-board-dark, #6f9c54) 0 75%,
+      var(--arcade-board-light, #ebecd3) 0
     ) 0 0 / 25% 25%;
 }
 .arcade-sq {
@@ -2710,32 +2719,6 @@
 }
 
 /* ─── Retro Cyber-Cabinet CRT & Visual Effects ─── */
-.crt-scanline {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-              linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-  background-size: 100% 3px, 6px 100%;
-  z-index: 99;
-  pointer-events: none;
-  border-radius: 28px;
-}
-
-.crt-glow {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at center, transparent 30%, rgba(6, 182, 212, 0.04) 70%, rgba(6, 182, 212, 0.08) 100%);
-  z-index: 98;
-  pointer-events: none;
-  border-radius: 28px;
-  animation: crtFlicker 0.15s infinite;
-}
-
-@keyframes crtFlicker {
-  0% { opacity: 0.98; }
-  50% { opacity: 1; }
-  100% { opacity: 0.99; }
-}
 
 .arcade-sq.error-glow {
   animation: errorFlash 0.65s ease;

@@ -39,18 +39,47 @@ CK.parents = (() => {
   ═════════════════════════════════════════════════════════ */
 
   let _parentRefreshTimer = null;
+  let _realtimeChannel = null;
 
   function startAutoRefresh() {
     stopAutoRefresh();
+    
+    // Heartbeat fallback
     _parentRefreshTimer = setInterval(async () => {
       if (!_childProfile) return;
       const activePanel = document.querySelector('#parent-page .par-panel.active');
       if (!activePanel) return;
       const panelId = activePanel.id.replace('par-panel-', '');
-      if (panelId === 'dashboard') { await renderChildProfile(); }
+      if (panelId === 'home') { await renderChildProfile(); }
       if (panelId === 'progress') { await renderProgress(); }
       if (panelId === 'attendance') { await renderAttendance(); }
-    }, 45000);
+    }, 60000);
+
+    // Supabase Realtime for instant sync
+    if (window.supabaseClient && !_realtimeChannel && _childProfile) {
+      try {
+        _realtimeChannel = window.supabaseClient.channel('parent_global_sync')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, async (payload) => {
+            const homePanel = document.getElementById('par-panel-home');
+            const progPanel = document.getElementById('par-panel-progress');
+            if (homePanel && homePanel.classList.contains('active')) await renderChildProfile();
+            if (progPanel && progPanel.classList.contains('active')) await renderProgress();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, async (payload) => {
+            const attPanel = document.getElementById('par-panel-attendance');
+            if (attPanel && attPanel.classList.contains('active')) await renderAttendance();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'coach_notes' }, async (payload) => {
+            const repPanel = document.getElementById('par-panel-reports');
+            if (repPanel && repPanel.classList.contains('active')) renderReports();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'meetings' }, async (payload) => {
+            const schedPanel = document.getElementById('par-panel-schedule');
+            if (schedPanel && schedPanel.classList.contains('active')) renderSchedule();
+          })
+          .subscribe();
+      } catch (e) {}
+    }
   }
 
   function stopAutoRefresh() {
