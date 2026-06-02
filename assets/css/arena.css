@@ -541,7 +541,10 @@
    against. Without this the board can collapse to 0×0 in some browsers
    and squares become invisible/unclickable (pieces "won't move"). */
 .arena-board-container > div[style*="fit-content"] {
-  flex: 1 1 auto;
+  /* grow:0 so the wrapper never expands wider than the board (that left a big
+     empty gap between the eval bar and the board on desktop); shrink:1 so it
+     can still narrow on tight viewports instead of overflowing. */
+  flex: 0 1 auto;
   width: min(640px, 75vh) !important;
   max-width: 100%;
   min-width: 240px;
@@ -555,7 +558,12 @@
 .arena-board-wrapper {
   position: relative;
   width: 100%;
-  max-width: 100%;
+  /* Cap the wrapper by the SAME value the board uses and centre it. Previously
+     the wrapper stretched to the full column width while the board was
+     height-capped by 75vh, so the board floated inside an oversized wrapper —
+     that produced the big empty gap between the eval bar and the board. */
+  max-width: min(640px, 75vh);
+  margin: 0 auto;
   aspect-ratio: 1 / 1;            /* keeps the wrapper a definite height */
   border-radius: 8px;
   overflow: hidden;
