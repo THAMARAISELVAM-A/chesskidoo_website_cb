@@ -1270,7 +1270,10 @@
   display: none;
   flex-direction: column;     /* stack card above action bar — never side-by-side */
   align-items: center;
-  justify-content: center;
+  /* "safe center" centres the certificate when it fits but falls back to
+     flex-start when it is taller than the viewport, so its TOP never gets cut
+     off / unscrollable (the classic flex-center overflow bug). */
+  justify-content: safe center;
   gap: 18px;
   z-index: 10001;
   padding: 20px;
