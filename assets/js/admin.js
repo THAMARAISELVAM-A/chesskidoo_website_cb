@@ -208,6 +208,7 @@ CK.admin = {
       feedback: 'Feedback & Reviews',
       schedule: 'Academy Schedule',
       coachattendance: 'Coach Attendance',
+      coachfinance: 'Coach Finance & Payroll',
       analytics: 'AI Analytics & Insights',
       leaderboard: 'Leaderboard & XP',
       audit: 'Security & Audit Logs',
@@ -240,6 +241,7 @@ CK.admin = {
     if (panelId === 'access')         CK.accessManager?.renderAccessTable('adminAccessTable');
     if (panelId === 'schedule')       if (CK.schedulePro) await CK.schedulePro.renderAdminSchedule('adminAllSchedule');
     if (panelId === 'coachattendance') if (CK.classSystem) await CK.classSystem.renderCoachAttendanceReport('adminCoachAttnReport');
+    if (panelId === 'coachfinance') await this.renderCoachFinance();
     if (panelId === 'tournaments') {
       this.loadTournaments();
       if (CK.tournament) CK.tournament.renderTournamentList('adminTournamentList');
@@ -1679,6 +1681,153 @@ CK.admin = {
     } catch (e) {
       console.error('[Admin] deleteCoach error:', e);
       CK.showToast('Could not delete coach: ' + (e.message || e), 'error');
+    }
+  },
+
+  /* ════════════════ COACH FINANCE / PAYROLL ════════════════
+     Per-coach P&L using existing data: revenue = sum of the coach's PAID
+     students' fees; salary = coach.salary; net = revenue − salary. Admin can
+     edit a salary, record a salary payment, and download a salary receipt. */
+  _money(n) { return '₹' + (parseInt(n) || 0).toLocaleString('en-IN'); },
+  _feeOf(s) { return parseInt((s.fee || '0').toString().replace(/[^0-9]/g, '')) || 0; },
+
+  async renderCoachFinance() {
+    const body = document.getElementById('adminCoachFinanceBody');
+    const statsEl = document.getElementById('adminCoachFinanceStats');
+    if (!body) return;
+    const _e = CK.esc || (s => s);
+    const coaches = (await CK.db.getProfiles('coach')) || [];
+    const students = (await CK.db.getProfiles('student')) || [];
+
+    let totPayroll = 0, totRevenue = 0;
+    const rows = coaches.map(c => {
+      const mine = students.filter(s => s.coach && s.coach.toLowerCase() === (c.full_name || '').toLowerCase());
+      const revenue = mine.filter(s => s.status === 'Paid').reduce((sum, s) => sum + this._feeOf(s), 0);
+      const pending = mine.filter(s => s.status !== 'Paid').reduce((sum, s) => sum + this._feeOf(s), 0);
+      const salary = parseInt((c.salary || '0').toString().replace(/[^0-9]/g, '')) || 0;
+      const net = revenue - salary;
+      totPayroll += salary; totRevenue += revenue;
+      const safeId = _e((c.id || '').replace(/'/g, '&apos;'));
+      return `<tr>
+        <td style="font-weight:600">${_e(c.full_name || '—')}</td>
+        <td>${mine.length}</td>
+        <td style="color:var(--p-teal,#14b8a6);font-weight:600">${this._money(revenue)}</td>
+        <td style="color:var(--p-gold,#e8b84b)">${this._money(pending)}</td>
+        <td>${this._money(salary)} <button class="p-btn p-btn-ghost p-btn-sm" style="padding:1px 6px" onclick="CK.admin.editCoachSalary('${safeId}')">✎</button></td>
+        <td style="font-weight:700;color:${net >= 0 ? 'var(--p-teal,#14b8a6)' : 'var(--p-danger,#ef4444)'}">${this._money(net)}</td>
+        <td style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="p-btn p-btn-teal p-btn-sm" onclick="CK.admin.paySalary('${safeId}')">💸 Pay Salary</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    body.innerHTML = `
+      <div style="overflow-x:auto">
+        <table class="p-table" style="width:100%;font-size:.85rem">
+          <thead><tr><th>Coach</th><th>Students</th><th>Revenue (paid)</th><th>Pending</th><th>Monthly Salary</th><th>Net to Academy</th><th>Action</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="7" style="text-align:center;opacity:.5;padding:24px">No coaches yet.</td></tr>'}</tbody>
+        </table>
+      </div>`;
+
+    if (statsEl) {
+      const card = (icon, val, label, color) => `
+        <div class="acc-stat-card"><div class="acc-stat-icon" style="background:${color}1a;color:${color}">${icon}</div>
+        <div><div class="acc-stat-val">${val}</div><div class="acc-stat-label">${label}</div></div></div>`;
+      statsEl.innerHTML =
+        card('👨‍🏫', coaches.length, 'Coaches', '#3b82f6') +
+        card('💰', this._money(totRevenue), 'Revenue Collected', '#14b8a6') +
+        card('💵', this._money(totPayroll), 'Monthly Payroll', '#e8b84b') +
+        card('📈', this._money(totRevenue - totPayroll), 'Net Margin', totRevenue - totPayroll >= 0 ? '#22c55e' : '#ef4444');
+    }
+    this.renderCoachPayments();
+  },
+
+  async editCoachSalary(coachId) {
+    const c = await CK.db.getProfile(coachId);
+    if (!c) return;
+    const cur = (c.salary || '').toString().replace(/[^0-9]/g, '');
+    const val = prompt(`Set monthly salary for ${c.full_name} (₹):`, cur || '');
+    if (val === null) return;
+    const num = parseInt(val.replace(/[^0-9]/g, '')) || 0;
+    c.salary = String(num);
+    await CK.db.saveProfile(c);
+    CK.showToast(`Salary updated for ${c.full_name}.`, 'success');
+    this.renderCoachFinance();
+  },
+
+  async paySalary(coachId) {
+    const c = await CK.db.getProfile(coachId);
+    if (!c) return;
+    const salary = parseInt((c.salary || '0').toString().replace(/[^0-9]/g, '')) || 0;
+    if (!salary) { CK.showToast('Set a salary for this coach first (✎).', 'warning'); return; }
+    const now = new Date();
+    const monthName = now.toLocaleString('en-US', { month: 'long' });
+    if (!confirm(`Record salary payment of ${this._money(salary)} to ${c.full_name} for ${monthName} ${now.getFullYear()}?`)) return;
+    const payment = {
+      coach_id: c.id, coach_name: c.full_name, amount: String(salary),
+      month: monthName, year: now.getFullYear(),
+      paid_date: now.toISOString().slice(0, 10), method: 'Bank Transfer',
+      receipt_no: 'SAL-' + now.getFullYear() + '-' + Math.random().toString(36).slice(2, 7).toUpperCase()
+    };
+    await CK.db.saveCoachPayment(payment);
+    if (CK.db.saveAuditLog) CK.db.saveAuditLog({
+      user_id: CK.currentUser?.id || 'admin', user_name: CK.currentUser?.full_name || 'Admin',
+      action: 'PAY_SALARY', resource: 'coach_payments',
+      detail: `Paid ${this._money(salary)} salary to ${c.full_name} (${monthName})`, severity: 'INFO'
+    });
+    CK.showToast(`✅ Salary paid to ${c.full_name}. Generating receipt…`, 'success');
+    this.downloadSalaryReceipt(payment);
+    this.renderCoachFinance();
+  },
+
+  async renderCoachPayments() {
+    const el = document.getElementById('adminCoachPaymentsBody');
+    if (!el) return;
+    const _e = CK.esc || (s => s);
+    const pays = (await CK.db.getCoachPayments()) || [];
+    if (!pays.length) { el.innerHTML = '<div style="text-align:center;opacity:.5;padding:20px">No salary payments recorded yet.</div>'; return; }
+    el.innerHTML = `<div style="overflow-x:auto"><table class="p-table" style="width:100%;font-size:.82rem">
+      <thead><tr><th>Receipt #</th><th>Coach</th><th>Amount</th><th>Period</th><th>Paid On</th><th></th></tr></thead>
+      <tbody>${pays.slice(0, 30).map(p => `<tr>
+        <td style="font-family:monospace;font-size:.74rem">${_e(p.receipt_no || '—')}</td>
+        <td style="font-weight:600">${_e(p.coach_name || '—')}</td>
+        <td style="color:var(--p-teal,#14b8a6);font-weight:600">${this._money(p.amount)}</td>
+        <td>${_e((p.month || '') + ' ' + (p.year || ''))}</td>
+        <td>${_e(p.paid_date || '—')}</td>
+        <td><button class="p-btn p-btn-ghost p-btn-sm" onclick='CK.admin.downloadSalaryReceipt(${JSON.stringify(p).replace(/'/g, "&apos;")})'>🧾 Receipt</button></td>
+      </tr>`).join('')}</tbody></table></div>`;
+  },
+
+  downloadSalaryReceipt(p) {
+    try {
+      const jsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+      if (!jsPDF) { CK.showToast('Receipt generator loading… try again in a moment.', 'info'); return; }
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      const academy = window.APP_CONFIG?.ACADEMY_NAME || 'ChessKidoo Academy';
+      doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 32, 'F');
+      doc.setTextColor(232, 184, 75); doc.setFont('helvetica', 'bold'); doc.setFontSize(20);
+      doc.text(academy, 105, 15, { align: 'center' });
+      doc.setTextColor(255, 255, 255); doc.setFontSize(11); doc.setFont('helvetica', 'normal');
+      doc.text('Coach Salary Receipt', 105, 24, { align: 'center' });
+      doc.setTextColor(30, 41, 59); doc.setFontSize(11);
+      let y = 48;
+      const line = (k, v) => { doc.setFont('helvetica', 'bold'); doc.text(k, 20, y); doc.setFont('helvetica', 'normal'); doc.text(String(v), 80, y); y += 11; };
+      line('Receipt No:', p.receipt_no || '—');
+      line('Coach:', p.coach_name || '—');
+      line('Amount Paid:', this._money(p.amount));
+      line('Pay Period:', (p.month || '') + ' ' + (p.year || ''));
+      line('Paid On:', p.paid_date || '—');
+      line('Method:', p.method || 'Bank Transfer');
+      y += 8;
+      doc.setDrawColor(212, 175, 55); doc.line(20, y, 90, y); y += 6;
+      doc.setFont('helvetica', 'italic'); doc.setFontSize(9);
+      doc.text('Authorised Signatory — ' + academy, 20, y);
+      doc.setTextColor(120, 120, 120);
+      doc.text('This is a computer-generated salary receipt.', 105, 285, { align: 'center' });
+      doc.save(`salary-receipt-${p.coach_name || 'coach'}-${p.month || ''}.pdf`);
+    } catch (e) {
+      console.error('[Admin] salary receipt error:', e);
+      CK.showToast('Could not generate receipt: ' + (e.message || e), 'error');
     }
   },
 

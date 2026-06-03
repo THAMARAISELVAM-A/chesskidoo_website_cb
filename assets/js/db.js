@@ -921,6 +921,32 @@
       return log;
     },
 
+    // --- COACH PAYMENTS / PAYROLL ---
+    async getCoachPayments(coachId = null) {
+      if (canUseSupabase()) {
+        try {
+          let q = window.supabaseClient.from('coach_payments').select('*').order('created_at', { ascending: false });
+          if (coachId) q = q.eq('coach_id', coachId);
+          const { data, error } = await q;
+          if (!error && data) { localStorage.setItem('ck_coach_payments', JSON.stringify(data)); return data; }
+        } catch (e) { }
+      }
+      const all = JSON.parse(localStorage.getItem('ck_coach_payments') || '[]');
+      return coachId ? all.filter(p => p.coach_id === coachId) : all;
+    },
+    async saveCoachPayment(p) {
+      if (!p.id) p.id = 'cp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5);
+      if (!p.created_at) p.created_at = new Date().toISOString();
+      if (canUseSupabase()) {
+        try { await window.supabaseClient.from('coach_payments').upsert(p); } catch (e) { }
+      }
+      const all = JSON.parse(localStorage.getItem('ck_coach_payments') || '[]');
+      const idx = all.findIndex(x => x.id === p.id);
+      if (idx !== -1) all[idx] = p; else all.unshift(p);
+      localStorage.setItem('ck_coach_payments', JSON.stringify(all));
+      return p;
+    },
+
     // --- CREDENTIALS SYNC (Supabase credentials table) ---
     async getCredentials() {
       if (canUseSupabase()) {

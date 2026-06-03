@@ -1772,6 +1772,9 @@
             <button class="p-nav-item" onclick="CK.admin.showPanel('coachattendance')">
               <span class="icon">👨‍🏫</span><span>Coach Attendance</span>
             </button>
+            <button class="p-nav-item" onclick="CK.admin.showPanel('coachfinance')">
+              <span class="icon">💵</span><span>Coach Finance</span>
+            </button>
             <div class="p-nav-section-label">Intelligence</div>
             <button class="p-nav-item" onclick="CK.admin.showPanel('analytics')">
               <span class="icon">🧠</span><span>AI Analytics</span>
@@ -2553,6 +2556,26 @@
                 </div>
                 <div class="p-card-body" id="adminCoachAttnReport" style="padding:16px;">
                   <div style="text-align:center;opacity:.45;padding:30px;">Loading coach attendance…</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ══ COACH FINANCE / PAYROLL PANEL ══ -->
+            <div class="p-panel" id="p-panel-coachfinance">
+              <div id="adminCoachFinanceStats" class="acc-stats-row" style="margin-bottom:18px;"></div>
+              <div class="p-card">
+                <div class="p-card-header">
+                  <div class="p-card-title">💵 Coach Finance & Payroll</div>
+                  <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.renderCoachFinance()">🔄 Refresh</button>
+                </div>
+                <div class="p-card-body" id="adminCoachFinanceBody" style="padding:16px;">
+                  <div style="text-align:center;opacity:.45;padding:30px;">Loading coach finance…</div>
+                </div>
+              </div>
+              <div class="p-card" style="margin-top:18px;">
+                <div class="p-card-header"><div class="p-card-title">🧾 Recent Salary Payments</div></div>
+                <div class="p-card-body" id="adminCoachPaymentsBody" style="padding:16px;">
+                  <div style="text-align:center;opacity:.45;padding:20px;">No salary payments recorded yet.</div>
                 </div>
               </div>
             </div>
