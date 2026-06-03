@@ -4432,15 +4432,15 @@
    signatures render as plain text instead of a handwritten signature script. */
 #cert-card .signature,
 .certificate .signature {
-  /* Alex Brush reads as a refined, professional ink signature (Great Vibes was
-     too ornate). Navy ink + a subtle slant sells the 'real signature' look. */
-  font-family: 'Alex Brush', 'Great Vibes', cursive !important;
-  font-size: 46px;
+  /* Allura — an elegant, professional flowing signature script. Navy ink + a
+     subtle slant sells the 'real signature' look. */
+  font-family: 'Allura', 'Sacramento', 'Alex Brush', cursive !important;
+  font-size: 54px;
   font-weight: 400;
   color: #1a2744;
   line-height: 1;
   letter-spacing: 0.5px;
-  transform: rotate(-2.5deg);
+  transform: rotate(-2deg);
   display: inline-block;
 }
 /* Certificate brand logo image in the header. The crop has a white background;

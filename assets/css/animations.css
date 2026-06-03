@@ -138,6 +138,22 @@ html { scroll-behavior: smooth; }
   background: none;
 }
 
+/* ═══ HERO TITLE — per-WORD entrance (GSAP slides each word in from a side) ═══ */
+.hero-word { display: inline-block; will-change: transform, opacity; }
+.hero-word-em {
+  color: var(--amber, #E8A020) !important;
+  -webkit-text-fill-color: var(--amber, #E8A020) !important;
+  background: none !important;
+}
+/* When GSAP word-animates the title, disable the block entrance + em shimmer
+   (per-word spans can't carry the clipped gradient). */
+.hero-title[data-worded] { animation: none !important; }
+.hero-title[data-worded] em {
+  background: none !important;
+  -webkit-text-fill-color: initial;
+  animation: none !important;
+}
+
 /* ═══ HERO TITLE — emphasized words shimmer in gold continuously ═══ */
 /* "think two" / "moves" already use color:var(--amber); upgrade to a moving
    gold gradient so the headline feels alive (time2chess-style motion). */

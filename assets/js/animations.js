@@ -73,8 +73,10 @@
   function init() {
     if (!reduce) mountProgressBar();
     scan(document);
-    // Let any i18n/translation settle first, then animate the letters.
-    setTimeout(animateHeroLetters, 350);
+    // Hero headline animation is owned by gsap-effects.js (pieces slide → words
+    // fly in from alternating sides). Only fall back to the CSS letter-bounce if
+    // GSAP isn't available.
+    setTimeout(() => { if (!window.gsap) animateHeroLetters(); }, 600);
   }
 
   if (document.readyState !== 'loading') init();
