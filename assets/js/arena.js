@@ -2321,15 +2321,10 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
         <div class="corner bottom-left"></div>
         <div class="corner bottom-right"></div>
 
-        <!-- Header: logo image + brand wordmark + tagline -->
-        <div class="header">
-          <img src="assets/img/logo.png" alt="ChessKidoo" class="cert-logo-img"
-               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
-          <div class="logo-circle" style="display:none;"><span>♞</span></div>
-          <div>
-            <div class="brand">CHESS<span>KIDOO</span></div>
-            <div class="tagline">BUILDING BRILLIANCE</div>
-          </div>
+        <!-- Header: full brand logo image (knight + wordmark + tagline) -->
+        <div class="header header-logo-only">
+          <img src="assets/img/cert-logo.png" alt="ChessKidoo — Building Brilliance" class="cert-logo-img"
+               onerror="this.onerror=null;this.src='assets/img/logo.png';this.classList.add('cert-logo-fallback');" />
         </div>
 
         <!-- Title -->

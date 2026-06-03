@@ -72,19 +72,39 @@ html { scroll-behavior: smooth; }
 @keyframes softPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
 .anim-pulse { animation: softPulse 2.8s ease-in-out infinite; }
 
-/* ═══ HERO STATS — each stat on ONE line (number + label inline), not stacked ═══ */
+/* ═══ HERO STATS — ALL on ONE straight horizontal line ═══ */
+.hero-stats {
+  display: flex !important;
+  flex-wrap: nowrap !important;     /* keep the 4 stats on a single line */
+  align-items: baseline;
+  gap: 14px;
+  overflow-x: auto;                 /* scroll instead of wrapping on tight widths */
+  padding-bottom: 6px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.hero-stats::-webkit-scrollbar { display: none; }
 .hero-stats .stat-item {
   display: flex !important;
   align-items: baseline;
-  gap: 7px;
+  gap: 6px;
   white-space: nowrap;
+  flex: 0 0 auto;                   /* don't shrink/wrap each stat */
 }
-.hero-stats { gap: 26px; }
-.hero-stats .hero-stat-num { line-height: 1; }
-.hero-stats .hero-stat-label { margin: 0; }
-@media (max-width: 640px) {
-  .hero-stats { gap: 14px 20px; justify-content: center; }
-  .hero-stats .hero-stat-num { font-size: 1.5rem; }
+.hero-stats .hero-stat-num { font-size: 1.5rem; line-height: 1; }
+.hero-stats .hero-stat-label { font-size: 0.72rem; margin: 0; }
+/* slim divider between stats */
+.hero-stats .stat-item:not(:last-child)::after {
+  content: '';
+  width: 1px; height: 18px; margin-left: 14px;
+  background: rgba(255,255,255,0.18);
+  align-self: center;
+}
+@media (max-width: 768px) {
+  .hero-stats { gap: 10px; justify-content: flex-start; }
+  .hero-stats .hero-stat-num { font-size: 1.25rem; }
+  .hero-stats .hero-stat-label { font-size: 0.66rem; }
+  .hero-stats .stat-item:not(:last-child)::after { height: 14px; margin-left: 10px; }
 }
 
 /* ═══ HERO TITLE — letters bounce in one-by-one like chess pieces landing ═══ */

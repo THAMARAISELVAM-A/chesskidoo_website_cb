@@ -4432,19 +4432,40 @@
    signatures render as plain text instead of a handwritten signature script. */
 #cert-card .signature,
 .certificate .signature {
-  font-family: 'Great Vibes', 'Alex Brush', cursive !important;
-  font-size: 52px;
+  /* Alex Brush reads as a refined, professional ink signature (Great Vibes was
+     too ornate). Navy ink + a subtle slant sells the 'real signature' look. */
+  font-family: 'Alex Brush', 'Great Vibes', cursive !important;
+  font-size: 46px;
   font-weight: 400;
-  color: #111;
+  color: #1a2744;
   line-height: 1;
+  letter-spacing: 0.5px;
+  transform: rotate(-2.5deg);
+  display: inline-block;
 }
-/* Certificate brand logo image in the header */
+/* Certificate brand logo image in the header. The crop has a white background;
+   multiply-blend it so the white melts into the cream paper and only the logo
+   artwork shows. */
+#cert-card .header-logo-only,
+.certificate .header-logo-only {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+}
 #cert-card .cert-logo-img,
 .certificate .cert-logo-img {
-  height: 84px;
+  height: 120px;
   width: auto;
+  max-width: 560px;
   object-fit: contain;
   display: block;
+  mix-blend-mode: multiply;   /* melt the white crop background into the cream */
+}
+/* SVG/PNG brand fallback (logo.png) has a transparent bg — no blend needed */
+#cert-card .cert-logo-img.cert-logo-fallback,
+.certificate .cert-logo-img.cert-logo-fallback {
+  mix-blend-mode: normal;
+  height: 80px;
 }
 .certificate .signature-line {
   height: 2px;
