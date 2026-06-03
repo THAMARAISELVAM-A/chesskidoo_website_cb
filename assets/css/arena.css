@@ -2476,6 +2476,11 @@
 @media (max-width: 1024px) and (min-width: 769px) {
   .arena-game-layout { gap: 24px; }
   .arena-board { max-width: min(560px, 80vw) !important; }
+  /* Board, wrapper AND the fit-content boardWrap must all share the same cap,
+     else the board floats centred in a wider parent and the eval bar sits far
+     away with empty space beside the board (the 901–1024px gap bug). */
+  .arena-board-wrapper { max-width: min(560px, 80vw); }
+  .arena-board-container > div[style*="fit-content"] { width: min(560px, 80vw) !important; }
 }
 
 @media (max-width: 768px) {
@@ -2485,6 +2490,7 @@
   .arena-board {
     max-width: min(440px, 92vw) !important;
   }
+  .arena-board-wrapper { max-width: min(440px, 92vw); }   /* hug the board */
   .arena-panel { padding: 16px !important; }
   .diff-btn, .timer-btn { padding: 6px 8px !important; font-size: 0.7rem !important; }
   .arena-header { padding: 12px 10px !important; }

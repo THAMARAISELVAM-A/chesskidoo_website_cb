@@ -65,7 +65,9 @@
   .arena-board-container > div[style*="fit-content"] {
     width: auto !important;
     max-width: calc(100% - 30px) !important;
-    flex: 1 1 auto !important;
+    /* grow:0 so this wrapper hugs the (capped) board instead of expanding and
+       leaving the board floating centred with the eval bar far to the left. */
+    flex: 0 1 auto !important;
     min-width: 0 !important;
   }
 
