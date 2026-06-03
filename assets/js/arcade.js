@@ -945,7 +945,9 @@ CK.arcade = (() => {
   function startPawnStormLoop() {
     if (state.timerInterval) clearInterval(state.timerInterval);
     state.timerInterval = setInterval(() => {
-      if (state.gameOver) return;
+      // Stop the loop if the game ended or its state was torn down (exiting /
+      // switching games) — otherwise it errors every tick on undefined state.
+      if (state.gameOver || !Array.isArray(state.pawns)) { clearInterval(state.timerInterval); return; }
 
       // 1. Slide existing pawns down
       const nextPawns = [];

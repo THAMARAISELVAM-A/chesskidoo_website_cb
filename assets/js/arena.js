@@ -2348,8 +2348,8 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
           <p>This certificate is proudly awarded to</p>
         </div>
 
-        <!-- Student name + citation -->
-        <div class="student-name">${_certEscape(playerName)}</div>
+        <!-- Student name + citation (always uppercased for a formal diploma look) -->
+        <div class="student-name">${_certEscape((playerName || 'Champion').toUpperCase())}</div>
         <div class="student-text">
           for successfully completing an AI Arena chess match in ChessKiddo at age
           <strong>${_certEscape(playerAge)}</strong> and demonstrating strategic

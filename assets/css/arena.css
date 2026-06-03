@@ -4307,15 +4307,25 @@
 }
 
 /* Student name + citation */
+/* #cert-card (ID) needed to outrank the global '#arena-page * { Poppins !important }'.
+   Cinzel — a formal Roman serif made for diplomas — in full caps reads far more
+   'official'; serif fallbacks (Cormorant 700 is loaded, then system serif) keep
+   it elegant even if Cinzel hasn't finished loading. */
+#cert-card .student-name,
 .certificate .student-name {
   text-align: center;
-  font-family: 'Great Vibes', cursive;
-  font-size: 88px;
+  font-family: 'Cinzel', 'Cormorant Garamond', Georgia, 'Times New Roman', serif !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 58px;
   color: #0d1b44;
-  margin-top: 12px;
+  margin-top: 14px;
+  padding: 4px 20px 10px;
   position: relative;
   z-index: 2;
-  line-height: 1;
+  line-height: 1.08;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.5);
 }
 .certificate .student-text {
   text-align: center;
