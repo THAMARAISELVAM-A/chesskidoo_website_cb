@@ -691,6 +691,14 @@ CK.admin = {
       }, 0);
       const revenue = paidRevenue > 0 ? '₹' + paidRevenue.toLocaleString('en-IN') : '—';
 
+      // Avg ELO of this coach's students (reference admin shows this at a glance)
+      const avgElo = myStudents.length
+        ? Math.round(myStudents.reduce((s, st) => s + (parseInt(st.rating) || 800), 0) / myStudents.length)
+        : '—';
+      // Coach status badge
+      const coachStatus = c.status || 'Active';
+      const statusClass = /inactive|leave|suspend/i.test(coachStatus) ? 'p-badge-red' : 'p-badge-green';
+
       // Get a stable initial from name for the avatar fallback
       const initial = (c.full_name || '?').trim().charAt(0).toUpperCase();
       const photoEl = photo
@@ -722,9 +730,11 @@ CK.admin = {
               <div class="ck-coach-stats">
                 <span class="ck-stat">🎯 <strong>${_e(fide)}</strong></span>
                 <span class="ck-stat">👥 <strong>${myStudents.length}</strong> students</span>
+                <span class="ck-stat">📊 Avg <strong>${avgElo}</strong></span>
                 <span class="ck-stat">💰 <strong>${revenue}</strong></span>
               </div>
               <div class="ck-coach-meta">
+                <span class="p-badge ${statusClass}">${_e(coachStatus)}</span>
                 <span class="p-badge p-badge-blue">${_e(batches)}</span>
                 <span class="ck-meta-text">⏰ ${_e(timetable)}</span>
               </div>
