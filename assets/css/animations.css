@@ -72,6 +72,21 @@ html { scroll-behavior: smooth; }
 @keyframes softPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
 .anim-pulse { animation: softPulse 2.8s ease-in-out infinite; }
 
+/* ═══ HERO TITLE — emphasized words shimmer in gold continuously ═══ */
+/* "think two" / "moves" already use color:var(--amber); upgrade to a moving
+   gold gradient so the headline feels alive (time2chess-style motion). */
+.hero-title em {
+  background: linear-gradient(100deg,
+    #c8821a 0%, #E8A020 30%, #ffe7a0 48%, #fffef2 52%, #ffe7a0 56%, #E8A020 72%, #c8821a 100%);
+  background-size: 250% auto;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: heroEmShimmer 4.5s linear infinite;
+}
+@keyframes heroEmShimmer { to { background-position: 250% center; } }
+/* Subtle continuous float on the decorative hero chess pieces (if not already) */
+.hero-floating-piece { will-change: transform; }
+
 /* ═══ GRADIENT SHIMMER on headings (opt-in via .anim-shimmer) ═══ */
 .anim-shimmer {
   background: linear-gradient(90deg, currentColor 0%, #E8A020 25%, currentColor 50%);
@@ -105,6 +120,6 @@ html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   [data-anim], [data-stagger] > * { opacity: 1 !important; transform: none !important; transition: none !important; }
-  .anim-float, .anim-float-slow, .anim-pulse, .anim-shimmer, #scroll-progress { animation: none !important; }
+  .anim-float, .anim-float-slow, .anim-pulse, .anim-shimmer, #scroll-progress, .hero-title em { animation: none !important; }
   .btn-primary::after, .hero-cta::after, .p-btn-gold::after { display: none; }
 }
