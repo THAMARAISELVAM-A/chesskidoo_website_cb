@@ -186,6 +186,51 @@
 .acc-stat-val { font-size: 1.35rem; font-weight: 800; color: var(--p-text, #e8edf5); line-height: 1.1; }
 .acc-stat-label { font-size: 0.72rem; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.04em; }
 
+/* ═══ TESTIMONIAL VIDEOS (landing page) ═══ */
+.tvid-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 360px));
+  justify-content: center;
+  align-items: start;
+  gap: 28px;
+  max-width: 820px;
+  margin: 36px auto 0;
+  padding: 0 20px;
+}
+.tvid-card {
+  margin: 0;
+  background: #fff;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 14px 44px rgba(0,0,0,0.14);
+  border: 1px solid rgba(0,0,0,0.06);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.tvid-card:hover { transform: translateY(-5px); box-shadow: 0 20px 56px rgba(0,0,0,0.2); }
+.tvid-player {
+  width: 100%;
+  display: block;
+  aspect-ratio: 9 / 16;        /* portrait by default (phone-shot testimonials) */
+  max-height: 78vh;
+  object-fit: cover;
+  background: #000;
+}
+/* Landscape videos: don't crop — letterbox inside a 16:9 frame instead */
+.tvid-player.is-landscape { aspect-ratio: 16 / 9; object-fit: contain; }
+.tvid-caption {
+  padding: 14px 18px;
+  font-weight: 700;
+  font-size: 1.02rem;
+  color: #1e293b;
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+}
+:root[data-theme="dark"] .tvid-card { background: #111418; }
+:root[data-theme="dark"] .tvid-caption { color: #e8edf5; }
+@media (max-width: 700px) {
+  .tvid-grid { grid-template-columns: minmax(0, 360px); }
+}
+
 /* ═══ PGN DATABASE — expandable game cards ═══ */
 .lab-db-item-wrap { border-bottom: 1px solid rgba(255,255,255,0.05); }
 .lab-db-item { display: flex; align-items: center; gap: 8px; }
