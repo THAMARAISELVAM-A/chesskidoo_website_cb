@@ -64,6 +64,7 @@
   <link rel="stylesheet" href="assets/css/portal-modern.css">
   <link rel="stylesheet" href="assets/css/tomai.css">
   <link rel="stylesheet" href="assets/css/enterprise.css">
+  <link rel="stylesheet" href="assets/css/animations.css">
 
   <!-- Backend: Supabase JS SDK -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
@@ -367,46 +368,46 @@
             tournaments and more.</p>
         </div>
 
-        <div class="feat-grid"
+        <div class="feat-grid" data-stagger
           style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-bottom: 50px;">
-          <div class="feat-card reveal">
+          <div class="feat-card">
             <div class="feat-icon-wrap">📊</div>
             <h3 data-translate="feature_tracking">Smart Student Tracking</h3>
             <p data-translate="feature_tracking_desc">Manage profiles, game history, and ratings for every student in
               one clean dashboard.</p>
           </div>
-          <div class="feat-card reveal">
+          <div class="feat-card">
             <div class="feat-icon-wrap">📈</div>
             <h3 data-translate="feature_progress">Progress Analytics</h3>
             <p data-translate="feature_progress_desc">Visual insights into each student's performance trends and
               learning velocity over time.</p>
           </div>
-          <div class="feat-card reveal">
+          <div class="feat-card">
             <div class="feat-icon-wrap">🏆</div>
             <h3 data-translate="feature_tournament">Tournament Ready</h3>
             <p data-translate="feature_tournament_desc">Manage tournaments, match pairings, and leaderboards with
               professional efficiency.</p>
           </div>
-          <div class="feat-card reveal">
+          <div class="feat-card">
             <div class="feat-icon-wrap">🌍</div>
             <h3 data-translate="feature_coaches">Certified Coaches</h3>
             <p data-translate="feature_coaches_desc">Learn from professionals trained under FIDE's rigorous global
               standards.</p>
           </div>
-          <div class="feat-card reveal">
+          <div class="feat-card">
             <div class="feat-icon-wrap">♟️</div>
             <h3 data-translate="feature_curriculum">Advanced Curriculum</h3>
             <p data-translate="feature_curriculum_desc">Openings, middlegame tactics, endgames, and mental prep - all on
               one platform.</p>
           </div>
-          <div class="feat-card reveal">
+          <div class="feat-card">
             <div class="feat-icon-wrap">🗣️</div>
             <h3 data-translate="feature_feedback">Personalized Feedback</h3>
             <p data-translate="feature_feedback_desc">Every game is reviewed and discussed with the coach for continuous
               improvement.</p>
           </div>
           <!-- 7th feat-card: Bilingual Support — same style as the others -->
-          <div class="feat-card reveal">
+          <div class="feat-card">
             <div class="feat-icon-wrap">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M5 8h6"/><path d="M8 5v3"/>
@@ -420,7 +421,7 @@
             <p data-translate="feature_bilingual_desc">Coaching available in <strong>English</strong> &amp; <strong>தமிழ் (Tamil)</strong> — students and parents communicate comfortably in either language.</p>
           </div>
           <!-- 8th feat-card: AI Practice Arena -->
-          <div class="feat-card reveal">
+          <div class="feat-card">
             <div class="feat-icon-wrap">🤖</div>
             <h3>AI Practice Arena</h3>
             <p>Play adaptive AI opponents, solve daily tactical puzzles, and get instant Stockfish-powered game analysis between classes.</p>
@@ -435,7 +436,7 @@
           <h2 style="font-size: 3rem;">Hear From Our Families</h2>
           <p class="lead">Real voices from our ChessKidoo community — straight from the heart.</p>
         </div>
-        <div class="tvid-grid reveal">
+        <div class="tvid-grid" data-stagger>
           <figure class="tvid-card">
             <video class="tvid-player" controls preload="metadata" playsinline
                    src="assets/videos/testimonial-1.mp4#t=0.1">
@@ -6862,6 +6863,7 @@
   <script defer src="assets/js/tomai.js"></script>
   <script defer type="module" src="assets/js/main.js"></script>
   <script defer src="assets/js/enterprise.js"></script>
+  <script defer src="assets/js/animations.js"></script>
   <script defer type="module" src="assets/js/admin.js"></script>
   <script defer type="module" src="assets/js/student.js"></script>
   <script defer type="module" src="assets/js/coach.js"></script>
