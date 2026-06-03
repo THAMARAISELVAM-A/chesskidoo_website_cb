@@ -1415,19 +1415,25 @@
       }
     });
     const cpOpponent = resultAfter ? (resultAfter.cp !== null ? resultAfter.cp : (resultAfter.mate ? resultAfter.mate * 10000 : 0)) : 0;
-    
+
     const playerEvalAfter = -cpOpponent;
     const absoluteCp = isWhite ? playerEvalAfter : -playerEvalAfter;
 
-    // 3. Centipawn loss
+    // 3. Centipawn loss — but ONLY trust it if the engine actually evaluated both
+    //    positions. If either eval is missing the diff is a meaningless 0, which
+    //    used to be classified as "best" → fake 100%-accuracy / all-best reports.
+    const analyzed = !!(resultBefore && resultAfter);
     const diff = evalBefore - playerEvalAfter;
-    const classification = classifyFromDiff(diff, playerSan, resultBefore ? resultBefore.pv : null);
-    
-    const obj = { 
-      san: playerSan, 
-      classification, 
+    const classification = analyzed
+      ? classifyFromDiff(diff, playerSan, resultBefore ? resultBefore.pv : null)
+      : 'unanalyzed';
+
+    const obj = {
+      san: playerSan,
+      classification,
+      analyzed,
       eval: absoluteCp,
-      diff: diff,
+      diff: analyzed ? diff : null,
       bestMove: resultBefore && resultBefore.pv ? resultBefore.pv.split(' ')[0] : '-'
     };
     classificationHistory.push(obj);
@@ -1546,9 +1552,12 @@
     const totalMoves = moveHistory.length;
 
     const weights = { brilliant: 1, best: 1, excellent: 0.9, good: 0.7, inaccuracy: 0.4, mistake: 0.2, blunder: 0 };
+    // Only ANALYZED moves count toward accuracy — unanalyzed moves (engine
+    // unavailable) must not inflate the score to a fake 100%.
+    const analyzedCls = classifications.filter(c => c !== 'unanalyzed');
     let totalWeight = 0;
-    classifications.forEach(c => { totalWeight += weights[c] || 0.5; });
-    const accuracy = classifications.length > 0 ? Math.round((totalWeight / classifications.length) * 100) : 50;
+    analyzedCls.forEach(c => { totalWeight += (weights[c] != null ? weights[c] : 0.5); });
+    const accuracy = analyzedCls.length > 0 ? Math.round((totalWeight / analyzedCls.length) * 100) : 0;
 
     const newAchievements = [];
     if (result === 'win') newAchievements.push(ACHIEVEMENTS.first_win);
@@ -2491,32 +2500,33 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
         
         card.setAttribute('style', restoreCard);
         
-        const imgData = canvas.toDataURL('image/png');
-        
+        // JPEG (quality 0.92) keeps the file ~300-600KB instead of a 12MB PNG.
+        const imgData = canvas.toDataURL('image/jpeg', 0.92);
+        const safeName = nameText.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'Champion';
+
         // Find jsPDF UMD module
         const { jsPDF } = window.jspdf || {};
         if (!jsPDF) {
-          // Fallback to PNG download if jsPDF is missing
           CK.showToast('PDF library not ready. Downloading as Image instead…', 'warning');
-          const safeName = nameText.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'Champion';
           const a = document.createElement('a');
           a.href = imgData;
-          a.download = `ChessKidoo-Certificate-${safeName}.png`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
+          a.download = `ChessKidoo-Certificate-${safeName}.jpg`;
+          document.body.appendChild(a); a.click(); a.remove();
           return;
         }
 
-        const pdf = new jsPDF({
-          orientation: 'landscape',
-          unit: 'px',
-          format: [canvas.width, canvas.height]
-        });
-
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-        
-        const safeName = nameText.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '') || 'Champion';
+        // ALWAYS a single standard A4 landscape page — fit the certificate image
+        // into the page preserving aspect (the old code used unit:'px' with the
+        // raw 2250x1470 canvas as the page size, which produced a giant/paginated
+        // multi-page PDF). Centre it with a small margin.
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const PW = 297, PH = 210, M = 6;
+        const availW = PW - M * 2, availH = PH - M * 2;
+        const imgAspect = canvas.width / canvas.height;
+        let w = availW, h = availW / imgAspect;
+        if (h > availH) { h = availH; w = availH * imgAspect; }
+        const x = (PW - w) / 2, y = (PH - h) / 2;
+        pdf.addImage(imgData, 'JPEG', x, y, w, h, undefined, 'FAST');
         pdf.save(`ChessKidoo-Certificate-${safeName}.pdf`);
         CK.showToast('✅ PDF Certificate downloaded!', 'success');
         return;
@@ -3004,9 +3014,12 @@ A.newGame = () => {
     const totalMoves = moveHistory.length;
     const classifications = classificationHistory.map(c => c.classification);
     const weights = { brilliant: 1, best: 1, excellent: 0.9, good: 0.7, inaccuracy: 0.4, mistake: 0.2, blunder: 0 };
+    // Only ANALYZED moves count toward accuracy — unanalyzed moves (engine
+    // unavailable) must not inflate the score to a fake 100%.
+    const analyzedCls = classifications.filter(c => c !== 'unanalyzed');
     let totalWeight = 0;
-    classifications.forEach(c => { totalWeight += weights[c] || 0.5; });
-    const accuracy = classifications.length > 0 ? Math.round((totalWeight / classifications.length) * 100) : 50;
+    analyzedCls.forEach(c => { totalWeight += (weights[c] != null ? weights[c] : 0.5); });
+    const accuracy = analyzedCls.length > 0 ? Math.round((totalWeight / analyzedCls.length) * 100) : 0;
 
     let grade;
     if (accuracy >= 90) grade = 'S';
