@@ -9,7 +9,21 @@
       "Bash(ls -la \"d:\\\\MY\\\\chessk\\\\\" | head -30)",
       "Read(//d/MY/**)",
       "mcp__881e6a95-12ae-440f-9724-85fe37561b8d__list_projects",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(curl -s \"http://localhost:8761/assets/css/arena.css?cb=$\\(date +%s\\)\")",
+      "Bash(grep -nA3 \"\\\\.arena-board-wrapper\\\\s*\\\\{\" assets/css/arena.css)",
+      "Bash(grep -iv \"css\\\\|//.*expire\")",
+      "Bash(grep -nA12 \"^\\\\.cert-overlay\\\\s*{\\\\|#cert-overlay\\\\s*{\" assets/css/arena.css)",
+      "Bash(node --check assets/js/admin.js)",
+      "Bash(sed -n '/id=.studentLabBoard/,/coach-page/p' index.html)",
+      "Bash(echo \"student lab CK.lab calls: $\\(sed -n '/id=.studentLabBoard/,/coach-page/p' index.html)",
+      "Bash(awk '{print $5, $9}')",
+      "Bash(awk 'NR>=762 && NR<=1100 && /<section|<!-- .*[Ss]ection|class=\"section|id=\"[a-z]/ {print NR\": \"$0}' index.html)",
+      "Bash(node --check assets/js/db.js)",
+      "WebFetch(domain:www.time2chess.com)",
+      "Bash(grep -nA10 \"^\\\\.feat-card\\\\s*{\\\\|^\\\\.feat-card\\\\b\" assets/css/style.css)",
+      "Bash(grep -nA6 \"^\\\\.reveal\\\\b\\\\|\\\\.reveal\\\\s*{\" assets/css/style.css)",
+      "Bash(grep -nB1 -A12 \"IntersectionObserver\\\\|\\\\.reveal\" assets/js/main.js)"
     ]
   }
 }

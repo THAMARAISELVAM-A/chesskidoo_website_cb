@@ -1,0 +1,55 @@
+/* assets/js/animations.js --------------------------------------------------
+   Premium motion controller — scroll-progress bar + reveal observer for the
+   data-anim / data-stagger system (independent of the legacy .reveal observer).
+   --------------------------------------------------------------------------- */
+(() => {
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ── Scroll progress bar ── */
+  function mountProgressBar() {
+    if (document.getElementById('scroll-progress')) return;
+    const bar = document.createElement('div');
+    bar.id = 'scroll-progress';
+    document.body.appendChild(bar);
+    let ticking = false;
+    const update = () => {
+      const h = document.documentElement;
+      const scrolled = h.scrollTop || document.body.scrollTop;
+      const height = (h.scrollHeight - h.clientHeight) || 1;
+      bar.style.width = Math.min(100, (scrolled / height) * 100) + '%';
+      ticking = false;
+    };
+    window.addEventListener('scroll', () => {
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    }, { passive: true });
+    update();
+  }
+
+  /* ── Reveal observer (data-anim / data-stagger) ── */
+  const io = ('IntersectionObserver' in window) ? new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('in-view'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }) : null;
+
+  function scan(root) {
+    root = root || document;
+    const els = root.querySelectorAll('[data-anim], [data-stagger]');
+    els.forEach(el => {
+      if (!io || reduce) { el.classList.add('in-view'); return; }
+      io.observe(el);
+    });
+  }
+
+  function init() {
+    if (!reduce) mountProgressBar();
+    scan(document);
+  }
+
+  if (document.readyState !== 'loading') init();
+  else document.addEventListener('DOMContentLoaded', init);
+
+  // Expose so dynamically-rendered sections can re-trigger reveals.
+  window.CK = window.CK || {};
+  window.CK.scanAnimations = scan;
+})();

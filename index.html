@@ -437,21 +437,29 @@
         </div>
         <div class="tvid-grid reveal">
           <figure class="tvid-card">
-            <video class="tvid-player" controls preload="metadata" playsinline poster="assets/img/og-cover.png">
-              <source src="assets/videos/testimonial-1.mp4" type="video/mp4">
+            <video class="tvid-player" controls preload="metadata" playsinline
+                   src="assets/videos/testimonial-1.mp4#t=0.1">
               Sorry, your browser doesn't support embedded videos.
             </video>
             <figcaption class="tvid-caption">⭐ Student Review</figcaption>
           </figure>
           <figure class="tvid-card">
-            <video class="tvid-player" controls preload="metadata" playsinline poster="assets/img/og-cover.png">
-              <source src="assets/videos/testimonial-2.mp4" type="video/mp4">
+            <video class="tvid-player" controls preload="metadata" playsinline
+                   src="assets/videos/testimonial-2.mp4#t=0.1">
               Sorry, your browser doesn't support embedded videos.
             </video>
             <figcaption class="tvid-caption">⭐ Parents Review</figcaption>
           </figure>
         </div>
       </section>
+      <script>
+        /* Show the video's own first frame as the thumbnail (not a static poster):
+           seek each testimonial video to 0.1s once metadata loads so a real frame renders. */
+        (function () {
+          function primeFrame(v){ v.addEventListener('loadedmetadata', function(){ try { if (v.currentTime < 0.1) v.currentTime = 0.1; } catch(e){} }, { once:true }); }
+          document.querySelectorAll('.tvid-player').forEach(primeFrame);
+        })();
+      </script>
 
       <!-- Curriculum -->
       <section id="levels" class="section-padding" style="overflow: hidden;">

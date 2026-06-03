@@ -1,0 +1,110 @@
+/* assets/css/animations.css ------------------------------------------------
+   Premium motion layer — scroll reveals, micro-interactions, button shine,
+   floating elements, gradient shimmer, scroll-progress bar.
+   Additive: does NOT modify the existing `.reveal` system in style.css.
+   --------------------------------------------------------------------------- */
+
+/* ── Smooth scrolling for anchor jumps ── */
+html { scroll-behavior: smooth; }
+
+/* ═══ SCROLL-REVEAL VARIANTS (data-anim) — independent of .reveal ═══ */
+[data-anim] {
+  opacity: 0;
+  transition: opacity .75s cubic-bezier(.16,1,.3,1), transform .75s cubic-bezier(.16,1,.3,1);
+  will-change: opacity, transform;
+}
+[data-anim="up"]    { transform: translateY(46px); }
+[data-anim="down"]  { transform: translateY(-46px); }
+[data-anim="left"]  { transform: translateX(-56px); }
+[data-anim="right"] { transform: translateX(56px); }
+[data-anim="zoom"]  { transform: scale(.88); }
+[data-anim="flip"]  { transform: perspective(900px) rotateX(14deg); transform-origin: top center; }
+[data-anim].in-view { opacity: 1; transform: none; }
+
+/* ═══ STAGGERED CHILDREN — parent gets data-stagger ═══ */
+[data-stagger] > * {
+  opacity: 0;
+  transform: translateY(34px);
+  transition: opacity .6s ease, transform .6s cubic-bezier(.16,1,.3,1);
+}
+[data-stagger].in-view > * { opacity: 1; transform: none; }
+[data-stagger].in-view > *:nth-child(1) { transition-delay: .04s; }
+[data-stagger].in-view > *:nth-child(2) { transition-delay: .12s; }
+[data-stagger].in-view > *:nth-child(3) { transition-delay: .20s; }
+[data-stagger].in-view > *:nth-child(4) { transition-delay: .28s; }
+[data-stagger].in-view > *:nth-child(5) { transition-delay: .36s; }
+[data-stagger].in-view > *:nth-child(6) { transition-delay: .44s; }
+[data-stagger].in-view > *:nth-child(7) { transition-delay: .52s; }
+[data-stagger].in-view > *:nth-child(8) { transition-delay: .60s; }
+
+/* ═══ SCROLL PROGRESS BAR (top of page) ═══ */
+#scroll-progress {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0;
+  background: linear-gradient(90deg, #E8A020, #F5C842, #E8A020);
+  background-size: 200% 100%;
+  z-index: 99999; pointer-events: none;
+  box-shadow: 0 0 10px rgba(232,160,32,0.6);
+  transition: width .1s linear;
+  animation: progressShimmer 3s linear infinite;
+}
+@keyframes progressShimmer { to { background-position: 200% 0; } }
+
+/* ═══ BUTTON SHINE SWEEP on hover ═══ */
+.btn-primary, .hero-cta, .p-btn-gold, .sd-join-btn, .login-btn, .ck-btn-upload {
+  position: relative; overflow: hidden;
+}
+.btn-primary::after, .hero-cta::after, .p-btn-gold::after, .sd-join-btn::after, .login-btn::after, .ck-btn-upload::after {
+  content: ''; position: absolute; top: 0; left: -120%; width: 60%; height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.45), transparent);
+  transform: skewX(-20deg); pointer-events: none; transition: none;
+}
+.btn-primary:hover::after, .hero-cta:hover::after, .p-btn-gold:hover::after,
+.sd-join-btn:hover::after, .login-btn:hover::after, .ck-btn-upload:hover::after {
+  animation: btnShine .85s ease;
+}
+@keyframes btnShine { 0% { left: -120%; } 100% { left: 130%; } }
+
+/* ═══ FLOAT / PULSE micro-animations ═══ */
+@keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+.anim-float { animation: floatY 4.5s ease-in-out infinite; }
+.anim-float-slow { animation: floatY 7s ease-in-out infinite; }
+
+@keyframes softPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+.anim-pulse { animation: softPulse 2.8s ease-in-out infinite; }
+
+/* ═══ GRADIENT SHIMMER on headings (opt-in via .anim-shimmer) ═══ */
+.anim-shimmer {
+  background: linear-gradient(90deg, currentColor 0%, #E8A020 25%, currentColor 50%);
+  background-size: 200% auto;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: textShimmer 4s linear infinite;
+}
+@keyframes textShimmer { to { background-position: 200% center; } }
+
+/* ═══ ICON / CARD micro-interactions ═══ */
+.feat-icon-wrap { transition: transform .35s cubic-bezier(.34,1.56,.64,1); }
+.feat-card:hover .feat-icon-wrap { transform: scale(1.12) rotate(-6deg); }
+
+.tvid-card .tvid-player { transition: filter .3s ease; }
+.tvid-card:hover .tvid-player { filter: brightness(1.04); }
+
+/* Nav links: animated underline */
+.nav-link { position: relative; }
+.nav-link::after {
+  content: ''; position: absolute; left: 0; bottom: -2px; height: 2px; width: 0;
+  background: linear-gradient(90deg, #E8A020, #F5C842);
+  transition: width .28s cubic-bezier(.16,1,.3,1);
+}
+.nav-link:hover::after { width: 100%; }
+
+/* Section heads rise a touch on reveal (works with existing .reveal too) */
+.section-head h2 { transition: letter-spacing .6s ease; }
+
+/* ═══ ACCESSIBILITY — respect reduced motion ═══ */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  [data-anim], [data-stagger] > * { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .anim-float, .anim-float-slow, .anim-pulse, .anim-shimmer, #scroll-progress { animation: none !important; }
+  .btn-primary::after, .hero-cta::after, .p-btn-gold::after { display: none; }
+}
