@@ -1868,7 +1868,7 @@ CK.student = {
               <div class="rc-sig-title">Master Coach Signature</div>
             </div>
             <div class="rc-sig-box">
-              <div class="rc-sig-line">Dr. V. Hariharan</div>
+              <div class="rc-sig-line">Rathanavel (IM)</div>
               <div class="rc-sig-title">Academy Director</div>
             </div>
           </div>

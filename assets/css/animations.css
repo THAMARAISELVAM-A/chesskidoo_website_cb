@@ -72,6 +72,21 @@ html { scroll-behavior: smooth; }
 @keyframes softPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
 .anim-pulse { animation: softPulse 2.8s ease-in-out infinite; }
 
+/* ═══ HERO STATS — each stat on ONE line (number + label inline), not stacked ═══ */
+.hero-stats .stat-item {
+  display: flex !important;
+  align-items: baseline;
+  gap: 7px;
+  white-space: nowrap;
+}
+.hero-stats { gap: 26px; }
+.hero-stats .hero-stat-num { line-height: 1; }
+.hero-stats .hero-stat-label { margin: 0; }
+@media (max-width: 640px) {
+  .hero-stats { gap: 14px 20px; justify-content: center; }
+  .hero-stats .hero-stat-num { font-size: 1.5rem; }
+}
+
 /* ═══ HERO TITLE — letters bounce in one-by-one like chess pieces landing ═══ */
 .hero-char {
   display: inline-block;

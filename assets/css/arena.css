@@ -4428,11 +4428,23 @@
   width: 300px;
   text-align: center;
 }
+/* #cert-card needed to beat '#arena-page * { Poppins !important }', else the
+   signatures render as plain text instead of a handwritten signature script. */
+#cert-card .signature,
 .certificate .signature {
-  font-family: 'Great Vibes', cursive;
+  font-family: 'Great Vibes', 'Alex Brush', cursive !important;
   font-size: 52px;
+  font-weight: 400;
   color: #111;
   line-height: 1;
+}
+/* Certificate brand logo image in the header */
+#cert-card .cert-logo-img,
+.certificate .cert-logo-img {
+  height: 84px;
+  width: auto;
+  object-fit: contain;
+  display: block;
 }
 .certificate .signature-line {
   height: 2px;

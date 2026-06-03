@@ -2321,22 +2321,13 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
         <div class="corner bottom-left"></div>
         <div class="corner bottom-right"></div>
 
-        <!-- Top-right Move History box -->
-        <div class="moves-box">
-          <div class="moves-title">COMPLETE MATCH MOVE HISTORY</div>
-          <table class="moves-table">
-            <thead>
-              <tr><th>Move</th><th>White</th><th>Black</th></tr>
-            </thead>
-            <tbody>${cleanMovesHtml}</tbody>
-          </table>
-        </div>
-
-        <!-- Header: logo + brand wordmark + tagline -->
+        <!-- Header: logo image + brand wordmark + tagline -->
         <div class="header">
-          <div class="logo-circle"><span>♞</span></div>
+          <img src="assets/img/logo.png" alt="ChessKidoo" class="cert-logo-img"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+          <div class="logo-circle" style="display:none;"><span>♞</span></div>
           <div>
-            <div class="brand">CHESS<span>KIDDO</span></div>
+            <div class="brand">CHESS<span>KIDOO</span></div>
             <div class="tagline">BUILDING BRILLIANCE</div>
           </div>
         </div>
