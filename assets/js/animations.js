@@ -41,9 +41,40 @@
     });
   }
 
+  /* ── Hero title: wrap each letter so they bounce in like chess pieces ── */
+  function animateHeroLetters() {
+    if (reduce) return;
+    const title = document.querySelector('.hero-title');
+    if (!title || title.dataset.lettered) return;
+    title.dataset.lettered = '1';
+    let i = 0;
+    const wrapText = (node) => {
+      const frag = document.createDocumentFragment();
+      for (const ch of node.textContent) {
+        if (ch === ' ' || ch === '\n') { frag.appendChild(document.createTextNode(ch === '\n' ? '' : ' ')); continue; }
+        const span = document.createElement('span');
+        span.className = 'hero-char';
+        span.style.setProperty('--i', i++);
+        span.textContent = ch;
+        frag.appendChild(span);
+      }
+      node.replaceWith(frag);
+    };
+    const walk = (el) => {
+      Array.from(el.childNodes).forEach(node => {
+        if (node.nodeType === 3) wrapText(node);            // text node → per-letter spans
+        else if (node.nodeName === 'BR') { /* keep line breaks */ }
+        else if (node.nodeType === 1) walk(node);           // <em> etc → recurse (keeps the element)
+      });
+    };
+    walk(title);
+  }
+
   function init() {
     if (!reduce) mountProgressBar();
     scan(document);
+    // Let any i18n/translation settle first, then animate the letters.
+    setTimeout(animateHeroLetters, 350);
   }
 
   if (document.readyState !== 'loading') init();

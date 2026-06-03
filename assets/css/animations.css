@@ -72,6 +72,37 @@ html { scroll-behavior: smooth; }
 @keyframes softPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
 .anim-pulse { animation: softPulse 2.8s ease-in-out infinite; }
 
+/* ═══ HERO TITLE — letters bounce in one-by-one like chess pieces landing ═══ */
+.hero-char {
+  display: inline-block;
+  animation: heroCharDrop .6s cubic-bezier(.34,1.56,.64,1) both;
+  animation-delay: calc(var(--i, 0) * 0.045s);
+  will-change: transform, opacity;
+}
+@keyframes heroCharDrop {
+  0%   { opacity: 0; transform: translateY(-46px) rotate(-10deg) scale(.55); }
+  55%  { opacity: 1; transform: translateY(7px)  rotate(3deg)  scale(1.06); }
+  75%  { transform: translateY(-3px) rotate(-1deg) scale(.99); }
+  100% { opacity: 1; transform: translateY(0) rotate(0) scale(1); }
+}
+/* Hover a letter and it hops like a knight */
+.hero-char:hover { animation: heroCharHop .5s ease; }
+@keyframes heroCharHop {
+  0%,100% { transform: translateY(0) rotate(0); }
+  35% { transform: translateY(-12px) rotate(-6deg) scale(1.1); }
+  70% { transform: translateY(0) rotate(4deg); }
+}
+/* Once letters animate individually, drop the block-level entrance so they
+   don't fight each other; emphasized letters stay solid gold (the per-word
+   shimmer can't co-exist with per-letter spans). */
+.hero-title[data-lettered] { animation: none !important; }
+.hero-title[data-lettered] em { -webkit-text-fill-color: initial; background: none; }
+.hero-title em .hero-char {
+  -webkit-text-fill-color: var(--amber, #E8A020) !important;
+  color: var(--amber, #E8A020);
+  background: none;
+}
+
 /* ═══ HERO TITLE — emphasized words shimmer in gold continuously ═══ */
 /* "think two" / "moves" already use color:var(--amber); upgrade to a moving
    gold gradient so the headline feels alive (time2chess-style motion). */
