@@ -72,8 +72,24 @@
         { opacity: 0, y: -60, x: (i) => (i % 2 ? 130 : -130), rotation: (i) => (i % 2 ? 9 : -9) },
         { opacity: 1, y: 0, x: 0, rotation: 0, duration: 0.75, ease: 'back.out(1.7)', stagger: 0.12, delay: 0.65 });
     }
-    // 3. After the entrance settles, start the gentle infinite float on the pieces.
+    // 3. After the entrance settles, start a CONTINUOUS bounce-back-and-forth on
+    //    each title word + the gentle float on the pieces. Each word bobs on its
+    //    own offset rhythm so the headline feels alive.
     gsap.delayedCall(2.0, () => {
+      // Per-word vertical bounce (slight horizontal sway for personality)
+      words.forEach((el, i) => {
+        gsap.to(el, {
+          y: '-=10',
+          x: (i % 2 ? 4 : -4),
+          rotation: (i % 2 ? 1.5 : -1.5),
+          duration: 1.6 + (i % 3) * 0.25,         // varied tempo per word
+          delay: i * 0.08,                         // staggered start
+          ease: 'sine.inOut',
+          yoyo: true,
+          repeat: -1
+        });
+      });
+      // Pieces float
       pieces.forEach((el, i) => {
         gsap.to(el, {
           y: `+=${18 + i * 6}`, x: `+=${(i % 2 ? 1 : -1) * (10 + i * 3)}`,
@@ -95,19 +111,9 @@
       });
     }
 
-    /* ─────────── 3D board tilt ─────────── */
-    const board = document.querySelector('.hero-board-frame') || document.querySelector('.hero-visual');
-    if (board) {
-      const wrap = board.closest('.hero-visual') || board;
-      gsap.set(board, { transformPerspective: 900, transformOrigin: 'center' });
-      wrap.addEventListener('mousemove', (e) => {
-        const r = wrap.getBoundingClientRect();
-        const px = (e.clientX - r.left) / r.width - 0.5;
-        const py = (e.clientY - r.top) / r.height - 0.5;
-        gsap.to(board, { rotationY: px * 12, rotationX: -py * 12, duration: 0.6, ease: 'power2.out', overwrite: 'auto' });
-      });
-      wrap.addEventListener('mouseleave', () => gsap.to(board, { rotationY: 0, rotationX: 0, duration: 0.9, ease: 'elastic.out(1,0.5)' }));
-    }
+    /* 3D board tilt removed — the hero board panel contains interactive controls
+       ("Check Ur Level", move nav), and tilting it on mousemove shifted the
+       buttons under the cursor, making them hard to click. */
 
     /* ─────────── Magnetic CTAs + pulse ─────────── */
     document.querySelectorAll('.hero-btn-demo, .btn-primary, .hero-cta').forEach((btn) => {
