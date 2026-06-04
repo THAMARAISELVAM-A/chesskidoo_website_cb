@@ -515,7 +515,7 @@
     return vulnerable;
   }
 
-  const DIFFICULTY_DEPTH = { Beginner: 3, Intermediate: 8, Advanced: 14, Expert: 20 };
+  const DIFFICULTY_DEPTH = { Beginner: 3, Intermediate: 8, Advanced: 14, Elite: 20 };
   const PIECE_VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
   const PIECE_SVG = {
     w: {
@@ -1148,7 +1148,7 @@
      Per-difficulty configuration. Previously every level pulled from
      Lichess endgame tablebases (≤7 pieces, perfect play) and the
      Lichess Masters opening book regardless of level, so Beginner
-     played perfect openings + endgames and felt as strong as Expert.
+     played perfect openings + endgames and felt as strong as Elite.
      Now each level only gets the external aids it deserves, plus a
      blunder/randomness layer at the lower levels so the engine
      actually feels weaker. */
@@ -1156,7 +1156,7 @@
     Beginner:     { depth: 2,  useBook: false, bookUntilMove: 0,  useTablebase: false, tbMaxPieces: 0, blunderRate: 0.35, randomFallbackRate: 0.20 },
     Intermediate: { depth: 6,  useBook: true,  bookUntilMove: 4,  useTablebase: false, tbMaxPieces: 0, blunderRate: 0.12, randomFallbackRate: 0.05 },
     Advanced:     { depth: 12, useBook: true,  bookUntilMove: 8,  useTablebase: true,  tbMaxPieces: 4, blunderRate: 0.00, randomFallbackRate: 0.00 },
-    Expert:       { depth: 18, useBook: true,  bookUntilMove: 12, useTablebase: true,  tbMaxPieces: 7, blunderRate: 0.00, randomFallbackRate: 0.00 },
+    Elite:       { depth: 18, useBook: true,  bookUntilMove: 12, useTablebase: true,  tbMaxPieces: 7, blunderRate: 0.00, randomFallbackRate: 0.00 },
   };
 
   async function requestAIMove() {
@@ -1167,8 +1167,8 @@
 
     const cfg = DIFFICULTY_CONFIG[currentDifficulty] || DIFFICULTY_CONFIG.Intermediate;
 
-    // 1. Endgame Tablebases — only Advanced/Expert, and only down to the
-    //    configured piece count (Advanced ≤4-piece, Expert ≤7-piece).
+    // 1. Endgame Tablebases — only Advanced/Elite, and only down to the
+    //    configured piece count (Advanced ≤4-piece, Elite ≤7-piece).
     const pieceCount = fen.split(' ')[0].replace(/[^a-zA-Z]/g, '').length;
     if (cfg.useTablebase && pieceCount <= cfg.tbMaxPieces) {
       updateStatus('🤖 Consulting Endgame Tablebases…');
@@ -1232,7 +1232,7 @@
         let bestCandidate = result.pvs[0];
         let bestScore = -Infinity;
 
-        const difficultyMargins = { Beginner: 150, Intermediate: 70, Advanced: 30, Expert: 10 };
+        const difficultyMargins = { Beginner: 150, Intermediate: 70, Advanced: 30, Elite: 10 };
         const maxCpMargin = difficultyMargins[currentDifficulty] || 70;
 
         for (let i = 0; i < result.pvs.length; i++) {
@@ -1287,7 +1287,7 @@
 
       // Beginner/Intermediate "blunder" layer — sometimes pick a clearly
       // worse PV from the engine's MultiPV output so the AI actually drops
-      // material the player can punish. Skip on Advanced/Expert.
+      // material the player can punish. Skip on Advanced/Elite.
       if (cfg.blunderRate > 0 && result.pvs.length > 1 && Math.random() < cfg.blunderRate) {
         const worstPv = result.pvs[result.pvs.length - 1];
         if (worstPv && worstPv.pv) {
@@ -1301,7 +1301,7 @@
     } else {
       // Fallback: Use built-in Pure JS Negamax Engine instead of random moves!
       if (window.CK && CK.enginePlay) {
-        const jsDepths = { Beginner: 1, Intermediate: 2, Advanced: 3, Expert: 4 };
+        const jsDepths = { Beginner: 1, Intermediate: 2, Advanced: 3, Elite: 4 };
         const jsDepth = jsDepths[currentDifficulty] || 2;
         const bestMoveObj = CK.enginePlay.getBestMove(game, jsDepth);
         if (bestMoveObj) {
@@ -1581,12 +1581,12 @@
   /* ─── Match Commentary Engine ─── */
   function generateMatchCommentary(result, accuracy, totalMoves, durationMin, counts) {
     const lines = [];
-    const levelOrder = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
+    const levelOrder = ['Beginner', 'Intermediate', 'Advanced', 'Elite'];
     const selectedIdx = levelOrder.indexOf(currentDifficulty);
 
     // Determine actual played level from accuracy
     let playerActualLevel, actualIdx;
-    if (accuracy >= 88) { playerActualLevel = 'Expert';       actualIdx = 3; }
+    if (accuracy >= 88) { playerActualLevel = 'Elite';       actualIdx = 3; }
     else if (accuracy >= 72) { playerActualLevel = 'Advanced';     actualIdx = 2; }
     else if (accuracy >= 55) { playerActualLevel = 'Intermediate'; actualIdx = 1; }
     else               { playerActualLevel = 'Beginner';     actualIdx = 0; }
@@ -2024,7 +2024,7 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
       Beginner:     { label: 'Beginner',     color: '#22c55e', bg: 'rgba(34,197,94,0.10)',  border: '#22c55e' },
       Intermediate: { label: 'Intermediate', color: '#3b82f6', bg: 'rgba(59,130,246,0.10)', border: '#3b82f6' },
       Advanced:     { label: 'Advanced',     color: '#a855f7', bg: 'rgba(168,85,247,0.10)', border: '#a855f7' },
-      Expert:       { label: 'Expert',       color: '#ef4444', bg: 'rgba(239,68,68,0.10)',  border: '#ef4444' },
+      Elite:       { label: 'Elite',       color: '#ef4444', bg: 'rgba(239,68,68,0.10)',  border: '#ef4444' },
     };
     return map[lvl] || map.Intermediate;
   };
@@ -2143,7 +2143,7 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
         badgeText = 'Strategic Thinker';
       }
     } else {
-      if (ctx.difficulty === 'Expert' || ctx.difficulty === 'Advanced') {
+      if (ctx.difficulty === 'Elite' || ctx.difficulty === 'Advanced') {
         badgeText = 'Rising Grandmaster';
       } else {
         badgeText = 'Brilliant Performance';
@@ -2155,7 +2155,7 @@ L37 10 L33 12 L31 9 L26 14 C 20 18 16 22 16 28 C 16 30 17 32 19 33
     if (ctx.difficulty === 'Beginner') levelTier = 'Beginner AI – Pawn Tier';
     else if (ctx.difficulty === 'Intermediate') levelTier = 'Intermediate AI – Knight Tier';
     else if (ctx.difficulty === 'Advanced') levelTier = 'Advanced AI – Rook Tier';
-    else if (ctx.difficulty === 'Expert') levelTier = 'Expert AI – Grandmaster Tier';
+    else if (ctx.difficulty === 'Elite') levelTier = 'Elite AI – Grandmaster Tier';
 
     // Dynamic completion time
     const duration = ctx.duration;

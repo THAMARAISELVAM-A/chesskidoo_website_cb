@@ -653,7 +653,7 @@
       <!-- Coaches Section -->
       <section id="coaches" class="section-padding">
         <div class="section-head" data-aos="fade-up">
-          <div class="eyebrow">Our Expert Faculty</div>
+          <div class="eyebrow">Our Elite Faculty</div>
           <h2 data-translate="coaches_title">Meet the Minds Behind the Moves</h2>
           <p class="lead" data-translate="coaches_lead">8+ FIDE-certified coaches with international ratings and
             state-championship experience.</p>
@@ -3287,7 +3287,7 @@
                         <div class="p-badge p-badge-blue" style="margin-bottom:8px;">Tactics Masterclass</div>
                         <h3 style="font-size:1.25rem; font-family:var(--font-display); color:#fff; margin-bottom:8px;">
                           Isolated Pawns & Dynamic Center</h3>
-                        <p style="font-size:0.88rem; color:var(--p-text-muted); margin-bottom:16px;">Expert breakdown of tactical outposts and active piece play in IQP positions.</p>
+                        <p style="font-size:0.88rem; color:var(--p-text-muted); margin-bottom:16px;">Elite breakdown of tactical outposts and active piece play in IQP positions.</p>
                       </div>
                       <button class="p-btn p-btn-blue" style="width:100%;"
                         onclick="CK.openVaultSession('Isolated Pawns & Dynamic Center', 'Coach')">▶ Study
@@ -3935,9 +3935,9 @@
                             <button class="p-btn p-btn-ghost p-btn-sm pv-diff-btn" data-diff="Advanced"
                               onclick="CK.lab._pvDifficulty='Advanced';document.querySelectorAll('.pv-diff-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">🔥
                               Advanced</button>
-                            <button class="p-btn p-btn-ghost p-btn-sm pv-diff-btn" data-diff="Expert"
-                              onclick="CK.lab._pvDifficulty='Expert';document.querySelectorAll('.pv-diff-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">💀
-                              Expert</button>
+                            <button class="p-btn p-btn-ghost p-btn-sm pv-diff-btn" data-diff="Elite"
+                              onclick="CK.lab._pvDifficulty='Elite';document.querySelectorAll('.pv-diff-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">💀
+                              Elite</button>
                           </div>
                         </div>
                         <div>
@@ -4196,7 +4196,7 @@
               <div class="p-user-avatar" id="coachSidebarAvatar">SC</div>
               <div class="p-user-info">
                 <div class="p-user-name" id="coachSidebarName">Coach</div>
-                <div class="p-user-sub" id="coachSidebarSub">FIDE 0 · Expert</div>
+                <div class="p-user-sub" id="coachSidebarSub">FIDE 0 · Elite</div>
               </div>
             </div>
           </div>
@@ -5516,7 +5516,23 @@
                   </div>
                 </div>
               </div>
+                <!-- Clocks -->
+          <div class="arena-panel" style="margin-top: 12px;">
+            <div class="arena-clock">
+              <div id="arena-clock-white-wrap">
+                <div class="clock-time" id="arena-clock-white">10:00</div>
+                <div class="clock-label">White (You)</div>
+              </div>
+              <div id="arena-clock-black-wrap">
+                <div class="clock-time" id="arena-clock-black">10:00</div>
+                <div class="clock-label">Black (AI)</div>
+              </div>
             </div>
+          </div>
+            </div>
+
+
+          
           </div>
 
           <!-- Blunder Replay Prompt -->
@@ -5541,22 +5557,36 @@
             <button class="arena-ctrl-btn danger" onclick="CK.arena.resignGame()">🏁 Resign</button>
           </div>
 
-          <!-- Standalone Arcade Promo CTA below board controls -->
-          <div class="arena-arcade-promo" data-aos="fade-up">
-            <div class="arcade-promo-glow"></div>
-            <div class="arcade-promo-content">
-              <span class="arcade-promo-icon">🎮</span>
-              <div class="arcade-promo-text">
-                <h4>Play Brain Booster Mini Games!</h4>
-                <p>Train your mind with Knight's Maze, Tactics Puzzles, and Memory Card Match.</p>
-              </div>
-              <button class="arcade-promo-btn" onclick="CK.navigate('more-games')">Play Games Now &rarr;</button>
-            </div>
           </div>
-        </div>
 
+        
         <!-- Analysis Column -->
         <div class="arena-analysis-col">
+          <style>
+            .style-btn.active { background: rgba(56, 189, 248, 0.1) !important; border-color: #38bdf8 !important; color: #38bdf8 !important; }
+            .coach-toggle input:checked + .slider { background-color: #10b981; }
+            .coach-toggle input:checked + .slider:before { transform: translateX(14px); }
+            .coach-toggle .slider:before { position:absolute; content:""; height:14px; width:14px; left:3px; bottom:3px; background-color:white; transition:.4s; border-radius:50%; }
+          </style>
+          <!-- Engine Eval -->
+          <div class="arena-panel">
+            <div class="arena-panel-header">
+              <span>Engine Analysis</span>
+              <span id="arena-engine-status" style="font-size:0.65rem;font-weight:400;opacity:0.5">Loading...</span>
+            </div>
+            <div class="engine-eval-display">
+              <div class="engine-eval-value" id="arena-eval-value">0.0</div>
+              <div class="engine-depth" id="arena-engine-depth">Depth: —</div>
+              <div class="engine-best-line" id="arena-best-line">Best: —</div>
+            </div>
+          </div>
+          <!-- Captured Pieces -->
+          <div class="arena-panel">
+            <div class="arena-panel-header">Captured by You</div>
+            <div class="captured-pieces" id="arena-captured-white"></div>
+            <div class="arena-panel-header" style="border-top:1px solid var(--arena-border)">Captured by AI</div>
+            <div class="captured-pieces" id="arena-captured-black"></div>
+          </div>
           <!-- AI Settings -->
           <div class="arena-panel" style="padding: 16px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
@@ -5605,7 +5635,6 @@
               </div>
             </div>
           </div>
-
           <!-- Time Control -->
           <div class="arena-panel" style="padding: 16px; margin-top: 12px;">
             <div style="margin-bottom:12px;">
@@ -5623,51 +5652,20 @@
               <button onclick="CK.arena.setCustomTimer()" style="background:var(--arena-gold); border:none; color:#111; font-weight:700; border-radius:6px; padding:0 12px; font-size:0.75rem; cursor:pointer; transition:all 0.2s;">Set</button>
             </div>
           </div>
-          <style>
-            .style-btn.active { background: rgba(56, 189, 248, 0.1) !important; border-color: #38bdf8 !important; color: #38bdf8 !important; }
-            .coach-toggle input:checked + .slider { background-color: #10b981; }
-            .coach-toggle input:checked + .slider:before { transform: translateX(14px); }
-            .coach-toggle .slider:before { position:absolute; content:""; height:14px; width:14px; left:3px; bottom:3px; background-color:white; transition:.4s; border-radius:50%; }
-          </style>
-
-          <!-- Engine Eval -->
-          <div class="arena-panel">
-            <div class="arena-panel-header">
-              <span>Engine Analysis</span>
-              <span id="arena-engine-status" style="font-size:0.65rem;font-weight:400;opacity:0.5">Loading...</span>
-            </div>
-            <div class="engine-eval-display">
-              <div class="engine-eval-value" id="arena-eval-value">0.0</div>
-              <div class="engine-depth" id="arena-engine-depth">Depth: —</div>
-              <div class="engine-best-line" id="arena-best-line">Best: —</div>
-            </div>
-          </div>
-
-          <!-- Clocks -->
-          <div class="arena-panel">
-            <div class="arena-clock">
-              <div id="arena-clock-white-wrap">
-                <div class="clock-time" id="arena-clock-white">10:00</div>
-                <div class="clock-label">White (You)</div>
+          <!-- Standalone Arcade Promo CTA below board controls -->
+          <div class="arena-arcade-promo" data-aos="fade-up">
+            <div class="arcade-promo-glow"></div>
+            <div class="arcade-promo-content">
+              <span class="arcade-promo-icon">🎮</span>
+              <div class="arcade-promo-text">
+                <h4>Play Brain Booster Mini Games!</h4>
+                <p>Train your mind with Knight's Maze, Tactics Puzzles, and Memory Card Match.</p>
               </div>
-              <div id="arena-clock-black-wrap">
-                <div class="clock-time" id="arena-clock-black">10:00</div>
-                <div class="clock-label">Black (AI)</div>
-              </div>
+              <button class="arcade-promo-btn" onclick="CK.navigate('more-games')">Play Games Now &rarr;</button>
             </div>
           </div>
-
-          <!-- Captured Pieces -->
-          <div class="arena-panel">
-            <div class="arena-panel-header">Captured by You</div>
-            <div class="captured-pieces" id="arena-captured-white"></div>
-            <div class="arena-panel-header" style="border-top:1px solid var(--arena-border)">Captured by AI</div>
-            <div class="captured-pieces" id="arena-captured-black"></div>
-          </div>
-
-
         </div>
-      </div>
+      
 
       <!-- Coach Mode Overlay -->
       <div id="coach-overlay" class="arena-overlay"></div>
@@ -5710,7 +5708,7 @@
               <button class="diff-btn" data-level="Beginner" onclick="CK.arena.setDifficulty('Beginner')">Beginner</button>
               <button class="diff-btn active" data-level="Intermediate" onclick="CK.arena.setDifficulty('Intermediate')">Intermediate</button>
               <button class="diff-btn" data-level="Advanced" onclick="CK.arena.setDifficulty('Advanced')">Advanced</button>
-              <button class="diff-btn" data-level="Expert" onclick="CK.arena.setDifficulty('Expert')">Expert</button>
+              <button class="diff-btn" data-level="Elite" onclick="CK.arena.setDifficulty('Elite')">Elite</button>
             </div>
           </div>
 
@@ -5950,6 +5948,32 @@
               </div>
               <div class="card-best">Best: <span id="score-display-escape">—</span></div>
             </div>
+          
+            <!-- 11th Game: 2048 -->
+            <div class="game-card bottles-card" onclick="CK.arcade.start2048()">
+              <div class="card-glow"></div>
+              <div class="game-icon">🔢</div>
+              <h3 class="card-title">2048 Puzzle</h3>
+              <p class="card-desc">Slide tiles to combine numbers and reach 2048 in this classic open-source puzzle!</p>
+              <div class="card-badges">
+                <span class="badge" style="background:#e11d48; color:#fff; font-weight:700;">Puzzle</span>
+                <span class="badge" style="background:rgba(255,255,255,0.1); color:white;">Logic</span>
+              </div>
+              <div class="card-best">Open Source</div>
+            </div>
+
+            <!-- 12th Game: Hextris -->
+            <div class="game-card carrom-card" onclick="CK.arcade.startHextris()">
+              <div class="card-glow"></div>
+              <div class="game-icon">🛑</div>
+              <h3 class="card-title">Hextris</h3>
+              <p class="card-desc">Rotate the hexagon to catch matching colored blocks. Fast-paced open-source action!</p>
+              <div class="card-badges">
+                <span class="badge" style="background:#059669; color:#fff; font-weight:700;">Action</span>
+                <span class="badge" style="background:rgba(255,255,255,0.1); color:white;">Reflexes</span>
+              </div>
+              <div class="card-best">Open Source</div>
+            </div>
           </div>
 
           <!-- ======================== ARCADE OVERLAY ======================== -->
@@ -5960,31 +5984,7 @@
               </div>
             </div>
           
-            <!-- Shooting Bottles -->
-            <div class="game-card bottles-card" onclick="alert('Shooting Bottles coming soon!')">
-              <div class="card-glow"></div>
-              <div class="game-icon">🍾</div>
-              <h3 class="card-title">Shooting Bottles</h3>
-              <p class="card-desc">Test your precision and timing by shooting moving bottles!</p>
-              <div class="card-badges">
-                <span class="badge" style="background:#e11d48; color:#fff; font-weight:700;">Action</span>
-                <span class="badge" style="background:rgba(255,255,255,0.1); color:white;">All Levels</span>
-              </div>
-              <div class="card-best">Best: <span id="score-display-bottles">—</span></div>
-            </div>
-
-            <!-- Carrom Board -->
-            <div class="game-card carrom-card" onclick="alert('Carrom Board coming soon!')">
-              <div class="card-glow"></div>
-              <div class="game-icon">🎯</div>
-              <h3 class="card-title">Carrom Board</h3>
-              <p class="card-desc">Flick your striker and pocket the coins in this classic board game simulation.</p>
-              <div class="card-badges">
-                <span class="badge" style="background:#059669; color:#fff; font-weight:700;">Classic</span>
-                <span class="badge" style="background:rgba(255,255,255,0.1); color:white;">All Levels</span>
-              </div>
-              <div class="card-best">Best: <span id="score-display-carrom">—</span></div>
-            </div>
+            
 
           </div>
 
@@ -6646,7 +6646,7 @@
               <option value="Easy">🌱 Easy</option>
               <option value="Medium">⚡ Medium</option>
               <option value="Hard">🔥 Hard</option>
-              <option value="Expert">💀 Expert</option>
+              <option value="Elite">💀 Elite</option>
             </select>
           </div>
         </div>
