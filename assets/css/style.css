@@ -433,19 +433,30 @@ body.loaded #preloader { opacity: 0; visibility: hidden; pointer-events: none; }
 }
 
 /* --- Hero Visual / Chess Board (Premium Match Interface) --- */
-.hero-visual { position: relative; perspective: 1500px; margin-top: -310px; margin-left: -72px; }
+.hero-visual {
+  position: relative;
+  perspective: 1500px;
+  margin-top: -310px;
+  /* the old margin-left:-72px shifted the panel into the right edge so the
+     move-list (L. Kieseritzky / Be7# / Check Ur Level) was clipped off-screen
+     on desktop. Keep it within the column instead. */
+  margin-left: 0;
+}
 .hero-board-frame {
   background: #1a1a1a;
   border-radius: 24px;
   border: 8px solid #3d2b1f;
   box-shadow: 0 40px 100px rgba(0,0,0,0.4);
   overflow: hidden;
-  transform: rotateX(20deg) rotateY(-8deg) rotateZ(1deg);
+  /* gentle tilt (no rotateY, which tipped the right edge away and clipped the
+     move-list); rotateX alone gives the same premium 3D feel without cutting
+     off content. */
+  transform: rotateX(12deg) rotateZ(0.5deg);
   transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
   max-width: 620px;
-  margin-left: auto;
+  margin: 0 auto;
 }
-.hero-board-frame:hover { transform: rotateX(10deg) rotateY(0deg) rotateZ(0deg); }
+.hero-board-frame:hover { transform: rotateX(6deg) rotateZ(0deg); }
 
 .board-header {
   background: #262626;
