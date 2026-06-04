@@ -72,14 +72,47 @@
         { opacity: 0, y: -60, x: (i) => (i % 2 ? 130 : -130), rotation: (i) => (i % 2 ? 9 : -9) },
         { opacity: 1, y: 0, x: 0, rotation: 0, duration: 0.75, ease: 'back.out(1.7)', stagger: 0.12, delay: 0.65 });
     }
+    // Touch / hover handler — each word FLIES OUT and returns to its place.
+    // Alternating direction per word, with a slight spin; uses an elastic return
+    // so it lands with a satisfying spring. Re-armable: triggers again next time.
+    // Stores the running bounce tween so we can pause it during the fly, then
+    // restart it (a fresh yoyo from the rest position) when the word lands.
+    words.forEach((el, i) => {
+      const dir = i % 2 ? 1 : -1;
+      let flying = false;
+      const fly = () => {
+        if (flying) return;
+        flying = true;
+        // Pause the idle bounce so it doesn't fight the fly tween.
+        if (el._bounceTween) el._bounceTween.pause();
+        const tl = gsap.timeline({ onComplete: () => {
+          flying = false;
+          // Re-arm the idle bounce from the rest position.
+          if (el._bounceTween) { el._bounceTween.restart(true); }
+        }});
+        tl.to(el, {
+          x: dir * 90, y: -54, rotation: dir * 18, scale: 1.18,
+          duration: 0.38, ease: 'power2.out', overwrite: 'auto'
+        }).to(el, {
+          x: 0, y: 0, rotation: 0, scale: 1,
+          duration: 0.85, ease: 'elastic.out(1, 0.45)'
+        });
+      };
+      el.addEventListener('mouseenter', fly);
+      el.addEventListener('touchstart', (e) => { e.preventDefault(); fly(); }, { passive: false });
+      el.addEventListener('click', fly);
+    });
+
     // 3. After the entrance settles, start a CONTINUOUS bounce-back-and-forth on
     //    each title word + the gentle float on the pieces. Each word bobs on its
     //    own offset rhythm so the headline feels alive.
     gsap.delayedCall(2.0, () => {
-      // Per-word vertical bounce (slight horizontal sway for personality)
+      // Per-word vertical bounce (slight horizontal sway for personality).
+      // Save the tween on the element so the click/hover fly handler can pause
+      // it during the fly and restart it cleanly when the word lands.
       words.forEach((el, i) => {
-        gsap.to(el, {
-          y: '-=10',
+        el._bounceTween = gsap.to(el, {
+          y: -10,
           x: (i % 2 ? 4 : -4),
           rotation: (i % 2 ? 1.5 : -1.5),
           duration: 1.6 + (i % 3) * 0.25,         // varied tempo per word

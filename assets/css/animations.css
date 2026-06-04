@@ -142,11 +142,8 @@ html { scroll-behavior: smooth; }
 .hero-word {
   display: inline-block;
   will-change: transform, opacity;
-  cursor: default;
-  transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+  cursor: pointer;
 }
-/* Hover a word and it hops — interactive on top of the continuous bounce */
-.hero-word:hover { transform: translateY(-14px) rotate(-3deg) scale(1.08); }
 .hero-word-em {
   color: var(--amber, #E8A020) !important;
   -webkit-text-fill-color: var(--amber, #E8A020) !important;
