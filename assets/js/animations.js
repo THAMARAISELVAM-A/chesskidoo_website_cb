@@ -70,6 +70,30 @@
     walk(title);
   }
 
+  /* ── SPA page-transition wrapper ──
+     Smoothly fades the current page out, then fades the next one in via the
+     .ck-fade-out / .ck-fade-in classes (defined in animations.css).
+     Wraps CK.showPage so EVERY page change (landing -> portal, portal -> arena,
+     login -> dashboard, etc.) gets the same polished transition. */
+  function installPageTransitions() {
+    if (!window.CK || typeof window.CK.showPage !== 'function' || window.CK.__pageTransitionsInstalled) return;
+    if (reduce) { window.CK.__pageTransitionsInstalled = true; return; } // honor reduced motion
+    const _origShowPage = window.CK.showPage;
+    window.CK.showPage = function (id) {
+      const current = document.querySelector('.page.active');
+      const target = document.getElementById(id);
+      if (!current || !target || current === target) return _origShowPage(id);
+      current.classList.add('ck-fade-out');
+      setTimeout(() => {
+        current.classList.remove('ck-fade-out');
+        _origShowPage(id);
+        target.classList.add('ck-fade-in');
+        setTimeout(() => target.classList.remove('ck-fade-in'), 450);
+      }, 200);
+    };
+    window.CK.__pageTransitionsInstalled = true;
+  }
+
   function init() {
     if (!reduce) mountProgressBar();
     scan(document);
@@ -77,6 +101,13 @@
     // fly in from alternating sides). Only fall back to the CSS letter-bounce if
     // GSAP isn't available.
     setTimeout(() => { if (!window.gsap) animateHeroLetters(); }, 600);
+    // Install SPA fade transitions once CK.showPage exists (main.js loads later)
+    let tries = 0;
+    const installTimer = setInterval(() => {
+      installPageTransitions();
+      if (window.CK && window.CK.__pageTransitionsInstalled) clearInterval(installTimer);
+      if (++tries > 40) clearInterval(installTimer);            // give up after 4s
+    }, 100);
   }
 
   if (document.readyState !== 'loading') init();
