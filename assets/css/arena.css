@@ -4446,20 +4446,31 @@
 /* Certificate brand logo image in the header. The crop has a white background;
    multiply-blend it so the white melts into the cream paper and only the logo
    artwork shows. */
+/* The logo crop has a white background. mix-blend-mode (used before) is NOT
+   supported by html2canvas, so the downloaded PDF showed an ugly white box.
+   Instead, sit the logo on a clean white rounded band — the white background
+   merges into the band and renders correctly in the PDF. */
 #cert-card .header-logo-only,
 .certificate .header-logo-only {
   display: flex !important;
   justify-content: center;
   align-items: center;
+  background: #ffffff;
+  border: 1px solid rgba(197,152,58,0.18);
+  border-radius: 14px;
+  padding: 12px 28px;
+  width: fit-content;
+  margin: 0 auto 6px;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.05);
 }
 #cert-card .cert-logo-img,
 .certificate .cert-logo-img {
-  height: 120px;
+  height: 116px;
   width: auto;
   max-width: 560px;
   object-fit: contain;
   display: block;
-  mix-blend-mode: multiply;   /* melt the white crop background into the cream */
+  mix-blend-mode: normal;
 }
 /* SVG/PNG brand fallback (logo.png) has a transparent bg — no blend needed */
 #cert-card .cert-logo-img.cert-logo-fallback,

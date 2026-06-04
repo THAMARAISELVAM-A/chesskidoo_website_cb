@@ -23,7 +23,30 @@
       "WebFetch(domain:www.time2chess.com)",
       "Bash(grep -nA10 \"^\\\\.feat-card\\\\s*{\\\\|^\\\\.feat-card\\\\b\" assets/css/style.css)",
       "Bash(grep -nA6 \"^\\\\.reveal\\\\b\\\\|\\\\.reveal\\\\s*{\" assets/css/style.css)",
-      "Bash(grep -nB1 -A12 \"IntersectionObserver\\\\|\\\\.reveal\" assets/js/main.js)"
+      "Bash(grep -nB1 -A12 \"IntersectionObserver\\\\|\\\\.reveal\" assets/js/main.js)",
+      "Bash(node --check assets/js/animations.js)",
+      "Bash(git check-ignore *)",
+      "Bash(grep -nA3 \"tvid-player\\\\|tvid-grid\\\\|@media.*700.*tvid\\\\|tvid.*@media\" assets/css/enterprise.css)",
+      "Bash(grep -nA4 \"\\\\.hero-title\\\\b\" assets/css/style.css assets/css/mobile-landing.css)",
+      "Bash(grep -nA2 \"\\\\.a-sq\\\\.light\\\\|\\\\.a-sq\\\\.dark\\\\|^\\\\.a-sq\\\\b\" assets/css/arena.css)",
+      "Bash(curl -s -D - https://chesskidoo.vercel.app/ -o /dev/null)",
+      "Bash(grep -nA20 \"function classifyFromDiff\" assets/js/arena.js)",
+      "Bash(grep -nA3 \"evaluate\\\\s*[:=]\\\\|evaluate\\(fen\\\\|evaluate =\" assets/js/engine.js)",
+      "Bash(grep -nB1 -A1 \"font-family\" assets/css/arena.css)",
+      "Bash(grep -nB3 \"font-family: 'Poppins', sans-serif !important\" assets/css/arena.css)",
+      "Bash(grep -nA4 \"\\\\.signature {\" assets/css/arena.css)",
+      "Bash(grep -nA5 \"\\\\.hero-stats\\\\b\" assets/css/style.css)",
+      "Bash(grep -nA3 \"\\\\.stat-item\\\\b\\\\|\\\\.hero-stat-num\\\\b\\\\|\\\\.hero-stat-label\\\\b\" assets/css/style.css)",
+      "Bash(node --check assets/js/arena.js)",
+      "Bash(node --check assets/js/gsap-effects.js)",
+      "Bash(curl -s __TRACKED_VAR__/assets/js/gsap-effects.js?cb=__CMDSUB_OUTPUT__)",
+      "Bash(head)",
+      "Bash(echo \"\")",
+      "Bash(echo \"=== their key layout props ===\")",
+      "Bash(echo '--- .__TRACKED_VAR__ ---')",
+      "Bash(grep -nA10 '\\\\.__TRACKED_VAR__ {' assets/css/style.css)",
+      "Bash(grep -nA4 \"\\\\.hero-grid\\\\b\" assets/css/style.css)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('vercel.json','utf8'\\)\\); console.log\\('vercel.json VALID'\\)\")"
     ]
   }
 }

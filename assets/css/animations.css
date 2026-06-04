@@ -212,10 +212,271 @@ html { scroll-behavior: smooth; }
 /* Smooth in-section scroll/anchor jumps on the landing page */
 .page#landing-page section { scroll-margin-top: 80px; }
 
+/* ═══ SECTION DIVIDERS — decorative gradient lines between sections ═══ */
+.section-padding + .section-padding::before {
+  content: '';
+  display: block;
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #E8A020, transparent);
+  margin: 0 auto 80px;
+  border-radius: 2px;
+  opacity: 0.5;
+}
+
+/* ═══ CARD HOVER GLOW — subtle ambient glow on interactive cards ═══ */
+.feat-card,
+.review-card,
+.achievement-card,
+.why-item,
+.skill-card,
+.coach-card-premium {
+  position: relative;
+  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.4s ease;
+}
+.feat-card:hover,
+.review-card:hover,
+.achievement-card:hover,
+.why-item:hover,
+.coach-card-premium:hover {
+  box-shadow: 0 20px 50px -12px rgba(217, 119, 6, 0.15), 0 0 0 1px rgba(217, 119, 6, 0.08);
+}
+
+/* ═══ SKILL CARDS — bounce on hover ═══ */
+.skill-card {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease;
+}
+.skill-card:hover {
+  transform: translateY(-8px) scale(1.04);
+  box-shadow: 0 16px 32px rgba(0,0,0,0.12);
+}
+.skill-card:hover .skill-icon {
+  animation: skillIconBounce 0.5s ease;
+}
+@keyframes skillIconBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  40% { transform: translateY(-6px) scale(1.15); }
+  60% { transform: translateY(-2px) scale(1.05); }
+}
+
+/* ═══ REVIEW CARDS — tilt on hover ═══ */
+.review-card {
+  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.4s ease;
+}
+.review-card:hover {
+  transform: translateY(-6px) rotate(-0.5deg);
+}
+.review-card:nth-child(even):hover {
+  transform: translateY(-6px) rotate(0.5deg);
+}
+
+/* ═══ REVIEW STARS — shimmer on hover ═══ */
+.review-stars {
+  transition: letter-spacing 0.4s ease, filter 0.4s ease;
+}
+.review-card:hover .review-stars {
+  letter-spacing: 3px;
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.6));
+}
+
+/* ═══ ACHIEVEMENT CARDS — pulse ring on hover ═══ */
+.achievement-card::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  border: 2px solid transparent;
+  transition: border-color 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
+}
+.achievement-card:hover::after {
+  border-color: rgba(217, 119, 6, 0.3);
+  transform: scale(1.02);
+}
+
+/* ═══ COACH CARDS — subtle lift + shine ═══ */
+.coach-card-premium {
+  overflow: hidden;
+}
+.coach-card-premium::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.08), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+.coach-card-premium:hover::before {
+  left: 130%;
+}
+
+/* ═══ WHY-ITEM — icon scale + glow ═══ */
+.why-icon {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.35s ease;
+}
+.why-item:hover .why-icon {
+  transform: scale(1.2) rotate(-5deg);
+  filter: drop-shadow(0 0 8px rgba(217, 119, 6, 0.4));
+}
+
+/* ═══ PRICING CARDS — perspective tilt on hover ═══ */
+.price-card {
+  transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.5s ease;
+  transform-style: preserve-3d;
+}
+.price-card:hover {
+  transform: translateY(-12px) perspective(800px) rotateX(-2deg);
+  box-shadow: 0 30px 60px -15px rgba(0,0,0,0.2);
+}
+.price-btn {
+  position: relative;
+  overflow: hidden;
+}
+.price-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
+  transform: skewX(-20deg);
+  pointer-events: none;
+}
+.price-btn:hover::after {
+  animation: btnShine 0.85s ease;
+}
+
+/* ═══ FAQ ITEMS — smooth expand with slide ═══ */
+.faq-item {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.faq-item:hover {
+  transform: translateX(4px);
+}
+.faq-item.active {
+  box-shadow: 0 4px 20px rgba(217, 119, 6, 0.1);
+  transform: translateX(6px);
+}
+.faq-icon-arrow svg {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.faq-item.active .faq-icon-arrow svg {
+  transform: rotate(180deg);
+}
+
+/* ═══ TRUST BAR — smooth infinite scroll ═══ */
+.trust-track {
+  display: flex;
+  gap: 48px;
+  animation: trustScroll 35s linear infinite;
+  width: max-content;
+}
+@keyframes trustScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.trust-item {
+  transition: color 0.3s ease, transform 0.3s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.trust-item:hover {
+  color: #E8A020;
+  transform: scale(1.05);
+}
+
+/* ═══ SECTION HEADINGS — letter-spacing expand on reveal ═══ */
+.section-head.visible h2,
+.section-head.in-view h2 {
+  animation: headingReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes headingReveal {
+  0% { letter-spacing: 0.08em; opacity: 0; }
+  100% { letter-spacing: -0.02em; opacity: 1; }
+}
+
+/* ═══ EYEBROW BADGES — slide-in from left ═══ */
+.section-head.visible .eyebrow,
+.section-head.in-view .eyebrow {
+  animation: eyebrowSlide 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+@keyframes eyebrowSlide {
+  0% { opacity: 0; transform: translateX(-20px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+/* ═══ COUNTER ANIMATION — number count-up feel ═══ */
+.hero-stat-num {
+  animation: counterPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: calc(var(--stat-i, 0) * 0.15s + 0.8s);
+}
+@keyframes counterPop {
+  0% { opacity: 0; transform: scale(0.5) translateY(10px); }
+  60% { transform: scale(1.1) translateY(-3px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.hero-stats .stat-item:nth-child(1) { --stat-i: 0; }
+.hero-stats .stat-item:nth-child(2) { --stat-i: 1; }
+.hero-stats .stat-item:nth-child(3) { --stat-i: 2; }
+.hero-stats .stat-item:nth-child(4) { --stat-i: 3; }
+
+/* ═══ SHOWCASE GALLERY — zoom-in on hover ═══ */
+.showcase-gallery-item {
+  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.4s ease;
+  overflow: hidden;
+}
+.showcase-gallery-item:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+.showcase-img-wrap img {
+  transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.showcase-gallery-item:hover .showcase-img-wrap img {
+  transform: scale(1.08);
+}
+
+/* ═══ TESTIMONIAL VIDEO CARDS — lift + shadow ═══ */
+.tvid-card {
+  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.4s ease;
+}
+.tvid-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+/* ═══ SMOOTH UNDERLINE for links ═══ */
+.footer-link-btn {
+  position: relative;
+}
+.footer-link-btn::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1.5px;
+  background: #E8A020;
+  transition: width 0.3s ease;
+}
+.footer-link-btn:hover::after {
+  width: 100%;
+}
+
 /* ═══ ACCESSIBILITY — respect reduced motion ═══ */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   [data-anim], [data-stagger] > * { opacity: 1 !important; transform: none !important; transition: none !important; }
   .anim-float, .anim-float-slow, .anim-pulse, .anim-shimmer, #scroll-progress, .hero-title em { animation: none !important; }
   .btn-primary::after, .hero-cta::after, .p-btn-gold::after { display: none; }
+  .trust-track { animation: none !important; }
+  .hero-stat-num { animation: none !important; }
+  .section-head h2, .section-head .eyebrow { animation: none !important; }
+  .skill-card:hover .skill-icon { animation: none !important; }
 }

@@ -11,7 +11,7 @@
     const target = document.getElementById(id);
     if (target) {
       target.classList.add('active');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     }
 
     // Toggle global site header visibility
@@ -1995,3 +1995,37 @@ ta: {
   });
 
 })();
+  /* ─── Curriculum Portal ─── */
+  CK.openCurriculum = (targetId) => {
+    const modal = document.getElementById('curriculumModal');
+    if (modal) {
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      
+      // If a specific section was clicked, scroll to it smoothly
+      if (targetId) {
+        setTimeout(() => {
+          const targetEl = document.getElementById(targetId);
+          if (targetEl) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Add a brief highlight flash
+            targetEl.style.transition = 'box-shadow 0.5s, transform 0.5s';
+            targetEl.style.boxShadow = '0 0 30px var(--amber)';
+            targetEl.style.transform = 'scale(1.02)';
+            setTimeout(() => {
+              targetEl.style.boxShadow = 'none';
+              targetEl.style.transform = 'scale(1)';
+            }, 1000);
+          }
+        }, 100);
+      }
+    }
+  };
+
+  CK.closeCurriculum = () => {
+    const modal = document.getElementById('curriculumModal');
+    if (modal) {
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  };

@@ -12,7 +12,22 @@
 
     const FILES = ['a','b','c','d','e','f','g','h'];
     const RANKS_LABELS = ['8','7','6','5','4','3','2','1'];
-    const GLYPH = {wK:'♔',wQ:'♕',wR:'♖',wB:'♗',wN:'♘',wP:'♙',bK:'♚',bQ:'♛',bR:'♜',bB:'♝',bN:'♞',bP:'♟'};
+
+    // Chess.com "neo" piece set (default Chess.com pieces)
+    const PIECE_SVG = {
+      wK:'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wk.png',
+      wQ:'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wq.png',
+      wR:'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wr.png',
+      wB:'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wb.png',
+      wN:'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wn.png',
+      wP:'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wp.png',
+      bK:'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/bk.png',
+      bQ:'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/bq.png',
+      bR:'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/br.png',
+      bB:'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/bb.png',
+      bN:'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/bn.png',
+      bP:'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/bp.png'
+    };
 
     // Build coordinate elements
     const ranksDiv = document.getElementById('ranks-col');
@@ -89,11 +104,16 @@
           if (hlFrom && hlFrom[0] === r && hlFrom[1] === f) square.classList.add('hl-from');
           if (hlTo && hlTo[0] === r && hlTo[1] === f) square.classList.add('hl-to');
           const piece = board[r][f];
-          if (piece) {
-            const pieceSpan = document.createElement('span');
-            pieceSpan.className = 'piece';
-            pieceSpan.textContent = GLYPH[piece];
-            square.appendChild(pieceSpan);
+          if (piece && PIECE_SVG[piece]) {
+            const img = document.createElement('img');
+            img.className = 'piece';
+            img.src = PIECE_SVG[piece];
+            img.alt = piece;
+            img.draggable = false;
+            img.style.width = '85%';
+            img.style.height = '85%';
+            img.style.pointerEvents = 'none';
+            square.appendChild(img);
           }
           boardEl.appendChild(square);
         }
