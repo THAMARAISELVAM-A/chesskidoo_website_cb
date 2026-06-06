@@ -1776,8 +1776,12 @@ CK.student = {
 
     // Save auto-updated ELO
     if (Math.abs(predictedElo - (p.rating || 1200)) > 20 && p.id) {
-       await CK.db.updateProfile(p.id, { rating: predictedElo });
-       p.rating = predictedElo;
+      const profile = await CK.db.getProfile(p.id);
+      if (profile) {
+        profile.rating = predictedElo;
+        await CK.db.saveProfile(profile);
+      }
+      p.rating = predictedElo;
     }
 
     const rc = p.report_card || {
