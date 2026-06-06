@@ -608,6 +608,8 @@ CK.student = {
   _puzzleSeconds: 0,
   _puzzleMistakes: 0,
   _puzzleXP: 0,
+  _pzBoardInstance: null,
+  _pzGame: null,
 
   startPuzzleTimer() {
     this.stopPuzzleTimer();
@@ -722,7 +724,6 @@ CK.student = {
     if (!p) return;
 
     this.activePuzzleId = id;
-    this._puzzleSelectedSq = null;  // reset piece selection between puzzles
 
     // Show active area, hide placeholder
     const placeholder = document.getElementById('pzPlaceholder');
@@ -757,8 +758,8 @@ CK.student = {
     const boardEl = document.getElementById('studentPuzzleBoardContainer');
     if (!boardEl) return;
 
-    this._puzzleFen = 'start';
-    this._pzGame = new Chess();
+    this._puzzleFen = p.fen || 'start';
+    this._pzGame = new Chess(this._puzzleFen);
     const pzBoardTarget = 'studentPuzzleBoard';
     if (this._pzBoardInstance) { try { this._pzBoardInstance.destroy(); } catch(_) {} this._pzBoardInstance = null; }
     boardEl.innerHTML = '<div id="' + pzBoardTarget + '" style="width:100%;max-width:420px;margin:0 auto;"></div>';
@@ -767,7 +768,7 @@ CK.student = {
         pieceTheme: function (piece) {
           return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
         },
-        position: 'start',
+        position: this._puzzleFen,
         orientation: 'white',
         draggable: true,
         onDrop: function(source, target, piece) {
@@ -884,123 +885,7 @@ CK.student = {
     }
   },
 
-  async onSquareClick(squareId) {
-    const p = this.puzzlesDb.find(x => x.id === this.activePuzzleId);
-    if (!p) return;
-
-    const fb = document.getElementById('puzzleFeedback');
-    const setup = this._PUZZLE_SETUPS[this.activePuzzleId] || {};
-
-    // PROPER CHESS-LIKE INPUT
-    //
-    // If the user has a piece selected and clicks another square,
-    // treat it as a move attempt. If the destination matches the
-    // puzzle's solution square, fire success. Otherwise count as a
-    // mistake and clear the selection so they can try again.
-    if (this._puzzleSelectedSq) {
-      const fromSq = this._puzzleSelectedSq;
-      this._puzzleSelectedSq = null;
-      // Clear all hint highlights
-      document.querySelectorAll('#studentPuzzleBoardContainer [title]').forEach(el => {
-        el.style.boxShadow = '';
-        if (!el.style.background.includes('#3a6b2a')) {
-          el.style.background = '';
-        }
-      });
-      // Re-render the board to restore visuals
-      // (cheap re-render keeps UI clean)
-      // Then evaluate the destination
-      if (fromSq === squareId) {
-        // Same square clicked again = deselect; do nothing further
-        return;
-      }
-      // Treat the destination click the same as the simple-solver below
-      squareId = squareId; // fall through to solution check
-    } else {
-      // No selection yet  if user clicked a piece, SELECT it
-      const piece = setup[squareId];
-      if (piece) {
-        this._puzzleSelectedSq = squareId;
-        // Visual highlight on the selected square
-        const el = document.querySelector(`#studentPuzzleBoardContainer [title="${squareId}"]`);
-        if (el) {
-          el.style.boxShadow = 'inset 0 0 0 4px #e8b84b, 0 0 16px rgba(232,184,75,0.5)';
-        }
-        if (fb) {
-          fb.style.display = 'block';
-          fb.className = 'pz-feedback hint';
-          fb.textContent = `Selected ${piece} on ${squareId.toUpperCase()}  now click the target square to make the move.`;
-        }
-        return;
-      }
-      // Clicked empty square with no piece selected  just ignore (or treat
-      // as direct solution-square click for legacy compatibility).
-    }
-
-    if (squareId === p.solution) {
-      this.stopPuzzleTimer();
-      const xp = this.getXPForPuzzle(p.diff, this._puzzleSeconds, this._puzzleMistakes);
-      this._puzzleXP += xp;
-      this.showXPPopup(xp);
-      CK.showToast(` Brilliant! +${xp} XP earned!`, 'success');
-      this._solvedPuzzles.add(p.id);
-      this._srs.record(p.id, true);
-      this._trackDailyGoal('puzzles');
-      this.renderSRSQueue();
-
-      if (fb) {
-        fb.style.display = 'block';
-        fb.className = 'pz-feedback success';
-        fb.innerHTML = ` <strong>${CK.esc ? CK.esc(p.title || '') : (p.title || '')} solved!</strong><br><span style="font-size:0.85rem;opacity:0.85;">${CK.esc ? CK.esc(p.desc || '') : (p.desc || '')}</span>`;
-      }
-
-      // Flash the solution square with olive-gold glow
-      const sqs = document.querySelectorAll('#studentPuzzleBoardContainer [title="' + squareId + '"]');
-      sqs.forEach(el => { el.style.boxShadow = 'inset 0 0 0 4px #e8b84b, 0 0 20px rgba(232,184,75,0.6)'; el.style.background = '#3a6b2a'; el.style.outline = ''; });
-
-      this.userProfile.puzzle = (parseInt(this.userProfile.puzzle) || 0) + 1;
-      if ((this.userProfile.star || 0) < 5) {
-        this.userProfile.star = (this.userProfile.star || 0) + 1;
-      }
-      await CK.db.saveProfile(this.userProfile);
-
-      // Persist individual puzzle solve to puzzle_scores table
-      await CK.db.savePuzzleScore({
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2),
-        userId: this.userProfile.id || this.userProfile.userid,
-        userName: this.userProfile.full_name || '',
-        puzzleId: p.id,
-        solved: true,
-        time: this._puzzleSeconds,
-        mistakes: this._puzzleMistakes,
-        xp: this.getXPForPuzzle(p.diff, this._puzzleSeconds, this._puzzleMistakes),
-        date: new Date().toISOString()
-      });
-
-      this.updateProfile();
-      this.renderDashboard();
-      this.renderPuzzlesList();
-      this.renderAchievementsTab();
-    } else {
-      this._puzzleMistakes++;
-      this._srs.record(p.id, false);
-      CK.showToast(' Not quite  try again!', 'warning');
-      if (fb) {
-        fb.style.display = 'block';
-        fb.className = 'pz-feedback error';
-        fb.textContent = ' Incorrect square. Think carefully  look for the move that forces an immediate decisive result.';
-      }
-      // Flash the wrong square red briefly
-      const sqs = document.querySelectorAll('#studentPuzzleBoardContainer [title="' + squareId + '"]');
-      sqs.forEach(el => {
-        el.style.boxShadow = 'inset 0 0 0 4px #ef4444, 0 0 14px rgba(239,68,68,0.5)';
-        el.style.outline = '';
-        setTimeout(() => { el.style.boxShadow = ''; }, 700);
-      });
-    }
-  },
-
-  async renderCoachReviews() {
+  renderCoachReviews() {
     const container = document.getElementById('studentReviewsContainer');
     if (!container) return;
 
