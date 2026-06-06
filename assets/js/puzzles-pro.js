@@ -232,9 +232,8 @@ CK.puzzlesPro = (() => {
       const wrap = document.getElementById('pzProBoardWrap');
       if (!wrap) return;
       _pzBoard = Chessboard('pzProBoardWrap', {
-        // Local pieces — no external dependency, so pieces can never gap out mid-game.
         pieceTheme: function (piece) {
-          return 'assets/img/pieces/' + piece.toLowerCase() + '.png';
+          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
         },
         position: _pzGame.fen(),
         orientation: _pzGame.turn() === 'w' ? 'white' : 'black',

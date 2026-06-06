@@ -217,7 +217,7 @@ CK.arcade = (() => {
         if (piece) {
           const colorPrefix = piece.color === 'white' ? 'w' : 'b';
           const typeCode = piece.type.toLowerCase();
-          const imgSrc = `/assets/img/pieces/${colorPrefix}${typeCode}.png`;
+          const imgSrc = `https://images.chesscomfiles.com/chess-themes/pieces/neo/150/${colorPrefix}${typeCode}.png`;
           pieceHTML = `<div class="arcade-piece ${piece.color}" style="width:100%;height:100%;"><img src="${imgSrc}" style="width:85%;height:85%;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.5));pointer-events:none;"></div>`;
         }
         boardHTML += `
@@ -558,12 +558,12 @@ CK.arcade = (() => {
      GAME 3: CHESS MATCH-3 (MEMORY MATCHING)
      ========================================== */
   const MEMORY_PIECES = [
-    { code: 'K', img: '/assets/img/pieces/wk.png' },
-    { code: 'Q', img: '/assets/img/pieces/wq.png' },
-    { code: 'R', img: '/assets/img/pieces/wr.png' },
-    { code: 'B', img: '/assets/img/pieces/wb.png' },
-    { code: 'N', img: '/assets/img/pieces/wn.png' },
-    { code: 'P', img: '/assets/img/pieces/wp.png' }
+    { code: 'K', img: 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wk.png' },
+    { code: 'Q', img: 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wq.png' },
+    { code: 'R', img: 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wr.png' },
+    { code: 'B', img: 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wb.png' },
+    { code: 'N', img: 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wn.png' },
+    { code: 'P', img: 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wp.png' }
   ];
 
   ARC.startMemoryMatchGame = () => {
@@ -817,7 +817,7 @@ CK.arcade = (() => {
 
         let entityHTML = '';
         if (isKnight) {
-          entityHTML = '<div class="arcade-piece white" style="width:100%;height:100%;"><img src="/assets/img/pieces/wn.png" style="width:85%;height:85%;pointer-events:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.5));"></div>';
+          entityHTML = '<div class="arcade-piece white" style="width:100%;height:100%;"><img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wn.png" style="width:85%;height:85%;pointer-events:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.5));"></div>';
         } else if (isTarget) {
           entityHTML = '<div class="arcade-star">⭐</div>';
         }
@@ -1029,9 +1029,9 @@ CK.arcade = (() => {
 
         let entityHTML = '';
         if (isKing) {
-          entityHTML = '<div class="arcade-piece white" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="/assets/img/pieces/wk.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;"></div>';
+          entityHTML = '<div class="arcade-piece white" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wk.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;"></div>';
         } else if (hasPawn) {
-          entityHTML = '<div class="arcade-piece black" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="/assets/img/pieces/bp.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;"></div>';
+          entityHTML = '<div class="arcade-piece black" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/bp.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;"></div>';
         }
 
         boardHTML += `
@@ -1208,9 +1208,9 @@ CK.arcade = (() => {
 
         let entityHTML = '';
         if (isQueen) {
-          entityHTML = '<div class="arcade-piece white" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="/assets/img/pieces/wq.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;"></div>';
+          entityHTML = '<div class="arcade-piece white" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wq.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;"></div>';
         } else if (isTarget) {
-          entityHTML = '<div class="arcade-piece black" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="/assets/img/pieces/br.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none; filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.85));"></div>';
+          entityHTML = '<div class="arcade-piece black" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;"><img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/br.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none; filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.85));"></div>';
         }
 
         boardHTML += `
@@ -1342,6 +1342,7 @@ CK.arcade = (() => {
       { id: 'quiz',        strip: 'score-badge-quiz',        card: 'score-display-quiz' },
       { id: 'coordinates', strip: 'score-badge-coordinates', card: 'score-display-coordinates' },
       { id: 'recall',      strip: 'score-badge-recall',      card: 'score-display-recall' },
+      { id: 'escape',      strip: 'score-badge-escape',      card: 'score-display-escape' },
     ];
     const scores = getScores();
     games.forEach(({ id, strip, card }) => {
@@ -1765,12 +1766,12 @@ CK.arcade = (() => {
         if (state.isMemorizing) {
           const piece = state.targetPieces[sq];
           if (piece) {
-            pieceHTML = `<img src="/assets/img/pieces/${piece}.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;">`;
+            pieceHTML = `<img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/${piece}.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;">`;
           }
         } else {
           const piece = state.userPieces[sq];
           if (piece) {
-            pieceHTML = `<img src="/assets/img/pieces/${piece}.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;">`;
+            pieceHTML = `<img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/${piece}.png" style="width:80%; height:80%; object-fit:contain; pointer-events:none;">`;
           }
         }
 
@@ -1814,7 +1815,7 @@ CK.arcade = (() => {
         <button class="arcade-palette-btn ${isSelected ? 'selected' : ''}" 
                 style="width:36px; height:36px; padding:2px; background:${isSelected ? 'rgba(6,182,212,0.18)' : 'rgba(255,255,255,0.03)'}; border:1px solid ${isSelected ? 'var(--p-blue)' : 'rgba(255,255,255,0.1)'}; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; box-shadow:${isSelected ? '0 0 10px rgba(6,182,212,0.3)' : 'none'};" 
                 onclick="CK.arcade.selectPalettePiece('${p.code}')" title="Place ${p.code.toUpperCase()}">
-          <img src="/assets/img/pieces/${p.icon}" style="width:100%; height:100%; object-fit:contain;">
+          <img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/${p.icon}" style="width:100%; height:100%; object-fit:contain;">
         </button>
       `;
     }).join('');
@@ -2029,194 +2030,284 @@ CK.arcade = (() => {
   }
 
   /* ==========================================
-     GAME 10: KING'S ESCAPE
+     GAME 10: BOTTLE SHOOTER
      ──────────────────────────────────────────
-     White king must reach the 8th rank without ever being on a square
-     attacked by the Black Queen. Each turn: player moves king one square
-     (any direction), then the queen makes a chasing move toward the king.
-     Reach rank 8 = win the level. +1 level → faster queen, longer board.
+     Click bottles to shoot them before they vanish!
+     Bottles spawn on 3 shelves; faster spawns & shorter
+     display times as levels progress.  Miss 5 = game over.
      ========================================== */
-  ARC.startKingEscapeGame = () => {
-    currentGameType = 'escape';
+  const _BS_BOTTLES = [
+    { emoji: '\uD83C\uDF7E', label: 'Champagne',  pts: 15, color: '#a3e635' },
+    { emoji: '\uD83C\uDF7A', label: 'Beer',       pts: 10, color: '#fbbf24' },
+    { emoji: '\uD83E\uDDC3', label: 'Juice',      pts: 12, color: '#f97316' },
+    { emoji: '\uD83C\uDF76', label: 'Chili Jar',  pts: 20, color: '#ef4444' },
+    { emoji: '\uD83C\uDF79', label: 'Cocktail',   pts: 18, color: '#ec4899' },
+    { emoji: '\uD83E\uDD64', label: 'Cup',        pts: 8,  color: '#38bdf8' },
+    { emoji: '\u2615',       label: 'Coffee',     pts: 10, color: '#a78bfa' },
+    { emoji: '\uD83C\uDF75', label: 'Teacup',     pts: 14, color: '#22d3ee' },
+  ];
+
+  ARC.startBottleShooter = () => {
+    currentGameType = 'escape';          // reuse the 'escape' save-key slot
     score = 0;
     level = 1;
     state = {
-      kingSq: 'e1',
-      queenSq: 'e8',
-      turns: 0,
+      bottles: [],       // active bottle objects { id, slot, bottle, timer, el }
+      misses: 0,
+      maxMisses: 5,
+      spawnInterval: null,
+      nextId: 0,
       gameOver: false,
+      totalShot: 0,
+      combo: 0,
+      maxCombo: 0,
     };
     showOverlay();
-    renderKingEscape();
+    _bsRender();
+    _bsStartSpawning();
   };
 
-  function _kFile(sq) { return sq.charCodeAt(0) - 97; }
-  function _kRank(sq) { return parseInt(sq[1]); }
-  function _kSq(f, r) { return String.fromCharCode(97 + f) + r; }
+  // Keep King's Escape entry point working (just redirects to bottle shooter)
+  ARC.startKingEscapeGame = ARC.startBottleShooter;
 
-  function _queenAttacks(qSq, kSq) {
-    // queen attacks if on same rank, file, or diagonal AND no pieces between
-    // (no other pieces in this game, so distance check is enough)
-    const qf = _kFile(qSq), qr = _kRank(qSq);
-    const kf = _kFile(kSq), kr = _kRank(kSq);
-    if (qf === kf || qr === kr) return true;
-    if (Math.abs(qf - kf) === Math.abs(qr - kr)) return true;
-    return false;
+  function _bsSpawnRate() {
+    // ms between spawns — faster at higher levels
+    return Math.max(600, 1800 - (level - 1) * 150);
+  }
+  function _bsBottleLife() {
+    // how long a bottle stays visible (ms) — shorter at higher levels
+    return Math.max(1200, 3000 - (level - 1) * 200);
   }
 
-  function _kingLegalMoves(kSq, qSq) {
-    const moves = [];
-    const kf = _kFile(kSq), kr = _kRank(kSq);
-    for (let df = -1; df <= 1; df++) {
-      for (let dr = -1; dr <= 1; dr++) {
-        if (df === 0 && dr === 0) continue;
-        const nf = kf + df, nr = kr + dr;
-        if (nf < 0 || nf > 7 || nr < 1 || nr > 8) continue;
-        const nsq = _kSq(nf, nr);
-        // King cannot move adjacent to queen (would be in check after move)
-        const qf = _kFile(qSq), qr = _kRank(qSq);
-        if (Math.abs(qf - nf) <= 1 && Math.abs(qr - nr) <= 1) continue;
-        // King cannot move to a square attacked by queen
-        if (_queenAttacks(qSq, nsq)) continue;
-        moves.push(nsq);
+  function _bsStartSpawning() {
+    if (state.spawnInterval) clearInterval(state.spawnInterval);
+    state.spawnInterval = setInterval(() => {
+      if (state.gameOver) { clearInterval(state.spawnInterval); return; }
+      _bsSpawnBottle();
+    }, _bsSpawnRate());
+    // spawn the first one immediately
+    _bsSpawnBottle();
+  }
+
+  function _bsSpawnBottle() {
+    if (state.gameOver) return;
+    const SLOTS = 9; // 3 rows x 3 cols
+    // find occupied slots
+    const occupied = new Set(state.bottles.map(b => b.slot));
+    // pick a random unoccupied slot
+    const free = [];
+    for (let i = 0; i < SLOTS; i++) { if (!occupied.has(i)) free.push(i); }
+    if (free.length === 0) return; // all full, skip
+
+    const slot = free[Math.floor(Math.random() * free.length)];
+    const bottle = _BS_BOTTLES[Math.floor(Math.random() * _BS_BOTTLES.length)];
+    const id = state.nextId++;
+
+    const entry = { id, slot, bottle, spawned: Date.now() };
+
+    // auto-remove after lifespan (counts as a miss)
+    entry.timer = setTimeout(() => {
+      if (state.gameOver) return;
+      const idx = state.bottles.findIndex(b => b.id === id);
+      if (idx !== -1) {
+        state.bottles.splice(idx, 1);
+        state.misses++;
+        state.combo = 0;
+        playSFX('buzz');
+        if (state.misses >= state.maxMisses) {
+          _bsEndGame();
+        } else {
+          _bsUpdateHUD();
+        }
       }
-    }
-    return moves;
+    }, _bsBottleLife());
+
+    state.bottles.push(entry);
+    _bsUpdateHUD();
   }
 
-  function _queenChaseMove(qSq, kSq) {
-    // Move queen one step toward king along same rank/file/diagonal if possible
-    const qf = _kFile(qSq), qr = _kRank(qSq);
-    const kf = _kFile(kSq), kr = _kRank(kSq);
-    const df = Math.sign(kf - qf);
-    const dr = Math.sign(kr - qr);
-    // Prefer staying on a line that attacks the king. Try diagonal step first.
-    let candidates = [];
-    if (df !== 0 && dr !== 0) candidates.push([df, dr]);
-    if (df !== 0) candidates.push([df, 0]);
-    if (dr !== 0) candidates.push([0, dr]);
-    for (const [a, b] of candidates) {
-      const nf = qf + a, nr = qr + b;
-      if (nf >= 0 && nf <= 7 && nr >= 1 && nr <= 8) {
-        const nsq = _kSq(nf, nr);
-        // Don't land on the king's square
-        if (nsq !== kSq) return nsq;
-      }
+  function _bsShoot(id) {
+    if (state.gameOver) return;
+    const idx = state.bottles.findIndex(b => b.id === id);
+    if (idx === -1) return;
+    const entry = state.bottles[idx];
+    clearTimeout(entry.timer);
+    state.bottles.splice(idx, 1);
+    state.totalShot++;
+    state.combo++;
+    if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+
+    // score: base pts + combo bonus + speed bonus
+    const speed = Date.now() - entry.spawned;
+    const speedBonus = speed < 800 ? 10 : speed < 1500 ? 5 : 0;
+    const comboBonus = Math.min(state.combo * 2, 20);
+    const pts = entry.bottle.pts + speedBonus + comboBonus;
+    score += pts;
+    playSFX('coin');
+
+    // Level up every 8 bottles shot
+    if (state.totalShot > 0 && state.totalShot % 8 === 0 && level < 15) {
+      level++;
+      CK.showToast('Level ' + level + ' - Faster!', 'success');
+      // restart spawner with faster rate
+      _bsStartSpawning();
     }
-    return qSq;
+
+    _bsUpdateHUD();
+
+    // animate the shot bottle cell
+    const cell = document.getElementById('bs-cell-' + id);
+    if (cell) {
+      cell.classList.add('bs-shot');
+      setTimeout(() => { if (cell) cell.classList.remove('bs-shot'); }, 350);
+    }
+  }
+  ARC.bsShoot = _bsShoot;
+
+  function _bsEndGame() {
+    state.gameOver = true;
+    if (state.spawnInterval) clearInterval(state.spawnInterval);
+    state.bottles.forEach(b => clearTimeout(b.timer));
+    state.bottles = [];
+    playSFX('gameover');
+
+    setTimeout(() => {
+      gameComplete('escape', score,
+        'Bottle Shooter - Game Over!',
+        'You shot ' + state.totalShot + ' bottles, reached level ' + level + ', and scored ' + score + ' points! Max combo: ' + state.maxCombo + 'x. Try again to beat your high score!',
+        'CK.arcade.startBottleShooter()');
+    }, 600);
   }
 
-  function renderKingEscape() {
+  function _bsRender() {
     const content = document.getElementById('arcade-cabinet-content');
     if (!content) return;
-    const legal = state.gameOver ? [] : _kingLegalMoves(state.kingSq, state.queenSq);
-    const files = ['a','b','c','d','e','f','g','h'];
 
-    let boardHTML = '';
-    for (let r = 8; r >= 1; r--) {
-      for (let f = 0; f < 8; f++) {
-        const sq = files[f] + r;
-        const isDark = (f + r) % 2 === 0;
-        let piece = '';
-        let extra = '';
-        if (sq === state.kingSq) piece = '<span class="arcade-piece white" style="font-size:1.6rem;">♔</span>';
-        else if (sq === state.queenSq) piece = '<span class="arcade-piece black" style="font-size:1.6rem;">♛</span>';
-        else if (legal.includes(sq)) extra = ' valid-dest';
-        else if (!state.gameOver && _queenAttacks(state.queenSq, sq)) {
-          // subtle red tint for attacked squares (helps player plan)
-          extra = '';
-        }
-        const click = (legal.includes(sq) && !state.gameOver)
-          ? `onclick="CK.arcade.kingEscapeMove('${sq}')"` : '';
-        boardHTML += `<div class="arcade-sq ${isDark ? 'dark' : 'light'}${extra}" data-sq="${sq}" ${click}>${piece}</div>`;
-      }
-    }
-
-    const status = state.gameOver
-      ? '<span style="color:#ef4444;">⚠ Game over!</span>'
-      : `Turn ${state.turns + 1} · move your King to a glowing square`;
-
-    content.innerHTML = `
-      <div class="arcade-header">
-        <div class="arcade-title-area">
-          <span class="arcade-game-icon">🏃‍♂️</span>
-          <div class="arcade-title">King's <span>Escape</span></div>
-        </div>
-        <button class="arcade-exit-btn" onclick="CK.arcade.exitGame()">✕ Exit Arcade</button>
-      </div>
-      <div class="arcade-main">
-        <div class="arcade-play-area">
-          <div class="arcade-board-wrap">
-            <div class="arcade-board" id="escape-board">${boardHTML}</div>
-          </div>
-        </div>
-        <div class="arcade-dashboard">
-          <div class="arcade-hud-card">
-            <div class="arcade-game-title">Escape to Rank 8!</div>
-            <p class="arcade-game-desc">Walk your <strong>♔ White King</strong> from rank 1 to rank 8. The <strong>♛ Black Queen</strong> chases — if she ever attacks your square, you lose. Glowing squares are safe; click to move.</p>
-            <div class="arcade-stats-row">
-              <div class="arcade-stat-box">
-                <div class="arcade-stat-label">Level</div>
-                <div class="arcade-stat-val">${level}</div>
-              </div>
-              <div class="arcade-stat-box">
-                <div class="arcade-stat-label">Score</div>
-                <div class="arcade-stat-val">${score}</div>
-              </div>
-            </div>
-            <div style="text-align:center; font-size:0.85rem; color:var(--arena-text-muted); margin:8px 0;">${status}</div>
-            <div class="arcade-btn-group">
-              <button class="arcade-action-btn primary" onclick="CK.arcade.startKingEscapeGame()">${state.gameOver ? '🔄 New Game' : 'Restart'}</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+    content.innerHTML = '\
+      <div class="arcade-header">\
+        <div class="arcade-title-area">\
+          <span class="arcade-game-icon">\uD83C\uDF7E</span>\
+          <div class="arcade-title">Bottle <span>Shooter</span></div>\
+        </div>\
+        <button class="arcade-exit-btn" onclick="CK.arcade.exitGame()">✕ Exit Arcade</button>\
+      </div>\
+      <div class="arcade-main">\
+        <div class="arcade-play-area">\
+          <div id="bs-arena" style="width:100%;max-width:460px;margin:0 auto;aspect-ratio:1;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:10px;padding:16px;background:linear-gradient(180deg,rgba(30,41,59,0.95) 0%,rgba(15,23,42,0.98) 100%);border-radius:20px;border:1px solid rgba(255,255,255,0.06);position:relative;cursor:crosshair;">\
+            <div class="bs-shelf-label" style="position:absolute;left:0;top:2px;width:100%;text-align:center;font-size:0.65rem;color:rgba(255,255,255,0.15);letter-spacing:0.15em;text-transform:uppercase;pointer-events:none;">TOP SHELF</div>\
+            <div class="bs-shelf-label" style="position:absolute;left:0;top:34%;width:100%;text-align:center;font-size:0.65rem;color:rgba(255,255,255,0.15);letter-spacing:0.15em;text-transform:uppercase;pointer-events:none;">MIDDLE SHELF</div>\
+            <div class="bs-shelf-label" style="position:absolute;left:0;top:67%;width:100%;text-align:center;font-size:0.65rem;color:rgba(255,255,255,0.15);letter-spacing:0.15em;text-transform:uppercase;pointer-events:none;">BOTTOM SHELF</div>\
+          </div>\
+        </div>\
+        <div class="arcade-dashboard">\
+          <div class="arcade-hud-card">\
+            <div class="arcade-game-title">Shoot the Bottles!</div>\
+            <p class="arcade-game-desc">Click bottles before they vanish! Miss 5 and it\'s game over. Score bonus points for speed and combos.</p>\
+            <div class="arcade-stats-row">\
+              <div class="arcade-stat-box">\
+                <div class="arcade-stat-label">Score</div>\
+                <div class="arcade-stat-val" id="bs-score">0</div>\
+              </div>\
+              <div class="arcade-stat-box">\
+                <div class="arcade-stat-label">Level</div>\
+                <div class="arcade-stat-val" id="bs-level">1</div>\
+              </div>\
+            </div>\
+            <div class="arcade-stats-row">\
+              <div class="arcade-stat-box">\
+                <div class="arcade-stat-label">Bottles Shot</div>\
+                <div class="arcade-stat-val" id="bs-shot">0</div>\
+              </div>\
+              <div class="arcade-stat-box">\
+                <div class="arcade-stat-label">Misses</div>\
+                <div class="arcade-stat-val" id="bs-misses" style="color:#ef4444;">0 / 5</div>\
+              </div>\
+            </div>\
+            <div id="bs-combo" style="text-align:center;font-size:0.95rem;font-weight:700;color:#fbbf24;min-height:24px;margin:6px 0;"></div>\
+            <div class="arcade-progress-container">\
+              <div class="arcade-progress-header">\
+                <span>Lives</span>\
+                <span id="bs-lives-pct">100%</span>\
+              </div>\
+              <div class="arcade-progress-bar">\
+                <div class="arcade-progress-fill" id="bs-lives-bar" style="width:100%;background:linear-gradient(90deg,#22c55e,#a3e635);"></div>\
+              </div>\
+            </div>\
+          </div>\
+          <div class="arcade-btn-group">\
+            <button class="arcade-action-btn primary" onclick="CK.arcade.startBottleShooter()">Restart</button>\
+          </div>\
+        </div>\
+      </div>\
+    ';
   }
 
-  ARC.kingEscapeMove = (toSq) => {
-    if (state.gameOver) return;
-    const legal = _kingLegalMoves(state.kingSq, state.queenSq);
-    if (!legal.includes(toSq)) return;
-    state.kingSq = toSq;
-    state.turns++;
-    playSFX('select');
+  function _bsUpdateHUD() {
+    // Update score / level / shot / misses
+    const scoreEl = document.getElementById('bs-score');
+    if (scoreEl) scoreEl.textContent = score;
+    const levelEl = document.getElementById('bs-level');
+    if (levelEl) levelEl.textContent = level;
+    const shotEl = document.getElementById('bs-shot');
+    if (shotEl) shotEl.textContent = state.totalShot;
+    const missesEl = document.getElementById('bs-misses');
+    if (missesEl) missesEl.textContent = state.misses + ' / ' + state.maxMisses;
+    const livesBar = document.getElementById('bs-lives-bar');
+    const livesPct = document.getElementById('bs-lives-pct');
+    const pct = Math.max(0, Math.round(((state.maxMisses - state.misses) / state.maxMisses) * 100));
+    if (livesBar) {
+      livesBar.style.width = pct + '%';
+      livesBar.style.background = pct > 60
+        ? 'linear-gradient(90deg,#22c55e,#a3e635)'
+        : pct > 30
+          ? 'linear-gradient(90deg,#f59e0b,#fbbf24)'
+          : 'linear-gradient(90deg,#dc2626,#ef4444)';
+    }
+    if (livesPct) livesPct.textContent = pct + '%';
 
-    // Win condition: king on rank 8
-    if (_kRank(state.kingSq) === 8) {
-      score += 100 - state.turns * 2;
-      level++;
-      // Reset position with queen closer for next level
-      state.kingSq = 'e1';
-      state.queenSq = level >= 4 ? 'd6' : level >= 2 ? 'd7' : 'e8';
-      state.turns = 0;
-      CK.showToast(`🏆 Escaped! Level ${level} begins — queen is closer!`, 'success');
-      playSFX('coin');
-      renderKingEscape();
-      return;
+    // combo
+    const comboEl = document.getElementById('bs-combo');
+    if (comboEl) {
+      comboEl.textContent = state.combo >= 2 ? (state.combo + 'x COMBO!') : '';
     }
 
-    // Queen's turn — chase the king
-    const newQueenSq = _queenChaseMove(state.queenSq, state.kingSq);
-    state.queenSq = newQueenSq;
+    // Render arena bottles
+    const arena = document.getElementById('bs-arena');
+    if (!arena) return;
 
-    // If queen now attacks king OR king has no legal moves left → game over
-    const stillLegal = _kingLegalMoves(state.kingSq, state.queenSq);
-    if (_queenAttacks(state.queenSq, state.kingSq) || stillLegal.length === 0) {
-      state.gameOver = true;
-      playSFX('buzz');
-      renderKingEscape();
-      setTimeout(() => {
-        gameComplete('escape', score,
-          'King Captured!',
-          `The queen closed in after ${state.turns} moves. You escaped to level ${level} and scored ${score} points. Try again to reach a higher level!`,
-          'CK.arcade.startKingEscapeGame()');
-      }, 800);
-      return;
-    }
+    // Keep shelf labels, remove old bottle cells
+    arena.querySelectorAll('.bs-cell').forEach(c => c.remove());
 
-    renderKingEscape();
-  };
+    state.bottles.forEach(b => {
+      const cell = document.createElement('div');
+      cell.className = 'bs-cell';
+      cell.id = 'bs-cell-' + b.id;
+
+      // Grid placement based on slot (0-8)
+      const row = Math.floor(b.slot / 3) + 1;
+      const col = (b.slot % 3) + 1;
+      cell.style.cssText = 'grid-row:' + row + ';grid-column:' + col + ';display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:pointer;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);transition:all 0.15s ease;position:relative;overflow:hidden;animation:bsPopIn 0.25s ease-out;';
+
+      // Time remaining indicator
+      const elapsed = Date.now() - b.spawned;
+      const life = _bsBottleLife();
+      const remaining = Math.max(0, Math.round(((life - elapsed) / life) * 100));
+
+      cell.innerHTML = '\
+        <div style="position:absolute;bottom:0;left:0;width:100%;height:' + remaining + '%;background:linear-gradient(180deg,' + b.bottle.color + '22,' + b.bottle.color + '08);transition:height 0.3s;pointer-events:none;border-radius:0 0 14px 14px;"></div>\
+        <div style="font-size:2.8rem;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.5));pointer-events:none;z-index:1;transition:transform 0.1s;">' + b.bottle.emoji + '</div>\
+        <div style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-weight:600;margin-top:2px;pointer-events:none;z-index:1;">+' + b.bottle.pts + ' pts</div>\
+      ';
+
+      cell.addEventListener('click', () => _bsShoot(b.id));
+
+      // Hover effect
+      cell.addEventListener('mouseenter', () => { cell.style.background = 'rgba(255,255,255,0.08)'; cell.style.transform = 'scale(1.05)'; cell.style.borderColor = b.bottle.color + '66'; });
+      cell.addEventListener('mouseleave', () => { cell.style.background = 'rgba(255,255,255,0.03)'; cell.style.transform = 'scale(1)'; cell.style.borderColor = 'rgba(255,255,255,0.05)'; });
+
+      arena.appendChild(cell);
+    });
+  }
 
   return ARC;
 })();

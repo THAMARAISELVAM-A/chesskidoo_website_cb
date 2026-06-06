@@ -5,6 +5,111 @@
 (() => {
   const CK = window.CK = window.CK || {};
 
+  /* 💎 Premium Confirm Dialog */
+  CK.confirm = function(message) {
+    return new Promise((resolve) => {
+      const _e = CK.esc || (s => s);
+      const modal = document.createElement('div');
+      modal.className = 'p-modal-overlay open';
+      modal.style.zIndex = '99999';
+      modal.innerHTML = `
+        <div class="p-modal" style="max-width:380px; text-align:center;">
+          <div style="font-size:3rem; margin-bottom:10px;">⚠️</div>
+          <div class="p-modal-title" style="margin-bottom:12px; font-size:1.2rem;">Confirm Action</div>
+          <div class="p-modal-body" style="font-size:0.95rem; color:var(--p-text-muted); margin-bottom:24px; white-space:pre-wrap;">${_e(message)}</div>
+          <div style="display:flex; gap:12px; justify-content:center;">
+            <button class="p-btn p-btn-ghost" id="ck-confirm-cancel">Cancel</button>
+            <button class="p-btn p-btn-blue" id="ck-confirm-ok" style="background:var(--p-danger); box-shadow:0 8px 20px rgba(255,77,79,0.3);">Confirm</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      const cleanup = (result) => {
+        modal.classList.remove('open');
+        setTimeout(() => modal.remove(), 300);
+        resolve(result);
+      };
+
+      modal.querySelector('#ck-confirm-cancel').onclick = () => cleanup(false);
+      modal.querySelector('#ck-confirm-ok').onclick = () => cleanup(true);
+      modal.onclick = (e) => { if (e.target === modal) cleanup(false); };
+    });
+  };
+
+  /* 💎 Premium Prompt Dialog */
+  CK.prompt = function(message, defaultValue = '', type = 'text') {
+    return new Promise((resolve) => {
+      const _e = CK.esc || (s => s);
+      const modal = document.createElement('div');
+      modal.className = 'p-modal-overlay open';
+      modal.style.zIndex = '99999';
+      modal.innerHTML = `
+        <div class="p-modal" style="max-width:400px;">
+          <div class="p-modal-title" style="margin-bottom:12px; font-size:1.1rem; border-bottom:1px solid var(--p-border); padding-bottom:8px;">Input Required</div>
+          <div class="p-modal-body" style="font-size:0.95rem; color:var(--p-text-muted); margin-bottom:16px;">${_e(message)}</div>
+          <input type="${type}" id="ck-prompt-input" class="p-form-control" style="width:100%; margin-bottom:24px; padding:10px; border-radius:6px;" value="${_e(defaultValue)}">
+          <div style="display:flex; gap:12px; justify-content:flex-end;">
+            <button class="p-btn p-btn-ghost" id="ck-prompt-cancel">Cancel</button>
+            <button class="p-btn p-btn-blue" id="ck-prompt-ok">Submit</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      const input = modal.querySelector('#ck-prompt-input');
+      input.focus();
+      if(type !== 'number') input.select();
+
+      const cleanup = (result) => {
+        modal.classList.remove('open');
+        setTimeout(() => modal.remove(), 300);
+        resolve(result);
+      };
+
+      modal.querySelector('#ck-prompt-cancel').onclick = () => cleanup(null);
+      modal.querySelector('#ck-prompt-ok').onclick = () => cleanup(input.value);
+      input.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter') cleanup(input.value);
+        if(e.key === 'Escape') cleanup(null);
+      });
+      modal.onclick = (e) => { if (e.target === modal) cleanup(null); };
+    });
+  };
+
+  /* 💎 Premium Alert Dialog */
+  CK.alert = function(message, title = 'Alert') {
+    return new Promise((resolve) => {
+      const _e = CK.esc || (s => s);
+      const modal = document.createElement('div');
+      modal.className = 'p-modal-overlay open';
+      modal.style.zIndex = '99999';
+      modal.innerHTML = `
+        <div class="p-modal" style="max-width:380px; text-align:center;">
+          <div style="font-size:2.5rem; margin-bottom:10px;">ℹ️</div>
+          <div class="p-modal-title" style="margin-bottom:12px; font-size:1.2rem;">${_e(title)}</div>
+          <div class="p-modal-body" style="font-size:0.95rem; color:var(--p-text-muted); margin-bottom:24px; white-space:pre-wrap;">${_e(message)}</div>
+          <div style="display:flex; justify-content:center;">
+            <button class="p-btn p-btn-blue" id="ck-alert-ok" style="min-width:120px;">OK</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      const cleanup = () => {
+        modal.classList.remove('open');
+        setTimeout(() => modal.remove(), 300);
+        resolve(true);
+      };
+
+      const okBtn = modal.querySelector('#ck-alert-ok');
+      okBtn.onclick = () => cleanup();
+      okBtn.focus();
+      modal.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === 'Escape') cleanup(); });
+      modal.onclick = (e) => { if (e.target === modal) cleanup(); };
+    });
+  };
+
   /* ─── SPA Router ─── */
   CK.showPage = (id) => {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -75,8 +180,16 @@
     }
   });
 
-  // Alias navigate to handle both section scrolling (landing) and page routing
-  CK.navigate = (section) => {
+// Safe navigation wrapper - prevents errors when portal objects aren't initialized
+   CK.safeNav = (portal, method, ...args) => {
+     if (portal && typeof portal[method] === 'function') {
+       portal[method](...args);
+     } else {
+       CK.showPage('login-page');
+     }
+   };
+
+   CK.navigate = (section) => {
     // Route to arena page first (before landing section check)
     if (section === 'arena') {
       CK.showPage('arena-page');
@@ -872,34 +985,48 @@ ta: {
 
   // Batch Manager is defined in db.js with full Supabase support — do not redefine here.
 
-  // Vault Board — renders a simple chess board in the coach session triple-pane
+  // Vault Board — renders an interactive chess board in the coach session panel
   CK.renderVaultBoard = () => {
     const container = document.getElementById('coachVaultBoard');
     if (!container) return;
     if (container.dataset.init) return;
-    container.dataset.init = '1';
 
-    const startPos = [
-      ['♜','♞','♝','♛','♚','♝','♞','♜'],
-      ['♟','♟','♟','♟','♟','♟','♟','♟'],
-      ['','','','','','','',''],
-      ['','','','','','','',''],
-      ['','','','','','','',''],
-      ['','','','','','','',''],
-      ['♙','♙','♙','♙','♙','♙','♙','♙'],
-      ['♖','♘','♗','♕','♔','♗','♘','♖']
-    ];
-
-    let html = '<div style="display:inline-grid;grid-template-columns:repeat(8,44px);grid-template-rows:repeat(8,44px);border:2px solid var(--p-gold-dim);border-radius:4px;overflow:hidden;">';
-    startPos.forEach((row, r) => {
-      row.forEach((piece, c) => {
-        const light = (r + c) % 2 === 0;
-        const bg = light ? '#ffffff' : '#4a7c40';
-        html += `<div style="width:44px;height:44px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;user-select:none;" title="${String.fromCharCode(97+c)}${8-r}">${piece}</div>`;
+    if (window.Chessboard) {
+      container.innerHTML = '<div id="coachInteractiveVaultBoard" style="width:360px; max-width:100%; border-radius:8px; overflow:hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.35);"></div>';
+      const board = Chessboard('coachInteractiveVaultBoard', {
+        pieceTheme: function (piece) {
+          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+        },
+        position: 'start',
+        draggable: true
       });
-    });
-    html += '</div>';
-    container.innerHTML = html;
+      container.dataset.init = '1';
+      CK.coachVaultBoardInstance = board;
+      setTimeout(() => { board.resize(); }, 150);
+    } else {
+      const startPos = [
+        ['♜','♞','♝','♛','♚','♝','♞','♜'],
+        ['♟','♟','♟','♟','♟','♟','♟','♟'],
+        ['','','','','','','',''],
+        ['','','','','','','',''],
+        ['','','','','','','',''],
+        ['','','','','','','',''],
+        ['♙','♙','♙','♙','♙','♙','♙','♙'],
+        ['♖','♘','♗','♕','♔','♗','♘','♖']
+      ];
+
+      let html = '<div style="display:inline-grid;grid-template-columns:repeat(8,44px);grid-template-rows:repeat(8,44px);border:2px solid var(--p-gold-dim);border-radius:4px;overflow:hidden;">';
+      startPos.forEach((row, r) => {
+        row.forEach((piece, c) => {
+          const light = (r + c) % 2 === 0;
+          const bg = light ? '#f0d9b5' : '#b58863';
+          html += `<div style="width:44px;height:44px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;user-select:none;" title="${String.fromCharCode(97+c)}${8-r}">${piece}</div>`;
+        });
+      });
+      html += '</div>';
+      container.innerHTML = html;
+      container.dataset.init = '1';
+    }
   };
 
   // Run on page load
@@ -951,7 +1078,7 @@ ta: {
       this.game = new Chess();
       this.board = Chessboard(containerId, {
         pieceTheme: function (piece) {
-          return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
+          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
         },
         position: 'start',
         orientation: this.orientation
@@ -1069,12 +1196,33 @@ ta: {
       this._autoAnnotate();
 
       if (this.board) { this.board.destroy(); this.board = null; }
+      
+      const self = this;
       this.board = Chessboard(boardId, {
         pieceTheme: function (piece) {
-          return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
+          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
         },
         position: this.game.fen(),
-        orientation: this.orientation
+        orientation: this.orientation,
+        draggable: true,
+        onDrop: (source, target) => {
+          if (self._mode !== 'analysis') return 'snapback';
+          const temp = new Chess();
+          for(let i=0; i<self.currentMove; i++) temp.move(self.history[i]);
+          const move = temp.move({from: source, to: target, promotion: 'q'});
+          if(move) {
+             self.history = self.history.slice(0, self.currentMove);
+             self.history.push(move);
+             self.currentMove++;
+             self.renderMoveList();
+             self.updateAnalysis(temp.fen(), move);
+             // Ensure board syncs perfectly (castling, en passant, promotion)
+             window.setTimeout(() => { if (self.board) self.board.position(temp.fen(), false); }, 10);
+
+          } else {
+             return 'snapback';
+          }
+        }
       });
       this.renderMoveList();
       this.updateAnalysis(this.game.fen(), this.history[this.history.length - 1] || null);
@@ -1154,7 +1302,71 @@ ta: {
       });
     },
 
+    autoplayInterval: null,
+    autoplaySpeed: 3000,
+    isAutoplayActive: false,
+
+    toggleAutoplay() {
+      if (this.isAutoplayActive) {
+        this.stopAutoplay();
+      } else {
+        this.startAutoplay();
+      }
+    },
+
+    startAutoplay() {
+      if (!this.history || !this.history.length) {
+        CK.showToast('No game loaded to autoplay.', 'warning');
+        return;
+      }
+      if (this.currentMove >= this.history.length) {
+        this.currentMove = 0;
+        this._applyAndRefresh();
+      }
+      this.isAutoplayActive = true;
+      this._updateAutoplayUI();
+      
+      this.autoplayInterval = setInterval(() => {
+        if (this.currentMove < this.history.length) {
+          this.next(true);
+        } else {
+          this.stopAutoplay();
+          CK.showToast('Autoplay finished.', 'info');
+        }
+      }, this.autoplaySpeed);
+    },
+
+    stopAutoplay() {
+      if (this.autoplayInterval) {
+        clearInterval(this.autoplayInterval);
+        this.autoplayInterval = null;
+      }
+      this.isAutoplayActive = false;
+      this._updateAutoplayUI();
+    },
+
+    setAutoplaySpeed(ms) {
+      this.autoplaySpeed = parseInt(ms) || 3000;
+      if (this.isAutoplayActive) {
+        this.stopAutoplay();
+        this.startAutoplay();
+      }
+    },
+
+    _updateAutoplayUI() {
+      document.querySelectorAll('.lab-autoplay-btn').forEach(btn => {
+        if (this.isAutoplayActive) {
+          btn.innerHTML = '⏸️ Pause';
+          btn.classList.add('active');
+        } else {
+          btn.innerHTML = '▶️ Play';
+          btn.classList.remove('active');
+        }
+      });
+    },
+
     goToMove(idx) {
+      this.stopAutoplay();
       this.currentMove = Math.max(0, Math.min(idx, this.history.length));
       this._applyAndRefresh();
     },
@@ -1164,10 +1376,10 @@ ta: {
       if (this.board) this.board.orientation(this.orientation);
     },
 
-    first() { this.currentMove = 0; this._applyAndRefresh(); },
-    prev()  { if (this.currentMove > 0) { this.currentMove--; this._applyAndRefresh(); } },
-    next()  { if (this.currentMove < this.history.length) { this.currentMove++; this._applyAndRefresh(); } },
-    last()  { this.currentMove = this.history.length; this._applyAndRefresh(); },
+    first() { this.stopAutoplay(); this.currentMove = 0; this._applyAndRefresh(); },
+    prev()  { this.stopAutoplay(); if (this.currentMove > 0) { this.currentMove--; this._applyAndRefresh(); } },
+    next(fromAuto)  { if (!fromAuto) this.stopAutoplay(); if (this.currentMove < this.history.length) { this.currentMove++; this._applyAndRefresh(); } },
+    last()  { this.stopAutoplay(); this.currentMove = this.history.length; this._applyAndRefresh(); },
 
     _applyAndRefresh() {
       if (this._mode !== 'analysis') {
@@ -1177,12 +1389,32 @@ ta: {
         if (ba) ba.classList.add('active');
         this._setBanner(null, '');
         if (this.board) { this.board.destroy(); this.board = null; }
+        const self = this;
         this.board = Chessboard(this._activeBoardId, {
           pieceTheme: function (piece) {
-            return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
+            return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
           },
           position: 'start',
-          orientation: this.orientation
+          orientation: this.orientation,
+          draggable: true,
+          onDrop: (source, target) => {
+            if (self._mode !== 'analysis') return 'snapback';
+            const temp = new Chess();
+            for(let i=0; i<self.currentMove; i++) temp.move(self.history[i]);
+            const move = temp.move({from: source, to: target, promotion: 'q'});
+            if(move) {
+               self.history = self.history.slice(0, self.currentMove);
+               self.history.push(move);
+               self.currentMove++;
+               self.renderMoveList();
+               self.updateAnalysis(temp.fen(), move);
+               // Ensure board syncs perfectly (castling, en passant, promotion)
+               window.setTimeout(() => { if (self.board) self.board.position(temp.fen(), false); }, 10);
+
+            } else {
+               return 'snapback';
+            }
+          }
         });
       }
       const g = new Chess();
@@ -1315,12 +1547,29 @@ ta: {
       const g = new Chess();
       for (let i = 0; i < this.currentMove; i++) g.move(this.history[i]);
       if (this.board) { this.board.destroy(); this.board = null; }
+      const self = this;
       this.board = Chessboard(this._activeBoardId, {
         pieceTheme: function (piece) {
-          return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
+          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
         },
         position: g.fen(),
-        orientation: this.orientation
+        orientation: this.orientation,
+        draggable: true,
+        onDrop: (source, target) => {
+          if (self._mode !== 'analysis') return 'snapback';
+          const temp = new Chess();
+          for(let i=0; i<self.currentMove; i++) temp.move(self.history[i]);
+          const move = temp.move({from: source, to: target, promotion: 'q'});
+          if(move) {
+             self.history = self.history.slice(0, self.currentMove);
+             self.history.push(move);
+             self.currentMove++;
+             self.renderMoveList();
+             self.updateAnalysis(temp.fen(), move);
+          } else {
+             return 'snapback';
+          }
+        }
       });
       this.renderMoveList();
       this.updateAnalysis(g.fen(), this.history[this.currentMove - 1] || null);
@@ -1331,7 +1580,7 @@ ta: {
       if (this.board) { this.board.destroy(); this.board = null; }
       this.board = Chessboard(this._activeBoardId, {
         pieceTheme: function (piece) {
-          return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
+          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
         },
         position: g.fen(),
         orientation: 'white',
@@ -1405,7 +1654,7 @@ ta: {
       const self = this;
       this.board = Chessboard(this._activeBoardId, {
         pieceTheme: function (piece) {
-          return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
+          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
         },
         position: 'start',
         orientation: 'white',
@@ -1529,6 +1778,33 @@ ta: {
         CK.showToast('Game imported from Lichess!', 'success');
       })
       .catch(() => CK.showToast('Could not fetch game. Paste the PGN directly.', 'error'));
+    },
+
+    importLichessUser(inputId, boardId) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      const username = input.value.trim();
+      if (!username) { CK.showToast('Enter a Lichess username', 'warning'); return; }
+      CK.showToast(`Fetching latest game for ${username}…`, 'info');
+      // Fetch the 1 most recent game for the user
+      fetch(`https://lichess.org/api/games/user/${username}?max=1&moves=true&clocks=false&evals=false&opening=false`, {
+        headers: { Accept: 'application/x-chess-pgn' }
+      })
+      .then(r => r.ok ? r.text() : Promise.reject(r.status))
+      .then(pgn => {
+        if (!pgn || !pgn.trim()) {
+           CK.showToast(`No recent games found for ${username}`, 'warning');
+           return;
+        }
+        const isCoach = boardId && boardId.startsWith('coach');
+        const pgn2Id = isCoach ? 'coachLabPgnInput' : 'labPgnInput';
+        const ta = document.getElementById(pgn2Id);
+        if (ta) ta.value = pgn.trim();
+        this.analyzePgn(pgn.trim(), boardId);
+        input.value = '';
+        CK.showToast('Latest game imported from Lichess!', 'success');
+      })
+      .catch(() => CK.showToast(`Could not fetch games for ${username}.`, 'error'));
     },
 
     async broadcastCoach() {

@@ -144,23 +144,31 @@ CK.openingTrainer = (() => {
   ];
 
   /* ── Mastery Storage ── */
-  const getMastery  = () => JSON.parse(localStorage.getItem(MASTERY_KEY) || '{}');
-  const saveMastery = (d) => localStorage.setItem(MASTERY_KEY, JSON.stringify(d));
+  const getMastery  = async () => {
+    const list = await CK.db.getOpeningMastery();
+    const map = {};
+    for (const item of list) map[item.id] = item;
+    return map;
+  };
+  const saveMastery = async (k, d) => {
+    await CK.db.saveOpeningMastery({ id: k, ...d });
+  };
 
-  function recordAttempt(userId, openingId, correct) {
-    const m = getMastery();
+  async function recordAttempt(userId, openingId, correct) {
+    const m = await getMastery();
     const k = `${userId}_${openingId}`;
-    if (!m[k]) m[k] = { attempts: 0, correct: 0 };
-    m[k].attempts++;
-    if (correct) m[k].correct++;
-    m[k].lastDate = new Date().toISOString().split('T')[0];
-    saveMastery(m);
+    const entry = m[k] || { attempts: 0, correct: 0 };
+    entry.attempts++;
+    if (correct) entry.correct++;
+    entry.lastDate = new Date().toISOString().split('T')[0];
+    await saveMastery(k, entry);
   }
 
-  function getMasteryPct(userId, openingId) {
-    const m = getMastery()[`${userId}_${openingId}`];
-    if (!m || !m.attempts) return 0;
-    return Math.round(m.correct / m.attempts * 100);
+  async function getMasteryPct(userId, openingId) {
+    const m = await getMastery();
+    const entry = m[`${userId}_${openingId}`];
+    if (!entry || !entry.attempts) return 0;
+    return Math.round(entry.correct / entry.attempts * 100);
   }
 
   function getMasteryLevel(pct) {
@@ -171,19 +179,51 @@ CK.openingTrainer = (() => {
   }
 
   /* ── Render opening grid ── */
-  function renderOpeningList(containerId, userId, filter = 'all') {
+  /* ── Render opening grid ── */
+  async function renderOpeningList(containerId, userId, filter = 'all', levelFilter = 'All') {
     const el = document.getElementById(containerId);
     if (!el) return;
-    const filtered = filter === 'all' ? OPENINGS : OPENINGS.filter(o => o.side === filter);
+
+    // Detect student's level if levelFilter is "Auto"
+    let activeLevel = levelFilter;
+    if (activeLevel === 'Auto') {
+      try {
+        const profile = await CK.db.getProfile(userId);
+        activeLevel = profile?.level || 'Beginner';
+      } catch (e) {
+        activeLevel = 'Beginner';
+      }
+    }
+
+    let filtered = OPENINGS;
+    if (filter !== 'all') filtered = filtered.filter(o => o.side === filter);
+    if (activeLevel !== 'All') filtered = filtered.filter(o => o.level === activeLevel);
+    
+    // Fetch all mastery percentages
+    const mPcts = {};
+    for (const o of filtered) {
+      mPcts[o.id] = await getMasteryPct(userId, o.id);
+    }
+
     el.innerHTML = `
-      <div class="ot-filter-bar">
-        <button class="ot-filter-btn${filter==='all'?' active':''}" onclick="CK.openingTrainer.renderOpeningList('${containerId}','${userId}','all')">All</button>
-        <button class="ot-filter-btn${filter==='white'?' active':''}" onclick="CK.openingTrainer.renderOpeningList('${containerId}','${userId}','white')">⬜ White</button>
-        <button class="ot-filter-btn${filter==='black'?' active':''}" onclick="CK.openingTrainer.renderOpeningList('${containerId}','${userId}','black')">⬛ Black</button>
+      <div class="ot-filter-bar" style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+        <div style="display:flex; gap:10px;">
+          <button class="ot-filter-btn${filter==='all'?' active':''}" onclick="CK.openingTrainer.renderOpeningList('${containerId}','${userId}','all','${levelFilter}')">All Colors</button>
+          <button class="ot-filter-btn${filter==='white'?' active':''}" onclick="CK.openingTrainer.renderOpeningList('${containerId}','${userId}','white','${levelFilter}')">⬜ White</button>
+          <button class="ot-filter-btn${filter==='black'?' active':''}" onclick="CK.openingTrainer.renderOpeningList('${containerId}','${userId}','black','${levelFilter}')">⬛ Black</button>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="ot-filter-btn${levelFilter==='Auto'?' active':''}" onclick="CK.openingTrainer.renderOpeningList('${containerId}','${userId}','${filter}','Auto')" title="Recommended for your level">🎯 Recommended</button>
+          <button class="ot-filter-btn${levelFilter==='Beginner'?' active':''}" onclick="CK.openingTrainer.renderOpeningList('${containerId}','${userId}','${filter}','Beginner')">Beginner</button>
+          <button class="ot-filter-btn${levelFilter==='Intermediate'?' active':''}" onclick="CK.openingTrainer.renderOpeningList('${containerId}','${userId}','${filter}','Intermediate')">Intermediate</button>
+          <button class="ot-filter-btn${levelFilter==='Advanced'?' active':''}" onclick="CK.openingTrainer.renderOpeningList('${containerId}','${userId}','${filter}','Advanced')">Advanced</button>
+          <button class="ot-filter-btn${levelFilter==='All'?' active':''}" onclick="CK.openingTrainer.renderOpeningList('${containerId}','${userId}','${filter}','All')">All Levels</button>
+        </div>
       </div>
       <div class="ot-grid">
+        ${filtered.length === 0 ? '<div style="color:var(--p-text-muted); padding:20px;">No openings found for this filter.</div>' : ''}
         ${filtered.map(o => {
-          const pct = getMasteryPct(userId, o.id);
+          const pct = mPcts[o.id];
           const lvl = getMasteryLevel(pct);
           return `
             <div class="ot-card" onclick="CK.openingTrainer.startDrill('${o.id}','${userId}')" style="border-top:3px solid ${o.color}">
@@ -280,7 +320,7 @@ CK.openingTrainer = (() => {
 
       const board = Chessboard('otDrillBoard', {
         pieceTheme: function (piece) {
-          return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
+          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
         },
         draggable: true,
         position: 'start',
@@ -371,12 +411,12 @@ CK.openingTrainer = (() => {
     if (expected) _setStatus(`Hint: play ${expected}`, 'var(--p-gold)');
   }
 
-  function _onDrillComplete() {
+  async function _onDrillComplete() {
     const { opening, userId, correctMoves, totalPrompts } = _drillState;
     const accuracy = totalPrompts > 0 ? Math.round(correctMoves / totalPrompts * 100) : 100;
-    recordAttempt(userId, opening.id, accuracy >= 70);
+    await recordAttempt(userId, opening.id, accuracy >= 70);
 
-    const pct = getMasteryPct(userId, opening.id);
+    const pct = await getMasteryPct(userId, opening.id);
     const lvl = getMasteryLevel(pct);
 
     const resultEl = document.getElementById('otDrillResult');
@@ -415,16 +455,20 @@ CK.openingTrainer = (() => {
   }
 
   /* ── Mastery overview ── */
-  function renderMasteryOverview(containerId, userId) {
+  async function renderMasteryOverview(containerId, userId) {
     const el = document.getElementById(containerId);
     if (!el) return;
-    const m = getMastery();
+    const m = await getMastery();
     const total = OPENINGS.length;
-    const mastered = OPENINGS.filter(o => getMasteryPct(userId, o.id) >= 90).length;
-    const learning = OPENINGS.filter(o => {
-      const p = getMasteryPct(userId, o.id);
-      return p >= 40 && p < 90;
-    }).length;
+    let mastered = 0;
+    let learning = 0;
+    
+    for (const o of OPENINGS) {
+      const p = await getMasteryPct(userId, o.id);
+      if (p >= 90) mastered++;
+      else if (p >= 40) learning++;
+    }
+    
     el.innerHTML = `
       <div class="ot-overview">
         <div class="ot-ov-stat"><div class="ot-ov-val" style="color:var(--p-gold)">${mastered}</div><div class="ot-ov-lbl">Mastered</div></div>

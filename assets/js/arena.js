@@ -887,7 +887,7 @@
             else if (v === 'attacked') pieceEl.classList.add('safety-attacked');
           }
 
-          pieceEl.innerHTML = `<img src="/assets/img/pieces/${piece.color}${piece.type.toLowerCase()}.png" style="width: 92%; height: 92%; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35)); pointer-events: none;" alt="${piece.type}">`;
+          pieceEl.innerHTML = `<img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/${piece.color}${piece.type.toLowerCase()}.png" style="width: 92%; height: 92%; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35)); pointer-events: none;" alt="${piece.type}">`;
           sqEl.appendChild(pieceEl);
         }
 
