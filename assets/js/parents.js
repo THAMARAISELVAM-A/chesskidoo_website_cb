@@ -130,27 +130,29 @@ CK.parents = (() => {
         const result = await CK.ai.getEngagementScore(_childProfile.id);
         const score = result?.score || 0;
         const color = score >= 70 ? '#22c55e' : score >= 40 ? '#f59e0b' : '#ef4444';
-        engEl.innerHTML = `
-          <div style="text-align:center;">
-            <div style="font-size:3rem; font-weight:900; color:${color};">${score}%</div>
-            <div style="font-size:0.85rem; color:var(--p-text-muted); margin-top:8px;">Overall Engagement Score</div>
-            <div style="margin-top:16px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; font-size:0.78rem;">
-              <div style="padding:10px; border-radius:8px; background:rgba(255,255,255,0.03);">
-                <div style="font-weight:700;">${_childProfile.puzzle || 0}</div>
-                <div style="color:var(--p-text-muted);">Puzzles</div>
-              </div>
-              <div style="padding:10px; border-radius:8px; background:rgba(255,255,255,0.03);">
-                <div style="font-weight:700;">${_childProfile.game || 0}</div>
-                <div style="color:var(--p-text-muted);">Games</div>
-              </div>
-              <div style="padding:10px; border-radius:8px; background:rgba(255,255,255,0.03);">
-                <div style="font-weight:700;">${_childProfile.streak || 0}</div>
-                <div style="color:var(--p-text-muted);">Streak</div>
-              </div>
+      engEl.innerHTML = `
+        <div style="text-align:center;">
+          <div style="font-size:3rem; font-weight:900; color:${color};">${score}%</div>
+          <div style="font-size:0.85rem; color:var(--p-text-muted); margin-top:8px;">Overall Engagement Score</div>
+          <div style="margin-top:16px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; font-size:0.78rem;">
+            <div style="padding:10px; border-radius:8px; background:rgba(255,255,255,0.03);">
+              <div style="font-weight:700;">${_childProfile.puzzle || 0}</div>
+              <div style="color:var(--p-text-muted);">Puzzles</div>
             </div>
-          </div>`;
+            <div style="padding:10px; border-radius:8px; background:rgba(255,255,255,0.03);">
+              <div style="font-weight:700;">${_childProfile.game || 0}</div>
+              <div style="color:var(--p-text-muted);">Games</div>
+            </div>
+            <div style="padding:10px; border-radius:8px; background:rgba(255,255,255,0.03);">
+              <div style="font-weight:700;">${_childProfile.streak || 0}</div>
+              <div style="color:var(--p-text-muted);">Streak</div>
+            </div>
+          </div>
+        </div>`;
       }
-    } catch(e) { console.warn('AI weekly report error:', e); }
+    } catch(e) {
+      CK.showToast('Weekly report unavailable right now.', 'warning');
+    }
   }
 
   /* ═══════════════════════════════════════════════════════
@@ -624,21 +626,8 @@ CK.parents = (() => {
         const qrEl = document.getElementById('parUpiQrCode');
         if (qrEl) {
           qrEl.innerHTML = '';
-          if (window.QRCode) {
-            try {
-              new window.QRCode(qrEl, {
-                text: _parFeeLinks.upi,
-                width: 176,
-                height: 176,
-                colorDark: '#1a1a2e',
-                colorLight: '#ffffff',
-                correctLevel: window.QRCode.CorrectLevel.H
-              });
-            } catch (e) {
-              console.error('[ChessKidoo] Parent QR generation failed:', e);
-              qrEl.innerHTML = '<div style="color:#94a3b8;font-size:0.75rem;padding:12px;text-align:center;">QR unavailable<br>Use app buttons below</div>';
-            }
-          }
+          const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(_parFeeLinks.upi);
+          qrEl.innerHTML = `<img src="${qrUrl}" alt="Scan to Pay" style="width:100%; height:100%; object-fit:contain; border-radius:8px;" onerror="this.outerHTML='<div style=\\\'color:#94a3b8;font-size:0.75rem;padding:12px;text-align:center;\\\'>QR unavailable<br>Use app buttons below</div>'"/>`;
         }
       }, 50);
     }
@@ -695,9 +684,7 @@ CK.parents = (() => {
         CK.admin.loadStudents();
       }
     } catch (e) {
-      console.error('[ChessKidoo] Parent payment confirm error:', e);
-      CK.showToast('Payment recorded. Please contact the academy if it is not reflected.', 'warning');
-      renderFees();
+      CK.showToast('Payment confirmation failed. Please contact admin.', 'error');
     } finally {
       if (btn) {
         btn.disabled = false;

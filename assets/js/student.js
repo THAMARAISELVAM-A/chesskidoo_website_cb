@@ -4,6 +4,8 @@
    rating spline charts, attendance calendar grids, and interactive mini-puzzles.
    ------------------------------------------------------------------------- */
 
+const CK = window.CK = window.CK || {};
+
 CK.student = {
   userProfile: null,
   activePuzzleId: null,
@@ -13,16 +15,16 @@ CK.student = {
     { id: 'P1', title: 'Back-Rank Mate', type: 'Tactics', diff: 'Easy', coach: 'ARIVUSELVAM', due: 'Today', instruction: 'White to move. Find the back-rank checkmate!', boardSetup: 'black-king-f8-pawns-g7-h7-white-rook-d1', solution: 'd8', desc: 'Rook to d8 delivers checkmate as the Black king is trapped behind its own pawns.' },
     { id: 'P2', title: 'Tactical Fork Opportunity', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'Tomorrow', instruction: 'White to move. Fork the black King and Rook with your Knight!', boardSetup: 'black-king-e8-rook-a8-white-knight-d5', solution: 'c7', desc: 'Knight to c7 forks both the king on e8 and the rook on a8, winning material.' },
     { id: 'P3', title: 'Smothered Mate', type: 'Endgame', diff: 'Hard', coach: 'VISHNU', due: 'May 18', instruction: 'White to move. Deliver the famous smothered mate with your Knight!', boardSetup: 'black-king-h8-rook-g8-pawns-h7-g7-f7-white-knight-f5', solution: 'f7', desc: 'Knight to f7 delivers checkmate because the king is completely boxed in by its own pieces.' },
-    { id: 'P4', title: 'Queen Snipes the Rook', type: 'Tactics', diff: 'Easy', coach: 'VISHNU', due: 'Today', instruction: 'White to move. Slide your queen up the h-file and capture the undefended rook!', boardSetup: 'black-king-e8-rook-h8-white-queen-h1', solution: 'h8', desc: 'Queen to h8 captures the undefended rook. The black king on e8 cannot reach in time — a free piece!' },
-    { id: 'P5', title: 'Knight Fork — King & Rook', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'May 16', instruction: 'White knight leaps to a square that attacks both the black king AND rook simultaneously. Find the forking square!', boardSetup: 'black-king-g5-rook-d6-white-knight-c3', solution: 'e4', desc: 'Knight to e4 forks the black king on g5 and rook on d6. White wins a full rook next move!' },
-    { id: 'P6', title: 'Pin and Win', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'May 17', instruction: 'The black rook is pinned along the bishop diagonal — a pinned piece cannot move. Simply capture it!', boardSetup: 'black-king-e5-rook-c3-white-bishop-a1', solution: 'c3', desc: 'Bishop takes c3! The rook was pinned to the king along the a1–e5 diagonal and could not escape.' },
-    { id: 'P7', title: 'Pawn Promotion', type: 'Endgame', diff: 'Easy', coach: 'VISHNU', due: 'May 19', instruction: 'White pawn is one square from queening! Click the promotion square to advance.', boardSetup: 'white-pawn-e7-white-king-e5-black-king-c7', solution: 'e8', desc: 'Pawn to e8, queening! The black king is too far away to stop it — a textbook passed pawn endgame win.' }
+    { id: 'P4', title: 'Queen Snipes the Rook', type: 'Tactics', diff: 'Easy', coach: 'VISHNU', due: 'Today', instruction: 'White to move. Slide your queen up the h-file and capture the undefended rook!', boardSetup: 'black-king-e8-rook-h8-white-queen-h1', solution: 'h8', desc: 'Queen to h8 captures the undefended rook. The black king on e8 cannot reach in time  a free piece!' },
+    { id: 'P5', title: 'Knight Fork  King & Rook', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'May 16', instruction: 'White knight leaps to a square that attacks both the black king AND rook simultaneously. Find the forking square!', boardSetup: 'black-king-g5-rook-d6-white-knight-c3', solution: 'e4', desc: 'Knight to e4 forks the black king on g5 and rook on d6. White wins a full rook next move!' },
+    { id: 'P6', title: 'Pin and Win', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'May 17', instruction: 'The black rook is pinned along the bishop diagonal  a pinned piece cannot move. Simply capture it!', boardSetup: 'black-king-e5-rook-c3-white-bishop-a1', solution: 'c3', desc: 'Bishop takes c3! The rook was pinned to the king along the a1e5 diagonal and could not escape.' },
+    { id: 'P7', title: 'Pawn Promotion', type: 'Endgame', diff: 'Easy', coach: 'VISHNU', due: 'May 19', instruction: 'White pawn is one square from queening! Click the promotion square to advance.', boardSetup: 'white-pawn-e7-white-king-e5-black-king-c7', solution: 'e8', desc: 'Pawn to e8, queening! The black king is too far away to stop it  a textbook passed pawn endgame win.' }
   ],
 
   async init() {
-    
+
     // 1. Fetch current user profile dynamically from DB layer.
-    //    Trust the cached ck_user — credential-login users have no Supabase Auth
+    //    Trust the cached ck_user  credential-login users have no Supabase Auth
     //    session, so we must rely on the cached profile and NOT show an alarming
     //    "session expired" message (which fired spuriously on refresh/race).
     let currentUser = CK.currentUser;
@@ -31,7 +33,7 @@ CK.student = {
       if (currentUser) CK.currentUser = currentUser;
     }
     if (!currentUser || currentUser.role !== 'student') {
-      // Quietly send to login — no scary toast.
+      // Quietly send to login  no scary toast.
       CK.showPage('login-page');
       return;
     }
@@ -77,7 +79,7 @@ CK.student = {
     this.startAutoRefresh();
   },
 
-  /* ── Auto Refresh ── */
+  /*  Auto Refresh  */
   _studentRefreshTimer: null,
 
   startAutoRefresh() {
@@ -118,10 +120,10 @@ CK.student = {
     }
 
     document.querySelectorAll('#student-page .p-panel').forEach(p => p.classList.remove('active'));
-    
+
     const target = document.getElementById(`student-panel-${targetPanelId}`);
     if (target) target.classList.add('active');
-    
+
     document.querySelectorAll('#student-page .p-nav-item').forEach(btn => {
       btn.classList.remove('active');
       if (btn.getAttribute('onclick')?.includes(`'${highlightPanelId}'`)) {
@@ -183,24 +185,24 @@ CK.student = {
     if (titleEl) titleEl.innerText = titles[panelId] || 'Dashboard';
   },
 
-  /* ═══════════════════════════════════════════════════════
-     LEVEL SYSTEM — Removed based on user request
-  ═════════════════════════════════════════════════════════ */
+  /*
+     LEVEL SYSTEM  Removed based on user request
+   */
 
   updateProfile() {
     const p = this.userProfile;
     const firstName = p.full_name ? p.full_name.split(' ')[0] : 'Champion';
-    const initial = p.full_name ? p.full_name.charAt(0).toUpperCase() : '♛';
+    const initial = p.full_name ? p.full_name.charAt(0).toUpperCase() : '';
 
     // Sidebar
     const sbName   = document.getElementById('studentSidebarName');
     const sbSub    = document.getElementById('studentSidebarSub');
     const sbAvatar = document.getElementById('studentSidebarAvatar');
     if (sbName)   sbName.innerText   = p.full_name || 'Chess Student';
-    if (sbSub)    sbSub.innerText    = `${p.level || 'Beginner'} · ELO ${p.rating || 800}`;
+    if (sbSub)    sbSub.innerText    = `${p.level || 'Beginner'}  ELO ${p.rating || 800}`;
     if (sbAvatar) sbAvatar.innerText = initial;
 
-    // Welcome banner — real puzzle count + next class name
+    // Welcome banner  real puzzle count + next class name
     const welcomeName = document.getElementById('studentWelcomeName');
     const welcomeSub  = document.getElementById('studentWelcomeSub');
     if (welcomeName) welcomeName.textContent = firstName;
@@ -216,7 +218,7 @@ CK.student = {
       ? `"${nextMeeting.title || nextMeeting.type || 'class'}" at ${nextMeeting.time}`
       : 'a class coming up soon';
     if (welcomeSub) welcomeSub.textContent =
-      `${greeting}! ${unsolvedCount > 0 ? `${unsolvedCount} puzzle${unsolvedCount>1?'s':''} waiting` : 'All puzzles done today!'} · ${classHint}. Keep pushing!`;
+      `${greeting}! ${unsolvedCount > 0 ? `${unsolvedCount} puzzle${unsolvedCount>1?'s':''} waiting` : 'All puzzles done today!'}  ${classHint}. Keep pushing!`;
 
     // FIDE level card
     const rating = parseInt(p.rating) || 800;
@@ -239,7 +241,7 @@ CK.student = {
     if (eloBar)  eloBar.style.width = eloPct + '%';
     if (eloNext) eloNext.textContent = `Next Milestone: ${nextMs} ELO`;
 
-    // Stats counters — real values
+    // Stats counters  real values
     const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
     setEl('studentStatLessons',  p.game   || 0);
     setEl('studentStatPuzzles',  p.puzzle || 0);
@@ -262,7 +264,7 @@ CK.student = {
     const presentCount = logs.filter(l => l.status === 'present').length;
     const totalCount = logs.length;
     const percentage = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 100;
-    
+
     const elAtt = document.getElementById('studentStatAttend');
     const elSum = document.getElementById('attendanceSummaryText');
     if (elAtt) elAtt.innerText = percentage + '%';
@@ -272,20 +274,20 @@ CK.student = {
   async renderDashboard() {
     const p = this.userProfile || {};
 
-    // ── Streak badge ──
+    //  Streak badge
     if (p.id) {
       const streak = this.getStreak(p.id);
       this._renderStreakBadge(streak.count);
     }
 
-    // ── Presence heartbeat ──
+    //  Presence heartbeat
     if (p.id) {
       const presence = JSON.parse(localStorage.getItem('ck_live_presence') || '{}');
       presence[p.id] = { name: p.full_name, role: 'student', lastSeen: Date.now() };
       localStorage.setItem('ck_live_presence', JSON.stringify(presence));
     }
 
-    // ── Real game stats from game-tracker ──
+    //  Real game stats from game-tracker
     if (p.id && typeof CK !== 'undefined' && CK.gameTracker) {
       const stats = CK.gameTracker.getStats(p.id);
       const elGames = document.getElementById('studentStatGames');
@@ -318,7 +320,7 @@ CK.student = {
     const badge = document.getElementById('studentPuzzleBadge');
     if (badge) badge.innerText = this.puzzlesDb.length - this._solvedPuzzles.size;
 
-    // ── Real leaderboard from DB ──
+    //  Real leaderboard from DB
     this._renderLeaderboard();
 
     // Daily puzzle title in home quick-card
@@ -328,12 +330,12 @@ CK.student = {
       if (daily) {
         const solved = this._solvedPuzzles.has(daily.id);
         dailyTitleEl.textContent = solved
-          ? `${daily.title} · ${daily.type} · ✅ Solved Today!`
-          : `${daily.title} · ${daily.type} · ${daily.diff}`;
+          ? `${daily.title}  ${daily.type}   Solved Today!`
+          : `${daily.title}  ${daily.type}  ${daily.diff}`;
       }
     }
 
-    // 2. Upcoming classes — fetched via DB layer (syncs from Supabase)
+    // 2. Upcoming classes  fetched via DB layer (syncs from Supabase)
     const sTable = document.getElementById('studentUpcomingTable');
     const allMeetings = (window.CK && CK.db) ? (await CK.db.getMeetings()) || [] : [];
 
@@ -418,11 +420,11 @@ CK.student = {
       let tooltip = '';
       if (status === 'present') {
         cls += ' present';
-        content += `<div style="font-size:0.55rem; margin-top:1px;">✅</div>`;
+        content += `<div style="font-size:0.55rem; margin-top:1px;"></div>`;
         tooltip = 'Present';
       } else if (status === 'absent') {
         cls += ' absent';
-        content += `<div style="font-size:0.55rem; margin-top:1px;">❌</div>`;
+        content += `<div style="font-size:0.55rem; margin-top:1px;"></div>`;
         tooltip = 'Absent';
       }
       html += `<div class="${cls}" title="${tooltip}">${content}</div>`;
@@ -446,13 +448,18 @@ CK.student = {
       <tr>
         <td style="font-weight:600">${_e(t.name)}</td>
         <td>${_e(t.result)}</td>
-        <td style="font-weight:700; color:${t.change?.startsWith('+') ? 'var(--p-teal)' : 'var(--p-danger)'}">${_e(t.change ?? '—')} ELO</td>
+        <td style="font-weight:700; color:${t.change?.startsWith('+') ? 'var(--p-teal)' : 'var(--p-danger)'}">${_e(t.change ?? '')} ELO</td>
       </tr>
     `).join('');
   },
 
-  
+
   async renderResources() {
+    if (!this._activeResourceTab) this._activeResourceTab = 'elibrary';
+    this.switchResourceTab(this._activeResourceTab);
+  },
+
+  async renderAssignedResources() {
     const list = document.getElementById('studentResourcesList');
     if (!list) return;
 
@@ -460,7 +467,7 @@ CK.student = {
     // finished, or after a session reset). Fall back to the cached user.
     const prof = this.userProfile || CK.currentUser || JSON.parse(localStorage.getItem('ck_user') || 'null');
     if (!prof) {
-      list.innerHTML = '<div style="opacity:0.6; padding:20px; text-align:center;">Loading your resources…</div>';
+      list.innerHTML = '<div style="opacity:0.6; padding:20px; text-align:center;">Loading your resources</div>';
       return;
     }
     const myId    = prof.id    || prof.userid || '';
@@ -482,6 +489,17 @@ CK.student = {
       return levelMatch && batchMatch && coachMatch;
     });
 
+    const defaultBooks = [
+      { id: 'def-book-1', name: "Bobby Fischer Teaches Chess", type: "Book", difficulty: "Beginner", link: "https://archive.org/details/bobbyfischerteacheschess", notes: "Interactive way to learn basic mating patterns." },
+      { id: 'def-book-2', name: "Chess Tactics for Kids", type: "Book", difficulty: "Beginner", link: "https://archive.org/details/chesstacticsfork0000chan", notes: "50 tricky tactics to master." },
+      { id: 'def-book-3', name: "Logical Chess: Move By Move", type: "Book", difficulty: "Intermediate", link: "https://archive.org/details/logicalchessmove00cher_0", notes: "Every single move explained by Irving Chernev." },
+      { id: 'def-book-4', name: "Silman's Complete Endgame Course", type: "Book", difficulty: "Intermediate", link: "https://archive.org/details/silmanscompletee0000silm", notes: "Essential endgame knowledge organized by rating." },
+      { id: 'def-book-5', name: "My System by Aron Nimzowitsch", type: "Book", difficulty: "Advanced", link: "https://archive.org/details/mysystem0000unse", notes: "The classic treatise on positional chess." },
+      { id: 'def-book-6', name: "Zurich International Chess Tournament 1953", type: "Book", difficulty: "Advanced", link: "https://archive.org/details/zurichinternatio0000bron", notes: "Masterpiece of chess literature by David Bronstein." }
+    ].filter(b => b.difficulty === myLevel || myLevel === 'Tournament Ready');
+
+    docs.push(...defaultBooks);
+
     if (!docs.length) {
       list.innerHTML = '<div style="opacity:0.6; padding:20px; text-align:center;">No resources assigned to your level yet. Check back soon!</div>';
       return;
@@ -494,24 +512,24 @@ CK.student = {
     const _e = CK.esc || (s => s);
     list.innerHTML = docs.map(f => {
       let openUrl = '';
-      let icon = '📄';
+      let icon = '';
       let btnLabel = 'Download';
       const refLink = f.link && /^https?:\/\//i.test(f.link) ? f.link : '';
 
       if (f.kind === 'link' || (f.url && /^https?:\/\//i.test(f.url))) {
         openUrl = f.url || f.file_name;
-        icon = '🔗';
+        icon = '';
         btnLabel = 'Open Link';
       } else if (f.file_name && /^https?:\/\//i.test(f.file_name || '')) {
         openUrl = f.file_name;
-        icon = '🔗';
+        icon = '';
         btnLabel = 'Open Link';
       } else if (f.file_name && window.supabaseClient) {
         const pub = window.supabaseClient.storage.from('documents').getPublicUrl(f.file_name);
         openUrl = pub?.data?.publicUrl || '';
       }
       // If no file/url but a reference link exists, use it as the primary action
-      if (!openUrl && refLink) { openUrl = refLink; icon = '🔗'; btnLabel = 'Open Link'; }
+      if (!openUrl && refLink) { openUrl = refLink; icon = ''; btnLabel = 'Open Link'; }
 
       const safeUrl = openUrl ? _e(openUrl) : '';
       const action = safeUrl
@@ -520,44 +538,44 @@ CK.student = {
 
       // Choose icon by type
       const type = (f.type || 'Material').toLowerCase();
-      if (type.includes('video')) icon = '🎬';
-      else if (type.includes('pgn'))   icon = '♟';
-      else if (type.includes('homework')) icon = '📝';
-      else if (type.includes('puzzle')) icon = '🧩';
-      else if (type.includes('reading')) icon = '📖';
-      else if (type.includes('note'))  icon = '📔';
-      else if (type.includes('link'))  icon = '🔗';
+      if (type.includes('video')) icon = '';
+      else if (type.includes('pgn'))   icon = '';
+      else if (type.includes('homework')) icon = '';
+      else if (type.includes('puzzle')) icon = '';
+      else if (type.includes('reading')) icon = '';
+      else if (type.includes('note'))  icon = '';
+      else if (type.includes('link'))  icon = '';
 
       // Optional badges: difficulty, due date, XP reward
       const badges = [];
       if (f.difficulty) {
-        const dIcon = { Easy:'🌱', Medium:'⚡', Hard:'🔥', Expert:'💀' }[f.difficulty] || '';
+        const dIcon = { Easy:'', Medium:'', Hard:'', Expert:'' }[f.difficulty] || '';
         badges.push(`<span class="ck-res-badge ck-res-badge-${f.difficulty.toLowerCase()}">${dIcon} ${_e(f.difficulty)}</span>`);
       }
       if (f.due_date) {
         const dueDate = new Date(f.due_date);
         const today = new Date(); today.setHours(0,0,0,0);
         const overdue = dueDate < today;
-        badges.push(`<span class="ck-res-badge ${overdue ? 'ck-res-badge-overdue' : 'ck-res-badge-due'}">📅 ${overdue ? 'Overdue' : 'Due'} ${_e(f.due_date)}</span>`);
+        badges.push(`<span class="ck-res-badge ${overdue ? 'ck-res-badge-overdue' : 'ck-res-badge-due'}"> ${overdue ? 'Overdue' : 'Due'} ${_e(f.due_date)}</span>`);
       }
       const xp = parseInt(f.xp_reward) || 0;
-      if (xp > 0) badges.push(`<span class="ck-res-badge ck-res-badge-xp">⭐ +${xp} XP</span>`);
+      if (xp > 0) badges.push(`<span class="ck-res-badge ck-res-badge-xp"> +${xp} XP</span>`);
 
       const isDone = !!completed[f.id || f.name];
       const completeBtn = isDone
-        ? `<button class="p-btn p-btn-ghost p-btn-sm" disabled>✓ Completed</button>`
-        : `<button class="p-btn p-btn-teal p-btn-sm" onclick="CK.student.markResourceComplete('${_e(f.id || f.name)}', ${xp})">✓ Mark Complete</button>`;
+        ? `<button class="p-btn p-btn-ghost p-btn-sm" disabled> Completed</button>`
+        : `<button class="p-btn p-btn-teal p-btn-sm" onclick="CK.student.markResourceComplete('${_e(f.id || f.name)}', ${xp})"> Mark Complete</button>`;
 
       return `
         <div class="p-resource-item ${isDone ? 'ck-res-done' : ''}">
           <div style="flex:1;min-width:0;">
             <div class="p-resource-name">${icon} ${_e(f.name)}</div>
-            <div class="p-resource-note">📝 ${_e(f.level || myLevel)} · ${_e(f.type || 'Material')}${f.notes ? ' · ' + _e(f.notes) : ''}</div>
+            <div class="p-resource-note"> ${_e(f.level || myLevel)}  ${_e(f.type || 'Material')}${f.notes ? '  ' + _e(f.notes) : ''}</div>
             ${badges.length ? `<div class="ck-res-badges">${badges.join('')}</div>` : ''}
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <button class="p-btn p-btn-blue p-btn-sm" ${action}>${btnLabel}</button>
-            ${refLink && openUrl !== refLink ? `<button class="p-btn p-btn-ghost p-btn-sm" onclick="window.open('${_e(refLink)}','_blank','noopener,noreferrer')">🔗 Reference</button>` : ''}
+            ${refLink && openUrl !== refLink ? `<button class="p-btn p-btn-ghost p-btn-sm" onclick="window.open('${_e(refLink)}','_blank','noopener,noreferrer')"> Reference</button>` : ''}
             ${completeBtn}
           </div>
         </div>`;
@@ -578,19 +596,19 @@ CK.student = {
     if (CK.db && CK.db.awardXP && xpReward > 0) {
       await CK.db.awardXP(myId, xpReward, 'Completed assignment');
     } else {
-      CK.showToast('✅ Marked complete!', 'success');
+      CK.showToast(' Marked complete!', 'success');
     }
     this.renderResources();
   },
 
   _PUZZLE_SETUPS: {
-    P1: { 'f8': '♚', 'g7': '♟', 'h7': '♟', 'd1': '♖' },
-    P2: { 'e8': '♚', 'a8': '♜', 'd5': '♘' },
-    P3: { 'h8': '♚', 'g8': '♜', 'h7': '♟', 'g7': '♟', 'f7': '♟', 'f5': '♘' },
-    P4: { 'e8': '♚', 'h8': '♜', 'h1': '♕' },
-    P5: { 'g5': '♚', 'd6': '♜', 'c3': '♘' },
-    P6: { 'e5': '♚', 'c3': '♜', 'a1': '♗' },
-    P7: { 'e7': '♙', 'e5': '♔', 'c7': '♚' },
+    P1: { 'f8': '', 'g7': '', 'h7': '', 'd1': '' },
+    P2: { 'e8': '', 'a8': '', 'd5': '' },
+    P3: { 'h8': '', 'g8': '', 'h7': '', 'g7': '', 'f7': '', 'f5': '' },
+    P4: { 'e8': '', 'h8': '', 'h1': '' },
+    P5: { 'g5': '', 'd6': '', 'c3': '' },
+    P6: { 'e5': '', 'c3': '', 'a1': '' },
+    P7: { 'e7': '', 'e5': '', 'c7': '' },
   },
 
   _solvedPuzzles: new Set(),
@@ -619,7 +637,7 @@ CK.student = {
     if (!el) return;
     const m = Math.floor(this._puzzleSeconds / 60).toString().padStart(2, '0');
     const s = (this._puzzleSeconds % 60).toString().padStart(2, '0');
-    el.textContent = `⏱ ${m}:${s}`;
+    el.textContent = ` ${m}:${s}`;
   },
 
   getXPForPuzzle(diff, seconds, mistakes) {
@@ -657,13 +675,13 @@ CK.student = {
       return;
     }
     container.innerHTML = sorted.map((s, i) => {
-      const medal = ['🥇', '🥈', '🥉'][i] || `#${i + 1}`;
+      const medal = ['', '', ''][i] || `#${i + 1}`;
       const isMe = s.id === myId;
       return `<div class="pz-lb-row${isMe ? ' pz-lb-row--me' : ''}">
         <span class="pz-lb-rank">${medal}</span>
         <span class="pz-lb-name">${_e(s.full_name || 'Unknown')}</span>
-        <span class="pz-lb-val">⭐ ${s.star || 0}</span>
-        <span class="pz-lb-val">🧩 ${s.puzzle || 0}</span>
+        <span class="pz-lb-val"> ${s.star || 0}</span>
+        <span class="pz-lb-val"> ${s.puzzle || 0}</span>
       </div>`;
     }).join('');
   },
@@ -686,10 +704,10 @@ CK.student = {
       const solved = this._solvedPuzzles.has(p.id);
       return `
         <div class="p-puzzle-card ${this.activePuzzleId === p.id ? 'active' : ''}" onclick="CK.student.loadPuzzle('${p.id}')">
-          <div class="p-puzzle-icon">${solved ? '✅' : '🧩'}</div>
+          <div class="p-puzzle-icon">${solved ? '' : ''}</div>
           <div class="p-puzzle-info">
             <div class="p-puzzle-title">${p.title}</div>
-            <div class="p-puzzle-sub">${p.type} · <span class="p-badge ${diffColor[p.diff] || 'p-badge-blue'}" style="font-size:0.7rem; padding:1px 6px;">${p.diff}</span></div>
+            <div class="p-puzzle-sub">${p.type}  <span class="p-badge ${diffColor[p.diff] || 'p-badge-blue'}" style="font-size:0.7rem; padding:1px 6px;">${p.diff}</span></div>
           </div>
           <button class="p-btn ${solved ? 'p-btn-ghost' : 'p-btn-gold'} p-btn-sm">${solved ? 'Redo' : 'Solve'}</button>
         </div>`;
@@ -732,7 +750,7 @@ CK.student = {
     // Update instructions
     const instrEl = document.getElementById('puzzleInstructions');
     if (instrEl) instrEl.innerHTML = `
-      <span class="p-badge ${p.diff === 'Easy' ? 'p-badge-green' : p.diff === 'Hard' ? 'p-badge-red' : 'p-badge-yellow'}" style="font-size:0.72rem; padding:2px 8px;">${p.type} · ${p.diff}</span>
+      <span class="p-badge ${p.diff === 'Easy' ? 'p-badge-green' : p.diff === 'Hard' ? 'p-badge-red' : 'p-badge-yellow'}" style="font-size:0.72rem; padding:2px 8px;">${p.type}  ${p.diff}</span>
       <p style="margin:8px 0 0; color:rgba(255,255,255,0.7);">${p.instruction}</p>
     `;
 
@@ -753,9 +771,9 @@ CK.student = {
     const SQ_LIGHT = '#d4d4a8';  // warm off-white (light squares)
     const COORD_DARK  = 'rgba(255,255,255,0.5)';
     const COORD_LIGHT = 'rgba(74,124,64,0.5)';
-    const BLACK_PIECES = new Set(['♚','♜','♝','♛','♞','♟']);
-    const WHITE_PIECES = new Set(['♔','♖','♗','♕','♘','♙']);
-    // isDark: a1 (f=0,r=1) must be dark → (f+r)%2===1
+    const BLACK_PIECES = new Set(['','','','','','']);
+    const WHITE_PIECES = new Set(['','','','','','']);
+    // isDark: a1 (f=0,r=1) must be dark  (f+r)%2===1
     const sqSize = 'min(52px, calc((min(400px,100vw - 48px)) / 8))';
     let html = `<div style="display:grid;grid-template-columns:repeat(8,${sqSize});grid-template-rows:repeat(8,${sqSize});width:fit-content;margin:0 auto;border:3px solid rgba(85,107,47,0.6);border-radius:8px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,0.6),0 0 0 1px rgba(85,107,47,0.25);">`;
     for (let r = 8; r >= 1; r--) {
@@ -789,17 +807,17 @@ CK.student = {
     const fb = document.getElementById('puzzleFeedback');
     if (!fb) return;
     const hints = {
-      P1: '💡 Hint: Your rook can slide all the way up the d-file to the back rank!',
-      P2: '💡 Hint: Your knight jumps in an L-shape. Look for a square that attacks both the king and rook.',
-      P3: '💡 Hint: The black king is trapped in the corner by its own pieces. A knight jump can end the game!',
-      P4: '💡 Hint: Your queen and the enemy rook share the h-file. Slide straight up for a free piece!',
-      P5: '💡 Hint: Find the one square where your knight attacks BOTH the black king and rook at the same time!',
-      P6: '💡 Hint: The black rook on c3 is pinned along the diagonal to the king — it cannot move. Simply capture it!',
-      P7: '💡 Hint: Your pawn is on e7, one step from queening. Push it all the way to e8!'
+      P1: ' Hint: Your rook can slide all the way up the d-file to the back rank!',
+      P2: ' Hint: Your knight jumps in an L-shape. Look for a square that attacks both the king and rook.',
+      P3: ' Hint: The black king is trapped in the corner by its own pieces. A knight jump can end the game!',
+      P4: ' Hint: Your queen and the enemy rook share the h-file. Slide straight up for a free piece!',
+      P5: ' Hint: Find the one square where your knight attacks BOTH the black king and rook at the same time!',
+      P6: ' Hint: The black rook on c3 is pinned along the diagonal to the king  it cannot move. Simply capture it!',
+      P7: ' Hint: Your pawn is on e7, one step from queening. Push it all the way to e8!'
     };
     fb.style.display = 'block';
     fb.className = 'pz-feedback hint';
-    fb.textContent = hints[p.id] || '💡 Look for forcing moves — checks, captures, and threats!';
+    fb.textContent = hints[p.id] || ' Look for forcing moves  checks, captures, and threats!';
   },
 
   showPuzzleSolution() {
@@ -820,7 +838,7 @@ CK.student = {
     if (next) {
       this.loadPuzzle(next.id);
     } else {
-      CK.showToast('🏆 All puzzles completed! Great work!', 'success');
+      CK.showToast(' All puzzles completed! Great work!', 'success');
     }
   },
 
@@ -832,7 +850,7 @@ CK.student = {
     const setup = this._PUZZLE_SETUPS[this.activePuzzleId] || {};
 
     // PROPER CHESS-LIKE INPUT
-    // ─────────────────────────────────────────────────────────────
+    //
     // If the user has a piece selected and clicks another square,
     // treat it as a move attempt. If the destination matches the
     // puzzle's solution square, fire success. Otherwise count as a
@@ -857,7 +875,7 @@ CK.student = {
       // Treat the destination click the same as the simple-solver below
       squareId = squareId; // fall through to solution check
     } else {
-      // No selection yet — if user clicked a piece, SELECT it
+      // No selection yet  if user clicked a piece, SELECT it
       const piece = setup[squareId];
       if (piece) {
         this._puzzleSelectedSq = squareId;
@@ -869,11 +887,11 @@ CK.student = {
         if (fb) {
           fb.style.display = 'block';
           fb.className = 'pz-feedback hint';
-          fb.textContent = `Selected ${piece} on ${squareId.toUpperCase()} — now click the target square to make the move.`;
+          fb.textContent = `Selected ${piece} on ${squareId.toUpperCase()}  now click the target square to make the move.`;
         }
         return;
       }
-      // Clicked empty square with no piece selected — just ignore (or treat
+      // Clicked empty square with no piece selected  just ignore (or treat
       // as direct solution-square click for legacy compatibility).
     }
 
@@ -882,7 +900,7 @@ CK.student = {
       const xp = this.getXPForPuzzle(p.diff, this._puzzleSeconds, this._puzzleMistakes);
       this._puzzleXP += xp;
       this.showXPPopup(xp);
-      CK.showToast(`🎉 Brilliant! +${xp} XP earned!`, 'success');
+      CK.showToast(` Brilliant! +${xp} XP earned!`, 'success');
       this._solvedPuzzles.add(p.id);
       this._srs.record(p.id, true);
       this._trackDailyGoal('puzzles');
@@ -891,7 +909,7 @@ CK.student = {
       if (fb) {
         fb.style.display = 'block';
         fb.className = 'pz-feedback success';
-        fb.innerHTML = `✅ <strong>${CK.esc ? CK.esc(p.title || '') : (p.title || '')} solved!</strong><br><span style="font-size:0.85rem;opacity:0.85;">${CK.esc ? CK.esc(p.desc || '') : (p.desc || '')}</span>`;
+        fb.innerHTML = ` <strong>${CK.esc ? CK.esc(p.title || '') : (p.title || '')} solved!</strong><br><span style="font-size:0.85rem;opacity:0.85;">${CK.esc ? CK.esc(p.desc || '') : (p.desc || '')}</span>`;
       }
 
       // Flash the solution square with olive-gold glow
@@ -924,11 +942,11 @@ CK.student = {
     } else {
       this._puzzleMistakes++;
       this._srs.record(p.id, false);
-      CK.showToast('❌ Not quite — try again!', 'warning');
+      CK.showToast(' Not quite  try again!', 'warning');
       if (fb) {
         fb.style.display = 'block';
         fb.className = 'pz-feedback error';
-        fb.textContent = '❌ Incorrect square. Think carefully — look for the move that forces an immediate decisive result.';
+        fb.textContent = ' Incorrect square. Think carefully  look for the move that forces an immediate decisive result.';
       }
       // Flash the wrong square red briefly
       const sqs = document.querySelectorAll('#studentPuzzleBoardContainer [title="' + squareId + '"]');
@@ -947,7 +965,7 @@ CK.student = {
     const myReviews = await CK.tracker?.getReviews(this.userProfile?.full_name || '') || [];
 
     if (!myReviews.length) {
-      container.innerHTML = '<div class="cls-empty">📭 No coach reviews posted yet. Keep attending classes!</div>';
+      container.innerHTML = '<div class="cls-empty"> No coach reviews posted yet. Keep attending classes!</div>';
       return;
     }
 
@@ -955,7 +973,7 @@ CK.student = {
     container.innerHTML = myReviews.map(r => `
       <div class="p-review-note">
         <div class="p-review-note-header">
-          <span class="p-review-note-coach">🎓 ${_e(r.coach)}</span>
+          <span class="p-review-note-coach"> ${_e(r.coach)}</span>
           <span class="p-review-note-date">${_e(r.date)}</span>
         </div>
         <p class="p-review-note-text">"${_e(r.text)}"</p>
@@ -981,7 +999,7 @@ CK.student = {
       if (recordings.length === 0) {
         container.innerHTML = `
           <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: var(--p-surface3); border: 1px dashed rgba(255,255,255,0.1); border-radius: 14px;">
-            <div style="font-size: 3rem; margin-bottom: 16px;">📼</div>
+            <div style="font-size: 3rem; margin-bottom: 16px;"></div>
             <h3 style="color: #fff; font-size: 1.15rem; margin-bottom: 8px;">No Synced Class Replays Yet</h3>
             <p style="color: var(--p-text-muted); font-size: 0.9rem; max-width: 400px; margin: 0 auto;">
               When your coach streams and completes a live session, the automated recording will appear here.
@@ -998,11 +1016,11 @@ CK.student = {
         const dateStr = rec.created_at ? new Date(rec.created_at).toLocaleDateString() : 'Recent';
         const notes = rec.notes || 'Automated lesson recording archive.';
         const link = rec.link || '';
-        
+
         const badgeClass = index % 2 === 0 ? 'p-badge-blue' : 'p-badge-gold';
         const btnClass = index % 2 === 0 ? 'p-btn-blue' : 'p-btn-gold';
-        const pieceIcon = index % 3 === 0 ? '♟️' : (index % 3 === 1 ? '♛' : '♞');
-        
+        const pieceIcon = index % 3 === 0 ? '' : (index % 3 === 1 ? '' : '');
+
         return `
           <div class="p-card-vault-item"
             style="background: var(--p-surface3); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, border-color 0.2s;">
@@ -1026,7 +1044,7 @@ CK.student = {
               </div>
               <button class="p-btn ${btnClass}" style="width:100%; margin-top: auto;"
                 onclick="CK.openVaultSession('${_esc(title.replace(/'/g, "\\'"))}', '${_esc(coach.replace(/'/g, "\\'"))}', '${_esc(link.replace(/'/g, "\\'"))}')">
-                ▶ Study Session Replay
+                 Study Session Replay
               </button>
             </div>
           </div>
@@ -1034,10 +1052,9 @@ CK.student = {
       }).join('');
 
     } catch (e) {
-      console.error("[Student Vault] Error rendering replay vault:", e);
       container.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #ef4444;">
-          ⚠️ Error loading synced class archives. Please try again.
+           Error loading synced class archives. Please try again.
         </div>
       `;
     }
@@ -1052,7 +1069,7 @@ CK.student = {
     // Star display
     let starStr = '';
     for (let i = 0; i < 5; i++) {
-      starStr += i < stars ? '⭐' : '☆';
+      starStr += i < stars ? '★' : '☆';
     }
     const starsEl = document.getElementById('achievementStarsDisplay');
     if (starsEl) starsEl.innerText = starStr;
@@ -1069,10 +1086,10 @@ CK.student = {
     const grid = document.getElementById('achievementsListGrid');
     if (grid) {
       const achievements = [
-        { title: "Academy Pioneer", desc: "First-time registered academy member.", icon: "🎖️", unlocked: true },
-        { title: "Puzzle Prodigy", desc: `Solve 20+ academy puzzles (Current: ${this.userProfile.puzzle}).`, icon: "🧠", unlocked: this.userProfile.puzzle >= 20 },
-        { title: "Century Contender", desc: `Surpass 1000+ rating on the academy (Current: ${this.userProfile.rating}).`, icon: "👑", unlocked: this.userProfile.rating >= 1000 },
-        { title: "Flawless Learner", desc: `Surpass 90% attendance record (Current: ${attendancePercentage}%).`, icon: "📚", unlocked: attendancePercentage >= 90 }
+        { title: "Academy Pioneer", desc: "First-time registered academy member.", icon: "", unlocked: true },
+        { title: "Puzzle Prodigy", desc: `Solve 20+ academy puzzles (Current: ${this.userProfile.puzzle}).`, icon: "", unlocked: this.userProfile.puzzle >= 20 },
+        { title: "Century Contender", desc: `Surpass 1000+ rating on the academy (Current: ${this.userProfile.rating}).`, icon: "", unlocked: this.userProfile.rating >= 1000 },
+        { title: "Flawless Learner", desc: `Surpass 90% attendance record (Current: ${attendancePercentage}%).`, icon: "", unlocked: attendancePercentage >= 90 }
       ];
 
       grid.innerHTML = achievements.map(a => `
@@ -1087,14 +1104,14 @@ CK.student = {
       `).join('');
     }
 
-    // Certificate section — use real jsPDF system
+    // Certificate section  use real jsPDF system
     const certEl = document.getElementById('studentCertSection');
     if (certEl && CK.certs) {
       const attnSummary = (await CK.classSystem?.getStudentAttendanceSummary(this.userProfile.id)) || { pct: attendancePercentage };
       const puzzlesSolved = ((await CK.puzzlesPro?.getLeaderboard()) || []).find(u => u.userId === this.userProfile.id)?.solved || (this.userProfile.puzzle || 0);
       CK.certs.renderStudentCerts(certEl.id, this.userProfile, attnSummary.pct || attendancePercentage, puzzlesSolved);
     } else {
-      // Fallback — old static cert logic
+      // Fallback  old static cert logic
       const hasCert = this.userProfile.certificate && this.userProfile.certificate !== "";
       const certStatusEl = document.getElementById('certificateDownloadStatus');
       if (certStatusEl) certStatusEl.innerText = hasCert
@@ -1110,7 +1127,7 @@ CK.student = {
     }
   },
 
-  /* ── My Rank & XP Panel ── */
+  /*  My Rank & XP Panel  */
   renderMyRank() {
     const p = this.userProfile;
     if (!p) return;
@@ -1122,7 +1139,7 @@ CK.student = {
     }
   },
 
-  /* ── AI Study Plan Panel ── */
+  /*  AI Study Plan Panel  */
   async renderStudyPlan() {
     const p = this.userProfile;
     if (!p || !CK.ai) return;
@@ -1132,7 +1149,7 @@ CK.student = {
       const analysis = await CK.ai.analyzeStudent(p.id);
       if (!analysis) return;
 
-      // Weakness radar chart — ensure canvas exists
+      // Weakness radar chart  ensure canvas exists
       const chartEl = document.getElementById('studentWeaknessChart');
       if (chartEl && !chartEl.querySelector('canvas')) {
         chartEl.innerHTML = '<canvas id="studentWeaknessCanvas" style="max-height:280px;"></canvas>';
@@ -1147,20 +1164,20 @@ CK.student = {
       const predEl = document.getElementById('studentELOPrediction');
       if (predEl) {
         const pred = await CK.ai.predictELO(p.id, 12);
-        const p6 = pred.predictions && pred.predictions[5] ? pred.predictions[5].predictedELO : '—';
-        const p12 = pred.predictions && pred.predictions[11] ? pred.predictions[11].predictedELO : '—';
+        const p6 = pred.predictions && pred.predictions[5] ? pred.predictions[5].predictedELO : '';
+        const p12 = pred.predictions && pred.predictions[11] ? pred.predictions[11].predictedELO : '';
         predEl.innerHTML = `
           <div style="text-align:center;">
             <div style="font-size:0.8rem; color:var(--p-text-muted); margin-bottom:8px;">Current ELO</div>
             <div style="font-size:2rem; font-weight:900; color:var(--p-gold);">${p.rating || 800}</div>
-            <div style="margin:16px 0; font-size:1.4rem; color:var(--p-teal);">→</div>
+            <div style="margin:16px 0; font-size:1.4rem; color:var(--p-teal);"></div>
             <div style="font-size:0.8rem; color:var(--p-text-muted); margin-bottom:8px;">Predicted in 6 Months</div>
             <div style="font-size:2rem; font-weight:900; color:var(--p-teal);">${p6}</div>
             <div style="font-size:0.75rem; color:var(--p-text-muted); margin-top:12px;">12-month prediction: <strong>${p12}</strong></div>
             <div style="font-size:0.72rem; color:var(--p-text-muted); margin-top:4px;">Confidence: ${pred.confidence || 'medium'}</div>
           </div>`;
       }
-    } catch(e) { console.warn('Study plan render error:', e); }
+    } catch(e) { }
   },
 
   regenerateStudyPlan() {
@@ -1168,7 +1185,7 @@ CK.student = {
     setTimeout(() => this.renderStudyPlan(), 300);
   },
 
-  /* ── Streak System ── */
+  /*  Streak System  */
   getStreak(userId) {
     const key = `ck_streak_${userId || 'anon'}`;
     // Prefer data stored on the user profile (set by updateStreak)
@@ -1197,7 +1214,7 @@ CK.student = {
     }
     this._renderStreakBadge(newCount);
     if (newCount > 0 && newCount % 7 === 0 && typeof CK !== 'undefined' && CK.notifs) {
-      CK.notifs.push('puzzle_streak', `🔥 ${newCount}-Day Streak!`, `You've practised ${newCount} days in a row. Keep the fire going!`, userId, 'student');
+      CK.notifs.push('puzzle_streak', ` ${newCount}-Day Streak!`, `You've practised ${newCount} days in a row. Keep the fire going!`, userId, 'student');
     }
     return newCount;
   },
@@ -1207,7 +1224,7 @@ CK.student = {
       el.textContent = count;
     });
     document.querySelectorAll('.student-streak-fire').forEach(el => {
-      el.textContent = count >= 3 ? '🔥' : count >= 1 ? '⚡' : '—';
+      el.textContent = count >= 3 ? '' : count >= 1 ? '' : '';
     });
   },
 
@@ -1221,7 +1238,7 @@ CK.student = {
       .sort((a, b) => (parseInt(b.rating) || 0) - (parseInt(a.rating) || 0));
     const userRank = sorted.findIndex(s => s.id === p.id) + 1;
     const rankColors = ['var(--p-gold)', '#94a3b8', '#cd7f32'];
-    const medals = ['🥇', '🥈', '🥉'];
+    const medals = ['', '', ''];
     const top5 = sorted.slice(0, 5);
     let html = top5.map((s, i) => {
       const isMe = s.id === p.id;
@@ -1233,12 +1250,12 @@ CK.student = {
             <span style="font-weight:700;color:${color};min-width:28px;text-align:center;font-size:${i < 3 ? '1.1rem' : '.85rem'}">${medal}</span>
             <div>
               <div style="font-weight:${isMe ? '700' : '500'};color:${isMe ? 'var(--p-teal)' : 'var(--p-text)'};font-size:.88rem;">${s.full_name || 'Anonymous'}${isMe ? ' (You)' : ''}</div>
-              <div style="font-size:.72rem;color:var(--p-text-muted);">${s.level || 'Beginner'} · ${s.puzzle || 0} puzzles</div>
+              <div style="font-size:.72rem;color:var(--p-text-muted);">${s.level || 'Beginner'}  ${s.puzzle || 0} puzzles</div>
             </div>
           </div>
           <div style="text-align:right;">
             <div style="font-weight:700;color:${color};font-size:.9rem;">${parseInt(s.rating) || 800} ELO</div>
-            <div style="font-size:.68rem;color:var(--p-text-muted);">★ ${s.star || 0}</div>
+            <div style="font-size:.68rem;color:var(--p-text-muted);"> ${s.star || 0}</div>
           </div>
         </div>`;
     }).join('');
@@ -1249,7 +1266,7 @@ CK.student = {
             <span style="font-weight:700;color:var(--p-teal);min-width:28px;text-align:center;">#${userRank}</span>
             <div>
               <div style="font-weight:700;color:var(--p-teal);font-size:.88rem;">${p.full_name || 'You'} (You)</div>
-              <div style="font-size:.72rem;color:var(--p-text-muted);">${p.level || 'Beginner'} · ${p.puzzle || 0} puzzles</div>
+              <div style="font-size:.72rem;color:var(--p-text-muted);">${p.level || 'Beginner'}  ${p.puzzle || 0} puzzles</div>
             </div>
           </div>
           <span style="font-weight:700;color:var(--p-teal)">${parseInt(p.rating) || 800} ELO</span>
@@ -1262,7 +1279,7 @@ CK.student = {
     if (rankBadge && userRank > 0) rankBadge.textContent = `#${userRank}`;
   },
 
-  /* ── Daily Goal Tracker ── */
+  /*  Daily Goal Tracker  */
   _trackDailyGoal(type) {
     const key = 'ck_daily_' + new Date().toDateString();
     const goals = JSON.parse(localStorage.getItem(key) || '{"puzzles":0,"lessons":0,"games":0}');
@@ -1279,9 +1296,9 @@ CK.student = {
     const done = JSON.parse(localStorage.getItem(key) || '{"puzzles":0,"lessons":0,"games":0}');
     const targets = { puzzles: 5, lessons: 2, games: 1 };
     const items = [
-      { k: 'puzzles', label: 'Daily Puzzles', icon: '🧩', color: 'var(--p-gold)' },
-      { k: 'lessons', label: 'Lessons Watched', icon: '📚', color: 'var(--p-blue)' },
-      { k: 'games',   label: 'Games Played',   icon: '♟',  color: 'var(--p-teal)' }
+      { k: 'puzzles', label: 'Daily Puzzles', icon: '', color: 'var(--p-gold)' },
+      { k: 'lessons', label: 'Lessons Watched', icon: '', color: 'var(--p-blue)' },
+      { k: 'games',   label: 'Games Played',   icon: '',  color: 'var(--p-teal)' }
     ];
     el.innerHTML = `
       <div class="dg-grid">
@@ -1294,14 +1311,14 @@ CK.student = {
             <div class="dg-body">
               <div class="dg-label">${g.label}</div>
               <div class="dg-bar-wrap"><div class="dg-bar" style="width:${pct}%;background:${g.color}"></div></div>
-              <div class="dg-count">${val} / ${targets[g.k]}${done2 ? ' ✓' : ''}</div>
+              <div class="dg-count">${val} / ${targets[g.k]}${done2 ? ' ' : ''}</div>
             </div>
           </div>`;
         }).join('')}
       </div>`;
   },
 
-  /* ── Spaced Repetition System ── */
+  /*  Spaced Repetition System  */
   _srs: {
     _key: 'ck_srs_v2',
     _getLog() {
@@ -1359,46 +1376,46 @@ CK.student = {
 
     if (!due.length) {
       el.innerHTML = `<div class="cls-empty">
-        ✅ No puzzles due for review today.<br>
-        <span style="font-size:.78rem;">Mastered: ${stats.mastered} — Total reviewed: ${stats.total}</span>
+         No puzzles due for review today.<br>
+        <span style="font-size:.78rem;">Mastered: ${stats.mastered}  Total reviewed: ${stats.total}</span>
       </div>`;
       return;
     }
     el.innerHTML = `
       <div style="margin-bottom:10px;font-size:.82rem;color:var(--p-text-muted)">
-        📬 <strong style="color:var(--p-gold)">${due.length}</strong> puzzle${due.length > 1 ? 's' : ''} due for review · ${stats.mastered} mastered
+         <strong style="color:var(--p-gold)">${due.length}</strong> puzzle${due.length > 1 ? 's' : ''} due for review  ${stats.mastered} mastered
       </div>
       ${due.map(p => `
         <div class="srs-card" onclick="CK.student.loadAndGoToPuzzle('${p.id}')">
-          <span class="srs-icon">🔁</span>
-          <div class="srs-info"><div class="srs-title">${p.title}</div><div class="srs-meta">${p.type} · ${p.diff}</div></div>
+          <span class="srs-icon"></span>
+          <div class="srs-info"><div class="srs-title">${p.title}</div><div class="srs-meta">${p.type}  ${p.diff}</div></div>
           <button class="p-btn p-btn-gold p-btn-sm">Review</button>
         </div>`).join('')}`;
   },
 
-  /* ══════════════════════════════════════════════════════════
+  /*
      REAL PROGRESS CALCULATION
      Weighted score from 5 pillars: attendance, puzzles,
      rating gain, games played, homework completion.
-  ══════════════════════════════════════════════════════════ */
+   */
   async renderRealProgress() {
     const p = this.userProfile;
     if (!p) return;
 
-    // 1. Attendance (30%) — from advanced attendance records
+    // 1. Attendance (30%)  from advanced attendance records
     const attnSummary = (await CK.classSystem?.getStudentAttendanceSummary(p.id)) || { total: 0, present: 0, pct: 0 };
     const logs = (await CK.db.getAttendance(p.id)) || [];
     const presentCount = logs.filter(l => l.status === 'present').length;
     const totalSessions = attnSummary ? attnSummary.total : logs.length;
     const presentSessions = attnSummary ? attnSummary.present : presentCount;
-    const attendancePct = totalSessions > 0 ? Math.round(presentSessions / totalSessions * 100) : 100;
+    const attendancePct = totalSessions > 0 ? Math.round(presentSessions / totalSessions * 100) : 0;
 
-    // 2. Puzzles (25%) — real solved count from puzzles-pro
+    // 2. Puzzles (25%)  real solved count from puzzles-pro
     const lbEntry = ((await CK.puzzlesPro?.getLeaderboard()) || []).find(u => u.userId === p.id);
     const puzzlesSolved = lbEntry?.solved || (p.puzzle || 0);
     const puzzleScore = Math.min(100, Math.round(puzzlesSolved / 60 * 100)); // 60 = total in DB
 
-    // 3. Rating gain (20%) — from start to now
+    // 3. Rating gain (20%)  from start to now
     const startRating = 800;
     const ratingGain = Math.max(0, (p.rating || 800) - startRating);
     const ratingScore = Math.min(100, Math.round(ratingGain / 4)); // 400pt gain = 100%
@@ -1406,12 +1423,12 @@ CK.student = {
     // 4. Games played (15%)
     const gamesScore = Math.min(100, Math.round((p.game || 0) * 5)); // 20 games = 100%
 
-    // 5. Homework (10%) — from classroom submissions
+    // 5. Homework (10%)  from classroom submissions
     const submissions = JSON.parse(localStorage.getItem('ck_hw_submissions') || '[]').filter(s => s.student_id === p.id || s.studentId === p.id);
     const assignments  = JSON.parse(localStorage.getItem('ck_assignments') || '[]');
     const hwDone  = submissions.filter(s => s.completed).length;
     const hwTotal = assignments.length;
-    const hwScore = hwTotal > 0 ? Math.round(hwDone / hwTotal * 100) : 100;
+    const hwScore = hwTotal > 0 ? Math.round(hwDone / hwTotal * 100) : 0;
 
     // Weighted overall score
     const overall = Math.round(
@@ -1455,7 +1472,7 @@ CK.student = {
     // Trend label
     const trendEl = document.getElementById('progTrend');
     if (trendEl) {
-      trendEl.textContent = overall >= 80 ? '🚀 Excellent Progress!' : overall >= 60 ? '📈 Good Progress' : overall >= 40 ? '📊 Making Progress' : '⚡ Needs Improvement';
+      trendEl.textContent = overall >= 80 ? ' Excellent Progress!' : overall >= 60 ? ' Good Progress' : overall >= 40 ? ' Making Progress' : ' Needs Improvement';
       trendEl.style.color = overall >= 80 ? 'var(--p-teal)' : overall >= 60 ? 'var(--p-blue)' : overall >= 40 ? 'var(--p-gold)' : 'var(--p-danger)';
     }
 
@@ -1480,11 +1497,11 @@ CK.student = {
   async initCharts() {
     const ctx = document.getElementById('ratingChart')?.getContext('2d');
     if (!ctx) return;
-    if (!this.userProfile) return; // profile not loaded yet — avoid null crash
+    if (!this.userProfile) return; // profile not loaded yet  avoid null crash
 
     // Fetch historical ratings from DB
     const history = await CK.db.getRatings(this.userProfile.id || this.userProfile.userid);
-    
+
     const now = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     let labels = [now];
     let onlineData = [this.userProfile.rating || 800];
@@ -1557,9 +1574,22 @@ CK.student = {
       }
     });
 
-    // Skill Radar / Heatmap Chart
+    // Skill Radar / Heatmap Chart (Dynamic via AI Engine)
     const ctxRadar = document.getElementById('skillRadarChart')?.getContext('2d');
     if (ctxRadar) {
+      if (window.CK && CK.ai && this.userProfile) {
+        try {
+          const analysis = await CK.ai.analyzeStudent(this.userProfile.id || this.userProfile.userid);
+          if (analysis) {
+            CK.ai.renderWeaknessChart('skillRadarChart', analysis);
+            return;
+          }
+        } catch (e) {
+          CK.ai.renderWeaknessChart('skillRadarChart', null);
+        }
+      }
+
+      // Fallback if AI system is not loaded or fails
       const rc = (this.userProfile && this.userProfile.report_card) || {};
       if (window._skillRadarInst) window._skillRadarInst.destroy();
       window._skillRadarInst = new window.Chart(ctxRadar, {
@@ -1620,7 +1650,7 @@ CK.student = {
 
     let classTime = null;
     let classTitle = `${p.level || 'Intermediate'} Strategy Session`;
-    let classCoach = p.coach || '—';
+    let classCoach = p.coach || '';
     let classDuration = null;
     let classStudents = null;
     let classDate = null;
@@ -1657,13 +1687,13 @@ CK.student = {
     const subEl   = document.getElementById('nextClassSub');
     if (nameEl) nameEl.innerText = displayTime;
     if (classEl) classEl.innerText = classTitle;
-    if (subEl)   subEl.innerText  = classCoach && classCoach !== '—' ? `with Coach ${classCoach}` : 'Check your schedule';
+    if (subEl)   subEl.innerText  = classCoach && classCoach !== '' ? `with Coach ${classCoach}` : 'Check your schedule';
 
-    // Duration chip — from the meeting's real duration
+    // Duration chip  from the meeting's real duration
     const durEl = document.getElementById('studentSessionDuration');
-    if (durEl) durEl.innerText = `⏱ ${classDuration || 60} mins`;
+    if (durEl) durEl.innerText = ` ${classDuration || 60} mins`;
 
-    // Student count chip — real count; fall back to headcount of this batch/coach
+    // Student count chip  real count; fall back to headcount of this batch/coach
     const studEl = document.getElementById('studentSessionStudents');
     if (studEl) {
       if (classStudents == null) {
@@ -1674,14 +1704,14 @@ CK.student = {
           ).length;
         } catch (_) { classStudents = 0; }
       }
-      studEl.innerText = `👥 ${classStudents} student${classStudents === 1 ? '' : 's'}`;
+      studEl.innerText = ` ${classStudents} student${classStudents === 1 ? '' : 's'}`;
     }
 
-    // LIVE badge — only "LIVE TODAY" when the class is actually today
+    // LIVE badge  only "LIVE TODAY" when the class is actually today
     const badgeEl = document.getElementById('studentLiveBadge');
     if (badgeEl) {
       const isToday = classDate === todayStr || (classTime && classTime.toDateString() === new Date().toDateString());
-      badgeEl.innerText = meetings.length ? (isToday ? '● LIVE TODAY' : '● UPCOMING') : '● NO CLASS';
+      badgeEl.innerText = meetings.length ? (isToday ? ' LIVE TODAY' : ' UPCOMING') : ' NO CLASS';
     }
 
     if (window.studentCountdownTimer) clearInterval(window.studentCountdownTimer);
@@ -1690,7 +1720,7 @@ CK.student = {
       if (!classTime) { el.innerText = 'Check schedule'; return; }
       const remaining = Math.max(0, Math.round((classTime - new Date()) / 60000));
       if (remaining === 0) {
-        el.innerText = '🔴 Starting now!';
+        el.innerText = ' Starting now!';
         el.style.color = 'var(--p-teal)';
       } else if (remaining < 60) {
         el.innerText = `Starts in ${remaining}m`;
@@ -1725,32 +1755,115 @@ CK.student = {
                       links[this.userProfile?.batch || ''] || '';
       if (!meetUrl) {
         CK.showToast('Class link not yet set. Ask your coach or admin for the meeting URL.', 'warning');
-        joinBtn.innerText = '▶ Join Class Room';
+        joinBtn.innerText = ' Join Class Room';
         joinBtn.disabled = false;
         return;
       }
       window.open(meetUrl, '_blank');
 
       setTimeout(() => {
-        joinBtn.innerText = "▶ Rejoin Class Room";
+        joinBtn.innerText = " Rejoin Class Room";
         joinBtn.disabled = false;
         if (sessionTitleEl) sessionTitleEl.innerText = "Class session is currently active!";
       }, 3000);
     }, 1500);
   },
 
-  renderReportCard() {
+  async renderReportCard() {
     const _e = CK.esc || (s => s);
     const p = this.userProfile || {};
+
+    // Fetch dynamic AI analysis
+    let analysis = null;
+    let plan = null;
+    if (window.CK && CK.ai && p.id) {
+      try {
+        analysis = await CK.ai.analyzeStudent(p.id);
+        if (analysis) plan = CK.ai.generateStudyPlan(analysis);
+      } catch (e) {
+        plan = null;
+      }
+    }
+    const aiScores = analysis?.scores || {};
+
+    let remarks = "Excellent concentration and tactical calculation. Shows great promise when navigating complex middlegame positions. Focus on active rook placements in pawn endgames.";
+    let goals = ["Participate in State Level Rapid U-14", "Master Lucena and Philidor Rook Endgames", "Maintain blunder rate under 3% in tournaments"];
+
+    if (analysis && plan) {
+       remarks = `Based on recent game analysis, ${_e(p.full_name || 'the student')} has a strong foundation in ${analysis.strengths.join(', ') || 'basic principles'}. Current priority should be improving ${analysis.weaknesses.join(' and ') || 'overall consistency'}. Consistent practice will yield great results.`;
+       goals = plan.focus.map(f => `Target ${f.targetScore} score in ${f.name}`);
+    }
+
+    // --- Internal Metrics ---
+    const userId = p.id;
+    const gameStats = CK.gameTracker ? await CK.gameTracker.getStats(userId) : { avgAccuracy: 0, winRate: 0, total: 0 };
+    const puzzleScores = CK.puzzlesPro ? await CK.puzzlesPro.getScores() : [];
+    const myPuzzles = puzzleScores.filter(s => s.studentId === userId);
+    const puzzlesSolved = myPuzzles.length;
+
+    // Fetch average opening mastery
+    let avgMastery = 0;
+    if (CK.openingTrainer && CK.openingTrainer.getMasteryPct) {
+      try {
+        let totalMastery = 0;
+        const openings = ['italian','sicilian','french','caro_kann','queens_gambit','kings_indian','ruy_lopez','london','scotch','nimzo_indian','english','dutch'];
+        for (const op of openings) {
+          totalMastery += await CK.openingTrainer.getMasteryPct(userId, op);
+        }
+        avgMastery = totalMastery / openings.length;
+      } catch (e) {}
+    }
+
+    // --- External Metrics ---
+    let lichessRapid = 0, chesscomRapid = 0;
+    if (CK.linkedAccounts) {
+      if (p.lichess_username) {
+        const liStats = await CK.linkedAccounts.fetchLichess(p.lichess_username);
+        if (liStats) lichessRapid = liStats.rapid;
+      }
+      if (p.chesscom_username) {
+        const ccStats = await CK.linkedAccounts.fetchChesscom(p.chesscom_username);
+        if (ccStats) chesscomRapid = ccStats.rapid;
+      }
+    }
+
+    // --- ALGORITHM: Predicted ELO ---
+    let baseElo = p.rating || 1200;
+    let externalElo = 0;
+    let extWeight = 0;
+
+    if (lichessRapid > 0) { externalElo += lichessRapid; extWeight++; }
+    if (chesscomRapid > 0) { externalElo += chesscomRapid; extWeight++; }
+
+    if (extWeight > 0) {
+      externalElo = externalElo / extWeight;
+      const normalizedExternal = Math.max(800, externalElo - 100);
+      baseElo = Math.round((baseElo * 0.4) + (normalizedExternal * 0.6));
+    }
+
+    const puzzleBonus = Math.min(100, puzzlesSolved * 1.5);
+    const accBonus = (gameStats.avgAccuracy - 70) * 3;
+    const winBonus = (gameStats.winRate - 50) * 2;
+    const masteryBonus = (avgMastery - 20) * 1.5;
+
+    let predictedElo = Math.round(baseElo + puzzleBonus + accBonus + winBonus + masteryBonus);
+    if (predictedElo < 400) predictedElo = 400;
+
+    // Save auto-updated ELO
+    if (Math.abs(predictedElo - (p.rating || 1200)) > 20 && p.id) {
+       await CK.db.updateProfile(p.id, { rating: predictedElo });
+       p.rating = predictedElo;
+    }
+
     const rc = p.report_card || {
-      opening: 84,
-      middlegame: 76,
-      tactics: 88,
-      endgame: 62,
-      time: 71,
-      sports: 95,
-      remarks: "Excellent concentration and tactical calculation. Shows great promise when navigating complex middlegame positions. Focus on active rook placements in pawn endgames.",
-      goals: ["Participate in State Level Rapid U-14", "Master Lucena and Philidor Rook Endgames", "Maintain blunder rate under 3% in tournaments"]
+      opening: Math.round(Math.max(40, Math.min(99, 50 + masteryBonus))),
+      middlegame: aiScores.pawn_struct || 76,
+      tactics: aiScores.tactics || 88,
+      endgame: aiScores.endgame || 62,
+      'time': aiScores.time_mgmt || 71,
+      sports: aiScores.king_safety || 95,
+      remarks: remarks,
+      goals: goals
     };
 
     const getGrade = (mark) => {
@@ -1764,116 +1877,138 @@ CK.student = {
     const elBody = document.querySelector('#student-panel-report .p-card-body');
     if (elBody) {
       elBody.innerHTML = `
-        <div class="report-card-wrapper" id="printableReportCard">
-          <!-- Crest Header -->
-          <div class="rc-crest">
-            <div class="rc-crest-icon">♔</div>
-            <h1 class="rc-title">ChessKidoo Academy</h1>
-            <div class="rc-subtitle">Official Student Performance Report</div>
-          </div>
+        <div class="report-card-modern" id="printableReportCard" style="background: var(--p-surface); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); padding: 40px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); max-width: 900px; margin: 0 auto; overflow: hidden; position: relative;">
+          <!-- Decorative Background Gradients -->
+          <div style="position:absolute; top:-100px; left:-100px; width:300px; height:300px; background:radial-gradient(circle, rgba(0,201,167,0.15) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
+          <div style="position:absolute; bottom:-100px; right:-100px; width:300px; height:300px; background:radial-gradient(circle, rgba(232,184,75,0.1) 0%, transparent 70%); border-radius:50%; pointer-events:none;"></div>
 
-          <!-- Student Profile Block -->
-          <div class="rc-student-block">
-            <div class="rc-student-info">
-               <div class="rc-info-item">
-                 <span class="rc-info-label">Student Name</span>
-                 <span class="rc-info-val">${_e(p.full_name || '—')}</span>
-               </div>
-               <div class="rc-info-item">
-                 <span class="rc-info-label">Current Level</span>
-                 <span class="rc-info-val">${_e(p.level || 'Intermediate')}</span>
-               </div>
-               <div class="rc-info-item">
-                 <span class="rc-info-label">Assigned Coach</span>
-                 <span class="rc-info-val">${_e(p.coach || '—')}</span>
-               </div>
-              <div class="rc-info-item">
-                <span class="rc-info-label">Academic Term</span>
-                <span class="rc-info-val">Summer Term 2026</span>
+          <!-- Header Section -->
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 40px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 20px;">
+            <div style="display:flex; align-items:center; gap: 20px;">
+              <div style="width: 70px; height: 70px; border-radius: 16px; background: linear-gradient(135deg, var(--p-gold), #d97706); display:flex; align-items:center; justify-content:center; font-size: 2.5rem; box-shadow: 0 8px 16px rgba(232,184,75,0.3);"></div>
+              <div>
+                <h1 style="margin:0; font-size:2rem; font-family:var(--font-display); color:#fff; letter-spacing:-0.5px;">Performance Analytics</h1>
+                <div style="color:var(--p-text-muted); font-size: 0.95rem;">ChessKidoo Official Academic Report</div>
               </div>
             </div>
-            <div class="rc-rating-badge">
-              <div class="rc-rating-val">${p.rating || 1120}</div>
-              <div class="rc-rating-label">FIDE / ELO Rating</div>
+            <div style="text-align:right;">
+              <div style="font-size:0.8rem; color:var(--p-text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Term</div>
+              <div style="font-weight:700; color:var(--p-teal); font-size:1.1rem; background: rgba(0,201,167,0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0,201,167,0.3);">Summer 2026</div>
             </div>
           </div>
 
-          <!-- Subject-Wise Assessment -->
-          <div class="rc-section-title">Subject-Wise Assessment</div>
-          <table class="rc-table">
-            <thead>
-              <tr>
-                <th>Curriculum Subject</th>
-                <th>Proficiency Mini-Bar</th>
-                <th>Score</th>
-                <th>Grade</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Opening Theory & Repertoire</td>
-                <td><div class="rc-bar-wrap"><div class="rc-bar-fill" style="width:${rc.opening}%"></div></div></td>
-                <td>${rc.opening}/100</td>
-                <td class="rc-grade">${getGrade(rc.opening)}</td>
-              </tr>
-              <tr>
-                <td>Middlegame Strategy & Planning</td>
-                <td><div class="rc-bar-wrap"><div class="rc-bar-fill" style="width:${rc.middlegame}%"></div></div></td>
-                <td>${rc.middlegame}/100</td>
-                <td class="rc-grade">${getGrade(rc.middlegame)}</td>
-              </tr>
-              <tr>
-                <td>Tactical Awareness & Calculation</td>
-                <td><div class="rc-bar-wrap"><div class="rc-bar-fill" style="width:${rc.tactics}%"></div></div></td>
-                <td>${rc.tactics}/100</td>
-                <td class="rc-grade">${getGrade(rc.tactics)}</td>
-              </tr>
-              <tr>
-                <td>Endgame Technique & Precision</td>
-                <td><div class="rc-bar-wrap"><div class="rc-bar-fill" style="width:${rc.endgame}%"></div></div></td>
-                <td>${rc.endgame}/100</td>
-                <td class="rc-grade">${getGrade(rc.endgame)}</td>
-              </tr>
-              <tr>
-                <td>Time Management & Board Control</td>
-                <td><div class="rc-bar-wrap"><div class="rc-bar-fill" style="width:${rc.time}%"></div></div></td>
-                <td>${rc.time}/100</td>
-                <td class="rc-grade">${getGrade(rc.time)}</td>
-              </tr>
-              <tr>
-                <td>Sportsmanship & Tournament Etiquette</td>
-                <td><div class="rc-bar-wrap"><div class="rc-bar-fill" style="width:${rc.sports}%"></div></div></td>
-                <td>${rc.sports}/100</td>
-                <td class="rc-grade">${getGrade(rc.sports)}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <!-- Coach's Remarks -->
-          <div class="rc-section-title">Coach's Diagnostic Remarks</div>
-          <div class="rc-remarks-box">
-            <div class="rc-remarks-content">"${_e(rc.remarks || '')}"</div>
-          </div>
-
-          <!-- Next Term Goals -->
-          <div class="rc-section-title">Goals for Next Term</div>
-          <div class="rc-goals-grid">
-            ${rc.goals.map(g => `<div class="rc-goal-item"><span class="rc-goal-check">✓</span><span>${_e(g)}</span></div>`).join('')}
-          </div>
-
-          <!-- Signatures -->
-          <div class="rc-signatures">
-            <div class="rc-sig-box">
-              <div class="rc-sig-line">${_e(p.coach || '—')}</div>
-              <div class="rc-sig-title">Master Coach Signature</div>
+          <!-- Student Meta Profile -->
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px;">
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; display:flex; align-items:center; gap: 16px;">
+              <div style="width:50px; height:50px; border-radius:50%; background:var(--p-surface2); display:flex; align-items:center; justify-content:center; font-size:1.5rem;"></div>
+              <div>
+                <div style="font-size:0.75rem; color:var(--p-text-muted); text-transform:uppercase; letter-spacing:1px;">Athlete</div>
+                <div style="font-size:1.1rem; font-weight:700; color:#fff;">${_e(p.full_name || '')}</div>
+              </div>
             </div>
-            <div class="rc-sig-box">
-              <div class="rc-sig-line">Rathanavel (IM)</div>
-              <div class="rc-sig-title">Academy Director</div>
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; display:flex; align-items:center; gap: 16px;">
+              <div style="width:50px; height:50px; border-radius:50%; background:var(--p-surface2); display:flex; align-items:center; justify-content:center; font-size:1.5rem;"></div>
+              <div>
+                <div style="font-size:0.75rem; color:var(--p-text-muted); text-transform:uppercase; letter-spacing:1px;">Division</div>
+                <div style="font-size:1.1rem; font-weight:700; color:var(--p-blue);">${_e(p.level || 'Intermediate')}</div>
+              </div>
+            </div>
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; display:flex; align-items:center; gap: 16px;">
+              <div style="width:50px; height:50px; border-radius:50%; background:var(--p-surface2); display:flex; align-items:center; justify-content:center; font-size:1.5rem;"></div>
+              <div>
+                <div style="font-size:0.75rem; color:var(--p-text-muted); text-transform:uppercase; letter-spacing:1px;">Peak Rating</div>
+                <div style="font-size:1.4rem; font-weight:900; color:var(--p-gold); font-family:monospace;">${p.rating || 1120}</div>
+              </div>
             </div>
           </div>
+
+          <!-- Subject Analytics Grids -->
+          <div style="margin-bottom: 20px;">
+            <h3 style="font-size: 1.2rem; color: #fff; margin-bottom: 20px; font-weight: 600; display:flex; align-items:center; gap:8px;">
+              <span style="color:var(--p-gold);"></span> Core Competencies
+            </h3>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+              ${[
+                {name: 'Opening Repertoire', score: rc.opening, icon: ''},
+                {name: 'Middlegame Strategy', score: rc.middlegame, icon: ''},
+                {name: 'Tactical Vision', score: rc.tactics, icon: ''},
+                {name: 'Endgame Technique', score: rc.endgame, icon: ''},
+                {name: 'Time Management', score: rc.time, icon: ''},
+                {name: 'Sportsmanship & Ethics', score: rc.sports, icon: ''}
+              ].map(s => `
+                <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.04); padding: 16px; border-radius: 12px; display:flex; align-items:center; gap: 16px; transition: transform 0.2s;">
+                  <div style="position:relative; width: 60px; height: 60px;">
+                    <svg viewBox="0 0 36 36" style="width:60px; height:60px; transform: rotate(-90deg);">
+                      <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="3" />
+                      <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="${s.score >= 80 ? 'var(--p-teal)' : s.score >= 60 ? 'var(--p-gold)' : 'var(--p-danger)'}" stroke-width="3" stroke-dasharray="${s.score}, 100" />
+                    </svg>
+                    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">${s.icon}</div>
+                  </div>
+                  <div style="flex:1;">
+                    <div style="font-size:0.9rem; font-weight:600; color:#e2e8f0; margin-bottom:4px;">${s.name}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                      <div style="font-size:0.75rem; color:var(--p-text-muted);">Grade: <strong style="color:#fff;">${getGrade(s.score)}</strong></div>
+                      <div style="font-size:1.1rem; font-weight:800; color:${s.score >= 80 ? 'var(--p-teal)' : s.score >= 60 ? 'var(--p-gold)' : 'var(--p-danger)'}; font-family:monospace;">${s.score}%</div>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Coach Feedback -->
+          <div style="background: linear-gradient(180deg, rgba(30,41,59,0.5) 0%, rgba(15,23,42,0.8) 100%); border: 1px solid rgba(255,255,255,0.05); padding: 30px; border-radius: 16px; margin-top: 30px;">
+            <div style="display:flex; gap: 30px; flex-wrap: wrap;">
+              <div style="flex:2; min-width:300px;">
+                <h3 style="font-size: 1.1rem; color: #fff; margin-bottom: 12px; display:flex; align-items:center; gap:8px;"><span style="color:var(--p-blue);"></span> Coach's Assessment</h3>
+                <p style="color: var(--p-text); font-size: 0.95rem; line-height: 1.7; font-style: italic; opacity: 0.9; margin: 0;">"${rc.remarks}"</p>
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                  <div style="font-size: 0.8rem; color: var(--p-text-muted); margin-bottom: 10px; text-transform:uppercase; letter-spacing:1px;">Action Plan / Objectives</div>
+                  <ul style="margin:0; padding-left: 20px; color: var(--p-text); font-size: 0.9rem; line-height: 1.6;">
+                    ${rc.goals.map(g => `<li style="margin-bottom:6px;">${g}</li>`).join('')}
+                  </ul>
+                </div>
+              </div>
+              <div style="flex:1; min-width: 250px; display:flex; flex-direction:column; justify-content:center; align-items:center; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px;">
+                 <div style="font-size: 0.8rem; color: var(--p-text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Authorized Signature</div>
+                 <div style="font-family: 'Brush Script MT', cursive, sans-serif; font-size: 2rem; color: #fff; transform: rotate(-2deg); margin-bottom:10px; opacity: 0.8;">${_e(p.coach || 'CK Admin')}</div>
+                 <div style="font-size: 0.75rem; color: var(--p-text-muted);">Lead Instructor, ChessKidoo</div>
+                 <div style="margin-top: 15px; width: 60px; height: 60px; border: 2px dashed rgba(255,255,255,0.1); border-radius: 50%; display:flex; align-items:center; justify-content:center; opacity:0.3;">
+                   <span style="font-size:0.6rem; letter-spacing:1px;">SEAL</span>
+                 </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       `;
+    }
+  },
+
+  async exportReportCardToPDF() {
+    const el = document.getElementById('printableReportCard');
+    if (!el) return;
+
+    if (!window.html2canvas || !window.jspdf) {
+      CK.showToast('PDF export libraries are still loading. Please wait a moment...', 'warning');
+      return;
+    }
+
+    CK.showToast('Generating PDF report card...', 'info');
+    try {
+      const canvas = await window.html2canvas(el, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL('image/png');
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
+      pdf.save(`ChessKidoo_ReportCard_${this.userProfile?.full_name || 'Student'}.pdf`);
+      CK.showToast('PDF exported successfully!', 'success');
+    } catch (err) {
+      CK.showToast('Failed to export PDF.', 'error');
     }
   },
 
@@ -1885,7 +2020,7 @@ CK.student = {
     const total = tuition + gst;
     const isPaid = status === 'Paid';
 
-    const fmt = n => '₹' + n.toLocaleString('en-IN');
+    const fmt = n => '' + n.toLocaleString('en-IN');
 
     // Populate order summary
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
@@ -1901,13 +2036,13 @@ CK.student = {
     const cfg = window.APP_CONFIG || {};
     const upiId = cfg.ACADEMY_UPI_ID || 'saminathanranjith73@okaxis';
     const upiName = cfg.ACADEMY_UPI_NAME || 'Ranjith A S';
-    
+
     const upiIdEl = document.getElementById('payUpiIdPreview');
     if (upiIdEl) upiIdEl.textContent = upiId;
 
     const badge = document.getElementById('payStatusBadge');
     if (badge) {
-      badge.textContent = isPaid ? '✅ Paid' : '⚡ Pending';
+      badge.textContent = isPaid ? ' Paid' : ' Pending';
       badge.className = 'pay-status-badge ' + (isPaid ? 'paid' : 'pending');
     }
 
@@ -1923,7 +2058,7 @@ CK.student = {
           box.dataset.filled = '1';
           const _e = CK.esc || (s => s);
           box.innerHTML = `
-            <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Txn ID</span><span>${_e(p.last_txn_id || 'CK_TXN_—')}</span></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Txn ID</span><span>${_e(p.last_txn_id || 'CK_TXN_')}</span></div>
             <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Amount</span><span>${fmt(total)}</span></div>
             <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>Date</span><span>${_e(p.paid_date || new Date().toLocaleDateString('en-GB'))}</span></div>
             <div style="display:flex;justify-content:space-between;"><span>Method</span><span>${_e(p.pay_method || 'Razorpay')}</span></div>
@@ -1937,7 +2072,7 @@ CK.student = {
       // Setup UPI details dynamically
       const note = encodeURIComponent('ChessKidoo Fee - ' + (p.full_name || 'Student'));
       const enc = s => encodeURIComponent(s);
-      
+
       this._upiPaymentTotal = total;
       this._upiLinks = {
         upi:     `upi://pay?pa=${enc(upiId)}&pn=${enc(upiName)}&am=${total}&cu=INR&tn=${note}`,
@@ -1954,21 +2089,8 @@ CK.student = {
         const qrEl = document.getElementById('studentUpiQrCode');
         if (qrEl) {
           qrEl.innerHTML = '';
-          if (window.QRCode) {
-            try {
-              new window.QRCode(qrEl, {
-                text: this._upiLinks.upi,
-                width: 176,
-                height: 176,
-                colorDark: '#1a1a2e',
-                colorLight: '#ffffff',
-                correctLevel: window.QRCode.CorrectLevel.H
-              });
-            } catch (e) {
-              console.error('[ChessKidoo] Student QR generation failed:', e);
-              qrEl.innerHTML = '<div style="color:#94a3b8;font-size:0.75rem;padding:12px;text-align:center;">QR unavailable<br>Use app buttons below</div>';
-            }
-          }
+          const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(this._upiLinks.upi);
+          qrEl.innerHTML = `<img src="${qrUrl}" alt="Scan to Pay" style="width:100%; height:100%; object-fit:contain; border-radius:8px;" onerror="this.outerHTML='<div style=\\\'color:#94a3b8;font-size:0.75rem;padding:12px;text-align:center;\\\'>QR unavailable<br>Use app buttons below</div>'"/>`;
         }
       }, 50);
 
@@ -1996,7 +2118,7 @@ CK.student = {
     // Deprecated for inline checkout
   },
 
-  // ── UPI PAYMENT FLOW ──────────────────────────────────────────────
+  //  UPI PAYMENT FLOW
 
   openUpiApp(app) {
     const links = this._upiLinks || {};
@@ -2024,7 +2146,7 @@ CK.student = {
     const utr   = utrEl ? utrEl.value.trim() : '';
 
     if (!utr || utr.length < 8 || utr.length > 30 || !/^[A-Z0-9]+$/i.test(utr)) {
-      CK.showToast('Please enter a valid UTR / Transaction ID (8–30 alphanumeric characters).', 'warning');
+      CK.showToast('Please enter a valid UTR / Transaction ID (830 alphanumeric characters).', 'warning');
       return;
     }
 
@@ -2033,7 +2155,7 @@ CK.student = {
     if (confirmBtn) {
       confirmBtn.disabled = true;
       textSpan = confirmBtn.querySelector('.pay-btn-text');
-      if (textSpan) textSpan.textContent = 'Verifying…';
+      if (textSpan) textSpan.textContent = 'Verifying';
     }
 
     try {
@@ -2053,9 +2175,7 @@ CK.student = {
       // Send emails
       try {
         await this.sendPaymentEmails(p, utr, total);
-      } catch (emailErr) {
-        console.warn('[ChessKidoo] Email send failed:', emailErr);
-      }
+      } catch (emailErr) { }
 
       CK.showToast('Payment confirmed! Receipt sent to your email.', 'success');
       this.renderFeesGateway();
@@ -2063,7 +2183,6 @@ CK.student = {
         CK.admin.loadStudents();
       }
     } catch (e) {
-      console.error('[ChessKidoo] UTR submission error:', e);
       CK.showToast('Payment recorded. Please contact admin if receipt is not received.', 'warning');
       this.renderFeesGateway();
     } finally {
@@ -2080,10 +2199,10 @@ CK.student = {
     const templateId = cfg.EMAILJS_TEMPLATE || 'template_3lumv9c';
     const publicKey  = cfg.EMAILJS_KEY      || '1EuHvvzi2H9RnaBF6';
 
-    if (!window.emailjs) { console.warn('[ChessKidoo] EmailJS not loaded'); return; }
+    if (!window.emailjs) { return; }
     window.emailjs.init({ publicKey: publicKey });
 
-    const fmt    = n => '₹' + n.toLocaleString('en-IN');
+    const fmt    = n => '' + n.toLocaleString('en-IN');
     const dateStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
     const base = {
@@ -2103,7 +2222,7 @@ CK.student = {
         ...base,
         to_email: p.email,
         to_name:  p.full_name || 'Student',
-        subject:  'ChessKidoo Payment Receipt — ' + utr
+        subject:  'ChessKidoo Payment Receipt  ' + utr
       });
     }
 
@@ -2112,7 +2231,7 @@ CK.student = {
       ...base,
       to_email: cfg.ACADEMY_EMAIL || 'Chesskidoo37@gmail.com',
       to_name:  'ChessKidoo Admin',
-      subject:  'New Payment — ' + (p ? (p.full_name || 'Student') : 'Student') + ' — ' + utr
+      subject:  'New Payment  ' + (p ? (p.full_name || 'Student') : 'Student') + '  ' + utr
     });
   },
 
@@ -2286,7 +2405,7 @@ CK.student = {
             <div class="r-header">
               <div class="r-title-brand">CHESSKIDOO ACADEMY</div>
               <div class="r-slogan">Building Champions, One Move at a Time</div>
-              <div class="r-contact"><span>📞 +91 88257 31470</span><span>✉️ Chesskidoo37@gmail.com</span></div>
+              <div class="r-contact"><span> +91 88257 31470</span><span> Chesskidoo37@gmail.com</span></div>
             </div>
             <div class="r-subhead">OFFICIAL RECEIPT</div>
             <div class="r-meta">
@@ -2295,7 +2414,7 @@ CK.student = {
             </div>
             <div class="r-body">
               <div class="watermark">PAID</div>
-              
+
               <div class="sec-title">STUDENT DETAILS</div>
               <table class="r-table">
                 <tr><td class="lbl">Name</td><td class="val">${name}</td></tr>
@@ -2306,21 +2425,21 @@ CK.student = {
 
               <div class="sec-title">PAYMENT DETAILS</div>
               <table class="r-table">
-                <tr><td class="lbl">Tuition Fee</td><td class="val">₹ ${feeAmount.toLocaleString()}</td></tr>
+                <tr><td class="lbl">Tuition Fee</td><td class="val"> ${feeAmount.toLocaleString()}</td></tr>
                 <tr><td class="lbl">Payment Mode</td><td class="val">Online</td></tr>
-                <tr><td class="lbl">Status</td><td class="val" style="color:#16a34a;">✓ SUCCESS</td></tr>
+                <tr><td class="lbl">Status</td><td class="val" style="color:#16a34a;"> SUCCESS</td></tr>
               </table>
 
               <div class="total-box">
                 <div class="total-lbl">Total Amount Paid</div>
-                <div class="total-val">₹ ${feeAmount.toLocaleString()}</div>
+                <div class="total-val"> ${feeAmount.toLocaleString()}</div>
               </div>
               <div class="words">${words}</div>
             </div>
             <div class="r-footer">
               <p style="margin:0 0 5px 0;">This is a computer-generated receipt. No signature required.</p>
               <p style="margin:0 0 15px 0;">For queries, contact Chesskidoo37@gmail.com</p>
-              <div style="font-family:'Cinzel',serif; font-weight:700; color:#b4831f; font-size:1.1rem; font-style:italic;">♟ Thank you for your patronage! ♟</div>
+              <div style="font-family:'Cinzel',serif; font-weight:700; color:#b4831f; font-size:1.1rem; font-style:italic;"> Thank you for your patronage! </div>
             </div>
           </div>
           <script>
@@ -2342,7 +2461,7 @@ CK.student = {
         return;
       }
     }
-    
+
     // Fallback to static mock certificate window
     const certWindow = window.open("", "_blank");
     if (!certWindow) { CK.showToast('Please allow popups to view the certificate.', 'warning'); return; }
@@ -2364,7 +2483,7 @@ CK.student = {
         </head>
         <body>
           <div class="cert-border">
-            <h1>♛ ChessKidoo Academy ♛</h1>
+            <h1> ChessKidoo Academy </h1>
             <h2>Certificate of Excellence</h2>
             <p>This is proudly presented to</p>
             <div class="name">${_eCert(this.userProfile.full_name)}</div>
@@ -2372,7 +2491,7 @@ CK.student = {
             <p style="color:#94a3b8; font-size:0.9rem;">Issued on ${new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' })}</p>
             <div class="signatures">
               <div>
-                <div class="sig">${_eCert(this.userProfile.coach || '—')}</div>
+                <div class="sig">${_eCert(this.userProfile.coach || '')}</div>
                 <div style="font-size:0.8rem; margin-top:5px; opacity:0.6;">Assigned Coach</div>
               </div>
               <div>
@@ -2381,7 +2500,7 @@ CK.student = {
               </div>
             </div>
           </div>
-          <button onclick="window.print()" style="margin-top: 30px; background: #e8b84b; color: #000; border: none; padding: 12px 24px; font-weight: bold; border-radius: 8px; cursor: pointer;">🖨️ Print Certificate</button>
+          <button onclick="window.print()" style="margin-top: 30px; background: #e8b84b; color: #000; border: none; padding: 12px 24px; font-weight: bold; border-radius: 8px; cursor: pointer;"> Print Certificate</button>
         </body>
       </html>
     `);
@@ -2392,15 +2511,22 @@ CK.student = {
     const container = document.getElementById('student-panel-tournaments');
     if (!container) return;
 
-    // We can inject a basic container and then call T.renderTournamentList
     container.innerHTML = `
       <div class="p-card" style="margin-bottom:20px;">
-        <h2>🏆 Academy Tournaments</h2>
-        <p style="opacity:0.7;">Join active tournaments, compete with peers, and climb the leaderboard!</p>
+        <div class="p-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div class="p-card-title"> ChessKidoo Tournament Radar</div>
+            <p style="opacity:0.7; font-size:12px; margin:4px 0 0 0;">Auto-syncing FIDE, State, and District Chess events with Lichess & Chess.com integration.</p>
+          </div>
+        </div>
+        <div class="p-card-body" id="studentTournamentRadarContainer" style="padding:16px;">
+          <div style="opacity:0.5; padding:20px; text-align:center;"> Activating location telemetry, please wait...</div>
+        </div>
       </div>
-      <div id="studentTournamentContainer"></div>
     `;
-    await CK.tournament.renderTournamentList('studentTournamentContainer');
+    await CK.tournament.loadTournaments();
+    try { window.tournamentInterestsData = await CK.db.getTournamentInterests(); } catch(e) { window.tournamentInterestsData = []; }
+    CK.tournament.renderTournamentFinderUI(document.getElementById('studentTournamentRadarContainer'), true);
   },
 
   async renderLinkedAccounts() {
@@ -2413,10 +2539,10 @@ CK.student = {
       <div class="p-card" style="border-color:rgba(91,156,246,0.3);margin-bottom:20px;">
         <div class="p-card-header">
           <div>
-            <div class="p-card-title">🔗 Lichess Account</div>
+            <div class="p-card-title"> Lichess Account</div>
             <div style="font-size:0.83rem;color:var(--p-text-muted);">Import your ratings and recent games from Lichess.org</div>
           </div>
-          ${p.lichess_username ? `<span style="background:rgba(91,156,246,0.15);color:var(--p-blue);padding:4px 12px;border-radius:20px;font-size:0.82rem;font-weight:600;">✓ Linked</span>` : ''}
+          ${p.lichess_username ? `<span style="background:rgba(91,156,246,0.15);color:var(--p-blue);padding:4px 12px;border-radius:20px;font-size:0.82rem;font-weight:600;"> Linked</span>` : ''}
         </div>
         <div class="p-card-body" style="padding:20px 25px;">
           ${p.lichess_username ? `
@@ -2443,8 +2569,8 @@ CK.student = {
               </div>` : ''}
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
-              <button class="btn-primary" data-uname="${_e(p.lichess_username)}" onclick="CK.student.linkLichess(this.dataset.uname)">↻ Refresh</button>
-              <button class="btn-secondary" data-uname="${_e(p.lichess_username)}" onclick="CK.gameTracker&&CK.gameTracker.importFromLichess(CK.currentUser?.id,this.dataset.uname)">📥 Import Recent Games</button>
+              <button class="btn-primary" data-uname="${_e(p.lichess_username)}" onclick="CK.student.linkLichess(this.dataset.uname)"> Refresh</button>
+              <button class="btn-secondary" data-uname="${_e(p.lichess_username)}" onclick="CK.gameTracker&&CK.gameTracker.importFromLichess(CK.currentUser?.id,this.dataset.uname)"> Import Recent Games</button>
             </div>
           ` : `
             <p style="color:var(--p-text-muted);margin-bottom:16px;">Link your Lichess account to automatically sync your rating and import games.</p>
@@ -2453,7 +2579,39 @@ CK.student = {
                 <label style="font-size:0.82rem;color:var(--p-text-muted);display:block;margin-bottom:6px;">Lichess Username</label>
                 <input id="lichessUsernameInput" type="text" placeholder="e.g. Magnus2024" style="width:100%;background:var(--p-bg-card);border:1px solid var(--p-border);color:var(--p-text);border-radius:8px;padding:9px 12px;font-size:0.92rem;box-sizing:border-box;" />
               </div>
-              <button class="btn-primary" onclick="CK.student.linkLichess(document.getElementById('lichessUsernameInput').value.trim())">🔗 Link Account</button>
+              <button class="btn-primary" onclick="CK.student.linkLichess(document.getElementById('lichessUsernameInput').value.trim())"> Link Lichess</button>
+            </div>
+          `}
+        </div>
+      </div>
+
+      <div class="p-card" style="border-color:rgba(118,150,86,0.3);margin-bottom:20px;">
+        <div class="p-card-header">
+          <div>
+            <div class="p-card-title" style="color:#769656;"> Chess.com Account</div>
+            <div style="font-size:0.83rem;color:var(--p-text-muted);">Import your ratings from Chess.com</div>
+          </div>
+          ${p.chesscom_username ? `<span style="background:rgba(118,150,86,0.15);color:#769656;padding:4px 12px;border-radius:20px;font-size:0.82rem;font-weight:600;"> Linked</span>` : ''}
+        </div>
+        <div class="p-card-body" style="padding:20px 25px;">
+          ${p.chesscom_username ? `
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px;flex-wrap:wrap;">
+              <div style="background:rgba(118,150,86,0.08);border-radius:10px;padding:12px 18px;">
+                <div style="font-size:0.78rem;color:var(--p-text-muted);margin-bottom:4px;">Username</div>
+                <div style="font-weight:700;color:#769656;">${_e(p.chesscom_username)}</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn-primary" style="background:#769656;border:none;" data-uname="${_e(p.chesscom_username)}" onclick="CK.student.linkChesscom(this.dataset.uname)"> Refresh</button>
+            </div>
+          ` : `
+            <p style="color:var(--p-text-muted);margin-bottom:16px;">Link your Chess.com account to sync your ratings.</p>
+            <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+              <div style="flex:1;min-width:200px;">
+                <label style="font-size:0.82rem;color:var(--p-text-muted);display:block;margin-bottom:6px;">Chess.com Username</label>
+                <input id="chesscomUsernameInput" type="text" placeholder="e.g. Hikaru" style="width:100%;background:var(--p-bg-card);border:1px solid var(--p-border);color:var(--p-text);border-radius:8px;padding:9px 12px;font-size:0.92rem;box-sizing:border-box;" />
+              </div>
+              <button class="btn-primary" style="background:#769656;border:none;" onclick="CK.student.linkChesscom(document.getElementById('chesscomUsernameInput').value.trim())"> Link Chess.com</button>
             </div>
           `}
         </div>
@@ -2462,10 +2620,10 @@ CK.student = {
       <div class="p-card" style="border-color:rgba(232,184,75,0.3);">
         <div class="p-card-header">
           <div>
-            <div class="p-card-title">🏅 FIDE Profile</div>
+            <div class="p-card-title"> FIDE Profile</div>
             <div style="font-size:0.83rem;color:var(--p-text-muted);">Link your official FIDE ID to display your international rating</div>
           </div>
-          ${p.fide_id ? `<span style="background:rgba(232,184,75,0.15);color:var(--p-gold);padding:4px 12px;border-radius:20px;font-size:0.82rem;font-weight:600;">✓ Linked</span>` : ''}
+          ${p.fide_id ? `<span style="background:rgba(232,184,75,0.15);color:var(--p-gold);padding:4px 12px;border-radius:20px;font-size:0.82rem;font-weight:600;"> Linked</span>` : ''}
         </div>
         <div class="p-card-body" style="padding:20px 25px;">
           ${p.fide_id ? `
@@ -2496,8 +2654,8 @@ CK.student = {
               </div>` : ''}
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
-              <button class="btn-secondary" data-fide="${_e(String(p.fide_id))}" onclick="CK.student.linkFide(this.dataset.fide)">↻ Refresh</button>
-              <a href="https://ratings.fide.com/profile/${_e(String(p.fide_id))}" target="_blank" rel="noopener" class="btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;">🏅 View on FIDE ↗</a>
+              <button class="btn-secondary" data-fide="${_e(String(p.fide_id))}" onclick="CK.student.linkFide(this.dataset.fide)"> Refresh</button>
+              <a href="https://ratings.fide.com/profile/${_e(String(p.fide_id))}" target="_blank" rel="noopener" class="btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;gap:5px;"> View on FIDE </a>
             </div>
           ` : `
             <p style="color:var(--p-text-muted);margin-bottom:16px;">Enter your FIDE ID to display your official international rating. Find it at <strong style="color:var(--p-gold);">ratings.fide.com</strong>.</p>
@@ -2506,7 +2664,7 @@ CK.student = {
                 <label style="font-size:0.82rem;color:var(--p-text-muted);display:block;margin-bottom:6px;">FIDE ID</label>
                 <input id="fideIdInput" type="text" placeholder="e.g. 35027789" style="width:100%;background:var(--p-bg-card);border:1px solid var(--p-border);color:var(--p-text);border-radius:8px;padding:9px 12px;font-size:0.92rem;box-sizing:border-box;" />
               </div>
-              <button class="btn-primary" onclick="CK.student.linkFide(document.getElementById('fideIdInput').value.trim())" style="background:var(--p-gold);color:#000;">🏅 Link FIDE</button>
+              <button class="btn-primary" onclick="CK.student.linkFide(document.getElementById('fideIdInput').value.trim())" style="background:var(--p-gold);color:#000;"> Link FIDE</button>
             </div>
           `}
         </div>
@@ -2514,7 +2672,7 @@ CK.student = {
     `;
   },
 
-  /* ── Auto-sync Lichess data on login (background, no toast spam) ── */
+  /*  Auto-sync Lichess data on login (background, no toast spam)  */
   async _autoSyncLichess() {
     const p = this.userProfile;
     if (!p?.lichess_username || !navigator.onLine) return;
@@ -2556,7 +2714,7 @@ CK.student = {
 
       localStorage.setItem(syncKey, String(Date.now()));
     } catch(e) {
-      // Silent fail — this is a background sync
+      // Silent fail  this is a background sync
     }
   },
 
@@ -2566,7 +2724,7 @@ CK.student = {
       CK.showToast('Invalid Lichess username format.', 'error');
       return;
     }
-    CK.showToast('Fetching Lichess profile…', 'info');
+    CK.showToast('Fetching Lichess profile', 'info');
     try {
       const res = await fetch(`https://lichess.org/api/user/${encodeURIComponent(username)}`);
       if (!res.ok) {
@@ -2592,11 +2750,10 @@ CK.student = {
       const merged = { ...this.userProfile, ...updates };
       await CK.db.saveProfile(merged);
       this.userProfile = merged;
-      CK.showToast(`Lichess linked: ${data.username}${rapidRating ? ' · Rapid ' + rapidRating : ''}`, 'success');
+      CK.showToast(`Lichess linked: ${data.username}${rapidRating ? '  Rapid ' + rapidRating : ''}`, 'success');
       this.renderLinkedAccounts();
       this.updateProfile();
     } catch (err) {
-      console.error('[ChessKidoo] Lichess link failed:', err);
       CK.showToast('Could not reach Lichess. Check username or try again.', 'error');
     }
   },
@@ -2608,7 +2765,7 @@ CK.student = {
       CK.showToast('FIDE ID must be a number (e.g. 35027789).', 'error');
       return;
     }
-    CK.showToast('Fetching FIDE profile…', 'info');
+    CK.showToast('Fetching FIDE profile', 'info');
     const updates = { fide_id: idStr };
 
     // Try server-side edge function first (no CORS issues)
@@ -2647,9 +2804,10 @@ CK.student = {
           if (data.name && !this.userProfile?.full_name) updates.full_name = data.name;
         }
       } catch (_) {
-        if (!updates.fide_title) CK.showToast('FIDE API unreachable — ID saved. Deploy fide-profile edge function for live data.', 'info');
+        if (!updates.fide_title) CK.showToast('FIDE API unreachable  ID saved. Deploy fide-profile edge function for live data.', 'info');
       }
     }
+
 
     const merged = { ...this.userProfile, ...updates };
     await CK.db.saveProfile(merged);
@@ -2658,7 +2816,7 @@ CK.student = {
     this.renderLinkedAccounts();
   },
 
-  /* ── Dynamic Mastery Skill Tree ── */
+  /*  Dynamic Mastery Skill Tree  */
   async renderSkillTree() {
     const container = document.getElementById('student-panel-path');
     if (!container) return;
@@ -2676,26 +2834,26 @@ CK.student = {
 
     const rc = p.report_card || {};
     const scores = analysis ? analysis.scores : {
-      opening: rc.opening || 40,
-      tactics: rc.tactics || 50,
-      endgame: rc.endgame || 30,
-      time_mgmt: rc.time || 35,
-      king_safety: 45,
-      pawn_struct: 25,
-      calculation: 30
+      opening: rc.opening || 0,
+      tactics: rc.tactics || 0,
+      endgame: rc.endgame || 0,
+      time_mgmt: rc.time || 0,
+      king_safety: 0,
+      pawn_struct: 0,
+      calculation: 0
     };
 
     const nodes = [
-      { id: 'basics',      name: 'Chess Basics',        icon: '♟', score: Math.min(100, (parseInt(p.rating) || 800) >= 800 ? 100 : 60), deps: [] },
-      { id: 'opening',     name: 'Opening Theory',      icon: '📖', score: scores.opening || 0, deps: ['basics'] },
-      { id: 'tactics',     name: 'Tactical Vision',     icon: '⚔️', score: scores.tactics || 0, deps: ['basics'] },
-      { id: 'endgame',     name: 'Endgame Technique',   icon: '♔',  score: scores.endgame || 0, deps: ['basics'] },
-      { id: 'time_mgmt',   name: 'Time Management',     icon: '⏱️', score: scores.time_mgmt || 0, deps: ['tactics'] },
-      { id: 'king_safety', name: 'King Safety',         icon: '🛡️', score: scores.king_safety || 0, deps: ['opening'] },
-      { id: 'pawn_struct', name: 'Pawn Structure',      icon: '♙',  score: scores.pawn_struct || 0, deps: ['opening', 'endgame'] },
-      { id: 'calculation', name: 'Deep Calculation',    icon: '🧠', score: scores.calculation || 0, deps: ['tactics', 'time_mgmt'] },
-      { id: 'strategy',    name: 'Positional Strategy', icon: '🎯', score: Math.round(((scores.pawn_struct || 0) + (scores.king_safety || 0)) / 2), deps: ['pawn_struct', 'king_safety'] },
-      { id: 'mastery',     name: 'Chess Mastery',       icon: '👑', score: analysis ? analysis.overall : Math.round(Object.values(scores).reduce((a,b) => a+b, 0) / Object.keys(scores).length), deps: ['strategy', 'calculation'] }
+      { id: 'basics',      name: 'Chess Basics',        icon: '', score: Math.min(100, (parseInt(p.rating) || 800) >= 800 ? 100 : 60), deps: [] },
+      { id: 'opening',     name: 'Opening Theory',      icon: '', score: scores.opening || 0, deps: ['basics'] },
+      { id: 'tactics',     name: 'Tactical Vision',     icon: '', score: scores.tactics || 0, deps: ['basics'] },
+      { id: 'endgame',     name: 'Endgame Technique',   icon: '',  score: scores.endgame || 0, deps: ['basics'] },
+      { id: 'time_mgmt',   name: 'Time Management',     icon: '', score: scores.time_mgmt || 0, deps: ['tactics'] },
+      { id: 'king_safety', name: 'King Safety',         icon: '', score: scores.king_safety || 0, deps: ['opening'] },
+      { id: 'pawn_struct', name: 'Pawn Structure',      icon: '',  score: scores.pawn_struct || 0, deps: ['opening', 'endgame'] },
+      { id: 'calculation', name: 'Deep Calculation',    icon: '', score: scores.calculation || 0, deps: ['tactics', 'time_mgmt'] },
+      { id: 'strategy',    name: 'Positional Strategy', icon: '', score: Math.round(((scores.pawn_struct || 0) + (scores.king_safety || 0)) / 2), deps: ['pawn_struct', 'king_safety'] },
+      { id: 'mastery',     name: 'Chess Mastery',       icon: '', score: analysis ? analysis.overall : Math.round(Object.values(scores).reduce((a,b) => a+b, 0) / Object.keys(scores).length), deps: ['strategy', 'calculation'] }
     ];
 
     const getStatus = (node) => {
@@ -2735,9 +2893,618 @@ CK.student = {
               <div style="height:6px;background:rgba(255,255,255,0.1);border-radius:3px;margin-bottom:6px;overflow:hidden;">
                 <div style="height:100%;width:${node.score}%;background:${st.color};border-radius:3px;"></div>
               </div>
-              <div style="font-size:0.75rem;color:${st.color};font-weight:600;">${st.label} · ${node.score}%</div>
+              <div style="font-size:0.75rem;color:${st.color};font-weight:600;">${st.label}  ${node.score}%</div>
             </div>`;
         }).join('')}
       </div>`;
   }
-};
+,
+
+  booksDb: [
+    {
+      id: 'book-opening-1',
+      title: 'Fundamental Chess Openings',
+      category: 'Opening',
+      author: 'Paul van der Sterren',
+      pages: [
+        "Welcome to Fundamental Chess Openings. Openings are the foundation of chess strategy. We will cover the main principles: control the center, develop pieces, and castle early.",
+        "The Ruy Lopez (1.e4 e5 2.Nf3 Nc6 3.Bb5) is one of the oldest and most respected openings. It challenges Black's knight on c6 and controls key central squares.",
+        "The Sicilian Defense (1.e4 c5) is the most popular response to 1.e4. It leads to sharp, asymmetrical play where Black fights for control of the d4 square.",
+        "The Queen's Gambit (1.d4 d5 2.c4) is a fight for the center where White offers a wing pawn to gain space and control. Declining it with 2...e6 or 2...c6 is standard.",
+        "To master chess openings, do not just memorize moves. Understand the plans and typical pawn structures that arise from each opening."
+      ],
+      xpReward: 30
+    },
+    {
+      id: 'book-tactics-1',
+      title: 'Chess Tactics for Beginners',
+      category: 'Tactics',
+      author: 'ChessKidoo Academy',
+      pages: [
+        "Tactics are short-term sequences of moves that result in immediate concrete gain. Forks, pins, and skewers are the basic weapons.",
+        "A fork occurs when one piece attacks two or more enemy pieces at the same time. Knights and Queens are particularly dangerous forking weapons.",
+        "A pin is when an attacked piece cannot move without exposing a more valuable piece behind it. Absolute pins (pinned to King) are completely paralyzed.",
+        "A skewer is the reverse of a pin. A valuable piece is attacked and must move, exposing a less valuable piece behind it to capture.",
+        "Always look for forcing moves: checks, captures, and threats. These are the building blocks of tactical calculations."
+      ],
+      xpReward: 30
+    },
+    {
+      id: 'book-endgame-1',
+      title: 'Essential Endgame Patterns',
+      category: 'Endgame',
+      author: 'Karsten Mller',
+      pages: [
+        "In the endgame, the King becomes an active, powerful piece. Do not hide your King; bring it to the center to assist your pawns.",
+        "King and Pawn endgames are defined by opposition. Having the opposition means forcing the enemy King to step aside.",
+        "Rook endgames are the most common and complex. The Philidor Position is a key defensive drawing technique that every player must know.",
+        "The Lucena Position is the 'bridge building' technique used by the attacker to win a rook and pawn endgame by shielding their King.",
+        "Passed pawns must be pushed! A passed pawn is a pawn that has no opposing pawns in front of it or on adjacent files."
+      ],
+      xpReward: 30
+    },
+    {
+      id: 'book-strategy-1',
+      title: 'Positional Masterclass',
+      category: 'Strategy',
+      author: 'Aron Nimzowitsch',
+      pages: [
+        "Strategy is the long-term plan in chess. It deals with pawn structures, piece placement, space, and color complex control.",
+        "Outposts are squares on the 4th, 5th, or 6th rank that cannot be attacked by enemy pawns. Knights love outposts, especially on d5 or e5.",
+        "Open files should be occupied by Rooks. The ultimate goal is to penetrate to the 7th or 8th rank to attack the enemy's base.",
+        "Weak pawns (isolated, backward, doubled) are targets. Keep pressure on them to tie down enemy pieces to passive defense.",
+        "Prophylaxis means anticipating your opponent's plans and stopping them before they can even execute them."
+      ],
+      xpReward: 35
+    },
+    {
+      id: 'book-middlegame-1',
+      title: 'The Art of Middlegame Planning',
+      category: 'Middlegame',
+      author: 'Alexander Kotov',
+      pages: [
+        "The middlegame starts when pieces are developed. A good plan is based on the weaknesses and strengths of the position.",
+        "King safety is paramount. If the opponent's King is stuck in the center, open up lines immediately by sacrificing a pawn if necessary.",
+        "Minor piece trade-offs: Bishops are stronger in open positions with pawns on both sides. Knights excel in closed, blocked positions.",
+        "Pawn storms: Pushing your pawns towards the opponent's castled King to open files for your heavy pieces.",
+        "Dynamic play vs Static advantages. A static advantage (better pawn structure) lasts long, whereas dynamic play requires speed."
+      ],
+      xpReward: 35
+    },
+    {
+      id: 'book-psychology-1',
+      title: 'Mindset of a Chess Champion',
+      category: 'Psychology',
+      author: 'ChessKidoo Mindset',
+      pages: [
+        "Chess is as much about psychology as logic. Confidence, resilience, and emotional control are critical to tournament success.",
+        "Never underestimate your opponent, but never fear them either. Treat every move with maximum focus and objectiveness.",
+        "Handling losses: Every chess master was once a beginner who lost thousands of games. Analyze your losses to learn and grow.",
+        "Time management: Avoid falling into time trouble early. Allocate time based on the complexity of the position.",
+        "Focus and endurance. Chess tournaments require hours of mental stamina. Exercise, stay hydrated, and take breaks between rounds."
+      ],
+      xpReward: 40
+    }
+  ],
+
+  videosDb: [
+    {
+      id: 'vid-sicilian',
+      title: 'How to Play the Sicilian Defense',
+      youtubeId: 'v8b_ZcLy41Q',
+      category: 'Opening',
+      channel: 'GothamChess',
+      duration: '18:24',
+      description: 'Master the basic concepts and key tactical ideas in the sharp Sicilian Defense.'
+    },
+    {
+      id: 'vid-endgames',
+      title: "Praggnanandhaa's Incredible Endgames",
+      youtubeId: 'tV91uG7WlyQ',
+      category: 'Endgame',
+      channel: 'ChessBase India',
+      duration: '15:10',
+      description: "Learn precise pawn endgame technique and King activity from Indian GM Praggnanandhaa."
+    },
+    {
+      id: 'vid-middlegame',
+      title: 'Middle Game Strategy: Pawn Chains',
+      youtubeId: 'y10z8d1b1s0',
+      category: 'Middlegame',
+      channel: 'Hanging Pawns',
+      duration: '22:45',
+      description: 'Understanding how pawn chains define plans, weaknesses, and attack directions.'
+    },
+    {
+      id: 'vid-fundamentals',
+      title: 'Endgame Fundamentals with GM Yasser Seirawan',
+      youtubeId: 's4Rj6Uq-XvY',
+      category: 'Endgame',
+      channel: 'Saint Louis Chess Club',
+      duration: '45:30',
+      description: 'GM Yasser Seirawan covers the key rules, Lucena position, Philidor position, and more.'
+    }
+  ],
+
+  _activeResourceTab: 'elibrary',
+  _elibraryCategory: 'All',
+  _activeBook: null,
+  _pdfZoom: 16,
+
+  switchResourceTab(tabId) {
+    this._activeResourceTab = tabId;
+    const btns = document.querySelectorAll('.resource-tab-btn');
+    btns.forEach(btn => {
+      const btnAttr = btn.getAttribute('onclick') || '';
+      if (btnAttr.includes(tabId)) {
+        btn.classList.add('active');
+        btn.classList.remove('p-btn-ghost');
+        btn.classList.add('p-btn-teal');
+      } else {
+        btn.classList.remove('active');
+        btn.classList.remove('p-btn-teal');
+        btn.classList.add('p-btn-ghost');
+      }
+    });
+
+    const elib = document.getElementById('studentELibrarySection');
+    const videos = document.getElementById('studentVideoAcademySection');
+    const assigns = document.getElementById('studentResourcesList');
+
+    if (elib) elib.style.display = tabId === 'elibrary' ? 'block' : 'none';
+    if (videos) videos.style.display = tabId === 'videos' ? 'block' : 'none';
+    if (assigns) assigns.style.display = tabId === 'assignments' ? 'block' : 'none';
+
+    if (tabId === 'elibrary') {
+      this.renderELibrary();
+    } else if (tabId === 'videos') {
+      this.renderVideoAcademy();
+    } else if (tabId === 'assignments') {
+      this.renderAssignedResources();
+    }
+  },
+
+  filterELibrary(category) {
+    this._elibraryCategory = category;
+    const btns = document.querySelectorAll('.elib-cat-btn');
+    btns.forEach(btn => {
+      const btnAttr = btn.getAttribute('onclick') || '';
+      if (btnAttr.includes(`'${category}'`)) {
+        btn.classList.add('active');
+        btn.classList.remove('p-btn-ghost');
+        btn.classList.add('p-btn-blue');
+      } else {
+        btn.classList.remove('active');
+        btn.classList.remove('p-btn-blue');
+        btn.classList.add('p-btn-ghost');
+      }
+    });
+    this.renderELibrary();
+  },
+
+  async renderELibrary() {
+    const grid = document.getElementById('studentELibraryGrid');
+    if (!grid) return;
+
+    const studentId = this.userProfile?.id || CK.currentUser?.id;
+    if (!studentId) return;
+
+    const progressList = await CK.db.getELibraryProgress(studentId) || [];
+    const progressMap = {};
+    progressList.forEach(p => {
+      progressMap[p.book_id] = p;
+    });
+
+    const filtered = this.booksDb.filter(b => this._elibraryCategory === 'All' || b.category === this._elibraryCategory);
+
+    grid.innerHTML = filtered.map(b => {
+      const prog = progressMap[b.id] || { last_page: 0, completed_percentage: 0 };
+      const percent = Math.min(100, Math.round(prog.completed_percentage || 0));
+      return `
+        <div class="p-resource-item" style="flex-direction:column; align-items:stretch; gap:12px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:16px; border-radius:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="p-badge p-badge-teal" style="font-size:0.75rem;"> ${b.category}</span>
+            <span class="p-badge p-badge-xp" style="font-size:0.75rem;"> +${b.xpReward} XP</span>
+          </div>
+          <div style="flex:1;">
+            <div class="p-resource-name" style="font-size:1.05rem; font-weight:700; margin:4px 0;">${b.title}</div>
+            <div style="font-size:0.8rem; color:var(--p-text-muted);">Author: ${b.author}</div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:4px;">
+              <span>Read progress</span>
+              <span>${percent}%</span>
+            </div>
+            <div style="height:6px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; margin-bottom:12px;">
+              <div style="height:100%; width:${percent}%; background:var(--p-teal); border-radius:4px;"></div>
+            </div>
+            <button class="p-btn p-btn-blue p-btn-sm" style="width:100%;" onclick="CK.student.openPDFReader('${b.id}')">Read Online</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  async openPDFReader(bookId) {
+    const book = this.booksDb.find(b => b.id === bookId);
+    if (!book) return;
+
+    this._activeBook = book;
+    this._pdfZoom = 16;
+
+    const studentId = this.userProfile?.id || CK.currentUser?.id;
+    const progressList = await CK.db.getELibraryProgress(studentId) || [];
+    const progress = progressList.find(p => p.book_id === bookId) || {
+      last_page: 1,
+      completed_percentage: 0,
+      reading_time_seconds: 0,
+      notes: '',
+      bookmarks: '[]'
+    };
+
+    this._activeBookPage = progress.last_page || 1;
+    this._activeBookTime = progress.reading_time_seconds || 0;
+    this._activeBookNotes = progress.notes || '';
+
+    let bookmarks = [];
+    try {
+      bookmarks = JSON.parse(progress.bookmarks || '[]');
+    } catch(e) { bookmarks = []; }
+    this._activeBookBookmarks = bookmarks;
+
+    const titleEl = document.getElementById('pdfReaderTitle');
+    if (titleEl) titleEl.innerHTML = ` Online Reader: ${book.title}`;
+
+    const contentEl = document.getElementById('pdfContentArea');
+    if (contentEl) {
+      contentEl.style.fontSize = this._pdfZoom + 'px';
+      contentEl.textContent = book.pages[this._activeBookPage - 1] || 'No content';
+    }
+
+    const indicatorEl = document.getElementById('pdfPageIndicator');
+    if (indicatorEl) indicatorEl.textContent = `Page ${this._activeBookPage} of ${book.pages.length}`;
+
+    const notesEl = document.getElementById('pdfNotesArea');
+    if (notesEl) notesEl.value = this._activeBookNotes;
+
+    this.updatePdfBookmarkBtn();
+    this.renderPdfBookmarks();
+    this.updatePdfProgress();
+
+    if (this._bookTimerInterval) clearInterval(this._bookTimerInterval);
+    this._bookTimerInterval = setInterval(() => {
+      this._activeBookTime++;
+      const rTimeEl = document.getElementById('pdfReadingTime');
+      if (rTimeEl) rTimeEl.textContent = this._activeBookTime + 's';
+      if (this._activeBookTime % 10 === 0) {
+        this.saveBookProgressToDb();
+      }
+    }, 1000);
+
+    CK.openModal('studentPDFReaderModal');
+  },
+
+  async closePDFReader() {
+    if (this._bookTimerInterval) {
+      clearInterval(this._bookTimerInterval);
+      this._bookTimerInterval = null;
+    }
+
+    await this.saveBookProgressToDb();
+
+    const studentId = this.userProfile?.id || CK.currentUser?.id;
+    const progressList = await CK.db.getELibraryProgress(studentId) || [];
+    const prevProgress = progressList.find(p => p.book_id === this._activeBook?.id);
+
+    if (this._activeBook && (this._activeBookPage === this._activeBook.pages.length) && (!prevProgress || prevProgress.completed_percentage < 100)) {
+      if (CK.db && CK.db.awardXP) {
+        await CK.db.awardXP(studentId, this._activeBook.xpReward || 30, `Read book: ${this._activeBook.title}`);
+      }
+    }
+
+    this._activeBook = null;
+    this.renderELibrary();
+    CK.closeModal('studentPDFReaderModal');
+  },
+
+  async saveBookProgressToDb() {
+    if (!this._activeBook) return;
+    const studentId = this.userProfile?.id || CK.currentUser?.id;
+    if (!studentId) return;
+
+    const notesEl = document.getElementById('pdfNotesArea');
+    const notes = notesEl ? notesEl.value : this._activeBookNotes;
+    const completedPct = Math.round((this._activeBookPage / this._activeBook.pages.length) * 100);
+
+    const progressObj = {
+      student_id: studentId,
+      book_id: this._activeBook.id,
+      last_page: this._activeBookPage,
+      completed_percentage: completedPct,
+      reading_time_seconds: this._activeBookTime,
+      notes: notes,
+      bookmarks: JSON.stringify(this._activeBookBookmarks)
+    };
+
+    await CK.db.saveELibraryProgress(progressObj);
+  },
+
+  pdfPrevPage() {
+    if (!this._activeBook || this._activeBookPage <= 1) return;
+    this._activeBookPage--;
+    this.renderPdfPage();
+  },
+
+  pdfNextPage() {
+    if (!this._activeBook || this._activeBookPage >= this._activeBook.pages.length) return;
+    this._activeBookPage++;
+    this.renderPdfPage();
+  },
+
+  renderPdfPage() {
+    const contentEl = document.getElementById('pdfContentArea');
+    if (contentEl) {
+      contentEl.textContent = this._activeBook.pages[this._activeBookPage - 1];
+    }
+    const indicatorEl = document.getElementById('pdfPageIndicator');
+    if (indicatorEl) {
+      indicatorEl.textContent = `Page ${this._activeBookPage} of ${this._activeBook.pages.length}`;
+    }
+    this.updatePdfBookmarkBtn();
+    this.updatePdfProgress();
+  },
+
+  pdfZoomIn() {
+    this._pdfZoom = Math.min(30, this._pdfZoom + 2);
+    const contentEl = document.getElementById('pdfContentArea');
+    if (contentEl) contentEl.style.fontSize = this._pdfZoom + 'px';
+  },
+
+  pdfZoomOut() {
+    this._pdfZoom = Math.max(12, this._pdfZoom - 2);
+    const contentEl = document.getElementById('pdfContentArea');
+    if (contentEl) contentEl.style.fontSize = this._pdfZoom + 'px';
+  },
+
+  togglePdfBookmark() {
+    if (!this._activeBook) return;
+    const page = this._activeBookPage;
+    const idx = this._activeBookBookmarks.indexOf(page);
+    if (idx !== -1) {
+      this._activeBookBookmarks.splice(idx, 1);
+      CK.showToast(`Removed bookmark for Page ${page}`, 'info');
+    } else {
+      this._activeBookBookmarks.push(page);
+      this._activeBookBookmarks.sort((a,b)=>a-b);
+      CK.showToast(`Bookmarked Page ${page}!`, 'success');
+    }
+    this.updatePdfBookmarkBtn();
+    this.renderPdfBookmarks();
+  },
+
+  updatePdfBookmarkBtn() {
+    const btn = document.getElementById('pdfBookmarkBtn');
+    if (!btn || !this._activeBook) return;
+    const isBookmarked = this._activeBookBookmarks.includes(this._activeBookPage);
+    btn.textContent = isBookmarked ? ' Bookmarked' : ' Bookmark';
+    btn.className = isBookmarked ? 'p-btn p-btn-teal p-btn-sm' : 'p-btn p-btn-ghost p-btn-sm';
+  },
+
+  renderPdfBookmarks() {
+    const list = document.getElementById('pdfBookmarksList');
+    if (!list) return;
+    if (this._activeBookBookmarks.length === 0) {
+      list.innerHTML = '<div style="font-size:0.8rem; opacity:0.4; padding:4px;">No bookmarks saved yet</div>';
+      return;
+    }
+    list.innerHTML = this._activeBookBookmarks.map(p => `
+      <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); padding:6px 10px; border-radius:4px; border:1px solid rgba(255,255,255,0.04); font-size:0.85rem;">
+        <span>Page ${p}</span>
+        <button class="p-btn p-btn-blue p-btn-xs" style="padding: 2px 6px; font-size:0.75rem;" onclick="CK.student.jumpToPdfPage(${p})">Go</button>
+      </div>
+    `).join('');
+  },
+
+  jumpToPdfPage(page) {
+    if (!this._activeBook) return;
+    this._activeBookPage = page;
+    this.renderPdfPage();
+  },
+
+  savePdfNotes() {
+    const notesEl = document.getElementById('pdfNotesArea');
+    if (notesEl) this._activeBookNotes = notesEl.value;
+  },
+
+  updatePdfProgress() {
+    const pct = Math.round((this._activeBookPage / this._activeBook.pages.length) * 100);
+    const pctEl = document.getElementById('pdfCompletionPct');
+    if (pctEl) pctEl.textContent = pct + '%';
+    const rTimeEl = document.getElementById('pdfReadingTime');
+    if (rTimeEl) rTimeEl.textContent = this._activeBookTime + 's';
+  },
+
+  // --- VIDEO ACADEMY METHODS ---
+  async renderVideoAcademy() {
+    const grid = document.getElementById('studentVideoGrid');
+    if (!grid) return;
+
+    const studentId = this.userProfile?.id || CK.currentUser?.id;
+    if (!studentId) return;
+
+    const progressList = await CK.db.getVideoProgress(studentId) || [];
+    const progressMap = {};
+    progressList.forEach(p => {
+      progressMap[p.video_id] = p;
+    });
+
+    const savedMap = JSON.parse(localStorage.getItem(`ck_video_saved_${studentId}`) || '{}');
+
+    grid.innerHTML = this.videosDb.map(v => {
+      const prog = progressMap[v.id] || { last_position_seconds: 0, completed: false };
+      const isSaved = !!savedMap[v.id];
+      const resumeText = prog.last_position_seconds > 0 ? `Resume (${Math.round(prog.last_position_seconds)}s)` : 'Watch Video';
+      return `
+        <div class="p-resource-item" style="flex-direction:column; align-items:stretch; gap:12px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:16px; border-radius:8px;">
+          <div style="position:relative; aspect-ratio:16/9; background:#000; border-radius:6px; overflow:hidden; border:1px solid rgba(255,255,255,0.05);">
+            <img src="https://img.youtube.com/vi/${v.youtubeId}/0.jpg" style="width:100%; height:100%; object-fit:cover; opacity:0.8;" />
+            <span style="position:absolute; bottom:6px; right:6px; background:rgba(0,0,0,0.8); font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:700;">${v.duration}</span>
+          </div>
+          <div style="flex:1;">
+            <div class="p-resource-name" style="font-size:0.95rem; font-weight:700; margin:4px 0; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${v.title}</div>
+            <div style="font-size:0.8rem; color:var(--p-text-muted);">${v.channel}  <span class="p-badge p-badge-blue" style="font-size:0.65rem; padding:1px 4px;">${v.category}</span></div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button class="p-btn p-btn-blue p-btn-sm" style="flex:2;" onclick="CK.student.playAcademyVideo('${v.id}')">${resumeText}</button>
+            <button class="p-btn p-btn-ghost p-btn-sm" style="flex:1;" onclick="CK.student.toggleSaveVideo('${v.id}')" title="Save for Later">${isSaved ? '' : ''}</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    this.renderVideoSidebar(progressList, savedMap);
+  },
+
+  renderVideoSidebar(progressList, savedMap) {
+    const studentId = this.userProfile?.id || CK.currentUser?.id;
+
+    const resumeEl = document.getElementById('videoAcademyResumeList');
+    if (resumeEl) {
+      const inProgress = this.videosDb.filter(v => {
+        const prog = progressList.find(p => p.video_id === v.id);
+        return prog && prog.last_position_seconds > 0 && !prog.completed;
+      });
+
+      if (inProgress.length === 0) {
+        resumeEl.innerHTML = '<div style="font-size:0.8rem; opacity:0.4; padding:8px;">No videos in progress yet</div>';
+      } else {
+        resumeEl.innerHTML = inProgress.map(v => {
+          const prog = progressList.find(p => p.video_id === v.id);
+          const pos = Math.round(prog.last_position_seconds);
+          return `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); padding:6px 10px; border-radius:4px; font-size:0.85rem; border:1px solid rgba(255,255,255,0.04);">
+              <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;">${v.title}</span>
+              <button class="p-btn p-btn-teal p-btn-xs" onclick="CK.student.playAcademyVideo('${v.id}')">Resume (${pos}s)</button>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    const savedEl = document.getElementById('videoAcademySavedList');
+    if (savedEl) {
+      const saved = this.videosDb.filter(v => savedMap[v.id]);
+      if (saved.length === 0) {
+        savedEl.innerHTML = '<div style="font-size:0.8rem; opacity:0.4; padding:8px;">No saved videos</div>';
+      } else {
+        savedEl.innerHTML = saved.map(v => `
+          <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); padding:6px 10px; border-radius:4px; font-size:0.85rem; border:1px solid rgba(255,255,255,0.04);">
+            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;">${v.title}</span>
+            <button class="p-btn p-btn-blue p-btn-xs" onclick="CK.student.playAcademyVideo('${v.id}')">Watch</button>
+          </div>
+        `).join('');
+      }
+    }
+  },
+
+  async playAcademyVideo(videoId) {
+    const video = this.videosDb.find(v => v.id === videoId);
+    if (!video) return;
+
+    this._activeVideoId = videoId;
+    const studentId = this.userProfile?.id || CK.currentUser?.id;
+
+    const progressList = await CK.db.getVideoProgress(studentId) || [];
+    const progress = progressList.find(p => p.video_id === videoId) || { last_position_seconds: 0 };
+
+    const titleEl = document.getElementById('videoAcademyActiveTitle');
+    const descEl = document.getElementById('videoAcademyActiveDesc');
+    const playerContainer = document.getElementById('videoAcademyPlayerContainer');
+
+    if (titleEl) titleEl.textContent = video.title;
+    if (descEl) descEl.textContent = video.description;
+
+    if (playerContainer) {
+      playerContainer.innerHTML = `<div id="ytAcademyPlayer" style="width:100%; height:100%;"></div>`;
+
+      if (!window.YT) {
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+      }
+
+      const createPlayer = () => {
+        this._ytPlayer = new window.YT.Player('ytAcademyPlayer', {
+          height: '100%',
+          width: '100%',
+          videoId: video.youtubeId,
+          playerVars: {
+            'autoplay': 1,
+            'modestbranding': 1,
+            'rel': 0,
+            'start': Math.round(progress.last_position_seconds)
+          },
+          events: {
+            'onStateChange': (event) => {
+              if (event.data === window.YT.PlayerState.PLAYING) {
+                this.startTrackingVideoProgress();
+              } else {
+                this.stopTrackingVideoProgress();
+              }
+            }
+          }
+        });
+      };
+
+      if (window.YT && window.YT.Player) {
+        createPlayer();
+      } else {
+        window.onYouTubeIframeAPIReady = createPlayer;
+      }
+    }
+  },
+
+  startTrackingVideoProgress() {
+    if (this._videoProgressTimer) clearInterval(this._videoProgressTimer);
+    this._videoProgressTimer = setInterval(async () => {
+      if (this._ytPlayer && typeof this._ytPlayer.getCurrentTime === 'function') {
+        const time = this._ytPlayer.getCurrentTime();
+        const duration = this._ytPlayer.getDuration();
+        const studentId = this.userProfile?.id || CK.currentUser?.id;
+        if (!studentId || !this._activeVideoId) return;
+
+        const completed = time > (duration - 15);
+
+        await CK.db.saveVideoProgress({
+          student_id: studentId,
+          video_id: this._activeVideoId,
+          last_position_seconds: time,
+          completed: completed
+        });
+      }
+    }, 5000);
+  },
+
+  stopTrackingVideoProgress() {
+    if (this._videoProgressTimer) {
+      clearInterval(this._videoProgressTimer);
+      this._videoProgressTimer = null;
+    }
+  },
+
+  async toggleSaveVideo(videoId) {
+    const studentId = this.userProfile?.id || CK.currentUser?.id;
+    if (!studentId) return;
+
+    const savedMap = JSON.parse(localStorage.getItem(`ck_video_saved_${studentId}`) || '{}');
+    if (savedMap[videoId]) {
+      delete savedMap[videoId];
+      CK.showToast('Removed from Saved Videos', 'info');
+    } else {
+      savedMap[videoId] = true;
+      CK.showToast('Saved for later!', 'success');
+    }
+    localStorage.setItem(`ck_video_saved_${studentId}`, JSON.stringify(savedMap));
+    this.renderVideoAcademy();
+  }};

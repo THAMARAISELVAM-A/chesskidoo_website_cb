@@ -4,6 +4,8 @@
    live session controls, real-time assigned students loading, and game note taking.
    ------------------------------------------------------------------------- */
 
+const CK = window.CK = window.CK || {};
+
 CK.coach = {
   coachProfile: null,
   classesDb: [],
@@ -108,6 +110,7 @@ CK.coach = {
     const presence = JSON.parse(localStorage.getItem('ck_live_presence') || '{}');
     const now = Date.now();
     const colors = ['var(--p-teal)', 'var(--p-gold)', 'var(--p-blue)', 'var(--p-rose)'];
+    const cBatches = this.coachProfile?.batches ? this.coachProfile.batches.split(',').map(b => b.trim()).filter(b=>b) : [];
     grid.innerHTML = myStudents.map((s, i) => {
       const initial = s.full_name ? s.full_name.charAt(0).toUpperCase() : '♟';
       const p = presence[s.id];
@@ -115,6 +118,9 @@ CK.coach = {
       const statusLabel = isRecent ? 'Online' : (s.status || 'Offline');
       const statusDot = isRecent ? 'online' : 'offline';
       const color = colors[i % colors.length];
+      
+      const batchOptions = cBatches.map(b => `<option value="${_e(b)}" ${s.batch === b ? 'selected' : ''}>${_e(b)}</option>`).join('');
+      
       return `
         <div class="p-live-card ${statusDot}">
           <div class="p-live-avatar" style="background:rgba(255,255,255,0.06);color:${color};font-size:1.1rem;font-weight:700;border:2px solid ${color}20;position:relative;">
@@ -126,7 +132,11 @@ CK.coach = {
             <div class="p-live-sub">${_e(s.level || 'Beginner')} · ${_e(String(s.rating || 800))} ELO · ${_e(String(s.puzzle || 0))} puzzles</div>
             <div class="p-live-status"><span class="p-status-dot ${statusDot}"></span> ${statusLabel}</div>
             <div style="margin-top:6px; font-size:0.8rem; color:var(--p-text-muted);">
-              Batch: <input type="text" value="${_e(s.batch || '')}" placeholder="Assign Batch" style="background:var(--p-surface1); border:1px solid rgba(255,255,255,0.1); color:var(--p-text); padding:2px 6px; border-radius:4px; font-size:0.8rem; width:100px;" onchange="CK.coach.updateStudentBatch('${_e(String(s.id))}', this.value)">
+              Batch: 
+              <select style="background:var(--p-surface1); border:1px solid rgba(255,255,255,0.1); color:var(--p-text); padding:2px 6px; border-radius:4px; font-size:0.8rem; width:120px;" onchange="CK.coach.updateStudentBatch('${_e(String(s.id))}', this.value)">
+                <option value="">-- Assign --</option>
+                ${batchOptions}
+              </select>
             </div>
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;">
@@ -284,7 +294,7 @@ CK.coach = {
 
   async editBatchLink(batchLevel) {
     const links = window.CK && CK.batchManager ? await CK.batchManager.getLinks() : {};
-    const newLink = prompt(`Enter Google Meet Class Room URL for ${batchLevel} Batch:`, links[batchLevel] || '');
+    const newLink = await CK.prompt(`Enter Google Meet Class Room URL for ${batchLevel} Batch:`, links[batchLevel] || '');
     if (newLink && window.CK && CK.batchManager) {
       CK.batchManager.saveLink(batchLevel, newLink);
     }
@@ -433,7 +443,7 @@ CK.coach = {
     const grid = document.getElementById('coachStudentsGrid');
     if (grid) {
       const students = (await CK.db.getProfiles('student')) || [];
-      const myStudents = students.filter(s => s.coach === (this.coachProfile ? this.coachProfile.full_name : ''));
+      const myStudents = students.filter(s => s.coach && s.coach.toLowerCase() === (this.coachProfile ? this.coachProfile.full_name.toLowerCase() : ''));
 
       if (myStudents.length === 0) {
         grid.innerHTML = '<div class="cls-empty">No students currently assigned to you.</div>';
@@ -490,13 +500,24 @@ CK.coach = {
     const _e = CK.esc || (s => s);
     tbody.innerHTML = myStudents.map(s => {
       const currentStatus = attendanceMap[s.id] || 'pending';
-      const levelBatch = s.level === 'Beginner' ? 'Beginner Fundamentals' : s.level === 'Advanced' ? 'Advanced Endgames' : 'Intermediate Strategy';
       const badgeCls = currentStatus === 'present' ? 'p-badge-green' : currentStatus === 'absent' ? 'p-badge-red' : 'p-badge-ghost';
       return `
         <tr id="coach_att_row_${_e(s.id)}">
           <td style="font-weight:700;">${_e(s.full_name)}</td>
-          <td><span class="p-badge p-badge-blue" style="font-size:0.75rem;">${_e(s.level || 'Beginner')}</span></td>
-          <td style="font-size:0.85rem; color:var(--p-text-muted);">${levelBatch}</td>
+          <td>
+            <select class="p-form-control" style="width:auto; padding:4px 8px; font-size:0.8rem; height:auto; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1);" 
+                    onchange="CK.coach.inlineUpdateStudent('${s.id}', 'level', this.value)">
+              <option value="Beginner" ${s.level === 'Beginner' ? 'selected' : ''}>Beginner</option>
+              <option value="Intermediate" ${s.level === 'Intermediate' ? 'selected' : ''}>Intermediate</option>
+              <option value="Advanced" ${s.level === 'Advanced' ? 'selected' : ''}>Advanced</option>
+              <option value="Tournament Ready" ${s.level === 'Tournament Ready' ? 'selected' : ''}>Tournament Ready</option>
+            </select>
+          </td>
+          <td>
+            <input type="text" class="p-form-control" style="width:100px; padding:4px 8px; font-size:0.8rem; height:auto; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1);" 
+                   placeholder="Batch" value="${_e(s.batch || '')}" 
+                   onblur="if(this.value !== '${_e(s.batch || '')}') CK.coach.inlineUpdateStudent('${s.id}', 'batch', this.value)">
+          </td>
           <td style="font-size:0.85rem; color:var(--p-text-muted);">${selectedDate}</td>
           <td><span class="p-badge ${badgeCls}" id="${_e('coach_att_badge_' + s.id)}">${currentStatus === 'present' ? '✅ Present' : currentStatus === 'absent' ? '❌ Absent' : '⏳ Pending'}</span></td>
           <td style="display:flex;gap:6px;align-items:center;">
@@ -511,8 +532,39 @@ CK.coach = {
     }).join('');
   },
 
+  async inlineUpdateStudent(studentId, field, newValue) {
+    try {
+      const p = await CK.db.getProfile(studentId);
+      if (!p) return;
+      p[field] = newValue;
+      await CK.db.saveProfile(p);
+      CK.showToast(`Updated ${field} for ${p.full_name}`, 'success');
+    } catch (e) {
+      CK.showToast(`Failed to update ${field}`, 'error');
+    }
+  },
+
   async markAttendance(studentId, date, status) {
+    const todayStr = new Date().toLocaleDateString('en-CA'); // local YYYY-MM-DD
+    const todayStrUTC = new Date().toISOString().split('T')[0]; // UTC YYYY-MM-DD
+    if (date !== todayStr && date !== todayStrUTC) {
+      CK.showToast("Attendance Security: You are strictly blocked from backdating or pre-marking attendance. Please contact the administrator for historical corrections.", "error");
+      return;
+    }
+
     await CK.db.saveAttendance({ userid: studentId, date, status, coachId: this.coachProfile?.id, coachName: this.coachProfile?.full_name });
+    
+    if (CK.db && CK.db.saveAuditLog) {
+      CK.db.saveAuditLog({
+        user_id: this.coachProfile?.id || 'unknown_coach_id',
+        user_name: this.coachProfile?.full_name || 'Coach',
+        action: 'student_attendance_toggle',
+        ip: '127.0.0.1',
+        user_agent: navigator.userAgent,
+        severity: 'INFO',
+        detail: `Coach ${this.coachProfile?.full_name || 'Coach'} marked student ${studentId} as ${status} on date ${date}`
+      });
+    }
     // Update badge in-place without full reload
     const badge = document.getElementById(`coach_att_badge_${studentId}`);
     if (badge) {
@@ -601,9 +653,7 @@ CK.coach = {
       if (window.CK?.db?.recordCoachAttendance) {
         await CK.db.recordCoachAttendance(coachId, classId);
       }
-    } catch (err) {
-      console.warn("[Coach Attendance] Failed to record coach attendance:", err);
-    }
+    } catch (err) { }
 
     this.nav('session');
     const nameEl = document.getElementById('coachSessionName');
@@ -630,7 +680,7 @@ CK.coach = {
       const presence = JSON.parse(localStorage.getItem('ck_live_presence') || '{}');
       const active = Object.values(presence).filter(u => u.role === 'student' && Date.now() - (u.lastSeen || 0) < 300000).length;
       if (el) el.textContent = active + ' Active';
-    } catch (_) { console.warn('[CK] presence data parse error', _); }
+    } catch (_) { }
   },
 
   toggleSession() {
@@ -700,9 +750,7 @@ CK.coach = {
         if (window.CK?.db?.runAttendanceSweep) {
           await CK.db.runAttendanceSweep(coachName, classId, className);
         }
-      } catch (err) {
-        console.warn("[Attendance Sweep] Failed to run attendance sweep:", err);
-      }
+      } catch (err) { }
 
       this._liveClassId = null;
     }
