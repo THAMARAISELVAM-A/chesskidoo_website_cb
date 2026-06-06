@@ -232,14 +232,21 @@ CK.puzzlesPro = (() => {
       const wrap = document.getElementById('pzProBoardWrap');
       if (!wrap) return;
       _pzBoard = Chessboard('pzProBoardWrap', {
+        // Local pieces — no external dependency, so pieces can never gap out mid-game.
         pieceTheme: function (piece) {
-          return '/assets/img/pieces/' + piece.toLowerCase() + '.png';
+          return 'assets/img/pieces/' + piece.toLowerCase() + '.png';
         },
         position: _pzGame.fen(),
         orientation: _pzGame.turn() === 'w' ? 'white' : 'black',
         draggable: true,
         onDrop: _pzHandleDrop,
-        onSnapEnd: () => { if (_pzBoard) _pzBoard.position(_pzGame.fen()); }
+        // Only re-sync if the rendered position drifted from the game (avoids racing
+        // the animated position() call already issued in _pzHandleDrop).
+        onSnapEnd: () => {
+          if (_pzBoard && _pzBoard.fen() !== _pzGame.fen().split(' ')[0]) {
+            _pzBoard.position(_pzGame.fen());
+          }
+        }
       });
     }));
 
@@ -265,12 +272,12 @@ CK.puzzlesPro = (() => {
 
     if (move.from === expectedFrom && move.to === expectedTo) {
       _pzMoveIdx++;
-      if (_pzBoard) _pzBoard.position(_pzGame.fen(), true);
-
+      
       if (_pzMoveIdx >= _activePuzzle.moves.length) {
         // Puzzle complete!
         clearInterval(_pzTimer);
         if (statusEl) statusEl.innerHTML = `<div class="pz-success">✅ Brilliant! Puzzle solved in ${_pzSeconds}s with ${_pzMistakes} mistake${_pzMistakes===1?'':'s'}!</div>`;
+        if (_pzBoard) window.setTimeout(() => _pzBoard.position(_pzGame.fen(), false), 10);
         recordScore(_pzUserId, _pzUserName, _activePuzzle.id, true, _pzSeconds, _pzMistakes).then(xp => {
           CK.showToast(`🎉 Puzzle solved! +${xp} XP`, 'success');
         });
@@ -278,6 +285,7 @@ CK.puzzlesPro = (() => {
       } else {
         // Play opponent's response
         if (statusEl) statusEl.innerHTML = `<div class="pz-correct">✓ Correct! Keep going...</div>`;
+        if (_pzBoard) window.setTimeout(() => _pzBoard.position(_pzGame.fen(), false), 10);
         _pzAwaitingOpponent = true;
         setTimeout(() => {
           const oppMove = _activePuzzle.moves[_pzMoveIdx];
@@ -292,8 +300,8 @@ CK.puzzlesPro = (() => {
     } else {
       _pzMistakes++;
       _pzGame.undo();
-      if (_pzBoard) _pzBoard.position(_pzGame.fen(), false);
       if (statusEl) statusEl.innerHTML = `<div class="pz-wrong">❌ Not quite — try again! (${_pzMistakes} mistake${_pzMistakes===1?'':'s'})</div>`;
+      return 'snapback';
     }
   }
 
@@ -324,7 +332,7 @@ CK.puzzlesPro = (() => {
   });
 
   return {
-    PUZZLES, getLeaderboard, recordScore, hasSolved,
+    PUZZLES, getScores, getLeaderboard, recordScore, hasSolved,
     getPuzzleById, getDailyPuzzle, getFilteredPuzzles,
     renderLeaderboard, renderPuzzleList,
     openPuzzle, closePuzzle, showSolution, resetPuzzle
