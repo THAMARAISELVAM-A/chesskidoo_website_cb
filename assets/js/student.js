@@ -9,6 +9,8 @@ const CK = window.CK = window.CK || {};
 CK.student = {
   userProfile: null,
   activePuzzleId: null,
+  _pzBoardInstance: null,
+  _pzGame: null,
 
   // List of interactive mock tactical puzzles
   puzzlesDb: [
@@ -601,16 +603,6 @@ CK.student = {
     this.renderResources();
   },
 
-  _PUZZLE_SETUPS: {
-    P1: { 'f8': '', 'g7': '', 'h7': '', 'd1': '' },
-    P2: { 'e8': '', 'a8': '', 'd5': '' },
-    P3: { 'h8': '', 'g8': '', 'h7': '', 'g7': '', 'f7': '', 'f5': '' },
-    P4: { 'e8': '', 'h8': '', 'h1': '' },
-    P5: { 'g5': '', 'd6': '', 'c3': '' },
-    P6: { 'e5': '', 'c3': '', 'a1': '' },
-    P7: { 'e7': '', 'e5': '', 'c7': '' },
-  },
-
   _solvedPuzzles: new Set(),
   _puzzleTimer: null,
   _puzzleSeconds: 0,
@@ -761,44 +753,94 @@ CK.student = {
     // Start puzzle timer
     this.startPuzzleTimer();
 
-    // Render board
+    // Render board with Chessboard.js (chess.com neo pieces via CDN)
     const boardEl = document.getElementById('studentPuzzleBoardContainer');
     if (!boardEl) return;
 
-    const setup = this._PUZZLE_SETUPS[id] || {};
-    const files = ['a','b','c','d','e','f','g','h'];
-    const SQ_DARK  = '#4a7a2e';  // deeper forest green (dark squares)
-    const SQ_LIGHT = '#d4d4a8';  // warm off-white (light squares)
-    const COORD_DARK  = 'rgba(255,255,255,0.5)';
-    const COORD_LIGHT = 'rgba(74,124,64,0.5)';
-    const BLACK_PIECES = new Set(['','','','','','']);
-    const WHITE_PIECES = new Set(['','','','','','']);
-    // isDark: a1 (f=0,r=1) must be dark  (f+r)%2===1
-    const sqSize = 'min(52px, calc((min(400px,100vw - 48px)) / 8))';
-    let html = `<div style="display:grid;grid-template-columns:repeat(8,${sqSize});grid-template-rows:repeat(8,${sqSize});width:fit-content;margin:0 auto;border:3px solid rgba(85,107,47,0.6);border-radius:8px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,0.6),0 0 0 1px rgba(85,107,47,0.25);">`;
-    for (let r = 8; r >= 1; r--) {
-      for (let f = 0; f < 8; f++) {
-        const sq = files[f] + r;
-        const isDark = (f + r) % 2 === 1;
-        const bg = isDark ? SQ_DARK : SQ_LIGHT;
-        const coord = isDark ? COORD_DARK : COORD_LIGHT;
-        const piece = setup[sq] || '';
-        let textShadow = '';
-        if (BLACK_PIECES.has(piece)) {
-          textShadow = '0 0 3px rgba(255,255,255,0.9),0 0 6px rgba(255,255,255,0.6),0 2px 4px rgba(0,0,0,0.5)';
-        } else if (WHITE_PIECES.has(piece)) {
-          textShadow = '0 0 3px rgba(0,0,0,0.95),0 0 6px rgba(0,0,0,0.7),0 2px 4px rgba(0,0,0,0.5)';
+    this._puzzleFen = 'start';
+    this._pzGame = new Chess();
+    const pzBoardTarget = 'studentPuzzleBoard';
+    if (this._pzBoardInstance) { try { this._pzBoardInstance.destroy(); } catch(_) {} this._pzBoardInstance = null; }
+    boardEl.innerHTML = '<div id="' + pzBoardTarget + '" style="width:100%;max-width:420px;margin:0 auto;"></div>';
+    requestAnimationFrame(() => {
+      this._pzBoardInstance = Chessboard(pzBoardTarget, {
+        pieceTheme: function (piece) {
+          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
+        },
+        position: 'start',
+        orientation: 'white',
+        draggable: true,
+        onDrop: function(source, target, piece) {
+          const stu = CK.student;
+          if (!stu || !stu._pzGame) return 'snapback';
+          const game = stu._pzGame;
+          const promotion = piece && piece.type === 'p' && target.charAt(1) === '8' ? 'q' : undefined;
+          const move = game.move({ from: source, to: target, promotion: promotion });
+          if (!move) return 'snapback';
+          const p = stu.puzzlesDb.find(x => x.id === stu.activePuzzleId);
+          if (!p) return;
+          if (target === p.solution) {
+            stu.stopPuzzleTimer();
+            const xp = stu.getXPForPuzzle(p.diff, stu._puzzleSeconds, stu._puzzleMistakes);
+            stu._puzzleXP += xp;
+            stu.showXPPopup(xp);
+            CK.showToast(' Brilliant! +' + xp + ' XP earned!', 'success');
+            stu._solvedPuzzles.add(p.id);
+            stu._srs.record(p.id, true);
+            stu._trackDailyGoal('puzzles');
+            stu.renderSRSQueue();
+            const fb = document.getElementById('puzzleFeedback');
+            if (fb) {
+              fb.style.display = 'block';
+              fb.className = 'pz-feedback success';
+              fb.innerHTML = ' <strong>' + (CK.esc ? CK.esc(p.title || '') : (p.title || '')) + ' solved!</strong><br><span style="font-size:0.85rem;opacity:0.85;">' + (CK.esc ? CK.esc(p.desc || '') : (p.desc || '')) + '</span>';
+            }
+            stu.userProfile.puzzle = (parseInt(stu.userProfile.puzzle) || 0) + 1;
+            if ((stu.userProfile.star || 0) < 5) {
+              stu.userProfile.star = (parseInt(stu.userProfile.star) || 0) + 1;
+            }
+            CK.db.saveProfile(stu.userProfile).then(function() {
+              CK.db.savePuzzleScore({
+                id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+                userId: stu.userProfile.id || stu.userProfile.userid,
+                userName: stu.userProfile.full_name || '',
+                puzzleId: p.id,
+                solved: true,
+                time: stu._puzzleSeconds,
+                mistakes: stu._puzzleMistakes,
+                xp: xp,
+                date: new Date().toISOString()
+              }).then(function() {
+                stu.updateProfile();
+                stu.renderDashboard();
+                stu.renderPuzzlesList();
+                stu.renderAchievementsTab();
+              });
+            });
+            setTimeout(function() {
+              if (stu._pzBoardInstance) {
+                stu._pzBoardInstance.position(game.fen(), true);
+              }
+            }, 10);
+            setTimeout(function() { stu.nextPuzzle(); }, 3000);
+          } else {
+            stu._puzzleMistakes++;
+            stu._srs.record(p.id, false);
+            CK.showToast(' Not quite — try again!', 'warning');
+            const fb2 = document.getElementById('puzzleFeedback');
+            if (fb2) {
+              fb2.style.display = 'block';
+              fb2.className = 'pz-feedback error';
+              fb2.textContent = ' Incorrect square. Think carefully — look for the move that forces an immediate decisive result.';
+            }
+            game.undo();
+            if (stu._pzBoardInstance) {
+              stu._pzBoardInstance.position(game.fen(), true);
+            }
+          }
         }
-        const pc = BLACK_PIECES.has(piece) ? '#1a1a2e' : (WHITE_PIECES.has(piece) ? '#fffde7' : '');
-        html += `<div style="width:${sqSize};height:${sqSize};background:${bg};display:flex;align-items:center;justify-content:center;font-size:clamp(1.5rem,4.5vw,2.5rem);cursor:pointer;user-select:none;position:relative;transition:filter 0.12s,transform 0.12s;box-sizing:border-box;" onclick="CK.student.onSquareClick('${sq}')" onmouseover="this.style.filter='brightness(1.18)';this.style.outline='3px solid rgba(85,107,47,0.7)';" onmouseout="this.style.filter='';this.style.outline='';" title="${sq}">
-          <span style="text-shadow:${textShadow};color:${pc};line-height:1;pointer-events:none;">${piece}</span>
-          <span style="position:absolute;bottom:1px;left:2px;font-size:0.5rem;font-weight:800;opacity:0.7;color:${coord};pointer-events:none;">${f === 0 ? r : ''}</span>
-          <span style="position:absolute;bottom:1px;right:2px;font-size:0.5rem;font-weight:800;opacity:0.7;color:${coord};pointer-events:none;">${r === 1 ? files[f] : ''}</span>
-        </div>`;
-      }
-    }
-    html += `</div>`;
-    boardEl.innerHTML = html;
+      });
+    });
   },
 
   showPuzzleHint() {
