@@ -14,13 +14,13 @@ CK.student = {
 
   // List of interactive mock tactical puzzles
   puzzlesDb: [
-    { id: 'P1', title: 'Back-Rank Mate', type: 'Tactics', diff: 'Easy', coach: 'ARIVUSELVAM', due: 'Today', instruction: 'White to move. Find the back-rank checkmate!', boardSetup: 'black-king-f8-pawns-g7-h7-white-rook-d1', solution: 'd8', desc: 'Rook to d8 delivers checkmate as the Black king is trapped behind its own pawns.' },
-    { id: 'P2', title: 'Tactical Fork Opportunity', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'Tomorrow', instruction: 'White to move. Fork the black King and Rook with your Knight!', boardSetup: 'black-king-e8-rook-a8-white-knight-d5', solution: 'c7', desc: 'Knight to c7 forks both the king on e8 and the rook on a8, winning material.' },
-    { id: 'P3', title: 'Smothered Mate', type: 'Endgame', diff: 'Hard', coach: 'VISHNU', due: 'May 18', instruction: 'White to move. Deliver the famous smothered mate with your Knight!', boardSetup: 'black-king-h8-rook-g8-pawns-h7-g7-f7-white-knight-f5', solution: 'f7', desc: 'Knight to f7 delivers checkmate because the king is completely boxed in by its own pieces.' },
-    { id: 'P4', title: 'Queen Snipes the Rook', type: 'Tactics', diff: 'Easy', coach: 'VISHNU', due: 'Today', instruction: 'White to move. Slide your queen up the h-file and capture the undefended rook!', boardSetup: 'black-king-e8-rook-h8-white-queen-h1', solution: 'h8', desc: 'Queen to h8 captures the undefended rook. The black king on e8 cannot reach in time  a free piece!' },
-    { id: 'P5', title: 'Knight Fork  King & Rook', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'May 16', instruction: 'White knight leaps to a square that attacks both the black king AND rook simultaneously. Find the forking square!', boardSetup: 'black-king-g5-rook-d6-white-knight-c3', solution: 'e4', desc: 'Knight to e4 forks the black king on g5 and rook on d6. White wins a full rook next move!' },
-    { id: 'P6', title: 'Pin and Win', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'May 17', instruction: 'The black rook is pinned along the bishop diagonal  a pinned piece cannot move. Simply capture it!', boardSetup: 'black-king-e5-rook-c3-white-bishop-a1', solution: 'c3', desc: 'Bishop takes c3! The rook was pinned to the king along the a1e5 diagonal and could not escape.' },
-    { id: 'P7', title: 'Pawn Promotion', type: 'Endgame', diff: 'Easy', coach: 'VISHNU', due: 'May 19', instruction: 'White pawn is one square from queening! Click the promotion square to advance.', boardSetup: 'white-pawn-e7-white-king-e5-black-king-c7', solution: 'e8', desc: 'Pawn to e8, queening! The black king is too far away to stop it  a textbook passed pawn endgame win.' }
+    { id: 'P1', title: 'Back-Rank Mate', type: 'Tactics', diff: 'Easy', coach: 'ARIVUSELVAM', due: 'Today', instruction: 'White to move. Find the back-rank checkmate!', fen: 'rnbqkbnr/pppp1ppp/8/8/8/PPPPPPPP/R1BQKBNR', solution: 'd8', desc: 'The black king is trapped behind its own pawns on the back rank. Find the forcing move that delivers checkmate immediately.' },
+    { id: 'P2', title: 'Tactical Fork Opportunity', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'Tomorrow', instruction: 'White to move. Fork the black King and Rook with your Knight!', fen: 'r1bqkb1r/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR', solution: 'c7', desc: 'Knight to c7 forks both the king on e8 and the rook on a8, winning material.' },
+    { id: 'P3', title: 'Smothered Mate', type: 'Endgame', diff: 'Hard', coach: 'VISHNU', due: 'May 18', instruction: 'White to move. Deliver the famous smothered mate with your Knight!', fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1', solution: 'f7', desc: 'Knight to f7 delivers checkmate because the king is completely boxed in by its own pieces.' },
+    { id: 'P4', title: 'Queen Snipes the Rook', type: 'Tactics', diff: 'Easy', coach: 'VISHNU', due: 'Today', instruction: 'White to move. Slide your queen up the h-file and capture the undefended rook!', fen: 'r1bqk1nr/pppppppp/8/8/8/8/PPPPPPPP/R1BQK1R', solution: 'h8', desc: 'Queen captures the undefended rook on h8. The black king on e8 cannot reach in time — a free piece!' },
+    { id: 'P5', title: 'Knight Fork King & Rook', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'May 16', instruction: 'White knight leaps to a square that attacks both the black king AND rook simultaneously. Find the forking square!', fen: 'r1bqkbnr/pppppppp/8/8/8/2PPPPPP/R1BQKBNR', solution: 'e4', desc: 'Knight to e4 forks the black king on g5 and rook on d6. White wins a full rook next move!' },
+    { id: 'P6', title: 'Pin and Win', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'May 17', instruction: 'The black rook is pinned along the bishop diagonal — a pinned piece cannot move. Simply capture it!', fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R1BQKBNR', solution: 'c3', desc: 'Bishop takes c3! The rook was pinned to the king along the a1-e5 diagonal and could not escape.' },
+    { id: 'P7', title: 'Pawn Promotion', type: 'Endgame', diff: 'Easy', coach: 'VISHNU', due: 'May 19', instruction: 'White pawn is one square from queening! Click the promotion square to advance.', fen: '8/4k3/8/3KP3/8/8/8/8', solution: 'e8', desc: 'Pawn to e8, queening! The black king is too far away to stop it — a textbook passed pawn endgame win.' }
   ],
 
   async init() {
@@ -768,8 +768,6 @@ CK.student = {
         pieceTheme: function (piece) {
           return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
         },
-        position: this._puzzleFen,
-        orientation: 'white',
         draggable: true,
         onDrop: function(source, target, piece) {
           const stu = CK.student;
@@ -885,7 +883,7 @@ CK.student = {
     }
   },
 
-  renderCoachReviews() {
+  async renderCoachReviews() {
     const container = document.getElementById('studentReviewsContainer');
     if (!container) return;
 
