@@ -49,6 +49,13 @@ window.CK_RAZORPAY_KEY = window.APP_CONFIG.RAZORPAY_KEY;
 // HTML-escape helper — use CK.esc(str) inside any innerHTML template
 // to prevent XSS from user-supplied names, notes, and descriptions.
 window.CK = window.CK || {};
+window.CK.student = window.CK.student || {
+  nav(panelId) {
+    const target = document.getElementById('student-panel-' + panelId);
+    if (target) target.classList.add('active');
+  },
+  init() {}
+};
 window.CK.esc = function(str) {
   if (str === null || str === undefined) return '';
   return String(str)

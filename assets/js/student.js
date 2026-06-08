@@ -14,13 +14,13 @@ CK.student = {
 
   // List of interactive mock tactical puzzles
   puzzlesDb: [
-    { id: 'P1', title: 'Back-Rank Mate', type: 'Tactics', diff: 'Easy', coach: 'ARIVUSELVAM', due: 'Today', instruction: 'White to move. Find the back-rank checkmate!', fen: 'rnbqkbnr/pppp1ppp/8/8/8/PPPPPPPP/R1BQKBNR', solution: 'd8', desc: 'The black king is trapped behind its own pawns on the back rank. Find the forcing move that delivers checkmate immediately.' },
-    { id: 'P2', title: 'Tactical Fork Opportunity', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'Tomorrow', instruction: 'White to move. Fork the black King and Rook with your Knight!', fen: 'r1bqkb1r/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR', solution: 'c7', desc: 'Knight to c7 forks both the king on e8 and the rook on a8, winning material.' },
-    { id: 'P3', title: 'Smothered Mate', type: 'Endgame', diff: 'Hard', coach: 'VISHNU', due: 'May 18', instruction: 'White to move. Deliver the famous smothered mate with your Knight!', fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1', solution: 'f7', desc: 'Knight to f7 delivers checkmate because the king is completely boxed in by its own pieces.' },
-    { id: 'P4', title: 'Queen Snipes the Rook', type: 'Tactics', diff: 'Easy', coach: 'VISHNU', due: 'Today', instruction: 'White to move. Slide your queen up the h-file and capture the undefended rook!', fen: 'r1bqk1nr/pppppppp/8/8/8/8/PPPPPPPP/R1BQK1R', solution: 'h8', desc: 'Queen captures the undefended rook on h8. The black king on e8 cannot reach in time — a free piece!' },
-    { id: 'P5', title: 'Knight Fork King & Rook', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'May 16', instruction: 'White knight leaps to a square that attacks both the black king AND rook simultaneously. Find the forking square!', fen: 'r1bqkbnr/pppppppp/8/8/8/2PPPPPP/R1BQKBNR', solution: 'e4', desc: 'Knight to e4 forks the black king on g5 and rook on d6. White wins a full rook next move!' },
-    { id: 'P6', title: 'Pin and Win', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'May 17', instruction: 'The black rook is pinned along the bishop diagonal — a pinned piece cannot move. Simply capture it!', fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R1BQKBNR', solution: 'c3', desc: 'Bishop takes c3! The rook was pinned to the king along the a1-e5 diagonal and could not escape.' },
-    { id: 'P7', title: 'Pawn Promotion', type: 'Endgame', diff: 'Easy', coach: 'VISHNU', due: 'May 19', instruction: 'White pawn is one square from queening! Click the promotion square to advance.', fen: '8/4k3/8/3KP3/8/8/8/8', solution: 'e8', desc: 'Pawn to e8, queening! The black king is too far away to stop it — a textbook passed pawn endgame win.' }
+    { id: 'P1', title: 'Back-Rank Mate', type: 'Tactics', diff: 'Easy', coach: 'ARIVUSELVAM', due: 'Today', instruction: 'White to move. Find the back-rank checkmate!', fen: '7k/5ppp/8/8/8/8/R7/7K w - - 0 1', solution: 'a8', desc: 'The black king is trapped behind its own pawns on the back rank. Find the forcing move that delivers checkmate immediately.' },
+    { id: 'P2', title: 'Tactical Fork Opportunity', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'Tomorrow', instruction: 'White to move. Fork the black King and Rook with your Knight!', fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', solution: 'c7', desc: 'Knight to c7 forks both the king on e8 and the rook on a8, winning material.' },
+    { id: 'P3', title: 'Smothered Mate', type: 'Endgame', diff: 'Hard', coach: 'VISHNU', due: 'May 18', instruction: 'White to move. Deliver the famous smothered mate with your Knight!', fen: '6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1', solution: 'f7', desc: 'Knight to f7 delivers checkmate because the king is completely boxed in by its own pieces.' },
+    { id: 'P4', title: 'Queen Snipes the Rook', type: 'Tactics', diff: 'Easy', coach: 'VISHNU', due: 'Today', instruction: 'White to move. Slide your queen up the h-file and capture the undefended rook!', fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', solution: 'h8', desc: 'Queen captures the undefended rook on h8. The black king on e8 cannot reach in time — a free piece!' },
+    { id: 'P5', title: 'Knight Fork King & Rook', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'May 16', instruction: 'White knight leaps to a square that attacks both the black king AND rook simultaneously. Find the forking square!', fen: 'rnbqkbnr/pppppppp/8/8/8/8/2N5/RNBQKBNR w KQkq - 0 1', solution: 'e4', desc: 'Knight to e4 forks the black king on g5 and rook on d6. White wins a full rook next move!' },
+    { id: 'P6', title: 'Pin and Win', type: 'Tactics', diff: 'Medium', coach: 'ARIVUSELVAM', due: 'May 17', instruction: 'The black rook is pinned along the bishop diagonal — a pinned piece cannot move. Simply capture it!', fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', solution: 'c3', desc: 'Bishop takes c3! The rook was pinned to the king along the a1-e5 diagonal and could not escape.' },
+    { id: 'P7', title: 'Pawn Promotion', type: 'Endgame', diff: 'Easy', coach: 'VISHNU', due: 'May 19', instruction: 'White pawn is one square from queening! Click the promotion square to advance.', fen: '8/4k3/8/3KP3/8/8/8/8 w - - 0 1', solution: 'e8', desc: 'Pawn to e8, queening! The black king is too far away to stop it — a textbook passed pawn endgame win.' }
   ],
 
   async init() {
@@ -144,7 +144,22 @@ CK.student = {
     if (targetPanelId === 'resources') this.renderResources();
     if (targetPanelId === 'tournaments') this.renderTournamentsTab();
     if (targetPanelId === 'linked') this.renderLinkedAccounts();
-    if (targetPanelId === 'schedule' && CK.schedulePro) CK.schedulePro.renderStudentSchedule('studentScheduleList', this.userProfile);
+    if (targetPanelId === 'schedule') {
+      if (CK.scheduleMatrix && this.userProfile) {
+        CK.scheduleMatrix.coachesForStudent(this.userProfile.id).then(coachIds => {
+          if (coachIds && coachIds.length) {
+            CK.scheduleMatrix.render('studentScheduleList', { coachIds, title: 'My Class Schedule', subtitle: 'Your coach’s weekly timetable' });
+          } else if (CK.schedulePro) {
+            CK.schedulePro.renderStudentSchedule('studentScheduleList', this.userProfile);
+          } else {
+            const el = document.getElementById('studentScheduleList');
+            if (el) el.innerHTML = '<div style="text-align:center;opacity:.5;padding:24px;">You’re not assigned to a class yet. Your coach will add you soon!</div>';
+          }
+        });
+      } else if (CK.schedulePro) {
+        CK.schedulePro.renderStudentSchedule('studentScheduleList', this.userProfile);
+      }
+    }
     if (targetPanelId === 'puzzles' && CK.puzzlesPro) CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', this.userProfile?.id, this.userProfile?.full_name);
     if (targetPanelId === 'vault') this.renderReplayVault();
     if (targetPanelId === 'openings' && CK.openingTrainer) { CK.openingTrainer.renderOpeningList('otGrid', this.userProfile?.id, 'all'); CK.openingTrainer.renderMasteryOverview('otMasteryOverview', this.userProfile?.id); }
@@ -458,11 +473,34 @@ CK.student = {
 
   async renderResources() {
     if (!this._activeResourceTab) this._activeResourceTab = 'elibrary';
+    const list = document.getElementById('studentResourcesList');
+    if (list && !document.getElementById('studentELibrarySection')) {
+      // Build the tabbed scaffold once (E-Library / Video Academy / Coach Assignments).
+      // These containers were missing from the HTML, so the library never rendered.
+      const cats = ['All', 'Beginner', 'Opening', 'Tactics', 'Middlegame', 'Strategy', 'Endgame', 'Psychology'];
+      list.innerHTML = `
+        <div class="resource-tabs">
+          <button class="resource-tab-btn p-btn p-btn-sm" onclick="CK.student.switchResourceTab('elibrary')">📚 E-Library</button>
+          <button class="resource-tab-btn p-btn p-btn-sm" onclick="CK.student.switchResourceTab('videos')">🎬 Video Academy</button>
+          <button class="resource-tab-btn p-btn p-btn-sm" onclick="CK.student.switchResourceTab('assignments')">📋 Coach Assignments</button>
+        </div>
+        <div id="studentELibrarySection">
+          <div class="elib-cat-bar">
+            ${cats.map(c => `<button class="elib-cat-btn p-btn p-btn-sm p-btn-ghost" onclick="CK.student.filterELibrary('${c}')">${c}</button>`).join('')}
+          </div>
+          <div id="studentELibraryGrid"></div>
+        </div>
+        <div id="studentVideoAcademySection" style="display:none;">
+          <div id="studentVideoGrid"></div>
+          <div id="videoAcademyResumeList"></div>
+        </div>
+        <div id="studentAssignSection" style="display:none;"></div>`;
+    }
     this.switchResourceTab(this._activeResourceTab);
   },
 
   async renderAssignedResources() {
-    const list = document.getElementById('studentResourcesList');
+    const list = document.getElementById('studentAssignSection') || document.getElementById('studentResourcesList');
     if (!list) return;
 
     // Guard: profile may not be loaded yet (e.g. panel rendered before init
@@ -1580,7 +1618,37 @@ CK.student = {
     let classStudents = null;
     let classDate = null;
 
-    if (meetings.length) {
+    // DYNAMIC next class from THIS student's actual schedule (the classes they're
+    // enrolled in). Computes the soonest upcoming day+time across their classes,
+    // so it updates automatically when a coach edits the timetable.
+    let schedNext = null;
+    try {
+      const _parseMin = (t) => { const s = String(t || '').trim(); const m = s.match(/(\d{1,2}):?(\d{2})?/); if (!m) return null; let h = +m[1]; const mn = +(m[2] || 0); const ap = s.match(/([ap])\.?\s*m/i); if (ap) { const pm = /p/i.test(ap[1]); if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; } return h * 60 + mn; };
+      const _dayIdx = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+      const allClasses = (await CK.db.getClasses()) || [];
+      const myClasses = allClasses.filter(c => (c.studentIds || []).includes(p.id));
+      const now = new Date();
+      myClasses.forEach(c => {
+        const mins = _parseMin(c.time); if (mins == null) return;
+        (c.days || []).forEach(d => {
+          const di = _dayIdx[String(d).slice(0, 3).toLowerCase()]; if (di == null) return;
+          const dt = new Date(now); dt.setHours(Math.floor(mins / 60), mins % 60, 0, 0);
+          let delta = (di - now.getDay() + 7) % 7;
+          if (delta === 0 && dt < now) delta = 7;
+          dt.setDate(now.getDate() + delta);
+          if (!schedNext || dt < schedNext.dt) schedNext = { dt, c };
+        });
+      });
+    } catch (e) {}
+
+    if (schedNext) {
+      classTime = schedNext.dt;
+      classTitle = schedNext.c.title || (schedNext.c.batch ? ('Batch ' + schedNext.c.batch) : classTitle);
+      classCoach = schedNext.c.coachName || classCoach;
+      classDuration = schedNext.c.duration || null;
+      classDate = schedNext.dt.toISOString().split('T')[0];
+      classStudents = (schedNext.c.studentIds || []).length;
+    } else if (meetings.length) {
       const next = meetings[0];
       const match = (next.time || '').match(/(\d{1,2}):(\d{2})/);
       if (match) {
@@ -1590,7 +1658,6 @@ CK.student = {
       classCoach = next.coachName || next.coach || classCoach;
       classDuration = next.duration || null;
       classDate = next.date || null;
-      // Real student count: explicit count, studentIds array length, or batch headcount
       if (typeof next.students === 'number') classStudents = next.students;
       else if (Array.isArray(next.studentIds)) classStudents = next.studentIds.length;
     } else {
@@ -2458,12 +2525,77 @@ CK.student = {
     CK.tournament.renderTournamentFinderUI(document.getElementById('studentTournamentRadarContainer'), true);
   },
 
+  _laCard(cfg) {
+    const _e = CK.esc || (s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])));
+    const pills = (cfg.stats || []).filter(s => s.val != null && s.val !== '')
+      .map(s => `<div class="la-stat"><span class="la-stat-label">${_e(s.label)}</span><span class="la-stat-val">${_e(String(s.val))}</span></div>`).join('');
+    return `
+      <div class="la-card" style="--la:${cfg.color}">
+        <div class="la-accent"></div>
+        <div class="la-head">
+          <div class="la-logo">${cfg.logo}</div>
+          <div class="la-titles">
+            <div class="la-title">${_e(cfg.title)}</div>
+            <div class="la-sub">${_e(cfg.subtitle)}</div>
+          </div>
+          <span class="la-badge${cfg.linked ? '' : ' la-badge-off'}">${cfg.linked ? '✓ Linked' : 'Not linked'}</span>
+        </div>
+        <div class="la-body">
+          ${cfg.linked
+            ? `<div class="la-hero">
+                 <div class="la-hero-rating">${cfg.heroRating != null && cfg.heroRating !== '' ? _e(String(cfg.heroRating)) : '—'}</div>
+                 <div class="la-hero-label">${_e(cfg.heroLabel || 'Rating')}</div>
+                 <div class="la-synced"><span class="la-dot"></span>Live · synced now</div>
+               </div>
+               <div class="la-stats">${pills}</div>
+               <div class="la-actions">${cfg.actions || ''}</div>`
+            : `<p class="la-note">${cfg.note || ''}</p>
+               <div class="la-form">
+                 <input id="${cfg.inputId}" type="text" class="la-input" placeholder="${_e(cfg.placeholder || '')}" />
+                 <button class="la-link-btn" onclick="${cfg.linkOnclick}">${_e(cfg.linkLabel || 'Link')}</button>
+               </div>`}
+        </div>
+      </div>`;
+  },
+
   async renderLinkedAccounts() {
     const el = document.getElementById('linkedAccountsContent');
     if (!el) return;
     const p = this.userProfile || {};
-    const _e = CK.esc || (s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'));
+    const _e = CK.esc || (s => String(s));
+    const u = (s) => String(s == null ? '' : s).replace(/'/g, "\\'");
 
+    el.innerHTML = `<div class="la-grid">
+      ${this._laCard({
+        color: '#5b9cf6', logo: '♞', title: 'Lichess Account', subtitle: 'Sync ratings & import recent games from Lichess.org',
+        linked: !!p.lichess_username, heroRating: p.rating, heroLabel: 'Rapid Rating',
+        stats: [{label:'Username',val:p.lichess_username},{label:'Rapid',val:p.rating},{label:'Blitz',val:p.lichess_blitz},{label:'Games',val:p.lichess_games},{label:'Title',val:p.lichess_title}],
+        actions: `<button class="la-act" onclick="CK.student.linkLichess('${u(p.lichess_username)}')">↻ Refresh</button><button class="la-act la-act-ghost" onclick="CK.gameTracker&&CK.gameTracker.importFromLichess(CK.currentUser?.id,'${u(p.lichess_username)}')">⬇ Import Games</button>`,
+        note: 'Link your Lichess account to automatically sync your rating and import games.',
+        inputId: 'lichessUsernameInput', placeholder: 'e.g. Magnus2024', linkLabel: 'Link Lichess',
+        linkOnclick: "CK.student.linkLichess(document.getElementById('lichessUsernameInput').value.trim())"
+      })}
+      ${this._laCard({
+        color: '#7fa650', logo: '♟', title: 'Chess.com Account', subtitle: 'Sync your ratings from Chess.com',
+        linked: !!p.chesscom_username, heroRating: p.chesscom_rapid, heroLabel: 'Rapid Rating',
+        stats: [{label:'Username',val:p.chesscom_username},{label:'Rapid',val:p.chesscom_rapid},{label:'Blitz',val:p.chesscom_blitz}],
+        actions: `<button class="la-act" onclick="CK.student.linkChesscom('${u(p.chesscom_username)}')">↻ Refresh</button>`,
+        note: 'Link your Chess.com account to sync your ratings.',
+        inputId: 'chesscomUsernameInput', placeholder: 'e.g. Hikaru', linkLabel: 'Link Chess.com',
+        linkOnclick: "CK.student.linkChesscom(document.getElementById('chesscomUsernameInput').value.trim())"
+      })}
+      ${this._laCard({
+        color: '#e8b84b', logo: '♚', title: 'FIDE Profile', subtitle: 'Show your official international rating',
+        linked: !!p.fide_id, heroRating: p.fide_rating, heroLabel: 'Standard Rating',
+        stats: [{label:'FIDE ID',val:p.fide_id},{label:'Standard',val:p.fide_rating},{label:'Rapid',val:p.fide_rapid},{label:'Blitz',val:p.fide_blitz},{label:'Title',val:p.fide_title},{label:'Federation',val:p.fide_federation}],
+        actions: `<button class="la-act" onclick="CK.student.linkFide('${u(String(p.fide_id))}')">↻ Refresh</button><a class="la-act la-act-ghost" href="https://ratings.fide.com/profile/${_e(String(p.fide_id))}" target="_blank" rel="noopener" style="text-decoration:none;">↗ View on FIDE</a>`,
+        note: 'Enter your FIDE ID to display your official international rating. Find it at ratings.fide.com.',
+        inputId: 'fideIdInput', placeholder: 'e.g. 35027789', linkLabel: 'Link FIDE',
+        linkOnclick: "CK.student.linkFide(document.getElementById('fideIdInput').value.trim())"
+      })}
+    </div>`;
+    return;
+    /* legacy markup retained below (unreachable) */
     el.innerHTML = `
       <div class="p-card" style="border-color:rgba(91,156,246,0.3);margin-bottom:20px;">
         <div class="p-card-header">
@@ -2684,6 +2816,38 @@ CK.student = {
       this.updateProfile();
     } catch (err) {
       CK.showToast('Could not reach Lichess. Check username or try again.', 'error');
+    }
+  },
+
+  /* Chess.com linking — fetches LIVE rapid/blitz/bullet ratings from the public
+     Chess.com API. (This function was referenced by the UI but never defined, so
+     the "Link Chess.com" button did nothing.) */
+  async linkChesscom(username) {
+    if (!username) { CK.showToast('Please enter your Chess.com username.', 'warning'); return; }
+    if (!/^[a-zA-Z0-9_-]{1,30}$/.test(username)) { CK.showToast('Invalid Chess.com username format.', 'error'); return; }
+    CK.showToast('Fetching Chess.com profile…', 'info');
+    try {
+      const res = await fetch(`https://api.chess.com/pub/player/${encodeURIComponent(username.toLowerCase())}/stats`);
+      if (!res.ok) {
+        if (res.status === 404) { CK.showToast('Chess.com user not found. Check the username.', 'error'); return; }
+        throw new Error('HTTP ' + res.status);
+      }
+      const data = await res.json();
+      const rapid  = data.chess_rapid?.last?.rating  || null;
+      const blitz  = data.chess_blitz?.last?.rating  || null;
+      const bullet = data.chess_bullet?.last?.rating || null;
+      const updates = { chesscom_username: username };
+      if (rapid)  updates.chesscom_rapid  = String(rapid);
+      if (blitz)  updates.chesscom_blitz  = String(blitz);
+      if (bullet) updates.chesscom_bullet = String(bullet);
+      const merged = { ...this.userProfile, ...updates };
+      await CK.db.saveProfile(merged);
+      this.userProfile = merged;
+      CK.showToast(`Chess.com linked: ${username}${rapid ? ' · Rapid ' + rapid : ''}`, 'success');
+      this.renderLinkedAccounts();
+      if (this.updateProfile) this.updateProfile();
+    } catch (err) {
+      CK.showToast('Could not reach Chess.com. Check username or try again.', 'error');
     }
   },
 
@@ -2913,6 +3077,48 @@ CK.student = {
         "Focus and endurance. Chess tournaments require hours of mental stamina. Exercise, stay hydrated, and take breaks between rounds."
       ],
       xpReward: 40
+    },
+    {
+      id: 'book-rules-1',
+      title: 'Learn Chess: The Complete Rules',
+      category: 'Beginner',
+      author: 'ChessKidoo Academy',
+      pages: [
+        "Chess is played on an 8x8 board between White and Black. White always moves first. The goal is to checkmate the enemy King.",
+        "Piece moves: the Rook moves in straight lines, the Bishop diagonally, the Queen both, the Knight in an 'L' shape, and the King one square in any direction.",
+        "Pawns move forward one square (two on their first move) and capture diagonally. Reaching the last rank promotes the pawn — usually to a Queen.",
+        "Special moves: castling (King + Rook safety move), en passant (a special pawn capture), and promotion. Learn all three early.",
+        "Check, checkmate, and stalemate: check is a threat to the King, checkmate ends the game, and stalemate (no legal move, not in check) is a draw."
+      ],
+      xpReward: 25
+    },
+    {
+      id: 'book-attack-1',
+      title: 'The Art of Attack in Chess',
+      category: 'Middlegame',
+      author: 'Vladimir Vukovic',
+      pages: [
+        "Attacking the King is the most exciting part of chess. Successful attacks usually require a lead in development or more active pieces.",
+        "The classic bishop sacrifice on h7 (the 'Greek Gift') is a recurring attacking pattern against a castled King — Bxh7+ Kxh7 Ng5+.",
+        "Open the lines to the enemy King. Pawn levers and sacrifices that rip open files and diagonals fuel a winning attack.",
+        "Bring ALL your pieces to the attack. An attack with two pieces rarely succeeds; coordinate Rooks, Queen, Bishops and Knights together.",
+        "Calculate forcing lines to the end. In sharp attacking positions, a single tempo decides between brilliancy and blunder."
+      ],
+      xpReward: 40
+    },
+    {
+      id: 'book-greats-1',
+      title: 'Lessons from the World Champions',
+      category: 'Strategy',
+      author: 'ChessKidoo Academy',
+      pages: [
+        "Capablanca taught simplicity: trade into favourable endgames and exploit tiny advantages with flawless technique.",
+        "Alekhine showed the power of dynamic, attacking chess fuelled by deep combinational vision.",
+        "Botvinnik pioneered scientific preparation — studying openings deeply and analysing your own games honestly.",
+        "Fischer combined razor-sharp opening prep with universal understanding; Kasparov added relentless dynamism and energy.",
+        "Carlsen's strength is pressing tiny edges for hours — proving that endgame mastery and patience win at the highest level."
+      ],
+      xpReward: 45
     }
   ],
 
@@ -2952,6 +3158,51 @@ CK.student = {
       channel: 'Saint Louis Chess Club',
       duration: '45:30',
       description: 'GM Yasser Seirawan covers the key rules, Lucena position, Philidor position, and more.'
+    },
+    {
+      id: 'vid-rules',
+      title: 'How to Play Chess: Rules for Beginners',
+      youtubeId: 'OCSbzArwB10',
+      category: 'Beginner',
+      channel: 'Chess.com',
+      duration: '10:01',
+      description: 'A clear beginner guide to the board, piece moves, special rules, check and checkmate.'
+    },
+    {
+      id: 'vid-openings',
+      title: 'The Best Chess Opening Traps',
+      youtubeId: 'D2NUyiTzv9c',
+      category: 'Opening',
+      channel: 'GothamChess',
+      duration: '14:52',
+      description: 'Common opening traps every improving player should know — both to use and to avoid.'
+    },
+    {
+      id: 'vid-tactics',
+      title: 'Chess Tactics: Forks, Pins & Skewers',
+      youtubeId: 'GeOQXgaQjFA',
+      category: 'Tactics',
+      channel: 'Saint Louis Chess Club',
+      duration: '20:18',
+      description: 'A structured lesson on the core tactical motifs that decide most games.'
+    },
+    {
+      id: 'vid-principles',
+      title: '3 Opening Principles Every Player Must Know',
+      youtubeId: 'rh1S0kPdsRk',
+      category: 'Opening',
+      channel: 'Chess.com',
+      duration: '12:33',
+      description: 'Control the centre, develop your pieces, and keep your King safe — explained simply.'
+    },
+    {
+      id: 'vid-checkmates',
+      title: 'Checkmate Patterns You Must Know',
+      youtubeId: 'B4o1Mc0NjPg',
+      category: 'Tactics',
+      channel: 'GothamChess',
+      duration: '16:40',
+      description: 'Back-rank, smothered mate, Anastasia, Arabian and more — the patterns that win games.'
     }
   ],
 
@@ -2978,7 +3229,7 @@ CK.student = {
 
     const elib = document.getElementById('studentELibrarySection');
     const videos = document.getElementById('studentVideoAcademySection');
-    const assigns = document.getElementById('studentResourcesList');
+    const assigns = document.getElementById('studentAssignSection');
 
     if (elib) elib.style.display = tabId === 'elibrary' ? 'block' : 'none';
     if (videos) videos.style.display = tabId === 'videos' ? 'block' : 'none';
@@ -3024,30 +3275,40 @@ CK.student = {
       progressMap[p.book_id] = p;
     });
 
+    const COVERS = {
+      Opening:    { grad: 'linear-gradient(140deg,#3b5998,#1e3358)', icon: '♟️' },
+      Tactics:    { grad: 'linear-gradient(140deg,#d35400,#8e2f00)', icon: '⚡' },
+      Endgame:    { grad: 'linear-gradient(140deg,#16a085,#0b5345)', icon: '👑' },
+      Strategy:   { grad: 'linear-gradient(140deg,#8e44ad,#512e5f)', icon: '🧠' },
+      Middlegame: { grad: 'linear-gradient(140deg,#27ae60,#145a32)', icon: '⚔️' },
+      Psychology: { grad: 'linear-gradient(140deg,#dca33e,#9c7320)', icon: '🎯' },
+      Beginner:   { grad: 'linear-gradient(140deg,#e8527c,#922b4e)', icon: '🌱' }
+    };
     const filtered = this.booksDb.filter(b => this._elibraryCategory === 'All' || b.category === this._elibraryCategory);
+    grid.classList.add('elib-grid');
 
     grid.innerHTML = filtered.map(b => {
       const prog = progressMap[b.id] || { last_page: 0, completed_percentage: 0 };
       const percent = Math.min(100, Math.round(prog.completed_percentage || 0));
+      const cv = COVERS[b.category] || { grad: 'linear-gradient(140deg,#475569,#1e293b)', icon: '📘' };
+      const _e = CK.esc || (s => s);
       return `
-        <div class="p-resource-item" style="flex-direction:column; align-items:stretch; gap:12px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:16px; border-radius:8px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span class="p-badge p-badge-teal" style="font-size:0.75rem;"> ${b.category}</span>
-            <span class="p-badge p-badge-xp" style="font-size:0.75rem;"> +${b.xpReward} XP</span>
-          </div>
-          <div style="flex:1;">
-            <div class="p-resource-name" style="font-size:1.05rem; font-weight:700; margin:4px 0;">${b.title}</div>
-            <div style="font-size:0.8rem; color:var(--p-text-muted);">Author: ${b.author}</div>
-          </div>
-          <div>
-            <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:4px;">
-              <span>Read progress</span>
-              <span>${percent}%</span>
+        <div class="elib-book">
+          <div class="elib-cover" style="background:${cv.grad}">
+            <div class="elib-spine"></div>
+            <div class="elib-cover-top">
+              <span class="elib-cover-cat">${_e(b.category)}</span>
+              <span class="elib-cover-xp">+${b.xpReward} XP</span>
             </div>
-            <div style="height:6px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; margin-bottom:12px;">
-              <div style="height:100%; width:${percent}%; background:var(--p-teal); border-radius:4px;"></div>
-            </div>
-            <button class="p-btn p-btn-blue p-btn-sm" style="width:100%;" onclick="CK.student.openPDFReader('${b.id}')">Read Online</button>
+            <div class="elib-cover-icon">${cv.icon}</div>
+            <div class="elib-cover-title">${_e(b.title)}</div>
+            <div class="elib-cover-author">${_e(b.author)}</div>
+            ${percent >= 100 ? '<div class="elib-done-badge">✓ Completed</div>' : ''}
+          </div>
+          <div class="elib-foot">
+            <div class="elib-prog-row"><span>${b.pages.length} pages</span><span>${percent}%</span></div>
+            <div class="elib-bar"><div class="elib-bar-fill" style="width:${percent}%"></div></div>
+            <button class="p-btn p-btn-gold p-btn-sm elib-read-btn" onclick="CK.student.openPDFReader('${b.id}')">${percent > 0 && percent < 100 ? '📖 Continue Reading' : (percent >= 100 ? '🔄 Read Again' : '📖 Read Online')}</button>
           </div>
         </div>
       `;
@@ -3269,23 +3530,27 @@ CK.student = {
 
     const savedMap = JSON.parse(localStorage.getItem(`ck_video_saved_${studentId}`) || '{}');
 
+    grid.classList.add('va-grid');
     grid.innerHTML = this.videosDb.map(v => {
       const prog = progressMap[v.id] || { last_position_seconds: 0, completed: false };
       const isSaved = !!savedMap[v.id];
-      const resumeText = prog.last_position_seconds > 0 ? `Resume (${Math.round(prog.last_position_seconds)}s)` : 'Watch Video';
+      const resumeText = prog.last_position_seconds > 0 ? `▶ Resume` : '▶ Watch';
+      const _e = CK.esc || (s => s);
       return `
-        <div class="p-resource-item" style="flex-direction:column; align-items:stretch; gap:12px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:16px; border-radius:8px;">
-          <div style="position:relative; aspect-ratio:16/9; background:#000; border-radius:6px; overflow:hidden; border:1px solid rgba(255,255,255,0.05);">
-            <img src="https://img.youtube.com/vi/${v.youtubeId}/0.jpg" style="width:100%; height:100%; object-fit:cover; opacity:0.8;" />
-            <span style="position:absolute; bottom:6px; right:6px; background:rgba(0,0,0,0.8); font-size:0.7rem; padding:2px 6px; border-radius:4px; font-weight:700;">${v.duration}</span>
+        <div class="va-card">
+          <div class="va-thumb" onclick="CK.student.playAcademyVideo('${v.id}')">
+            <img src="https://img.youtube.com/vi/${v.youtubeId}/hqdefault.jpg" loading="lazy" onerror="this.src='https://img.youtube.com/vi/${v.youtubeId}/0.jpg'"/>
+            <span class="va-play">▶</span>
+            <span class="va-dur">${_e(v.duration)}</span>
+            ${prog.completed ? '<span class="va-done">✓ Watched</span>' : ''}
           </div>
-          <div style="flex:1;">
-            <div class="p-resource-name" style="font-size:0.95rem; font-weight:700; margin:4px 0; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${v.title}</div>
-            <div style="font-size:0.8rem; color:var(--p-text-muted);">${v.channel}  <span class="p-badge p-badge-blue" style="font-size:0.65rem; padding:1px 4px;">${v.category}</span></div>
+          <div class="va-body">
+            <div class="va-title">${_e(v.title)}</div>
+            <div class="va-meta"><span class="va-channel">📺 ${_e(v.channel)}</span><span class="p-badge p-badge-blue">${_e(v.category)}</span></div>
           </div>
-          <div style="display:flex; gap:6px;">
-            <button class="p-btn p-btn-blue p-btn-sm" style="flex:2;" onclick="CK.student.playAcademyVideo('${v.id}')">${resumeText}</button>
-            <button class="p-btn p-btn-ghost p-btn-sm" style="flex:1;" onclick="CK.student.toggleSaveVideo('${v.id}')" title="Save for Later">${isSaved ? '' : ''}</button>
+          <div class="va-foot">
+            <button class="p-btn p-btn-blue p-btn-sm va-watch" onclick="CK.student.playAcademyVideo('${v.id}')">${resumeText}</button>
+            <button class="p-btn p-btn-ghost p-btn-sm va-save${isSaved ? ' va-saved' : ''}" onclick="CK.student.toggleSaveVideo('${v.id}')" title="${isSaved ? 'Saved' : 'Save for later'}">${isSaved ? '★' : '☆'}</button>
           </div>
         </div>
       `;

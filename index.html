@@ -54,17 +54,17 @@
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css">
-  <link rel="stylesheet" href="assets/css/portals.css">
-  <link rel="stylesheet" href="assets/css/arena.css">
-  <link rel="stylesheet" href="assets/css/dashboard.css">
-  <link rel="stylesheet" href="assets/css/mobile-landing.css">
-  <link rel="stylesheet" href="assets/css/mobile-portals.css">
-  <link rel="stylesheet" href="assets/css/mobile-arena.css">
-  <link rel="stylesheet" href="assets/css/portal-modern.css">
-  <link rel="stylesheet" href="assets/css/tomai.css">
-  <link rel="stylesheet" href="assets/css/enterprise.css">
-  <link rel="stylesheet" href="assets/css/animations.css">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260608a">
+  <link rel="stylesheet" href="assets/css/portals.css?v=20260608a">
+  <link rel="stylesheet" href="assets/css/arena.css?v=20260608a">
+  <link rel="stylesheet" href="assets/css/dashboard.css?v=20260608a">
+  <link rel="stylesheet" href="assets/css/mobile-landing.css?v=20260608a">
+  <link rel="stylesheet" href="assets/css/mobile-portals.css?v=20260608a">
+  <link rel="stylesheet" href="assets/css/mobile-arena.css?v=20260608a">
+  <link rel="stylesheet" href="assets/css/portal-modern.css?v=20260608a">
+  <link rel="stylesheet" href="assets/css/tomai.css?v=20260608a">
+  <link rel="stylesheet" href="assets/css/enterprise.css?v=20260608a">
+  <link rel="stylesheet" href="assets/css/animations.css?v=20260608a">
   <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
   <!-- Backend: Supabase JS SDK -->
@@ -1720,6 +1720,50 @@
 
     <!-- Dashboards -->
     <div id="admin-page" class="page">
+      <!-- Floating Calculator Widget (admin-only; hidden with the page via opacity/pointer-events) -->
+      <button id="calc-toggle-btn" title="Open Calculator" onclick="toggleCalculator()"><span class="ico">🧮</span></button>
+      <div id="floating-calc" class="calc-window" style="display:none">
+        <div class="calc-header" onmousedown="dragStart(event)">
+          <div class="calc-title">🧮 Quick Math</div>
+          <div class="calc-controls">
+            <button class="calc-ctrl-btn calc-minimize" onclick="minimizeCalculator()" title="Minimize">−</button>
+            <button class="calc-ctrl-btn calc-close" onclick="toggleCalculator()" title="Close">×</button>
+          </div>
+        </div>
+        <div id="calc-body-wrap">
+          <div class="calc-display-container">
+            <div id="calc-prev-expression"></div>
+            <div id="calc-display">0</div>
+          </div>
+          <div class="calc-keypad">
+            <button class="calc-btn calc-action calc-mem" onclick="calcMemory('mc')" title="Memory Clear">MC</button>
+            <button class="calc-btn calc-action calc-mem" onclick="calcMemory('mr')" title="Memory Recall">MR</button>
+            <button class="calc-btn calc-action calc-mem" onclick="calcMemory('m-')" title="Memory Subtract">M-</button>
+            <button class="calc-btn calc-action calc-mem" onclick="calcMemory('m+')" title="Memory Add">M+</button>
+            <button class="calc-btn calc-action" onclick="calcInput('(')">(</button>
+            <button class="calc-btn calc-action" onclick="calcInput(')')">)</button>
+            <button class="calc-btn calc-action" onclick="calcInput('%')">%</button>
+            <button class="calc-btn calc-action" onclick="calcClear()">C</button>
+            <button class="calc-btn" onclick="calcInput('7')">7</button>
+            <button class="calc-btn" onclick="calcInput('8')">8</button>
+            <button class="calc-btn" onclick="calcInput('9')">9</button>
+            <button class="calc-btn calc-action" onclick="calcOperator('/')">÷</button>
+            <button class="calc-btn" onclick="calcInput('4')">4</button>
+            <button class="calc-btn" onclick="calcInput('5')">5</button>
+            <button class="calc-btn" onclick="calcInput('6')">6</button>
+            <button class="calc-btn calc-action" onclick="calcOperator('*')">×</button>
+            <button class="calc-btn" onclick="calcInput('1')">1</button>
+            <button class="calc-btn" onclick="calcInput('2')">2</button>
+            <button class="calc-btn" onclick="calcInput('3')">3</button>
+            <button class="calc-btn calc-action" onclick="calcOperator('-')">−</button>
+            <button class="calc-btn" onclick="calcInput('0')">0</button>
+            <button class="calc-btn" onclick="calcInput('.')">.</button>
+            <button class="calc-btn calc-action" onclick="calcBackspace()">⌫</button>
+            <button class="calc-btn calc-action" onclick="calcOperator('+')">+</button>
+            <button class="calc-btn calc-equals" onclick="calcEvaluate()" style="grid-column: span 4">=</button>
+          </div>
+        </div>
+      </div>
       <div class="portal-body">
         <!-- SIDEBAR -->
         <nav class="p-sidebar">
@@ -3332,13 +3376,13 @@
                   <div class="p-card-title">🧩 Tactical Puzzle Bank</div>
                   <div style="display:flex;gap:6px;">
                     <button class="p-btn p-btn-ghost p-btn-sm"
-                      onclick="CK.puzzlesPro && CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', CK.currentUser && CK.currentUser.id, CK.currentUser && CK.currentUser.name)">All</button>
+                      onclick="CK.puzzlesPro && CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', CK.currentUser && CK.currentUser.id, CK.currentUser && (CK.currentUser.full_name||CK.currentUser.name))">All</button>
                     <button class="p-btn p-btn-ghost p-btn-sm"
-                      onclick="CK.puzzlesPro && CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', CK.currentUser && CK.currentUser.id, CK.currentUser && CK.currentUser.name, 'Easy')">Easy</button>
+                      onclick="CK.puzzlesPro && CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', CK.currentUser && CK.currentUser.id, CK.currentUser && (CK.currentUser.full_name||CK.currentUser.name), 'Easy')">Easy</button>
                     <button class="p-btn p-btn-ghost p-btn-sm"
-                      onclick="CK.puzzlesPro && CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', CK.currentUser && CK.currentUser.id, CK.currentUser && CK.currentUser.name, 'Medium')">Medium</button>
+                      onclick="CK.puzzlesPro && CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', CK.currentUser && CK.currentUser.id, CK.currentUser && (CK.currentUser.full_name||CK.currentUser.name), 'Medium')">Medium</button>
                     <button class="p-btn p-btn-ghost p-btn-sm"
-                      onclick="CK.puzzlesPro && CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', CK.currentUser && CK.currentUser.id, CK.currentUser && CK.currentUser.name, 'Hard')">Hard</button>
+                      onclick="CK.puzzlesPro && CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', CK.currentUser && CK.currentUser.id, CK.currentUser && (CK.currentUser.full_name||CK.currentUser.name), 'Hard')">Hard</button>
                   </div>
                 </div>
                 <div class="p-card-body" id="studentPuzzleProList"
@@ -4088,6 +4132,7 @@
                 </div>
               </div>
             </div>
+            </div><!-- /student-panel-classroom: was unclosed → it was nesting the Opening Trainer + Game Tracker panels, hiding them (parent display:none) -->
 
             <!-- OPENING TRAINER -->
             <div class="p-panel" id="student-panel-openings">
@@ -4109,7 +4154,9 @@
                 </div>
                 <div class="p-card-body" style="padding:20px 24px;">
                   <div id="otMasteryOverview" style="margin-bottom:18px;"></div>
-                  <div id="otGrid" class="ot-grid"></div>
+                  <!-- NOTE: container must NOT carry .ot-grid — renderOpeningList injects its
+                       own .ot-filter-bar + .ot-grid; a grid-on-grid squashed them into columns -->
+                  <div id="otGrid"></div>
                 </div>
               </div>
             </div>
@@ -4615,9 +4662,8 @@
                   <div style="display:flex;gap:8px;">
                     <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.coach.openPuzzleCreator()">➕ Create
                       Puzzle</button>
-                    <button class="p-btn p-btn-ghost p-btn-sm"
-                      onclick="CK.showToast('Puzzle broadcasted to all active students!','success')">🚀
-                      Broadcast</button>
+                    <button class="p-btn p-btn-blue p-btn-sm" onclick="CK.coach.openAssignPuzzle()">🎯 Assign &amp;
+                      Track</button>
                   </div>
                 </div>
                 <div class="p-card-body"
@@ -5141,7 +5187,7 @@
                       students · Mark attendance via class link</div>
                   </div>
                   <button class="p-btn p-btn-teal p-btn-sm"
-                    onclick="CK.classSystem && CK.classSystem.openClassModal(null, function(d){CK.classSystem.createClass(d, CK.currentUser&&CK.currentUser.id, CK.currentUser&&CK.currentUser.name); CK.classSystem.renderCoachClasses('coachClassesList', CK.currentUser&&CK.currentUser.id);})">+
+                    onclick="CK.classSystem && CK.classSystem.openClassModal(null, function(d){CK.classSystem.createClass(d, CK.currentUser&&CK.currentUser.id, CK.currentUser&&(CK.currentUser.full_name||CK.currentUser.name)); CK.classSystem.renderCoachClasses('coachClassesList', CK.currentUser&&CK.currentUser.id);})">+
                     Create Class</button>
                 </div>
                 <div class="p-card-body" id="coachClassesList"
@@ -6833,44 +6879,47 @@
 
    <!-- Core Framework & DB (Load First) -->
    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-   <script defer type="module" src="assets/js/config.js"></script>
-   <script defer type="module" src="assets/js/db.js"></script>
-   <script defer type="module" src="assets/js/auth.js"></script>
-   <script defer type="module" src="assets/js/router.js"></script>
+   <script defer type="module" src="assets/js/config.js?v=20260608a"></script>
+   <script defer type="module" src="assets/js/db.js?v=20260608a"></script>
+   <script defer type="module" src="assets/js/auth.js?v=20260608a"></script>
+   <script defer type="module" src="assets/js/router.js?v=20260608a"></script>
 
   <!-- Feature Modules -->
-  <script defer type="module" src="assets/js/engine.js"></script>
-  <script defer type="module" src="assets/js/engine-play.js"></script>
-  <script defer type="module" src="assets/js/multiplayer.js"></script>
-  <script defer type="module" src="assets/js/classroom.js"></script>
-  <script defer type="module" src="assets/js/webrtc-stream.js"></script>
-  <script defer type="module" src="assets/js/classes-system.js"></script>
-  <script defer type="module" src="assets/js/schedule-pro.js"></script>
-  <script defer type="module" src="assets/js/puzzles-pro.js"></script>
-  <script defer type="module" src="assets/js/certs.js"></script>
-  <script defer type="module" src="assets/js/reports-system.js"></script>
-  <script defer type="module" src="assets/js/parents.js"></script>
-  <script defer type="module" src="assets/js/notifications.js"></script>
-  <script defer type="module" src="assets/js/game-tracker.js"></script>
-  <script defer type="module" src="assets/js/opening-trainer.js"></script>
-  <script defer type="module" src="assets/js/gamification.js"></script>
-  <script defer type="module" src="assets/js/tournament-engine.js"></script>
-  <script defer type="module" src="assets/js/ai-analysis.js"></script>
-  <script defer type="module" src="assets/js/anti-cheat.js"></script>
+  <script defer type="module" src="assets/js/engine.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/engine-play.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/multiplayer.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/classroom.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/webrtc-stream.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/classes-system.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/schedule-pro.js?v=20260608a"></script>
+  <script defer src="assets/js/schedule-matrix.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/puzzles-pro.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/certs.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/reports-system.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/parents.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/notifications.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/game-tracker.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/opening-trainer.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/gamification.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/tournament-engine.js?v=20260608a"></script>
+  <script defer src="assets/js/swiss-pairing.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/ai-analysis.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/anti-cheat.js?v=20260608a"></script>
   <!-- TOM AI: classic script (not a module) so it always runs even if a sibling module errors -->
-  <script defer src="assets/js/tomai.js"></script>
-  <script defer type="module" src="assets/js/main.js"></script>
-  <script defer src="assets/js/enterprise.js"></script>
-  <script defer src="assets/js/animations.js"></script>
+  <script defer src="assets/js/tomai.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/main.js?v=20260608a"></script>
+  <script defer src="assets/js/enterprise.js?v=20260608a"></script>
+  <script defer src="assets/js/calculator.js?v=20260608a"></script>
+  <script defer src="assets/js/animations.js?v=20260608a"></script>
   <!-- GSAP — premium scroll + interaction animations -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <script defer src="assets/js/gsap-effects.js"></script>
-  <script defer type="module" src="assets/js/admin.js"></script>
-  <script defer type="module" src="assets/js/student.js"></script>
-  <script defer type="module" src="assets/js/coach.js"></script>
-  <script defer type="module" src="assets/js/pgn-library.js"></script>
-  <script defer type="module" src="assets/js/chessboard.js"></script>
+  <script defer src="assets/js/gsap-effects.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/admin.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/student.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/coach.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/pgn-library.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/chessboard.js?v=20260608a"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (window.CK && CK.pgnLibrary) {
@@ -6881,9 +6930,9 @@
   </script>
 
 
-  <script defer type="module" src="assets/js/arena.js"></script>
-  <script defer type="module" src="assets/js/arcade.js"></script>
-  <script defer type="module" src="assets/js/arcade-extra.js"></script>
+  <script defer type="module" src="assets/js/arena.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/arcade.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/arcade-extra.js?v=20260608a"></script>
 
   <script>
     const CK = window.CK = window.CK || {};

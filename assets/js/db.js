@@ -22,38 +22,155 @@
         city: "Chennai"
       },
 
-      // Coaches
-      { id: "c1", full_name: "ARIVUSELVAM", email: "arivuselvam@gmail.com", role: "coach", phone_number: "+91 98400 11223", level: "Advanced", batches: "Group 17:00, WEEKEND", timetable: "Mon-Thu 5PM, Sat 10AM", revenue: "₹18,400", classes: 18, star: 5, puzzle: "Endgames Specialist" },
-      { id: "c2", full_name: "GYANASURYA", email: "gyanasurya@gmail.com", role: "coach", phone_number: "+91 98400 22334", level: "Intermediate", batches: "WEEKDAY, WEEKEND", timetable: "Tue-Fri 6PM, Sun 4PM", revenue: "₹15,000", classes: 22, star: 4, puzzle: "Tactics Specialist" },
-      { id: "c3", full_name: "VISHNU", email: "vishnu@gmail.com", role: "coach", phone_number: "+91 98400 33445", level: "Advanced", batches: "FRI& SAT, Fri & Sat", timetable: "Fri-Sat 4PM-8PM", revenue: "₹24,500", classes: 20, star: 5, puzzle: "Calculation Expert" },
-      { id: "c4", full_name: "HARIS", email: "haris@gmail.com", role: "coach", phone_number: "+91 98400 44556", level: "Beginner", batches: "Weekend, MORNING & EVENING", timetable: "Sat-Sun 9AM & 5PM", revenue: "₹11,200", classes: 16, star: 4, puzzle: "Junior Trainer" },
-      { id: "c5", full_name: "YOGESH", email: "yogesh@gmail.com", role: "coach", phone_number: "+91 98400 55667", level: "Beginner", batches: "WEEKEND - SUNDAY&MONDAY, Evening", timetable: "Sun-Mon 5PM", revenue: "₹12,800", classes: 19, star: 4, puzzle: "Fundamentals Coach" },
-      { id: "c6", full_name: "SUDHIN", email: "sudhin@gmail.com", role: "coach", phone_number: "+91 98400 66778", level: "Beginner", batches: "Evening 17:00, Group", timetable: "Mon-Wed 5PM", revenue: "₹9,600", classes: 14, star: 4, puzzle: "Pawn Structures" },
-      { id: "c7", full_name: "RANJITH", email: "ranjith@gmail.com", role: "coach", phone_number: "+91 98400 77889", level: "Advanced", batches: "Weekend, Group 17:00", timetable: "Thu-Sun 5PM", revenue: "₹21,000", classes: 25, star: 5, puzzle: "Positional Master" },
-      { id: "c8", full_name: "ROHITH SELVARAJ", email: "rohith@gmail.com", role: "coach", phone_number: "+91 98400 88990", level: "Beginner", batches: "Group 17:00, MORNING & EVENING", timetable: "Mon-Fri 5PM", revenue: "₹13,700", classes: 21, star: 4, puzzle: "Tactical Trainer" }
+      // ── Coaches (batches use standard format: CoachName Batch# Time) ──
+      { id: "c0c0c0c0-0001-4000-8000-000000000001", full_name: "ARIVUSELVAM", email: "arivuselvam@gmail.com", role: "coach", phone_number: "+91 98400 11223", level: "Advanced", batches: "ARIVUSELVAM Batch 1 7:00 PM - 8:00 PM, ARIVUSELVAM Batch 2 8:00 PM - 9:00 PM, ARIVUSELVAM Batch 3 8:00 PM - 9:00 PM, ARIVUSELVAM Batch 4 7:00 PM - 8:00 PM", timetable: "Mon/Wed 7-9PM, Tue/Thu 7-8PM", revenue: "₹18,400", classes: 18, star: 5, puzzle: 0, specialization: "Endgames Specialist" },
+      { id: "c0c0c0c0-0002-4000-8000-000000000002", full_name: "GYANASURYA", email: "gyanasurya@gmail.com", role: "coach", phone_number: "+91 98400 22334", level: "Beginner", batches: "GYANASURYA Batch 1 5:40 AM - 6:20 AM, GYANASURYA Batch 2 7:00 AM - 8:00 AM, GYANASURYA Batch 3 7:00 PM - 8:00 PM", timetable: "Wed/Fri 5:40AM-8AM, Sat/Sun 7PM", revenue: "₹15,000", classes: 22, star: 4, puzzle: 0, specialization: "Tactics Specialist" },
+      { id: "c0c0c0c0-0003-4000-8000-000000000003", full_name: "VISHNU", email: "vishnu@gmail.com", role: "coach", phone_number: "+91 98400 33445", level: "Intermediate", batches: "VISHNU Batch 1 6:00 PM - 7:00 PM, VISHNU Batch 2 7:00 PM - 8:00 PM, VISHNU Batch 3 7:00 PM - 8:00 PM", timetable: "Wed/Thu 6-8PM, Fri/Sat 7-8PM", revenue: "₹24,500", classes: 20, star: 5, puzzle: 0, specialization: "Calculation Expert" },
+      { id: "c0c0c0c0-0004-4000-8000-000000000004", full_name: "HARIS", email: "haris@gmail.com", role: "coach", phone_number: "+91 98400 44556", level: "Beginner", batches: "HARIS Batch 1", timetable: "Sat-Sun 9AM", revenue: "₹11,200", classes: 16, star: 4, puzzle: 0, specialization: "Junior Trainer" },
+      { id: "c0c0c0c0-0005-4000-8000-000000000005", full_name: "YOGESH", email: "yogesh@gmail.com", role: "coach", phone_number: "+91 98400 55667", level: "Beginner", batches: "YOGESH Batch 1 6:00 AM - 7:00 AM, YOGESH Batch 2 6:00 PM - 7:00 PM, YOGESH Batch 3 7:30 PM - 8:30 PM", timetable: "Thu/Fri 6AM, Sat/Sun 6-8:30PM", revenue: "₹12,800", classes: 19, star: 4, puzzle: 0, specialization: "Fundamentals Coach" },
+      { id: "c0c0c0c0-0006-4000-8000-000000000006", full_name: "SUDHIN", email: "sudhin@gmail.com", role: "coach", phone_number: "+91 98400 66778", level: "Beginner", batches: "SUDHIN Batch 1 7:00 PM - 8:00 PM", timetable: "Sat/Sun 7PM-8PM", revenue: "₹9,600", classes: 14, star: 4, puzzle: 0, specialization: "Pawn Structures" },
+      { id: "c0c0c0c0-0007-4000-8000-000000000007", full_name: "RANJITH", email: "ranjith@gmail.com", role: "coach", phone_number: "+91 98400 77889", level: "Advanced", batches: "RANJITH Batch 1 2:45 PM - 3:45 PM, RANJITH Batch 2 7:00 PM - 8:00 PM", timetable: "Wed/Fri 2:45PM, Sat/Sun 7PM", revenue: "₹21,000", classes: 25, star: 5, puzzle: 0, specialization: "Positional Master" },
+      { id: "c0c0c0c0-0008-4000-8000-000000000008", full_name: "ROHITH SELVARAJ", email: "rohith@gmail.com", role: "coach", phone_number: "+91 98400 88990", level: "Beginner", batches: "ROHITH SELVARAJ Batch 1 5:00 AM - 5:40 AM, ROHITH SELVARAJ Batch 2 8:00 PM - 9:00 PM", timetable: "Tue/Wed/Sat 5AM, Wed/Thu 8PM", revenue: "₹13,700", classes: 21, star: 4, puzzle: 0, specialization: "Tactical Trainer" },
+      { id: "c0c0c0c0-0009-4000-8000-000000000009", full_name: "VASANTH KUMAR", email: "vasanth@gmail.com", role: "coach", phone_number: "+91 98400 99001", level: "Beginner", batches: "VASANTH KUMAR Batch 1 7:00 PM - 7:40 PM", timetable: "Mon/Wed 7PM-7:40PM", revenue: "₹8,500", classes: 12, star: 4, puzzle: 0, specialization: "Opening Prep" },
+
+      // ── Students (from Master Schedule Matrix) ──
+      // --- ROHITH SELVARAJ students ---
+      { id: "s-rohith-1", full_name: "Sreelaxmi", email: "sreelaxmi@gmail.com", role: "student", coach: "ROHITH SELVARAJ", batch: "ROHITH SELVARAJ Batch 1 5:00 AM - 5:40 AM", level: "Beginner", rating: 850, join_date: "2026-05-01", session: "Individual", schedule: "Tue/Wed/Sat 5:00 AM", fee: "2200", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-rohith-2", full_name: "Samiksha", email: "samiksha@gmail.com", role: "student", coach: "ROHITH SELVARAJ", batch: "ROHITH SELVARAJ Batch 2 8:00 PM - 9:00 PM", level: "Beginner", rating: 800, join_date: "2026-05-05", session: "Individual", schedule: "Wed/Thu 8:00 PM", fee: "2200", status: "Paid", due_date: "14-Jul-2026" },
+
+      // --- RANJITH students ---
+      { id: "s-ranjith-1", full_name: "Sakthi", email: "sakthi@gmail.com", role: "student", coach: "RANJITH", batch: "RANJITH Batch 1 2:45 PM - 3:45 PM", level: "Advanced", rating: 1350, join_date: "2026-04-15", session: "Group", schedule: "Wed/Fri 2:45 PM", fee: "3000", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-ranjith-2", full_name: "Sathya", email: "sathya@gmail.com", role: "student", coach: "RANJITH", batch: "RANJITH Batch 1 2:45 PM - 3:45 PM", level: "Advanced", rating: 1300, join_date: "2026-04-15", session: "Group", schedule: "Wed/Fri 2:45 PM", fee: "3000", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-ranjith-3", full_name: "Riyas", email: "riyas@gmail.com", role: "student", coach: "RANJITH", batch: "RANJITH Batch 2 7:00 PM - 8:00 PM", level: "Advanced", rating: 1250, join_date: "2026-04-20", session: "Group", schedule: "Sat/Sun 7:00 PM", fee: "3000", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-ranjith-4", full_name: "Susil", email: "susil@gmail.com", role: "student", coach: "RANJITH", batch: "RANJITH Batch 2 7:00 PM - 8:00 PM", level: "Advanced", rating: 1200, join_date: "2026-04-20", session: "Group", schedule: "Sat/Sun 7:00 PM", fee: "3000", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-ranjith-5", full_name: "Varun", email: "varun@gmail.com", role: "student", coach: "RANJITH", batch: "RANJITH Batch 2 7:00 PM - 8:00 PM", level: "Advanced", rating: 1280, join_date: "2026-04-20", session: "Group", schedule: "Sat/Sun 7:00 PM", fee: "3000", status: "Paid", due_date: "14-Jul-2026" },
+
+      // --- GYANASURYA students ---
+      { id: "s-gyana-1", full_name: "Ekash", email: "ekash@gmail.com", role: "student", coach: "GYANASURYA", batch: "GYANASURYA Batch 1 5:40 AM - 6:20 AM", level: "Beginner", rating: 750, join_date: "2026-05-10", session: "Individual", schedule: "Wed/Fri 5:40 AM", fee: "2200", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-gyana-2", full_name: "Nigunan", email: "nigunan@gmail.com", role: "student", coach: "GYANASURYA", batch: "GYANASURYA Batch 2 7:00 AM - 8:00 AM", level: "Beginner", rating: 700, join_date: "2026-05-12", session: "Group", schedule: "Wed/Fri 7:00 AM", fee: "2200", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-gyana-3", full_name: "Aara", email: "aara@gmail.com", role: "student", coach: "GYANASURYA", batch: "GYANASURYA Batch 3 7:00 PM - 8:00 PM", level: "Beginner", rating: 680, join_date: "2026-05-15", session: "Group", schedule: "Sat/Sun 7:00 PM", fee: "2200", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-gyana-4", full_name: "Anush", email: "anush@gmail.com", role: "student", coach: "GYANASURYA", batch: "GYANASURYA Batch 3 7:00 PM - 8:00 PM", level: "Beginner", rating: 720, join_date: "2026-05-15", session: "Group", schedule: "Sat/Sun 7:00 PM", fee: "2200", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-gyana-5", full_name: "Rakshitha", email: "rakshitha@gmail.com", role: "student", coach: "GYANASURYA", batch: "GYANASURYA Batch 3 7:00 PM - 8:00 PM", level: "Beginner", rating: 690, join_date: "2026-05-15", session: "Group", schedule: "Sat/Sun 7:00 PM", fee: "2200", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-gyana-6", full_name: "Shervin", email: "shervin@gmail.com", role: "student", coach: "GYANASURYA", batch: "GYANASURYA Batch 3 7:00 PM - 8:00 PM", level: "Beginner", rating: 710, join_date: "2026-05-15", session: "Group", schedule: "Sat/Sun 7:00 PM", fee: "2200", status: "Paid", due_date: "14-Jul-2026" },
+
+      // --- ARIVUSELVAM students ---
+      { id: "s-arivu-1", full_name: "Eduveer", email: "eduveer@gmail.com", role: "student", coach: "ARIVUSELVAM", batch: "ARIVUSELVAM Batch 1 7:00 PM - 8:00 PM", level: "Advanced", rating: 1400, join_date: "2026-04-10", session: "Group", schedule: "Mon/Wed 7:00 PM", fee: "3500", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-arivu-2", full_name: "Yugan", email: "yugan@gmail.com", role: "student", coach: "ARIVUSELVAM", batch: "ARIVUSELVAM Batch 1 7:00 PM - 8:00 PM", level: "Advanced", rating: 1380, join_date: "2026-04-10", session: "Group", schedule: "Mon/Wed 7:00 PM", fee: "3500", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-arivu-3", full_name: "Aarunya", email: "aarunya@gmail.com", role: "student", coach: "ARIVUSELVAM", batch: "ARIVUSELVAM Batch 2 8:00 PM - 9:00 PM", level: "Advanced", rating: 1250, join_date: "2026-04-12", session: "Group", schedule: "Mon/Wed 8:00 PM", fee: "3500", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-arivu-4", full_name: "Magathi", email: "magathi@gmail.com", role: "student", coach: "ARIVUSELVAM", batch: "ARIVUSELVAM Batch 2 8:00 PM - 9:00 PM", level: "Advanced", rating: 1200, join_date: "2026-04-12", session: "Group", schedule: "Mon/Wed 8:00 PM", fee: "3500", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-arivu-5", full_name: "Pranav", email: "pranav@gmail.com", role: "student", coach: "ARIVUSELVAM", batch: "ARIVUSELVAM Batch 2 8:00 PM - 9:00 PM", level: "Advanced", rating: 1300, join_date: "2026-04-12", session: "Group", schedule: "Mon/Wed 8:00 PM", fee: "3500", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-arivu-6", full_name: "Aatish", email: "aatish@gmail.com", role: "student", coach: "ARIVUSELVAM", batch: "ARIVUSELVAM Batch 3 8:00 PM - 9:00 PM", level: "Advanced", rating: 1150, join_date: "2026-04-18", session: "Group", schedule: "Mon/Wed 8:00 PM", fee: "3500", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-arivu-7", full_name: "Uttsan", email: "uttsan@gmail.com", role: "student", coach: "ARIVUSELVAM", batch: "ARIVUSELVAM Batch 3 8:00 PM - 9:00 PM", level: "Advanced", rating: 1180, join_date: "2026-04-18", session: "Group", schedule: "Mon/Wed 8:00 PM", fee: "3500", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-arivu-8", full_name: "Mukilan", email: "mukilan@gmail.com", role: "student", coach: "ARIVUSELVAM", batch: "ARIVUSELVAM Batch 4 7:00 PM - 8:00 PM", level: "Advanced", rating: 1320, join_date: "2026-04-22", session: "Group", schedule: "Tue/Thu 7:00 PM", fee: "3500", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-arivu-9", full_name: "Sachin", email: "sachin@gmail.com", role: "student", coach: "ARIVUSELVAM", batch: "ARIVUSELVAM Batch 4 7:00 PM - 8:00 PM", level: "Advanced", rating: 1290, join_date: "2026-04-22", session: "Group", schedule: "Tue/Thu 7:00 PM", fee: "3500", status: "Paid", due_date: "14-Jul-2026" },
+
+      // --- YOGESH students ---
+      { id: "s-yogesh-1", full_name: "Jeevan", email: "jeevan@gmail.com", role: "student", coach: "YOGESH", batch: "YOGESH Batch 1 6:00 AM - 7:00 AM", level: "Beginner", rating: 780, join_date: "2026-05-08", session: "Individual", schedule: "Thu/Fri 6:00 AM", fee: "2200", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-yogesh-2", full_name: "Sai", email: "sai@gmail.com", role: "student", coach: "YOGESH", batch: "YOGESH Batch 2 6:00 PM - 7:00 PM", level: "Beginner", rating: 820, join_date: "2026-05-10", session: "Group", schedule: "Sat/Sun 6:00 PM", fee: "2200", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-yogesh-3", full_name: "Venkatesh Son", email: "venkateshson@gmail.com", role: "student", coach: "YOGESH", batch: "YOGESH Batch 2 6:00 PM - 7:00 PM", level: "Beginner", rating: 790, join_date: "2026-05-10", session: "Group", schedule: "Sat/Sun 6:00 PM", fee: "2200", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-yogesh-4", full_name: "Athvik", email: "athvik@gmail.com", role: "student", coach: "YOGESH", batch: "YOGESH Batch 3 7:30 PM - 8:30 PM", level: "Beginner", rating: 760, join_date: "2026-05-12", session: "Group", schedule: "Sat/Sun 7:30 PM", fee: "2200", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-yogesh-5", full_name: "Mohammad Rayan", email: "mohammadrayan@gmail.com", role: "student", coach: "YOGESH", batch: "YOGESH Batch 3 7:30 PM - 8:30 PM", level: "Beginner", rating: 740, join_date: "2026-05-12", session: "Group", schedule: "Sat/Sun 7:30 PM", fee: "2200", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-yogesh-6", full_name: "Pranesh", email: "pranesh@gmail.com", role: "student", coach: "YOGESH", batch: "YOGESH Batch 3 7:30 PM - 8:30 PM", level: "Beginner", rating: 810, join_date: "2026-05-12", session: "Group", schedule: "Sat/Sun 7:30 PM", fee: "2200", status: "Paid", due_date: "14-Jul-2026" },
+
+      // --- SUDHIN students ---
+      { id: "s-sudhin-1", full_name: "Aakif", email: "aakif@gmail.com", role: "student", coach: "SUDHIN", batch: "SUDHIN Batch 1 7:00 PM - 8:00 PM", level: "Beginner", rating: 700, join_date: "2026-05-20", session: "Group", schedule: "Sat/Sun 7:00 PM", fee: "2200", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-sudhin-2", full_name: "Pranish", email: "pranish@gmail.com", role: "student", coach: "SUDHIN", batch: "SUDHIN Batch 1 7:00 PM - 8:00 PM", level: "Beginner", rating: 720, join_date: "2026-05-20", session: "Group", schedule: "Sat/Sun 7:00 PM", fee: "2200", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-sudhin-3", full_name: "Venkatesh Daughter", email: "venkateshdaughter@gmail.com", role: "student", coach: "SUDHIN", batch: "SUDHIN Batch 1 7:00 PM - 8:00 PM", level: "Beginner", rating: 680, join_date: "2026-05-20", session: "Group", schedule: "Sat/Sun 7:00 PM", fee: "2200", status: "Paid", due_date: "14-Jul-2026" },
+
+      // --- VASANTH KUMAR students ---
+      { id: "s-vasanth-1", full_name: "Aaradhya", email: "aaradhya@gmail.com", role: "student", coach: "VASANTH KUMAR", batch: "VASANTH KUMAR Batch 1 7:00 PM - 7:40 PM", level: "Beginner", rating: 650, join_date: "2026-05-25", session: "Individual", schedule: "Mon/Wed 7:00 PM", fee: "2200", status: "Paid", due_date: "14-Jul-2026" },
+
+      // --- VISHNU students ---
+      { id: "s-vishnu-1", full_name: "Abinitha", email: "abinitha@gmail.com", role: "student", coach: "VISHNU", batch: "VISHNU Batch 1 6:00 PM - 7:00 PM", level: "Intermediate", rating: 1050, join_date: "2026-04-28", session: "Individual", schedule: "Wed/Thu 6:00 PM", fee: "2800", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-vishnu-2", full_name: "Yogesh (Student)", email: "yogeshstudent@gmail.com", role: "student", coach: "VISHNU", batch: "VISHNU Batch 2 7:00 PM - 8:00 PM", level: "Intermediate", rating: 1100, join_date: "2026-04-28", session: "Individual", schedule: "Wed/Thu 7:00 PM", fee: "2800", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-vishnu-3", full_name: "Akmal", email: "akmal@gmail.com", role: "student", coach: "VISHNU", batch: "VISHNU Batch 3 7:00 PM - 8:00 PM", level: "Intermediate", rating: 980, join_date: "2026-05-02", session: "Group", schedule: "Fri/Sat 7:00 PM", fee: "2800", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-vishnu-4", full_name: "Anfal", email: "anfal@gmail.com", role: "student", coach: "VISHNU", batch: "VISHNU Batch 3 7:00 PM - 8:00 PM", level: "Intermediate", rating: 950, join_date: "2026-05-02", session: "Group", schedule: "Fri/Sat 7:00 PM", fee: "2800", status: "Paid", due_date: "14-Jul-2026" },
+      { id: "s-vishnu-5", full_name: "Buvargan", email: "buvargan@gmail.com", role: "student", coach: "VISHNU", batch: "VISHNU Batch 3 7:00 PM - 8:00 PM", level: "Intermediate", rating: 1020, join_date: "2026-05-02", session: "Group", schedule: "Fri/Sat 7:00 PM", fee: "2800", status: "Paid", due_date: "14-Jul-2026" }
+    ],
+
+    // ── Global Batch Registry (derived from coaches for quick lookups) ──
+    batches: [
+      { id: "b-rohith-1", coach: "ROHITH SELVARAJ", batchName: "ROHITH SELVARAJ Batch 1 5:00 AM - 5:40 AM", time: "5:00 AM - 5:40 AM", days: ["Tue","Wed","Sat"], students: ["Sreelaxmi"] },
+      { id: "b-rohith-2", coach: "ROHITH SELVARAJ", batchName: "ROHITH SELVARAJ Batch 2 8:00 PM - 9:00 PM", time: "8:00 PM - 9:00 PM", days: ["Wed","Thu"], students: ["Samiksha"] },
+      { id: "b-ranjith-1", coach: "RANJITH", batchName: "RANJITH Batch 1 2:45 PM - 3:45 PM", time: "2:45 PM - 3:45 PM", days: ["Wed","Fri"], students: ["Sakthi","Sathya"] },
+      { id: "b-ranjith-2", coach: "RANJITH", batchName: "RANJITH Batch 2 7:00 PM - 8:00 PM", time: "7:00 PM - 8:00 PM", days: ["Sat","Sun"], students: ["Riyas","Susil","Varun"] },
+      { id: "b-gyana-1", coach: "GYANASURYA", batchName: "GYANASURYA Batch 1 5:40 AM - 6:20 AM", time: "5:40 AM - 6:20 AM", days: ["Wed","Fri"], students: ["Ekash"] },
+      { id: "b-gyana-2", coach: "GYANASURYA", batchName: "GYANASURYA Batch 2 7:00 AM - 8:00 AM", time: "7:00 AM - 8:00 AM", days: ["Wed","Fri"], students: ["Nigunan"] },
+      { id: "b-gyana-3", coach: "GYANASURYA", batchName: "GYANASURYA Batch 3 7:00 PM - 8:00 PM", time: "7:00 PM - 8:00 PM", days: ["Sat","Sun"], students: ["Aara","Anush","Rakshitha","Shervin"] },
+      { id: "b-arivu-1", coach: "ARIVUSELVAM", batchName: "ARIVUSELVAM Batch 1 7:00 PM - 8:00 PM", time: "7:00 PM - 8:00 PM", days: ["Mon","Wed"], students: ["Eduveer","Yugan"] },
+      { id: "b-arivu-2", coach: "ARIVUSELVAM", batchName: "ARIVUSELVAM Batch 2 8:00 PM - 9:00 PM", time: "8:00 PM - 9:00 PM", days: ["Mon","Wed"], students: ["Aarunya","Magathi","Pranav"] },
+      { id: "b-arivu-3", coach: "ARIVUSELVAM", batchName: "ARIVUSELVAM Batch 3 8:00 PM - 9:00 PM", time: "8:00 PM - 9:00 PM", days: ["Mon","Wed"], students: ["Aatish","Uttsan"] },
+      { id: "b-arivu-4", coach: "ARIVUSELVAM", batchName: "ARIVUSELVAM Batch 4 7:00 PM - 8:00 PM", time: "7:00 PM - 8:00 PM", days: ["Tue","Thu"], students: ["Mukilan","Sachin"] },
+      { id: "b-yogesh-1", coach: "YOGESH", batchName: "YOGESH Batch 1 6:00 AM - 7:00 AM", time: "6:00 AM - 7:00 AM", days: ["Thu","Fri"], students: ["Jeevan"] },
+      { id: "b-yogesh-2", coach: "YOGESH", batchName: "YOGESH Batch 2 6:00 PM - 7:00 PM", time: "6:00 PM - 7:00 PM", days: ["Sat","Sun"], students: ["Sai","Venkatesh Son"] },
+      { id: "b-yogesh-3", coach: "YOGESH", batchName: "YOGESH Batch 3 7:30 PM - 8:30 PM", time: "7:30 PM - 8:30 PM", days: ["Sat","Sun"], students: ["Athvik","Mohammad Rayan","Pranesh"] },
+      { id: "b-sudhin-1", coach: "SUDHIN", batchName: "SUDHIN Batch 1 7:00 PM - 8:00 PM", time: "7:00 PM - 8:00 PM", days: ["Sat","Sun"], students: ["Aakif","Pranish","Venkatesh Daughter"] },
+      { id: "b-vasanth-1", coach: "VASANTH KUMAR", batchName: "VASANTH KUMAR Batch 1 7:00 PM - 7:40 PM", time: "7:00 PM - 7:40 PM", days: ["Mon","Wed"], students: ["Aaradhya"] },
+      { id: "b-vishnu-1", coach: "VISHNU", batchName: "VISHNU Batch 1 6:00 PM - 7:00 PM", time: "6:00 PM - 7:00 PM", days: ["Wed","Thu"], students: ["Abinitha"] },
+      { id: "b-vishnu-2", coach: "VISHNU", batchName: "VISHNU Batch 2 7:00 PM - 8:00 PM", time: "7:00 PM - 8:00 PM", days: ["Wed","Thu"], students: ["Yogesh (Student)"] },
+      { id: "b-vishnu-3", coach: "VISHNU", batchName: "VISHNU Batch 3 7:00 PM - 8:00 PM", time: "7:00 PM - 8:00 PM", days: ["Fri","Sat"], students: ["Akmal","Anfal","Buvargan"] }
     ],
 
     expenses: [],
     document: [],
     resources: [],
     attendance: [],
+    monthly_reports: [],
+    vault_recordings: [],
     ratings: [],
     tourRatings: []
   };
+
 
   // Helper: Initialize localStorage if empty (never overwrite existing data)
   const initLocalStore = () => {
     Object.keys(DEFAULT_DB).forEach(key => {
       const storeKey = `ck_db_${key}`;
+      let existing = [];
       if (!localStorage.getItem(storeKey)) {
         localStorage.setItem(storeKey, JSON.stringify(DEFAULT_DB[key]));
+        existing = DEFAULT_DB[key];
+      } else {
+        try {
+          existing = JSON.parse(localStorage.getItem(storeKey));
+        } catch(e) {
+          existing = [];
+        }
+      }
+      
+      // Auto-seed missing coaches to Supabase AND local
+      if (key === 'users') {
+        try {
+          const existingCoachEmails = new Set(existing.filter(u => u.role === 'coach').map(u => (u.email || '').toLowerCase()));
+          const missingCoaches = DEFAULT_DB.users.filter(u => u.role === 'coach' && !existingCoachEmails.has((u.email || '').toLowerCase()));
+          if (missingCoaches.length > 0) {
+            existing.push(...missingCoaches);
+            localStorage.setItem(storeKey, JSON.stringify(existing));
+          }
+          
+          // Always try to sync default coaches up to Supabase just in case they are missing there
+          setTimeout(async () => {
+            if (canUseSupabase()) {
+              try {
+                for (const coach of DEFAULT_DB.users.filter(u => u.role === 'coach')) {
+                   // Strip 'id' prefix if it exists in local but Supabase expects UUIDs? 
+                   // Wait, our coaches use 'c1', 'c2' string IDs.
+                   // Ensure all required fields are uploaded so Admin dashboard populates fully
+                   const safeCoach = { ...coach };
+                   await window.supabaseClient.from('users').upsert(safeCoach, { onConflict: 'id' }).catch(() => {});
+                }
+                console.log('[ChessKidoo DB] Seeded/Verified default coaches in Supabase.');
+              } catch(e) {}
+            }
+          }, 2000);
+        } catch(e) {}
       }
     });
     // Pre-populate offline credentials in localStorage so demo accounts are fully accessible out-of-the-box
     const credsKey = 'ck_user_credentials';
     const credsVersion = 'ck_creds_version';
-    if (!localStorage.getItem(credsKey) || localStorage.getItem(credsVersion) !== '3') {
-      localStorage.setItem(credsVersion, '3');
+    if (!localStorage.getItem(credsKey) || localStorage.getItem(credsVersion) !== '4') {
+      localStorage.setItem(credsVersion, '4');
       const defaultCreds = {
         'admin@chesskidoo.com': '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', // admin123
         'admin@gmail.com': '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', // admin123
@@ -65,7 +182,46 @@
         'yogesh@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
         'sudhin@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
         'ranjith@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
-        'rohith@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248' // chess123
+        'rohith@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
+        'vasanth@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
+        // Student credentials (all use 123456)
+        'sreelaxmi@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'samiksha@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'sakthi@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'sathya@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'riyas@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'susil@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'varun@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'ekash@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'nigunan@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'aara@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'anush@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'rakshitha@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'shervin@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'eduveer@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'yugan@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'aarunya@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'magathi@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'pranav@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'aatish@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'uttsan@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'mukilan@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'sachin@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'jeevan@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'sai@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'venkateshson@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'athvik@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'mohammadrayan@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'pranesh@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'aakif@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'pranish@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'venkateshdaughter@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'aaradhya@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'abinitha@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'yogeshstudent@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'akmal@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'anfal@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+        'buvargan@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92'
       };
       localStorage.setItem(credsKey, JSON.stringify(defaultCreds));
     }
@@ -94,6 +250,18 @@
     console.warn(`[ChessKidoo DB] Supabase temporarily unreachable; retrying in ${_COOLDOWN_MS/1000}s. Using local storage meanwhile.`);
   };
 
+  // Tables that returned "does not exist" (404 / PGRST205). Once a table is known
+  // missing we stop hammering Supabase with it and use localStorage directly —
+  // avoids repeated 404 noise (e.g. opening_mastery was queried 12+ times/render).
+  const _deadTables = new Set();
+  const tableLive = (name) => !_deadTables.has(name);
+  const flagIfMissing = (name, error) => {
+    if (error && (error.code === 'PGRST205' || error.code === '42P01' ||
+        /could not find the table|does not exist/i.test(error.message || ''))) {
+      _deadTables.add(name);
+    }
+  };
+
   /* ─── CK.db Main Object ─── */
   CK.db = {
     // --- USER PROFILE OPERATIONS ---
@@ -103,7 +271,7 @@
       if (canUseSupabase()) {
         try {
           let query = window.supabaseClient.from('users').select('*');
-          if (role) query = query.eq('role', role);
+          if (role) query = query.ilike('role', role);
           // Race against a 3s timeout to prevent hanging
           const result = await Promise.race([
             query,
@@ -123,9 +291,13 @@
                 getLocal('users').forEach(u => { if (u && u.id != null) byId[u.id] = u; });
                 rows.forEach(u => { if (u && u.id != null) byId[u.id] = u; });
                 const liveIds = new Set(rows.map(u => u.id));
-                setLocal('users', Object.values(byId).filter(u => u.role !== role || liveIds.has(u.id)));
+                const defaultIds = new Set(DEFAULT_DB.users.map(du => du.id));
+                setLocal('users', Object.values(byId).filter(u => u.role !== role || liveIds.has(u.id) || defaultIds.has(u.id)));
               } else {
-                setLocal('users', rows);
+                const byId = {};
+                DEFAULT_DB.users.forEach(u => { if (u && u.id != null) byId[u.id] = u; });
+                rows.forEach(u => { if (u && u.id != null) byId[u.id] = u; });
+                setLocal('users', Object.values(byId));
               }
             } catch (_) { /* localStorage full / disabled — non-fatal */ }
             return rows;
@@ -423,6 +595,64 @@
       }
     },
 
+    // --- BATCHES OPERATIONS ---
+    async getBatches() {
+      // Generate batches dynamically from coaches if not stored
+      let stored = getLocal('batches');
+      if (stored && stored.length > 0) return stored;
+
+      const coaches = await this.getProfiles('coach');
+      const batches = [];
+      const seen = new Set();
+      
+      coaches.forEach(coach => {
+        if (coach.batches) {
+          const coachBatches = coach.batches.split(',').map(b => b.trim()).filter(b => b);
+          coachBatches.forEach(batchStr => {
+            if (!seen.has(batchStr)) {
+              seen.add(batchStr);
+              batches.push({ batchName: batchStr, coach: coach.full_name || 'Coach' });
+            }
+          });
+        }
+      });
+      
+      return batches;
+    },
+
+
+    // --- VAULT RECORDINGS OPERATIONS ---
+    async getVaultRecordings() {
+      if (canUseSupabase()) {
+        try {
+          let query = window.supabaseClient.from('vault_recordings').select('*');
+          const { data, error } = await query;
+          if (!error && data) {
+            setLocal('vault_recordings', data);
+            return data;
+          }
+        } catch (e) {
+          console.warn("[ChessKidoo DB] Vault fetch error, falling back to local:", e);
+        }
+      }
+      return getLocal('vault_recordings') || [];
+    },
+
+    async saveVaultRecording(rec) {
+      if (!rec.id) rec.id = 'vrec-' + Date.now();
+      if (!rec.timestamp) rec.timestamp = Date.now();
+      if (canUseSupabase()) {
+        try {
+          const { error } = await window.supabaseClient.from('vault_recordings').upsert(rec);
+          if (error) console.warn("[ChessKidoo DB] Vault save error:", error.message);
+        } catch (e) {}
+      }
+      const vault = getLocal('vault_recordings') || [];
+      const idx = vault.findIndex(v => v.id === rec.id || (v.batch === rec.batch && v.date === rec.date));
+      if (idx !== -1) vault[idx] = { ...vault[idx], ...rec };
+      else vault.push(rec);
+      setLocal('vault_recordings', vault);
+    },
 
     // --- RATINGS OPERATIONS ---
 
@@ -753,6 +983,115 @@
       return score;
     },
 
+    // --- PUZZLE ASSIGNMENTS (coach → student tracking) ---
+    async getPuzzleAssignments(filter = {}) {
+      if (canUseSupabase() && tableLive('puzzle_assignments')) {
+        try {
+          const { data, error } = await window.supabaseClient.from('puzzle_assignments').select('*');
+          if (error) flagIfMissing('puzzle_assignments', error);
+          if (!error && data) { localStorage.setItem('ck_puzzle_assignments', JSON.stringify(data)); }
+        } catch (e) { }
+      }
+      let all = JSON.parse(localStorage.getItem('ck_puzzle_assignments') || '[]');
+      if (filter.coachId) all = all.filter(a => a.coachId === filter.coachId);
+      if (filter.studentId) all = all.filter(a => a.studentId === filter.studentId);
+      return all;
+    },
+    async savePuzzleAssignment(a) {
+      if (!a.id) a.id = 'pa-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+      if (!a.assignedAt) a.assignedAt = new Date().toISOString();
+      if (canUseSupabase() && tableLive('puzzle_assignments')) {
+        try { const { error } = await window.supabaseClient.from('puzzle_assignments').upsert(a); flagIfMissing('puzzle_assignments', error); } catch (e) { }
+      }
+      const all = JSON.parse(localStorage.getItem('ck_puzzle_assignments') || '[]');
+      const idx = all.findIndex(x => x.id === a.id);
+      if (idx !== -1) all[idx] = a; else all.push(a);
+      localStorage.setItem('ck_puzzle_assignments', JSON.stringify(all));
+      return a;
+    },
+
+    async getGames(userId = null) {
+      if (canUseSupabase() && tableLive('student_games')) {
+        try {
+          let query = window.supabaseClient.from('student_games').select('*');
+          if (userId) query = query.eq('userId', userId);
+          const { data, error } = await query;
+          if (error) flagIfMissing('student_games', error);
+          if (!error && data) { localStorage.setItem('ck_games', JSON.stringify(data)); return data; }
+        } catch (e) { }
+      }
+      const all = JSON.parse(localStorage.getItem('ck_games') || '[]');
+      // Games are saved with `studentId` (game-tracker); accept either field so
+      // CK.db.getGames(id) and CK.gameTracker.getGames(id) agree.
+      if (userId) return all.filter(s => s.userId === userId || s.studentId === userId);
+      return all;
+    },
+    async saveGame(game) {
+      if (!game.id) game.id = 'gm-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+      if (canUseSupabase() && tableLive('student_games')) {
+        try { const { error } = await window.supabaseClient.from('student_games').upsert(game); flagIfMissing('student_games', error); } catch (e) { }
+      }
+      const all = JSON.parse(localStorage.getItem('ck_games') || '[]');
+      const idx = all.findIndex(s => s.id === game.id);
+      if (idx !== -1) all[idx] = game; else all.push(game);
+      localStorage.setItem('ck_games', JSON.stringify(all));
+      return game;
+    },
+    async getOpeningMastery(userId = null) {
+      if (canUseSupabase() && tableLive('opening_mastery')) {
+        try {
+          let query = window.supabaseClient.from('opening_mastery').select('*');
+          if (userId) query = query.eq('userId', userId);
+          const { data, error } = await query;
+          if (error) flagIfMissing('opening_mastery', error);
+          if (!error && data) { localStorage.setItem('ck_opening_mastery', JSON.stringify(data)); return data; }
+        } catch (e) { }
+      }
+      const all = JSON.parse(localStorage.getItem('ck_opening_mastery') || '[]');
+      if (userId) return all.filter(s => s.userId === userId);
+      return all;
+    },
+    async saveOpeningMastery(mastery) {
+      if (!mastery.id) mastery.id = 'om-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+      if (canUseSupabase() && tableLive('opening_mastery')) {
+        try { const { error } = await window.supabaseClient.from('opening_mastery').upsert(mastery); flagIfMissing('opening_mastery', error); } catch (e) { }
+      }
+      const all = JSON.parse(localStorage.getItem('ck_opening_mastery') || '[]');
+      const idx = all.findIndex(s => s.id === mastery.id);
+      if (idx !== -1) all[idx] = mastery; else all.push(mastery);
+      localStorage.setItem('ck_opening_mastery', JSON.stringify(all));
+      return mastery;
+    },
+
+    // --- E-LIBRARY READING PROGRESS (per student; localStorage-backed) ---
+    // These were referenced by the student e-library but never implemented, so
+    // renderELibrary threw "getELibraryProgress is not a function" and no books
+    // ever rendered. Personal reading progress → localStorage is appropriate.
+    async getELibraryProgress(studentId = null) {
+      const all = JSON.parse(localStorage.getItem('ck_elib_progress') || '[]');
+      return studentId ? all.filter(p => p.student_id === studentId) : all;
+    },
+    async saveELibraryProgress(p) {
+      if (!p || !p.student_id || !p.book_id) return p;
+      const all = JSON.parse(localStorage.getItem('ck_elib_progress') || '[]');
+      const idx = all.findIndex(x => x.student_id === p.student_id && x.book_id === p.book_id);
+      if (idx !== -1) all[idx] = { ...all[idx], ...p }; else all.push(p);
+      localStorage.setItem('ck_elib_progress', JSON.stringify(all));
+      return p;
+    },
+    async getVideoProgress(studentId = null) {
+      const all = JSON.parse(localStorage.getItem('ck_video_progress') || '[]');
+      return studentId ? all.filter(p => p.student_id === studentId) : all;
+    },
+    async saveVideoProgress(p) {
+      if (!p || !p.student_id || !p.video_id) return p;
+      const all = JSON.parse(localStorage.getItem('ck_video_progress') || '[]');
+      const idx = all.findIndex(x => x.student_id === p.student_id && x.video_id === p.video_id);
+      if (idx !== -1) all[idx] = { ...all[idx], ...p }; else all.push(p);
+      localStorage.setItem('ck_video_progress', JSON.stringify(all));
+      return p;
+    },
+
     // --- NEW: COACH ATTENDANCE ---
     async getCoachAttendance(coachId = null) {
       if (canUseSupabase()) {
@@ -804,7 +1143,9 @@
       if (canUseSupabase()) {
         try {
           const { data, error } = await window.supabaseClient.from('assignments').select('*').order('created_at', { ascending: false });
-          if (!error && data) { localStorage.setItem('ck_assignments', JSON.stringify(data)); return data; }
+          // Only adopt Supabase when it actually has rows — an empty result (e.g.
+          // a read racing a just-written row) must NOT wipe locally-saved homework.
+          if (!error && data && data.length) { localStorage.setItem('ck_assignments', JSON.stringify(data)); return data; }
         } catch(e) {}
       }
       return JSON.parse(localStorage.getItem('ck_assignments') || '[]');
@@ -1052,6 +1393,139 @@
       const notes = JSON.parse(localStorage.getItem('ck_coach_notes') || '[]');
       if (!studentName) return notes;
       return notes.filter(n => (n.student || '').toLowerCase() === studentName.toLowerCase()).reverse();
+    },
+    // --- TOURNAMENT INTEREST OPERATIONS ---
+    async getTournamentInterests() {
+      if (canUseSupabase() && !(window.sbTableKnownMissing && window.sbTableKnownMissing('tournament_interests'))) {
+        try {
+          const { data, error } = await window.supabaseClient.from('tournament_interests').select('*');
+          if (error && window.sbIsTableMissing && window.sbIsTableMissing(error)) {
+            window.sbMarkTableMissing('tournament_interests');
+          } else if (!error && data) {
+            localStorage.setItem('ck_tournament_interests', JSON.stringify(data));
+            return data;
+          }
+        } catch(e) {}
+      }
+      return JSON.parse(localStorage.getItem('ck_tournament_interests') || '[]');
+    },
+    async saveTournamentInterest(ti) {
+      if (!ti.id) ti.id = 'ti-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+      ti.updated_at = new Date().toISOString();
+      if (canUseSupabase() && !(window.sbTableKnownMissing && window.sbTableKnownMissing('tournament_interests'))) {
+        try {
+          const { error } = await window.supabaseClient.from('tournament_interests').upsert(ti);
+          if (error && window.sbIsTableMissing && window.sbIsTableMissing(error)) {
+            window.sbMarkTableMissing('tournament_interests');
+          }
+        } catch(e) {}
+      }
+      const all = JSON.parse(localStorage.getItem('ck_tournament_interests') || '[]');
+      const idx = all.findIndex(x => x.id === ti.id || (x.student_id === ti.student_id && x.tournament_id === ti.tournament_id));
+      if (idx !== -1) all[idx] = { ...all[idx], ...ti }; else all.unshift(ti);
+      localStorage.setItem('ck_tournament_interests', JSON.stringify(all));
+      return ti;
+    },
+
+    // --- E-LIBRARY PROGRESS OPERATIONS ---
+    async getELibraryProgress(studentId) {
+      if (canUseSupabase() && !(window.sbTableKnownMissing && window.sbTableKnownMissing('elibrary_progress'))) {
+        try {
+          const { data, error } = await window.supabaseClient.from('elibrary_progress').select('*').eq('student_id', studentId);
+          if (error && window.sbIsTableMissing && window.sbIsTableMissing(error)) {
+            window.sbMarkTableMissing('elibrary_progress');
+          } else if (!error && data) {
+            localStorage.setItem(`ck_elibrary_progress_${studentId}`, JSON.stringify(data));
+            return data;
+          }
+        } catch(e) {}
+      }
+      return JSON.parse(localStorage.getItem(`ck_elibrary_progress_${studentId}`) || '[]');
+    },
+    async saveELibraryProgress(ep) {
+      if (!ep.id) ep.id = 'ep-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+      ep.updated_at = new Date().toISOString();
+      if (canUseSupabase() && !(window.sbTableKnownMissing && window.sbTableKnownMissing('elibrary_progress'))) {
+        try {
+          const { error } = await window.supabaseClient.from('elibrary_progress').upsert(ep);
+          if (error && window.sbIsTableMissing && window.sbIsTableMissing(error)) {
+            window.sbMarkTableMissing('elibrary_progress');
+          }
+        } catch(e) {}
+      }
+      const studentId = ep.student_id;
+      const all = JSON.parse(localStorage.getItem(`ck_elibrary_progress_${studentId}`) || '[]');
+      const idx = all.findIndex(x => x.id === ep.id || (x.student_id === ep.student_id && x.book_id === ep.book_id));
+      if (idx !== -1) all[idx] = { ...all[idx], ...ep }; else all.unshift(ep);
+      localStorage.setItem(`ck_elibrary_progress_${studentId}`, JSON.stringify(all));
+      return ep;
+    },
+
+    // --- VIDEO PROGRESS OPERATIONS ---
+    async getVideoProgress(studentId) {
+      if (canUseSupabase() && !(window.sbTableKnownMissing && window.sbTableKnownMissing('video_progress'))) {
+        try {
+          const { data, error } = await window.supabaseClient.from('video_progress').select('*').eq('student_id', studentId);
+          if (error && window.sbIsTableMissing && window.sbIsTableMissing(error)) {
+            window.sbMarkTableMissing('video_progress');
+          } else if (!error && data) {
+            localStorage.setItem(`ck_video_progress_${studentId}`, JSON.stringify(data));
+            return data;
+          }
+        } catch(e) {}
+      }
+      return JSON.parse(localStorage.getItem(`ck_video_progress_${studentId}`) || '[]');
+    },
+    async saveVideoProgress(vp) {
+      if (!vp.id) vp.id = 'vp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+      vp.updated_at = new Date().toISOString();
+      if (canUseSupabase() && !(window.sbTableKnownMissing && window.sbTableKnownMissing('video_progress'))) {
+        try {
+          const { error } = await window.supabaseClient.from('video_progress').upsert(vp);
+          if (error && window.sbIsTableMissing && window.sbIsTableMissing(error)) {
+            window.sbMarkTableMissing('video_progress');
+          }
+        } catch(e) {}
+      }
+      const studentId = vp.student_id;
+      const all = JSON.parse(localStorage.getItem(`ck_video_progress_${studentId}`) || '[]');
+      const idx = all.findIndex(x => x.id === vp.id || (x.student_id === vp.student_id && x.video_id === vp.video_id));
+      if (idx !== -1) all[idx] = { ...all[idx], ...vp }; else all.unshift(vp);
+      localStorage.setItem(`ck_video_progress_${studentId}`, JSON.stringify(all));
+      return vp;
+    },
+
+    // --- LIVE CLASS CHAT OPERATIONS ---
+    async getLiveClassChats(classId) {
+      if (canUseSupabase() && !(window.sbTableKnownMissing && window.sbTableKnownMissing('live_class_chats'))) {
+        try {
+          const { data, error } = await window.supabaseClient.from('live_class_chats').select('*').eq('class_id', classId).order('timestamp', { ascending: true });
+          if (error && window.sbIsTableMissing && window.sbIsTableMissing(error)) {
+            window.sbMarkTableMissing('live_class_chats');
+          } else if (!error && data) {
+            localStorage.setItem(`ck_live_chats_${classId}`, JSON.stringify(data));
+            return data;
+          }
+        } catch(e) {}
+      }
+      return JSON.parse(localStorage.getItem(`ck_live_chats_${classId}`) || '[]');
+    },
+    async saveLiveClassChat(msg) {
+      if (!msg.id) msg.id = 'chat-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+      msg.timestamp = new Date().toISOString();
+      if (canUseSupabase() && !(window.sbTableKnownMissing && window.sbTableKnownMissing('live_class_chats'))) {
+        try {
+          const { error } = await window.supabaseClient.from('live_class_chats').upsert(msg);
+          if (error && window.sbIsTableMissing && window.sbIsTableMissing(error)) {
+            window.sbMarkTableMissing('live_class_chats');
+          }
+        } catch(e) {}
+      }
+      const classId = msg.class_id;
+      const all = JSON.parse(localStorage.getItem(`ck_live_chats_${classId}`) || '[]');
+      all.push(msg);
+      localStorage.setItem(`ck_live_chats_${classId}`, JSON.stringify(all));
+      return msg;
     }
   };
 
@@ -1273,6 +1747,7 @@
             ${u.email ? `<button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.accessManager.setDialog('${safeEmail}','${safeName}')">🔑 Set Password</button>` : ''}
             ${hasAccess ? `<button class="p-btn p-btn-ghost p-btn-sm" style="color:var(--p-danger)" onclick="CK.accessManager.revokeAccess('${safeEmail}')">✕ Revoke</button>` : ''}
             ${u.role === 'parent' ? `<button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.accessManager.setChildDialog('${safeId}','${safeName}')">🔗 Set Child</button>` : ''}
+            <button class="p-btn p-btn-ghost p-btn-sm" style="color:var(--p-danger)" onclick="CK.accessManager.deleteUserDialog('${safeId}','${safeEmail}','${safeName}')">🗑 Delete</button>
           </td>
         </tr>`;
       }).join('');
@@ -1291,13 +1766,33 @@
     },
 
     async setChildDialog(parentId, parentName) {
-      const childEmail = prompt(`Enter the student's email to link as child for ${parentName}:`);
+      const childEmail = await CK.prompt(`Enter the student's email to link as child for ${parentName}:`);
       if (!childEmail) return;
       const profile = await CK.db.getProfile(parentId);
       if (!profile) return CK.showToast('Parent profile not found.', 'error');
       profile.childEmail = childEmail.trim().toLowerCase();
       await CK.db.saveProfile(profile);
       CK.showToast(`Child (${childEmail}) linked to ${parentName}.`, 'success');
+    },
+
+    async deleteUserDialog(userId, email, name) {
+      if (!await window.CK.confirm(`WARNING: Are you sure you want to permanently delete the profile for ${name} (${email})?\n\nThis action cannot be undone.`)) return;
+      
+      // Attempt to revoke Supabase credential first
+      if (email && this.removeCredential) {
+        await this.removeCredential(email);
+      }
+      
+      // Delete the profile
+      const { error } = await window.supabaseClient.from('users').delete().eq('id', userId);
+      if (error) {
+        console.error('Error deleting user profile:', error);
+        CK.showToast('Failed to delete user profile.', 'error');
+        return;
+      }
+      
+      CK.showToast(`User ${name} has been permanently deleted.`, 'success');
+      this.renderAccessTable('adminAccessTable');
     },
 
     _filter(query) {
@@ -1350,7 +1845,7 @@
     },
 
     async revokeAccess(email) {
-      if (!confirm(`Revoke portal access for ${email}?\n\nThey will no longer be able to log in until a new password is set.`)) return;
+      if (!await window.CK.confirm(`Revoke portal access for ${email}?\n\nThey will no longer be able to log in until a new password is set.`)) return;
       await this.removeCredential(email);
       CK.showToast('🔒 Access revoked.', 'success');
       this.renderAccessTable(this._lastContainerId || 'adminAccessTable');
@@ -1392,6 +1887,7 @@
 
     addParentDialog() {
       const modal = document.createElement('div');
+      modal.id = 'addParentModalOverlay';
       modal.className = 'p-modal-overlay open';
       modal.innerHTML = `
         <div class="p-modal">
@@ -1411,15 +1907,36 @@
     },
 
     async _doAddParent() {
-      const name  = document.getElementById('addp_name')?.value.trim();
-      const email = document.getElementById('addp_email')?.value.trim();
-      const pass  = document.getElementById('addp_pass')?.value;
-      const child = document.getElementById('addp_child')?.value.trim();
-      if (!name || !email || !pass) { CK.showToast('Fill all fields', 'warning'); return; }
-      await this.addParent(name, email, pass, child);
-      CK.showToast(`Parent account created for ${name}!`, 'success');
-      document.querySelector('.p-modal-overlay')?.remove();
-      this.renderAccessTable('adminAccessTable');
+      const btn = document.querySelector('#addParentModalOverlay .p-btn-blue');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Creating…'; }
+      
+      try {
+        const name  = document.getElementById('addp_name')?.value.trim();
+        const child = document.getElementById('addp_child')?.value.trim();
+        let email = document.getElementById('addp_email')?.value.trim();
+        let pass  = document.getElementById('addp_pass')?.value;
+        
+        if (!name || !child) { 
+          CK.showToast('Name and Child Email are required', 'warning'); 
+          if (btn) { btn.disabled = false; btn.textContent = '➕ Create Parent'; }
+          return; 
+        }
+        
+        if (!email) {
+          const childPrefix = child.split('@')[0];
+          email = `${childPrefix}.parent@gmail.com`;
+        }
+        if (!pass) pass = '123456';
+        
+        await this.addParent(name, email, pass, child);
+        CK.showToast(`Parent account created for ${name}!`, 'success');
+        document.getElementById('addParentModalOverlay')?.remove();
+        this.renderAccessTable(this._lastContainerId || 'adminAccessTable');
+      } catch (err) {
+        console.error('[AddParent] Error:', err);
+        CK.showToast('Failed to create parent account. Check console.', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = '➕ Create Parent'; }
+      }
     }
   };
 

@@ -274,7 +274,7 @@ CK.classroom = (() => {
     }
 
     list.innerHTML = assignments.map(a => {
-      const sub  = submissions.find(s => s.assignmentId === a.id && s.studentId === userId);
+      const sub  = submissions.find(s => (s.assignment_id === a.id || s.assignmentId === a.id) && (s.student_id === userId || s.studentId === userId));
       const done = sub && sub.completed;
       const badge = done
         ? `<span class="cls-badge cls-badge-done">✓ ${sub.accuracy}%</span>`
@@ -708,7 +708,10 @@ CK.classroom = (() => {
     const g = new Chess();
     if (!g.load_pgn(pgn)) { CK.showToast('Invalid PGN — check the notation', 'warning'); return; }
 
-    const assignment = { id: uid(), title, pgn, type, assignedTo: to, dueDate: due, description: desc, coach, moves: g.history().length, created: Date.now() };
+    // Supabase `assignments` schema: assignedTo is an ARRAY, there is no `created`
+    // column (it's created_at, DB-defaulted). Sending those broke the upsert
+    // silently → homework never persisted/synced to students. Match the schema.
+    const assignment = { id: uid(), title, pgn, type, assignedTo: (to && to !== 'all') ? [to] : ['all'], dueDate: due, description: desc, coach, moves: g.history().length };
     await saveAssignment(assignment);
 
     CK.showToast(`✓ Assigned: "${title}" (${g.history().length} moves, ${type} mode)`, 'success');

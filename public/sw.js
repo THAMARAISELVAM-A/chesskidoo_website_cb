@@ -10,7 +10,7 @@
    - Cross-origin (CDNs, Supabase, fonts)     → bypass (let the network handle)
    Bump CACHE_VERSION on any release to purge everything old.
    ────────────────────────────────────────────────────────────────────── */
-const CACHE_VERSION = 'ck-v8';
+const CACHE_VERSION = 'ck-v10';
 const CORE = [
   '/', '/index.html',
   '/assets/css/style.css', '/assets/css/portals.css',

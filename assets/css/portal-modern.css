@@ -437,6 +437,8 @@
    ════════════════════════════════════════════════════════════════════ */
 .ck-upload-card {
   max-width: 640px !important;
+  max-height: 85vh;
+  overflow-y: auto;
   background: var(--p-surface, #fff) !important;
   color: var(--p-text, #15191f);
   border: 1px solid var(--p-border, #d8dee7);

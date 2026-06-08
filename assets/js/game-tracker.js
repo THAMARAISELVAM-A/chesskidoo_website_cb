@@ -7,8 +7,11 @@ window.CK = window.CK || {};
 CK.gameTracker = (() => {
   const KEY = 'ck_games';
   const uid  = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  const get  = ()    => JSON.parse(localStorage.getItem(KEY) || '[]');
-  const save = (arr) => localStorage.setItem(KEY, JSON.stringify(arr));
+  const get  = async ()    => await CK.db.getGames();
+  const save = async (arr) => {
+    // Save each game individually
+    for (const g of arr) await CK.db.saveGame(g);
+  };
 
   /* ── Basic accuracy estimator from PGN annotations ── */
   function _estimateAccuracy(pgn) {
@@ -29,9 +32,9 @@ CK.gameTracker = (() => {
   }
 
   /* ── Submit a new game ── */
-  function submitGame(studentId, data) {
+  async function submitGame(studentId, data) {
     if (!data.result || !data.color) { CK.showToast('Please fill all required fields', 'warning'); return false; }
-    const games = get();
+    const games = await get();
     const newGame = {
       id: uid(),
       studentId,
@@ -51,7 +54,7 @@ CK.gameTracker = (() => {
       submittedAt: new Date().toISOString()
     };
     games.unshift(newGame);
-    save(games);
+    await save(games);
 
     // Update student's game count via CK.db (falls back to localStorage)
     // Note: bulk callers (importFromLichess) must do their own single batch update instead
@@ -76,13 +79,14 @@ CK.gameTracker = (() => {
   }
 
   /* ── Get games for a student ── */
-  function getGames(studentId, limit = 50) {
-    return get().filter(g => g.studentId === studentId).slice(0, limit);
+  async function getGames(studentId, limit = 50) {
+    const all = await get();
+    return all.filter(g => g.studentId === studentId).slice(0, limit);
   }
 
   /* ── Win/loss/draw stats ── */
-  function getStats(studentId) {
-    const games = getGames(studentId, 999);
+  async function getStats(studentId) {
+    const games = await getGames(studentId, 999);
     const wins   = games.filter(g => (g.color === 'white' && g.result === '1-0') || (g.color === 'black' && g.result === '0-1')).length;
     const losses = games.filter(g => (g.color === 'white' && g.result === '0-1') || (g.color === 'black' && g.result === '1-0')).length;
     const draws  = games.filter(g => g.result === '1/2-1/2').length;
@@ -105,7 +109,7 @@ CK.gameTracker = (() => {
       const lines = text.trim().split('\n').filter(Boolean);
       submitGame._bulkMode = true; // suppress per-game profile updates
       let imported = 0;
-      const existingUrls = new Set(getGames(studentId, 999).map(e => e.lichessUrl).filter(Boolean));
+      const existingUrls = new Set((await getGames(studentId, 999)).map(e => e.lichessUrl).filter(Boolean));
       for (const line of lines) {
         try {
           const g = JSON.parse(line);
@@ -114,7 +118,7 @@ CK.gameTracker = (() => {
           const isWhite = g.players?.white?.user?.name?.toLowerCase() === lichessUsername.toLowerCase();
           const wR = g.players?.white?.ratingDiff || 0;
           const bR = g.players?.black?.ratingDiff || 0;
-          const ok = submitGame(studentId, {
+          const ok = await submitGame(studentId, {
             title: `${g.opening?.name || 'Game'} vs ${isWhite ? (g.players?.black?.user?.name || 'Opponent') : (g.players?.white?.user?.name || 'Opponent')}`,
             date: new Date(g.createdAt).toISOString().split('T')[0],
             color: isWhite ? 'white' : 'black',
@@ -226,8 +230,8 @@ CK.gameTracker = (() => {
       </div>`;
   }
 
-  function _doSubmit(studentId) {
-    const ok = submitGame(studentId, {
+  async function _doSubmit(studentId) {
+    const ok = await submitGame(studentId, {
       title:  document.getElementById('gtTitle')?.value.trim(),
       date:   document.getElementById('gtDate')?.value,
       color:  document.getElementById('gtColor')?.value,
@@ -243,19 +247,23 @@ CK.gameTracker = (() => {
         const el = document.getElementById(id); if (el) el.value = '';
       });
       renderGameList('gtGameList', studentId);
+      renderStatsBanner('gtStatsBanner', studentId);
     }
   }
 
   function _doLichessImport(studentId) {
     const user = document.getElementById('gtLichessUser')?.value.trim();
-    importFromLichess(studentId, user).then(() => renderGameList('gtGameList', studentId));
+    importFromLichess(studentId, user).then(() => {
+      renderGameList('gtGameList', studentId);
+      renderStatsBanner('gtStatsBanner', studentId);
+    });
   }
 
   /* ── Render stats banner ── */
-  function renderStatsBanner(containerId, studentId) {
+  async function renderStatsBanner(containerId, studentId) {
     const el = document.getElementById(containerId);
     if (!el) return;
-    const s = getStats(studentId);
+    const s = await getStats(studentId);
     const winRate = s.total > 0 ? Math.round(s.wins / s.total * 100) : 0;
     el.innerHTML = `
       <div class="gt-stats-banner">
@@ -269,10 +277,10 @@ CK.gameTracker = (() => {
   }
 
   /* ── Render game list ── */
-  function renderGameList(containerId, studentId) {
+  async function renderGameList(containerId, studentId) {
     const el = document.getElementById(containerId);
     if (!el) return;
-    const games = getGames(studentId, 30);
+    const games = await getGames(studentId, 30);
     if (!games.length) {
       el.innerHTML = `<div class="gt-empty">♟ No games yet. Submit your first game above to start tracking your progress!</div>`;
       return;
@@ -291,8 +299,8 @@ CK.gameTracker = (() => {
       </div>`;
   }
 
-  function filterGames(containerId, studentId, filter) {
-    let games = getGames(studentId, 30);
+  async function filterGames(containerId, studentId, filter) {
+    let games = await getGames(studentId, 30);
     if (filter === 'win')  games = games.filter(g => (g.color === 'white' && g.result === '1-0') || (g.color === 'black' && g.result === '0-1'));
     if (filter === 'loss') games = games.filter(g => (g.color === 'white' && g.result === '0-1') || (g.color === 'black' && g.result === '1-0'));
     const inner = document.getElementById(`${containerId}_inner`);

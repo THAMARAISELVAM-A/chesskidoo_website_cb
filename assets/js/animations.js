@@ -75,23 +75,15 @@
      .ck-fade-out / .ck-fade-in classes (defined in animations.css).
      Wraps CK.showPage so EVERY page change (landing -> portal, portal -> arena,
      login -> dashboard, etc.) gets the same polished transition. */
+  /* Page transitions are handled purely in CSS now: inactive pages are
+     display:none (.page:not(.active)) and the active page fades in via the
+     `pageTransition` keyframe on `.page.active`. The old JS wrapper added a
+     200ms blocking delay + a second competing fade class, which fought the CSS
+     animation and made navigation feel like it froze/flashed ("crashing").
+     We keep this as a no-op passthrough so showPage stays the clean direct
+     swap from main.js. */
   function installPageTransitions() {
-    if (!window.CK || typeof window.CK.showPage !== 'function' || window.CK.__pageTransitionsInstalled) return;
-    if (reduce) { window.CK.__pageTransitionsInstalled = true; return; } // honor reduced motion
-    const _origShowPage = window.CK.showPage;
-    window.CK.showPage = function (id) {
-      const current = document.querySelector('.page.active');
-      const target = document.getElementById(id);
-      if (!current || !target || current === target) return _origShowPage(id);
-      current.classList.add('ck-fade-out');
-      setTimeout(() => {
-        current.classList.remove('ck-fade-out');
-        _origShowPage(id);
-        target.classList.add('ck-fade-in');
-        setTimeout(() => target.classList.remove('ck-fade-in'), 450);
-      }, 200);
-    };
-    window.CK.__pageTransitionsInstalled = true;
+    if (window.CK) window.CK.__pageTransitionsInstalled = true;
   }
 
   function init() {

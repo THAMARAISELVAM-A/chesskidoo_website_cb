@@ -1069,6 +1069,38 @@ ta: {
       }
     },
 
+    /* Shared free-style analysis drop handler — used by both the initial board
+       (initBoard) and after a PGN is loaded (analyzePgn) so the Lab board is a
+       fully playable free-style board from the moment it opens. Makes any legal
+       move from the current position, extends the line, and re-runs analysis. */
+    _analysisOnDrop(source, target) {
+      const self = this;
+      if (self._mode !== 'analysis') return 'snapback';
+      const temp = new Chess();
+      for (let i = 0; i < self.currentMove; i++) temp.move(self.history[i]);
+      // Auto-queen only when a pawn actually reaches the last rank; otherwise the
+      // promotion flag is harmless. Detect promotion to optionally ask the user.
+      const movingPiece = temp.get(source);
+      const isPromotion = movingPiece && movingPiece.type === 'p' &&
+        ((movingPiece.color === 'w' && target[1] === '8') || (movingPiece.color === 'b' && target[1] === '1'));
+      let promo = 'q';
+      if (isPromotion && typeof self._askPromotion === 'function') {
+        promo = self._askPromotion() || 'q';
+      }
+      const move = temp.move({ from: source, to: target, promotion: promo });
+      if (move) {
+        self.history = self.history.slice(0, self.currentMove);
+        self.history.push(move);
+        self.currentMove++;
+        self.renderMoveList();
+        self.updateAnalysis(temp.fen(), move);
+        // Ensure board syncs perfectly (castling, en passant, promotion)
+        window.setTimeout(() => { if (self.board) self.board.position(temp.fen(), false); }, 10);
+      } else {
+        return 'snapback';
+      }
+    },
+
     initBoard(containerId) {
       this._activeBoardId = containerId;
       this._mode = 'analysis';
@@ -1076,16 +1108,20 @@ ta: {
       this._sparGame = null;
       if (this.board) { this.board.destroy(); this.board = null; }
       this.game = new Chess();
+      this.history = [];
+      this.currentMove = 0;
+      this.annotations = {};
+      const self = this;
       this.board = Chessboard(containerId, {
         pieceTheme: function (piece) {
           return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
         },
         position: 'start',
-        orientation: this.orientation
+        orientation: this.orientation,
+        // Free-style: pieces are draggable from the start position.
+        draggable: true,
+        onDrop: (source, target) => self._analysisOnDrop(source, target)
       });
-      this.history = [];
-      this.currentMove = 0;
-      this.annotations = {};
       this._resetModeBtns();
       this.renderMoveList();
       this.updateAnalysis(this.game.fen(), null);
@@ -1205,24 +1241,7 @@ ta: {
         position: this.game.fen(),
         orientation: this.orientation,
         draggable: true,
-        onDrop: (source, target) => {
-          if (self._mode !== 'analysis') return 'snapback';
-          const temp = new Chess();
-          for(let i=0; i<self.currentMove; i++) temp.move(self.history[i]);
-          const move = temp.move({from: source, to: target, promotion: 'q'});
-          if(move) {
-             self.history = self.history.slice(0, self.currentMove);
-             self.history.push(move);
-             self.currentMove++;
-             self.renderMoveList();
-             self.updateAnalysis(temp.fen(), move);
-             // Ensure board syncs perfectly (castling, en passant, promotion)
-             window.setTimeout(() => { if (self.board) self.board.position(temp.fen(), false); }, 10);
-
-          } else {
-             return 'snapback';
-          }
-        }
+        onDrop: (source, target) => self._analysisOnDrop(source, target)
       });
       this.renderMoveList();
       this.updateAnalysis(this.game.fen(), this.history[this.history.length - 1] || null);

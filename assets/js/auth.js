@@ -275,7 +275,7 @@
     window.supabaseClient.auth.onAuthStateChange(async (event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setTimeout(async () => {
-          const newPassword = prompt("Please enter your NEW password (minimum 8 characters):");
+          const newPassword = await CK.prompt('Please enter your NEW password (minimum 8 characters):');
           if (newPassword && newPassword.length >= 8) {
             const { error } = await window.supabaseClient.auth.updateUser({ password: newPassword });
             if (error) {

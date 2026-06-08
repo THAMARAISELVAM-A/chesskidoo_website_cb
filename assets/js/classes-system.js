@@ -102,7 +102,7 @@ CK.classSystem = (() => {
   }
 
   async function deleteClass(classId) {
-    if (!confirm('Delete this class? This will also remove its attendance records.')) return;
+    if (!await CK.confirm('Delete this class? This will also remove its attendance records.')) return;
     await CK.db.deleteClass(classId);
     CK.showToast('Class deleted.', 'success');
     if (window.CK && CK.coach) CK.coach.renderClassesPanel();
@@ -210,10 +210,19 @@ CK.classSystem = (() => {
     const allSAttn = await getStudentAttn();
     const attnRecords = allSAttn.filter(a => a.date === date && a.coachId === coachId);
 
+    // Attendance integrity: coaches may only mark TODAY (prevents back/forward
+    // dating false or late attendance). Past/other dates are read-only for
+    // coaches; only admins can edit any date.
+    const isAdmin = !!(window.CK && CK.currentUser && CK.currentUser.role === 'admin');
+    const todayStr = today();
+    const locked = !isAdmin && date !== todayStr;
+    const _e2 = CK.esc || (v => v);
+
     el.innerHTML = `
       <div class="cls-attn-date-row">
         <label>Date:</label>
-        <input class="p-input" type="date" id="attnDatePicker" value="${date}" data-container="${_e(containerId)}" data-coach="${_e(coachId)}" onchange="CK.classSystem.renderAttendanceMarker(this.dataset.container,this.dataset.coach,this.value)">
+        <input class="p-input" type="date" id="attnDatePicker" value="${date}" ${isAdmin ? '' : `max="${todayStr}"`} data-container="${_e2(containerId)}" data-coach="${_e2(coachId)}" onchange="CK.classSystem.renderAttendanceMarker(this.dataset.container,this.dataset.coach,this.value)">
+        ${locked ? `<span class="p-badge p-badge-yellow" style="margin-left:8px;">🔒 Past date — admin only</span>` : (isAdmin && date !== todayStr ? `<span class="p-badge p-badge-blue" style="margin-left:8px;">Admin edit mode</span>` : '')}
       </div>
       ${classes.map(cls => {
         const classStudents = allStudents.filter(s => (cls.studentIds||[]).includes(s.id));
@@ -230,9 +239,9 @@ CK.classSystem = (() => {
                   <div class="cls-attn-row">
                     <div class="cls-attn-name">${_e(s.full_name)}</div>
                     <div class="cls-attn-btns">
-                      <button class="cls-attn-btn ${status==='present'?'active-present':''}" ${_da} data-status="present" onclick="CK.classSystem.markAttnFromBtn(this)">✅ Present</button>
-                      <button class="cls-attn-btn ${status==='absent'?'active-absent':''}" ${_da} data-status="absent" onclick="CK.classSystem.markAttnFromBtn(this)">❌ Absent</button>
-                      <button class="cls-attn-btn ${status==='late'?'active-late':''}" ${_da} data-status="late" onclick="CK.classSystem.markAttnFromBtn(this)">⏰ Late</button>
+                      <button class="cls-attn-btn ${status==='present'?'active-present':''}" ${_da} data-status="present" ${locked?'disabled title="Past attendance is admin-only"':''} onclick="CK.classSystem.markAttnFromBtn(this)">✅ Present</button>
+                      <button class="cls-attn-btn ${status==='absent'?'active-absent':''}" ${_da} data-status="absent" ${locked?'disabled title="Past attendance is admin-only"':''} onclick="CK.classSystem.markAttnFromBtn(this)">❌ Absent</button>
+                      <button class="cls-attn-btn ${status==='late'?'active-late':''}" ${_da} data-status="late" ${locked?'disabled title="Past attendance is admin-only"':''} onclick="CK.classSystem.markAttnFromBtn(this)">⏰ Late</button>
                     </div>
                   </div>`;
               }).join('') : `<div class="cls-empty" style="padding:12px;">No students assigned to this class yet.</div>`}
@@ -247,6 +256,13 @@ CK.classSystem = (() => {
   }
 
   async function markStudentAttn(studentId, studentName, classId, className, coachId, date, status, containerId) {
+    // Server-of-record guard: a coach may only mark TODAY. Editing any other
+    // date requires admin — blocks back/post-dated (false/late) attendance.
+    const isAdmin = !!(window.CK && CK.currentUser && CK.currentUser.role === 'admin');
+    if (!isAdmin && date !== today()) {
+      CK.showToast('Coaches can only mark today\'s attendance. Ask an admin to edit other dates.', 'warning');
+      return;
+    }
     const entry = { id: uid(), userid: studentId, studentId, studentName, classId, className, coachId, date, status, markedAt: new Date().toISOString() };
     await CK.db.saveAttendance(entry);
 
@@ -330,26 +346,74 @@ CK.classSystem = (() => {
     const coaches   = (await CK.db.getProfiles('coach')) || [];
     const thisMonth = new Date().toISOString().slice(0,7);
 
-    el.innerHTML = `
-      <div class="cls-report-header">Coach Attendance Report — ${new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})}</div>
+    let html = `
+      <div class="cls-report-header" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>👨‍🏫 Coach Attendance Report — ${new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})}</span>
+      </div>
+      <div style="margin: 20px 0; height: 260px; position: relative; width: 100%; background: var(--p-surface3); border-radius: 8px; padding: 16px;">
+        <canvas id="coachAttnChart"></canvas>
+      </div>
       <table class="p-table" style="width:100%;margin-top:12px;">
         <thead><tr><th>Coach</th><th>Sessions Taken</th><th>Unique Days</th><th>Last Session</th><th>Status</th></tr></thead>
         <tbody>
-          ${coaches.map(coach => {
-            const _e = CK.esc || (v => v);
-            const records = coachAttn.filter(a => a.date.startsWith(thisMonth) && classes.find(c => c.id === a.classId && c.coachId === coach.id));
-            const uniqueDays = [...new Set(records.map(r => r.date))].length;
-            const last = records.sort((a,b) => b.date.localeCompare(a.date))[0];
-            return `<tr>
-              <td style="font-weight:600">${_e(coach.full_name)}</td>
-              <td>${records.length}</td>
-              <td>${uniqueDays}</td>
-              <td>${last ? last.date : '—'}</td>
-              <td><span class="p-badge p-badge-${records.length >= 8 ? 'green' : records.length >= 4 ? 'yellow' : 'red'}">${records.length >= 8 ? 'Active' : records.length >= 4 ? 'Moderate' : 'Low'}</span></td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>`;
+    `;
+
+    const chartLabels = [];
+    const chartData = [];
+
+    coaches.forEach(coach => {
+      const _e = CK.esc || (v => v);
+      const records = coachAttn.filter(a => a.date.startsWith(thisMonth) && classes.find(c => c.id === a.classId && c.coachId === coach.id));
+      const uniqueDays = [...new Set(records.map(r => r.date))].length;
+      const last = records.sort((a,b) => b.date.localeCompare(a.date))[0];
+      
+      chartLabels.push(coach.full_name || '—');
+      chartData.push(records.length);
+
+      html += `<tr>
+        <td style="font-weight:600">${_e(coach.full_name)}</td>
+        <td>${records.length}</td>
+        <td>${uniqueDays}</td>
+        <td>${last ? last.date : '—'}</td>
+        <td><span class="p-badge p-badge-${records.length >= 8 ? 'green' : records.length >= 4 ? 'yellow' : 'red'}">${records.length >= 8 ? 'Active' : records.length >= 4 ? 'Moderate' : 'Low'}</span></td>
+      </tr>`;
+    });
+
+    html += `</tbody></table>`;
+    el.innerHTML = html;
+
+    // Render chart
+    setTimeout(() => {
+      const ctx = document.getElementById('coachAttnChart');
+      if (ctx && window.Chart) {
+        if (window.coachAttnChartInstance) window.coachAttnChartInstance.destroy();
+        window.coachAttnChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: chartLabels,
+            datasets: [{
+              label: 'Sessions Taken This Month',
+              data: chartData,
+              backgroundColor: 'rgba(20, 184, 166, 0.65)',
+              borderColor: '#14b8a6',
+              borderWidth: 1,
+              borderRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false }
+            },
+            scales: {
+              y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { stepSize: 1, color: 'rgba(255,255,255,0.5)' } },
+              x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)' } }
+            }
+          }
+        });
+      }
+    }, 100);
   }
 
   /* ═══════════════════════════════════════════════════════════

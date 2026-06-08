@@ -153,8 +153,13 @@ CK.puzzlesPro = (() => {
     const [min, max] = ratingMap[difficulty] || [0,9999];
     const list = getFilteredPuzzles(null, max, min);
 
-    el.innerHTML = (await Promise.all(list.map(async p => {
-      const solved = await hasSolved(userId, p.id);
+    // Fetch all of this user's solved puzzles ONCE (was calling hasSolved per
+    // puzzle → 60 Supabase round-trips → list appeared empty/slow to render).
+    const _scores = await getScores();
+    const _solvedSet = new Set((_scores || []).filter(s => s.userId === userId && s.solved).map(s => s.puzzleId));
+
+    el.innerHTML = (list.map(p => {
+      const solved = _solvedSet.has(p.id);
       const themeLabel = p.theme.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase());
       const diff = p.rating < 900 ? 'Easy' : p.rating < 1100 ? 'Medium' : 'Hard';
       return `
@@ -174,7 +179,7 @@ CK.puzzlesPro = (() => {
             </button>
           </div>
         </div>`;
-    }))).join('');
+    })).join('');
   }
 
   /* ─── Interactive Puzzle Solver (board modal) ─── */
@@ -232,6 +237,7 @@ CK.puzzlesPro = (() => {
       const wrap = document.getElementById('pzProBoardWrap');
       if (!wrap) return;
       _pzBoard = Chessboard('pzProBoardWrap', {
+        // chess.com neo pieces (consistent with all other portal boards).
         pieceTheme: function (piece) {
           return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
         },

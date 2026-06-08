@@ -25,30 +25,43 @@ CK.coach = {
 
     this.coachProfile = await CK.db.getProfile(currentUser.id) || currentUser;
 
-    // Load today's classes from ck_meetings, fallback to mock
+    // Today's classes — derived DYNAMICALLY from the live class schedule, so the
+    // home widget reflects whatever the coach has on the calendar today and
+    // updates whenever they edit their timetable. No hardcoded mock fallback.
     const _todayStr = new Date().toISOString().split('T')[0];
-    const _meetings = await CK.db.getMeetings();
+    const _dayShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getDay()];
+    const _coachId = this.coachProfile?.id;
     const _coachName = this.coachProfile?.full_name;
-    const _todayMeetings = _meetings.filter(m =>
-      (m.coach === _coachName || !m.coach) &&
-      (m.date === new Date().toISOString().split('T')[0])
-    );
-    if (_todayMeetings.length > 0) {
-      this.classesDb = _todayMeetings.map((m, i) => ({
-        id: m.id || `C${i + 1}`,
-        class: m.title || m.type || 'Chess Class',
-        level: m.level || 'Intermediate',
-        time: m.time || '4:00 PM',
-        students: m.students || 0,
-        status: 'Upcoming',
-        batch: m.batch
-      }));
-    } else {
-      this.classesDb = [
-        { id: 'C1', class: 'Intermediate Strategy', level: 'Intermediate', time: '4:00 PM', students: 8, status: 'Upcoming' },
-        { id: 'C2', class: 'Advanced Endgames', level: 'Advanced', time: '6:30 PM', students: 5, status: 'Scheduled' }
-      ];
-    }
+    const _fmt12 = (t) => {
+      const s = String(t || '').trim(); const m = s.match(/(\d{1,2}):?(\d{2})?/); if (!m) return s || '';
+      let h = +m[1]; const mn = +(m[2] || 0); const ap = s.match(/([ap])\.?\s*m/i);
+      if (ap) { const pm = /p/i.test(ap[1]); if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; }
+      const aps = h >= 12 ? 'PM' : 'AM'; return (h % 12 || 12) + ':' + String(mn).padStart(2, '0') + ' ' + aps;
+    };
+    const _allClasses = await CK.db.getClasses().catch(() => []);
+    const _mine = (c) => (c.coachId && c.coachId === _coachId) ||
+      (c.coachName && _coachName && String(c.coachName).toLowerCase() === String(_coachName).toLowerCase());
+    const _onToday = (c) => (c.days || []).some(d => String(d).slice(0, 3).toLowerCase() === _dayShort.toLowerCase());
+    const _todayClasses = _allClasses.filter(c => _mine(c) && _onToday(c))
+      .sort((a, b) => String(a.time).localeCompare(String(b.time)));
+    const _meetings = await CK.db.getMeetings();
+    const _todayMeetings = _meetings.filter(m => (m.coach === _coachName || !m.coach) && m.date === _todayStr);
+
+    const entries = _todayClasses.map((c, i) => ({
+      id: c.id || `C${i + 1}`,
+      class: c.title || (c.batch ? (/^\d+$/.test(String(c.batch)) ? 'Batch ' + c.batch : c.batch) : 'Chess Class'),
+      level: c.level || 'Beginner',
+      time: _fmt12(c.time),
+      students: (c.studentIds || []).length,
+      status: 'Upcoming',
+      batch: c.batch,
+      link: c.zoomLink
+    }));
+    // Append ad-hoc meetings scheduled for today that aren't already class-backed
+    _todayMeetings.forEach((m, i) => {
+      entries.push({ id: m.id || `M${i + 1}`, class: m.title || m.type || 'Meeting', level: m.level || '', time: _fmt12(m.time), students: m.students || 0, status: 'Upcoming', batch: m.batch, link: m.link });
+    });
+    this.classesDb = entries;
 
     // coach_notes are managed by CK.tracker (via db.js) — no local init needed
 
@@ -259,7 +272,11 @@ CK.coach = {
   /* ── Schedule Pro Panel ── */
   async renderSchedulePro() {
     const cp = this.coachProfile || {};
-    if (CK.schedulePro) await CK.schedulePro.renderCoachSchedule('coachSchedList', cp.id);
+    if (CK.scheduleMatrix) {
+      await CK.scheduleMatrix.render('coachSchedList', { coachId: cp.id, coachName: cp.full_name, editable: true, title: 'My Weekly Schedule', subtitle: 'Click a batch to edit · “+” to add a class' });
+    } else if (CK.schedulePro) {
+      await CK.schedulePro.renderCoachSchedule('coachSchedList', cp.id);
+    }
   },
 
   async createMeeting() {
@@ -1000,6 +1017,101 @@ CK.coach = {
     });
     this.closePuzzleCreator();
     CK.showToast(`Puzzle "${title}" created and saved to library!`, 'success');
+  },
+
+  /* ── Assign Puzzle + Tracking ──
+     Assign puzzles to specific students and track who/when/status/time-to-solve
+     by joining puzzle_assignments with puzzle_scores. */
+  async openAssignPuzzle() {
+    const _e = CK.esc || (s => s);
+    const students = (await CK.db.getProfiles('student')) || [];
+    // Puzzle pool: built-in pro puzzles + coach-created puzzle resources
+    const pro = (window.CK && CK.puzzlesPro && CK.puzzlesPro.PUZZLES) ? CK.puzzlesPro.PUZZLES.map(p => ({ id: p.id, title: p.title || p.id })) : [];
+    let created = [];
+    try { created = ((await CK.db.getResources?.()) || []).filter(r => r.type === 'Puzzle').map(p => ({ id: p.id, title: p.name || p.id })); } catch (e) {}
+    const puzzles = [...created, ...pro];
+    document.getElementById('assignPzModal')?.remove();
+    const m = document.createElement('div');
+    m.id = 'assignPzModal';
+    m.className = 'cls-modal-overlay open';
+    m.innerHTML = `
+      <div class="cls-modal" style="max-width:760px;width:97%;max-height:92vh;">
+        <div class="cls-modal-header"><h3>🎯 Assign &amp; Track Puzzles</h3>
+          <button class="cls-modal-close" onclick="document.getElementById('assignPzModal').remove()">✕</button></div>
+        <div class="cls-modal-body" style="padding:16px;">
+          <div style="display:flex;gap:8px;margin-bottom:14px;">
+            <button class="p-btn p-btn-blue p-btn-sm" id="apzTabAssign" onclick="CK.coach._apzTab('assign')">➕ Assign</button>
+            <button class="p-btn p-btn-ghost p-btn-sm" id="apzTabTrack" onclick="CK.coach._apzTab('track')">📊 Tracker</button>
+          </div>
+          <div id="apzAssignPane">
+            <div class="cls-form-row"><label>Puzzle</label>
+              <select class="p-input" id="apzPuzzle">${puzzles.map(p => `<option value="${_e(p.id)}">${_e(p.title)}</option>`).join('') || '<option value="">No puzzles available</option>'}</select></div>
+            <div class="cls-form-row"><label>Assign to students</label>
+              <div class="sw-enroll-list" id="apzStudents">${students.map(s => `<label class="sw-enroll-row"><input type="checkbox" class="apz-cb" value="${_e(s.id)}" data-name="${_e(s.full_name)}"> ${_e(s.full_name)}</label>`).join('') || '<div style="opacity:.5">No students</div>'}</div></div>
+            <button class="p-btn p-btn-gold" style="margin-top:12px;" onclick="CK.coach._assignPuzzleSubmit()">🎯 Assign Puzzle</button>
+          </div>
+          <div id="apzTrackPane" style="display:none;"></div>
+        </div>
+      </div>`;
+    document.body.appendChild(m);
+  },
+
+  _apzTab(which) {
+    const a = document.getElementById('apzAssignPane'), t = document.getElementById('apzTrackPane');
+    const ba = document.getElementById('apzTabAssign'), bt = document.getElementById('apzTabTrack');
+    if (which === 'track') {
+      a.style.display = 'none'; t.style.display = 'block';
+      ba.className = 'p-btn p-btn-ghost p-btn-sm'; bt.className = 'p-btn p-btn-blue p-btn-sm';
+      this.renderPuzzleTracker('apzTrackPane');
+    } else {
+      a.style.display = 'block'; t.style.display = 'none';
+      ba.className = 'p-btn p-btn-blue p-btn-sm'; bt.className = 'p-btn p-btn-ghost p-btn-sm';
+    }
+  },
+
+  async _assignPuzzleSubmit() {
+    const sel = document.getElementById('apzPuzzle');
+    const puzzleId = sel ? sel.value : '';
+    const puzzleTitle = sel && sel.selectedOptions[0] ? sel.selectedOptions[0].textContent : puzzleId;
+    const picked = [...document.querySelectorAll('#apzStudents .apz-cb:checked')].map(cb => ({ id: cb.value, name: cb.dataset.name }));
+    if (!puzzleId) { CK.showToast('No puzzle selected', 'warning'); return; }
+    if (!picked.length) { CK.showToast('Select at least one student', 'warning'); return; }
+    const cp = this.coachProfile || CK.currentUser || {};
+    for (const s of picked) {
+      await CK.db.savePuzzleAssignment({
+        puzzleId, puzzleTitle, studentId: s.id, studentName: s.name,
+        coachId: cp.id, coachName: cp.full_name, status: 'pending'
+      });
+    }
+    CK.showToast(`Assigned "${puzzleTitle}" to ${picked.length} student${picked.length > 1 ? 's' : ''}`, 'success');
+    this._apzTab('track');
+  },
+
+  async renderPuzzleTracker(hostId) {
+    const host = document.getElementById(hostId);
+    if (!host) return;
+    const _e = CK.esc || (s => s);
+    const cp = this.coachProfile || CK.currentUser || {};
+    const assigns = await CK.db.getPuzzleAssignments({ coachId: cp.id });
+    const scores = (await CK.db.getPuzzleScores()) || [];
+    if (!assigns.length) { host.innerHTML = '<div style="opacity:.5;padding:14px;">No puzzles assigned yet. Use the Assign tab.</div>'; return; }
+    const fmt = (iso) => { try { return new Date(iso).toLocaleDateString(); } catch (e) { return '—'; } };
+    const rows = assigns.sort((a, b) => (b.assignedAt || '').localeCompare(a.assignedAt || '')).map(a => {
+      const sc = scores.find(s => s.userId === a.studentId && s.puzzleId === a.puzzleId && s.solved);
+      const solved = !!sc;
+      const time = sc && sc.time != null ? (sc.time + 's') : '—';
+      return `<tr>
+        <td style="text-align:left;">${_e(a.puzzleTitle || a.puzzleId)}</td>
+        <td style="text-align:left;">${_e(a.studentName || a.studentId)}</td>
+        <td>${fmt(a.assignedAt)}</td>
+        <td>${solved ? '<span class="p-badge p-badge-green">✓ Solved</span>' : '<span class="p-badge p-badge-yellow">⏳ Pending</span>'}</td>
+        <td>${time}</td>
+      </tr>`;
+    }).join('');
+    const solvedCount = assigns.filter(a => scores.some(s => s.userId === a.studentId && s.puzzleId === a.puzzleId && s.solved)).length;
+    host.innerHTML = `
+      <div style="font-size:.82rem;color:var(--p-text-muted);margin-bottom:10px;">${assigns.length} assignment${assigns.length > 1 ? 's' : ''} · ${solvedCount} solved · ${assigns.length - solvedCount} pending</div>
+      <table class="p-table" style="width:100%;"><thead><tr><th style="text-align:left;">Puzzle</th><th style="text-align:left;">Student</th><th>Assigned</th><th>Status</th><th>Time</th></tr></thead><tbody>${rows}</tbody></table>`;
   },
 
   /* ── Effectiveness Panel ── */
