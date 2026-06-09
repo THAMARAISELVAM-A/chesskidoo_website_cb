@@ -40,7 +40,14 @@ window.APP_CONFIG = {
   // EmailJS (public keys — safe for client-side)
   EMAILJS_SERVICE:  "service_7mn07q9",
   EMAILJS_TEMPLATE: "template_3lumv9c",
-  EMAILJS_KEY:      "1EuHvvzi2H9RnaBF6"
+  EMAILJS_KEY:      "1EuHvvzi2H9RnaBF6",
+
+  // WebRTC TURN servers — REQUIRED for in-app live video/audio to work behind
+  // NAT/firewalls (most networks). Without this, peer video falls back to the
+  // avatar. Get free/cheap credentials from metered.ca, Twilio, or self-host
+  // coturn, then fill this in. Example:
+  //   TURN_SERVERS: [{ urls: "turn:host:3478", username: "user", credential: "pass" }]
+  TURN_SERVERS: []
 };
 
 // Expose Razorpay key via global for student.js payment gateway

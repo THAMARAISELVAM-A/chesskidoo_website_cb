@@ -22,12 +22,24 @@ CK.webrtc = (() => {
   // Canvas drawing properties
   let animationFrameId = null;
 
+  // STUN finds your public address but CANNOT relay media through restrictive
+  // (symmetric) NATs — most home/mobile networks. For reliable, Google-Meet-style
+  // video you MUST add a TURN server. Set window.APP_CONFIG.TURN_SERVERS in
+  // config.js, e.g.:
+  //   TURN_SERVERS: [{ urls: 'turn:your.turn.host:3478', username: 'u', credential: 'p' }]
+  // (Free/cheap options: metered.ca, Twilio, or self-hosted coturn.)
   const ICE_CONFIG = {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' }
-    ]
+      { urls: 'stun:stun1.l.google.com:19302' },
+      ...((window.APP_CONFIG && Array.isArray(window.APP_CONFIG.TURN_SERVERS)) ? window.APP_CONFIG.TURN_SERVERS : [])
+    ],
+    iceCandidatePoolSize: 4
   };
+  // Warn (once) if no TURN is configured, so it's obvious why video may not connect.
+  if (!(window.APP_CONFIG && Array.isArray(window.APP_CONFIG.TURN_SERVERS) && window.APP_CONFIG.TURN_SERVERS.length)) {
+    console.warn('[WebRTC] No TURN server configured (APP_CONFIG.TURN_SERVERS). Peer video may fail behind NAT/firewalls. Use the Google Meet join button for guaranteed video, or add a TURN server.');
+  }
 
   /* ────────────────────────────────────────────────────────────────────────
      GENERAL UTILITIES & WAVEFORM FALLBACK

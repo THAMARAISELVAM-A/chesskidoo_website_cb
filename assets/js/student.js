@@ -895,8 +895,55 @@ CK.student = {
       });
       // Indicate the opponent's setup move so the student sees what just happened.
       if (setup) setTimeout(() => self._pzHighlight(setup.slice(0, 2), setup.slice(2, 4)), 60);
+      self._pzAttachClick();   // enable tap-to-move (in addition to drag)
     };
     requestAnimationFrame(() => requestAnimationFrame(mk));
+  },
+
+  /* Click / tap to move: tap a piece (legal moves light up), tap a destination.
+     Reuses the same validation as drag (_pzOnDrop). Great on mobile. */
+  _pzAttachClick() {
+    const wrap = document.getElementById('studentPuzzleBoardContainer');
+    if (!wrap || wrap._pzClickBound) return;
+    wrap._pzClickBound = true;
+    wrap.addEventListener('click', (e) => {
+      const cell = e.target.closest('[data-square]');
+      if (cell) this._pzClickSquare(cell.getAttribute('data-square'));
+    });
+  },
+  _pzClickSquare(sq) {
+    const g = this._pzGame;
+    if (!g || this._pzAwaiting) return;
+    const turn = g.turn();
+    if (this._pzSel) {
+      if (sq === this._pzSel) { this._pzClearSelect(); return; }
+      const legal = g.moves({ square: this._pzSel, verbose: true }).some(m => m.to === sq);
+      if (legal) { const from = this._pzSel; this._pzClearSelect(); this._pzOnDrop(from, sq); return; }
+      const pc = g.get(sq);
+      if (pc && pc.color === turn) { this._pzSelect(sq); return; }
+      this._pzClearSelect();
+      return;
+    }
+    const pc = g.get(sq);
+    if (pc && pc.color === turn) this._pzSelect(sq);
+  },
+  _pzSelect(sq) {
+    this._pzClearSelect();
+    this._pzSel = sq;
+    const wrap = document.getElementById('studentPuzzleBoardContainer');
+    if (!wrap) return;
+    const cell = wrap.querySelector('[data-square="' + sq + '"]');
+    if (cell) cell.classList.add('pz-selected');
+    this._pzGame.moves({ square: sq, verbose: true }).forEach(m => {
+      const d = wrap.querySelector('[data-square="' + m.to + '"]');
+      if (d) d.classList.add(m.captured ? 'pz-legal-cap' : 'pz-legal');
+    });
+  },
+  _pzClearSelect() {
+    this._pzSel = null;
+    const wrap = document.getElementById('studentPuzzleBoardContainer');
+    if (wrap) wrap.querySelectorAll('.pz-selected, .pz-legal, .pz-legal-cap')
+      .forEach(el => el.classList.remove('pz-selected', 'pz-legal', 'pz-legal-cap'));
   },
 
   /* Professional multi-move solve: validate the player's move against the
@@ -1772,30 +1819,28 @@ CK.student = {
       classDate = next.date || null;
       if (typeof next.students === 'number') classStudents = next.students;
       else if (Array.isArray(next.studentIds)) classStudents = next.studentIds.length;
-    } else {
-      // Fallback: parse from profile schedule
-      const scheduleRaw = p.schedule || '17:00';
-      const match = scheduleRaw.match(/(\d{1,2}):(\d{2})/);
-      if (match) {
-        classTime = new Date();
-        classTime.setHours(parseInt(match[1]), parseInt(match[2]), 0, 0);
-      }
     }
+    // No fabricated fallback — if there's no real recurring class or meeting,
+    // we show "No class scheduled" rather than inventing a today-5pm session.
+    const hasRealClass = !!(schedNext || (meetings && meetings.length));
+    if (!hasRealClass) classTime = null;
 
     const displayTime = classTime
       ? classTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
-      : '5:00 PM';
+      : '—';
 
     const nameEl = document.getElementById('nextClassTime');
     const classEl = document.getElementById('nextClassName');
     const subEl   = document.getElementById('nextClassSub');
-    if (nameEl) nameEl.innerText = displayTime;
-    if (classEl) classEl.innerText = classTitle;
-    if (subEl)   subEl.innerText  = classCoach && classCoach !== '' ? `with Coach ${classCoach}` : 'Check your schedule';
+    if (nameEl) nameEl.innerText = hasRealClass ? displayTime : 'No class scheduled';
+    if (classEl) classEl.innerText = hasRealClass ? classTitle : '—';
+    if (subEl)   subEl.innerText  = hasRealClass
+      ? (classCoach && classCoach !== '' ? `with Coach ${classCoach}` : 'Check your schedule')
+      : 'Your coach will add sessions soon';
 
     // Duration chip  from the meeting's real duration
     const durEl = document.getElementById('studentSessionDuration');
-    if (durEl) durEl.innerText = ` ${classDuration || 60} mins`;
+    if (durEl) durEl.innerText = hasRealClass ? ` ${classDuration || 60} mins` : '—';
 
     // Student count chip  real count; fall back to headcount of this batch/coach
     const studEl = document.getElementById('studentSessionStudents');
@@ -1808,20 +1853,21 @@ CK.student = {
           ).length;
         } catch (_) { classStudents = 0; }
       }
-      studEl.innerText = ` ${classStudents} student${classStudents === 1 ? '' : 's'}`;
+      studEl.innerText = hasRealClass ? ` ${classStudents} student${classStudents === 1 ? '' : 's'}` : '—';
     }
 
-    // LIVE badge  only "LIVE TODAY" when the class is actually today
+    // LIVE badge — based on whether a real class exists (recurring OR meeting),
+    // not just one-off meetings (fixed the "NO CLASS + countdown" contradiction).
     const badgeEl = document.getElementById('studentLiveBadge');
     if (badgeEl) {
       const isToday = classDate === todayStr || (classTime && classTime.toDateString() === new Date().toDateString());
-      badgeEl.innerText = meetings.length ? (isToday ? ' LIVE TODAY' : ' UPCOMING') : ' NO CLASS';
+      badgeEl.innerText = hasRealClass ? (isToday ? ' LIVE TODAY' : ' UPCOMING') : ' NO CLASS';
     }
 
     if (window.studentCountdownTimer) clearInterval(window.studentCountdownTimer);
 
     const tick = () => {
-      if (!classTime) { el.innerText = 'Check schedule'; return; }
+      if (!classTime) { el.innerText = hasRealClass ? 'Check schedule' : 'No class scheduled'; el.style.color = ''; return; }
       const remaining = Math.max(0, Math.round((classTime - new Date()) / 60000));
       if (remaining === 0) {
         el.innerText = ' Starting now!';

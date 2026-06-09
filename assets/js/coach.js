@@ -90,7 +90,10 @@ CK.coach = {
       const studPanel = document.getElementById('coach-panel-students');
       if ((homePanel && homePanel.classList.contains('active')) ||
           (studPanel && studPanel.classList.contains('active'))) {
-        await this._refreshStudentGrid();
+        // Don't rebuild while the coach is interacting (hover / focused dropdown).
+        const grid = document.getElementById('coachStudentsGrid');
+        const busy = grid && (grid.matches(':hover') || grid.contains(document.activeElement));
+        if (!busy) await this._refreshStudentGrid();
       }
       await this.updateProfile();
     }, 30000);
@@ -117,8 +120,15 @@ CK.coach = {
     const myStudents = students.filter(s => s.coach && s.coach.toLowerCase() === coachName);
     if (!myStudents.length) {
       grid.innerHTML = '<div class="cls-empty" style="grid-column:1/-1;">No students assigned yet. Ask admin to assign students to your profile.</div>';
+      this._lastStudentSig = '';
       return;
     }
+    // Skip the rebuild if nothing actually changed — constantly replacing the
+    // grid's innerHTML on the 30s timer was wiping the buttons/dropdowns and
+    // making them feel unclickable. Only re-render on a real data change.
+    const sig = myStudents.map(s => `${s.id}|${s.batch}|${s.status}|${s.rating}|${s.puzzle}|${s.level}`).join('~');
+    if (this._lastStudentSig === sig && grid.children.length && !grid.querySelector('.cls-empty')) return;
+    this._lastStudentSig = sig;
     const _e = CK.esc || (s => s);
     const presence = JSON.parse(localStorage.getItem('ck_live_presence') || '{}');
     const now = Date.now();
@@ -141,7 +151,7 @@ CK.coach = {
             ${isRecent ? `<span style="position:absolute;bottom:0;right:0;width:9px;height:9px;background:var(--p-teal);border-radius:50%;border:2px solid var(--p-surface2);"></span>` : ''}
           </div>
           <div class="p-live-info">
-            <div class="p-live-name">${_e(s.full_name)}</div>
+            <div class="p-live-name" style="cursor:pointer;" data-sid="${_e(String(s.id))}" onclick="CK.coach.viewStudentMetrics(this.dataset.sid)" title="View ${_e(s.full_name)}'s progress">${_e(s.full_name)}</div>
             <div class="p-live-sub">${_e(s.level || 'Beginner')} · ${_e(String(s.rating || 800))} ELO · ${_e(String(s.puzzle || 0))} puzzles</div>
             <div class="p-live-status"><span class="p-status-dot ${statusDot}"></span> ${statusLabel}</div>
             <div style="margin-top:6px; font-size:0.8rem; color:var(--p-text-muted);">
@@ -152,9 +162,9 @@ CK.coach = {
               </select>
             </div>
           </div>
-          <div style="display:flex;flex-direction:column;gap:4px;">
-            <button class="p-icon-btn" data-sid="${_e(String(s.id))}" onclick="CK.coach.viewStudentMetrics(this.dataset.sid)" title="View Progress">📊</button>
-            <button class="p-icon-btn" data-sid="${_e(String(s.id))}" data-sname="${_e(s.full_name || '')}" onclick="CK.coach.quickNoteFor(this.dataset.sid,this.dataset.sname)" title="Quick Note">📝</button>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;position:relative;z-index:2;">
+            <button type="button" class="p-icon-btn" data-sid="${_e(String(s.id))}" onclick="CK.coach.viewStudentMetrics(this.dataset.sid)" title="View Progress">📊</button>
+            <button type="button" class="p-icon-btn" data-sid="${_e(String(s.id))}" data-sname="${_e(s.full_name || '')}" onclick="CK.coach.quickNoteFor(this.dataset.sid,this.dataset.sname)" title="Quick Note">📝</button>
           </div>
         </div>`;
     }).join('');

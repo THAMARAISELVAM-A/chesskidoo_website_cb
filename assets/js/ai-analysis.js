@@ -227,14 +227,46 @@ CK.ai = (() => {
       plan.puzzleRecommendations.push(`Target puzzles rated ${analysis.elo - 100} to ${analysis.elo + 200}`);
     }
 
-    // Opening recommendations based on level
-    if (analysis.level === 'Beginner') {
-      plan.openingRecommendations = ['Italian Game (1.e4 e5 2.Bc4)', 'London System (1.d4 2.Bf4)', 'Scandinavian Defense (1...d5)'];
-    } else if (analysis.level === 'Intermediate') {
-      plan.openingRecommendations = ['Ruy Lopez', 'Sicilian Defense (Najdorf)', "Queen's Gambit Declined"];
-    } else {
-      plan.openingRecommendations = ['Catalan Opening', 'Grünfeld Defense', 'English Opening'];
+    // Opening recommendations — personalised by level AND the student's profile.
+    const _pools = {
+      Beginner: [
+        ['Italian Game (1.e4 e5 2.Bc4)', 'Natural development and early pressure on f7 — perfect for learning tactics.'],
+        ['London System (1.d4, Bf4)', 'A solid, easy setup you can play against almost anything.'],
+        ['Scandinavian Defense (1…d5)', 'Clear plans for Black with very little theory to memorise.'],
+        ["Queen's Gambit (1.d4 d5 2.c4)", 'Teaches central control and pawn-structure basics.']
+      ],
+      Intermediate: [
+        ['Ruy Lopez', 'Rich strategic play that sharpens long-term planning.'],
+        ['Sicilian Defense (Najdorf)', 'Fighting, double-edged positions to grow tactical vision.'],
+        ["Queen's Gambit Declined", 'Solid structures that reward good piece coordination.'],
+        ['Caro-Kann Defense', 'Reliable, low-risk defence with clean endgames.']
+      ],
+      Advanced: [
+        ['Catalan Opening', 'Long-term pressure and squeeze technique for strong players.'],
+        ['Grünfeld Defense', 'Dynamic counterplay against 1.d4 — tests calculation.'],
+        ['English Opening', 'Flexible and transpositional — broadens your repertoire.'],
+        ['Nimzo-Indian Defense', 'Principled control of e4 with excellent structures.']
+      ]
+    };
+    const _lvl = (analysis.level === 'Intermediate') ? 'Intermediate'
+              : (analysis.level === 'Beginner') ? 'Beginner' : 'Advanced';
+    const _pool = _pools[_lvl];
+    const _weak = new Set(analysis.weaknesses);
+    // If tactics/king-safety are weak, lead with the more solid/forcing option to reduce blunders.
+    let _chosen = _pool.slice(0, 3);
+    if (_weak.has('tactics') || _weak.has('king_safety')) {
+      _chosen = [_pool[1], _pool[0], _pool[2]];
+    } else if (_weak.has('endgame')) {
+      _chosen = [_pool[3] || _pool[2], _pool[0], _pool[1]];
     }
+    plan.openingRecommendations = _chosen.map(o => ({ name: o[0], why: o[1] }));
+
+    // Plain-language summary so the plan feels "discussed", grounded in real scores.
+    const _wn = analysis.weaknesses.slice(0, 2).map(c => (CATEGORIES[c] && CATEGORIES[c].name) || c);
+    const _goal = Math.round(analysis.elo + (analysis.weaknesses.length ? 80 : 120));
+    plan.summary = _wn.length
+      ? `Your data shows <b>${_wn.join(' and ')}</b> ${_wn.length > 1 ? 'are' : 'is'} holding you back most right now. This 4-week plan front-loads those areas — daily tactics, targeted endgames and structure work — aiming to lift your rating from <b>${analysis.elo}</b> toward <b>~${_goal}</b>.`
+      : `You're well-rounded across the board. This plan keeps your edge sharp with mixed tactics, endgame technique and game analysis, aiming from <b>${analysis.elo}</b> toward <b>~${_goal}</b>.`;
 
     return plan;
   };
@@ -491,6 +523,9 @@ CK.ai = (() => {
     const _e = CK.esc || (s => s);
 
     el.innerHTML = `
+      ${plan.summary ? `<div class="p-card" style="margin-bottom:14px;border-left:4px solid var(--p-gold);">
+        <div style="font-size:0.9rem;line-height:1.6;color:var(--p-text);">🧠 ${plan.summary}</div>
+      </div>` : ''}
       <div style="margin-bottom:16px;">
         <h4 style="margin-bottom:8px;">🎯 Focus Areas</h4>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
@@ -511,8 +546,15 @@ CK.ai = (() => {
             </div>`).join('')}
         </div>`).join('')}
       <div class="p-card" style="margin-bottom:8px;">
-        <h5 style="margin-bottom:8px;">📖 Recommended Openings</h5>
-        ${plan.openingRecommendations.map(o => `<div style="padding:2px 0; font-size:0.85rem;">♟ ${_e(o)}</div>`).join('')}
+        <h5 style="margin-bottom:8px;">📖 Recommended Openings <span style="font-size:0.72rem;font-weight:400;opacity:.6;">· chosen for your level &amp; weak spots</span></h5>
+        ${plan.openingRecommendations.map(o => {
+          const name = typeof o === 'string' ? o : o.name;
+          const why = typeof o === 'string' ? '' : o.why;
+          return `<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);">
+            <div style="font-size:0.88rem;font-weight:600;">♟ ${_e(name)}</div>
+            ${why ? `<div style="font-size:0.78rem;color:var(--p-text-muted);margin-top:2px;">${_e(why)}</div>` : ''}
+          </div>`;
+        }).join('')}
       </div>`;
   };
 

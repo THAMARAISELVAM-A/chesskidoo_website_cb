@@ -4146,7 +4146,15 @@
                               style="height:80px;font-size:0.83rem;resize:vertical;"
                               placeholder="Write your thoughts on this position…"></textarea>
                           </div>
-                          <button class="p-btn p-btn-teal" style="width:100%;" onclick="CK.classroom.submitHomework()">✓
+                          <div style="margin-bottom:12px;">
+                            <div style="font-size:0.78rem;font-weight:700;color:var(--p-teal);margin-bottom:6px;">📤 Attach
+                              Your Finished Work <span style="font-weight:400;color:var(--p-text-muted);">(photo, PDF, PGN — optional)</span></div>
+                            <input id="scHwSubmitFiles" type="file" multiple
+                              accept="image/*,application/pdf,.pdf,.doc,.docx,.txt,.pgn"
+                              class="p-form-control cls-file-input">
+                            <div id="scHwSubmitPreview" class="cls-attach-existing"></div>
+                          </div>
+                          <button class="p-btn p-btn-teal" style="width:100%;" id="scHwSubmitBtn" onclick="CK.classroom.submitHomework()">✓
                             Submit Homework</button>
                         </div>
                       </div>
@@ -5088,8 +5096,7 @@
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
                       <!-- Form -->
                       <div>
-                        <div style="font-size:0.9rem;font-weight:700;color:#fff;margin-bottom:14px;">Create New
-                          Assignment</div>
+                        <div class="cls-col-head">📝 Create New Assignment</div>
                         <div class="p-form-group">
                           <label class="p-label">Assignment Title</label>
                           <input id="ccHwTitle" class="p-form-control" placeholder="e.g. Study the Sicilian Najdorf">
@@ -5104,6 +5111,17 @@
                           <label class="p-label">Instructions for Students</label>
                           <textarea id="ccHwDesc" class="p-form-control" style="height:58px;font-size:0.85rem;"
                             placeholder="What should students focus on? Any specific questions?"></textarea>
+                        </div>
+                        <div class="p-form-group">
+                          <label class="p-label">📎 Attach Files <span style="text-transform:none;letter-spacing:0;opacity:0.6;">(images, PDFs, reading material — max 16 MB each)</span></label>
+                          <input id="ccHwFiles" type="file" multiple
+                            accept="image/*,application/pdf,.pdf,.doc,.docx,.txt,.ppt,.pptx"
+                            class="p-form-control cls-file-input">
+                          <div id="ccHwAttachExisting" class="cls-attach-existing"></div>
+                        </div>
+                        <div class="p-form-group">
+                          <label class="p-label">🔗 Reading Link <span style="text-transform:none;letter-spacing:0;opacity:0.6;">(optional — article, video, Lichess study)</span></label>
+                          <input id="ccHwLink" type="url" class="p-form-control" placeholder="https://…">
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
                           <div class="p-form-group" style="margin:0;">
@@ -5128,13 +5146,12 @@
                             <input id="ccHwDue" type="date" class="p-form-control">
                           </div>
                         </div>
-                        <button class="p-btn p-btn-teal" style="width:100%;" onclick="CK.classroom.assignHomework()">📝
+                        <button class="p-btn p-btn-teal" style="width:100%;" id="ccHwAssignBtn" onclick="CK.classroom.assignHomework()">📝
                           Assign Homework</button>
                       </div>
                       <!-- Existing Assignments -->
                       <div>
-                        <div style="font-size:0.9rem;font-weight:700;color:#fff;margin-bottom:14px;">Active Assignments
-                        </div>
+                        <div class="cls-col-head">📋 Active Assignments <span class="cls-count-badge" id="ccAssignCount">0</span></div>
                         <div id="ccAssignmentList"></div>
                       </div>
                     </div>
@@ -6099,7 +6116,7 @@
             <!-- 12th Game: Hextris -->
             <div class="game-card carrom-card" onclick="CK.arcade.startHextris()">
               <div class="card-glow"></div>
-              <div class="game-icon">🛑</div>
+              <div class="game-icon">⬡</div>
               <h3 class="card-title">Hextris</h3>
               <p class="card-desc">Rotate the hexagon to catch matching colored blocks. Fast-paced open-source action!</p>
               <div class="card-badges">
@@ -6762,7 +6779,7 @@
         <div class="form-group">
           <label class="ck-label ck-label-with-hint">
             Assign to Students
-            <span class="ck-hint">(attendance marked present for selected)</span>
+            <span class="ck-hint">(homework/resource is shared with selected students)</span>
           </label>
           <div id="uploadStudentList" class="ck-student-list">
             <span class="ck-student-list-empty">Select level/batch above to load students</span>

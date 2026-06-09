@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChessKidoo — Complete User Manual</title>
+<style>
+  :root{
+    --navy:#0f1623; --navy2:#1a2333; --ink:#111827;
+    --gold:#e8b84b; --gold-d:#d97706; --teal:#14b8a6; --blue:#5b9cf6;
+    --green:#22c55e; --red:#ef4444; --line:#e5e7eb; --muted:#6b7280;
+    --paper:#ffffff; --soft:#f8fafc;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:var(--ink);
+    background:var(--soft);line-height:1.65;font-size:16px;}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px;display:grid;grid-template-columns:260px 1fr;gap:30px;}
+  /* Cover */
+  .cover{background:radial-gradient(120% 140% at 100% 0%,rgba(232,184,75,.25),transparent 55%),
+    radial-gradient(120% 140% at 0% 100%,rgba(20,184,166,.2),transparent 55%),
+    linear-gradient(135deg,#0f1623,#1a2333);color:#fff;text-align:center;padding:64px 20px 70px;}
+  .cover .logo{width:78px;height:78px;border-radius:20px;margin:0 auto 18px;display:grid;place-items:center;
+    font-size:2.6rem;background:linear-gradient(145deg,var(--gold),var(--gold-d));box-shadow:0 12px 30px rgba(232,184,75,.4);}
+  .cover h1{font-size:2.6rem;margin:0 0 6px;letter-spacing:-.5px;}
+  .cover .sub{opacity:.8;font-size:1.05rem;}
+  .cover .meta{margin-top:18px;font-size:.85rem;opacity:.6;}
+  .cover .chip{display:inline-block;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);
+    border-radius:999px;padding:5px 14px;margin:14px 5px 0;font-size:.82rem;}
+  /* TOC */
+  nav.toc{position:sticky;top:16px;align-self:start;background:var(--paper);border:1px solid var(--line);
+    border-radius:14px;padding:16px 14px;max-height:calc(100vh - 32px);overflow:auto;font-size:.9rem;}
+  nav.toc h4{margin:0 0 10px;color:var(--gold-d);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;}
+  nav.toc a{display:block;color:#374151;text-decoration:none;padding:5px 8px;border-radius:7px;}
+  nav.toc a:hover{background:var(--soft);color:var(--navy);}
+  nav.toc a.sub{padding-left:20px;font-size:.85rem;color:var(--muted);}
+  /* Content */
+  main{padding:30px 0 80px;min-width:0;}
+  h2{font-size:1.8rem;color:var(--navy);border-bottom:3px solid var(--gold);padding-bottom:8px;margin:46px 0 18px;}
+  h2:first-child{margin-top:6px;}
+  h3{font-size:1.25rem;color:var(--gold-d);margin:30px 0 10px;}
+  h4{font-size:1.02rem;color:var(--navy);margin:20px 0 8px;}
+  p{margin:10px 0;}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin:16px 0;
+    box-shadow:0 6px 20px -14px rgba(0,0,0,.2);}
+  ol li,ul li{margin:6px 0;}
+  .steps{counter-reset:s;list-style:none;padding:0;}
+  .steps>li{position:relative;padding:10px 0 10px 46px;border-bottom:1px dashed var(--line);}
+  .steps>li:last-child{border-bottom:none;}
+  .steps>li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:9px;width:30px;height:30px;
+    background:linear-gradient(145deg,var(--gold),var(--gold-d));color:#1a1407;font-weight:800;border-radius:9px;
+    display:grid;place-items:center;font-size:.9rem;}
+  .btn{display:inline-block;background:var(--navy);color:#fff;border-radius:7px;padding:2px 9px;font-size:.84rem;
+    font-weight:600;white-space:nowrap;}
+  .btn.gold{background:var(--gold);color:#1a1407;} .btn.teal{background:var(--teal);} .btn.blue{background:var(--blue);}
+  .btn.green{background:var(--green);} .btn.red{background:var(--red);}
+  .note,.tip,.warn{border-radius:12px;padding:12px 16px;margin:14px 0;border-left:5px solid;}
+  .note{background:#eff6ff;border-color:var(--blue);} .tip{background:#f0fdf4;border-color:var(--green);}
+  .warn{background:#fef2f2;border-color:var(--red);}
+  .note b,.tip b,.warn b{display:block;margin-bottom:2px;}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.92rem;}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top;}
+  th{background:var(--navy);color:#fff;font-weight:600;}
+  tr:nth-child(even) td{background:var(--soft);}
+  .role-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:16px 0;}
+  .role{border-radius:14px;padding:18px;color:#fff;}
+  .role h4{color:#fff;margin:0 0 6px;font-size:1.15rem;}
+  .role.admin{background:linear-gradient(145deg,#7c3aed,#4c1d95);}
+  .role.coach{background:linear-gradient(145deg,#0d9488,#0f766e);}
+  .role.student{background:linear-gradient(145deg,#2563eb,#1e3a8a);}
+  .role.parent{background:linear-gradient(145deg,#d97706,#b45309);}
+  .diagram{background:var(--navy);border-radius:14px;padding:18px;margin:18px 0;overflow:auto;}
+  .diagram figcaption{color:var(--gold);font-size:.85rem;text-align:center;margin-top:8px;font-weight:600;}
+  .shot{background:var(--soft);border:2px dashed var(--gold);border-radius:12px;padding:14px 16px;margin:14px 0;
+    font-size:.9rem;color:var(--muted);}
+  .shot b{color:var(--gold-d);}
+  code{background:#0f1623;color:#fde9c8;padding:2px 7px;border-radius:5px;font-size:.85em;}
+  .kpi{display:inline-block;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:3px 10px;
+    font-size:.82rem;margin:2px 4px 2px 0;}
+  footer{background:var(--navy);color:rgba(255,255,255,.7);text-align:center;padding:30px 20px;font-size:.85rem;}
+  @media(max-width:880px){.wrap{grid-template-columns:1fr;}nav.toc{position:static;max-height:none;}}
+  @media print{nav.toc{display:none;}.wrap{grid-template-columns:1fr;}body{background:#fff;}}
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="logo">♘</div>
+  <h1>ChessKidoo</h1>
+  <div class="sub">Complete User Manual — Academy Management Platform</div>
+  <div>
+    <span class="chip">👨‍💼 Admin</span><span class="chip">👨‍🏫 Coach</span>
+    <span class="chip">🎓 Student</span><span class="chip">👨‍👩‍👧 Parent</span>
+  </div>
+  <div class="meta">Covers all four portals · live classes · PGN Stockfish Lab · homework · tournaments · resources</div>
+</header>
+
+<div class="wrap">
+<nav class="toc">
+  <h4>Contents</h4>
+  <a href="#intro">1. Introduction</a>
+  <a href="#roles">2. Roles &amp; access</a>
+  <a href="#login">3. Logging in</a>
+  <a href="#landing">4. Website &amp; enrolment</a>
+  <a href="#admin">5. Admin portal</a>
+  <a href="#admin-enroll" class="sub">Enrol a student</a>
+  <a href="#admin-access" class="sub">Access Manager</a>
+  <a href="#admin-classes" class="sub">Classes &amp; timetable</a>
+  <a href="#admin-other" class="sub">Fees, resources, more</a>
+  <a href="#coach">6. Coach portal</a>
+  <a href="#coach-hw" class="sub">Assign homework</a>
+  <a href="#coach-grades" class="sub">Grades</a>
+  <a href="#coach-live" class="sub">Live session</a>
+  <a href="#coach-res" class="sub">Upload resources</a>
+  <a href="#coach-puz" class="sub">Puzzles</a>
+  <a href="#student">7. Student portal</a>
+  <a href="#student-hw" class="sub">Homework</a>
+  <a href="#student-puz" class="sub">My Puzzles</a>
+  <a href="#student-lab" class="sub">PGN Stockfish Lab</a>
+  <a href="#student-live" class="sub">Live classroom</a>
+  <a href="#student-report" class="sub">Report card</a>
+  <a href="#student-more" class="sub">Other sections</a>
+  <a href="#parent">8. Parent portal</a>
+  <a href="#workflows">9. Key workflows</a>
+  <a href="#pgn">10. PGN Lab deep-dive</a>
+  <a href="#tom">11. AI Coach Tom</a>
+  <a href="#faq">12. FAQ &amp; troubleshooting</a>
+  <a href="#glossary">13. Glossary</a>
+  <a href="#screens">14. Adding screenshots</a>
+</nav>
+
+<main>
+
+<h2 id="intro">1. Introduction</h2>
+<p>ChessKidoo is an all-in-one platform for running a chess academy. It brings the
+website, four role-based portals, live classes, homework, a Stockfish-powered PGN
+analysis lab, tournaments, fees and learning resources into one place. This manual
+explains, step by step, what each type of user can do.</p>
+<div class="tip"><b>How to read this manual</b>
+Buttons you tap are shown like this: <span class="btn gold">▶ Start</span>. Numbered
+lists are exact step-by-step actions. Blue boxes are notes, green boxes are tips,
+red boxes are warnings. Use the left menu to jump to any section.</div>
+
+<h2 id="roles">2. Roles &amp; access</h2>
+<p>Everyone signs in with the same login screen; what you see is decided by your role.</p>
+<div class="role-grid">
+  <div class="role admin"><h4>👨‍💼 Admin</h4>Runs the academy: enrols students, manages logins &amp; roles, classes, timetable, fees, resources, tournaments and analytics.</div>
+  <div class="role coach"><h4>👨‍🏫 Coach</h4>Teaches: assigns homework, runs live classes, uploads learning materials, assigns/ tracks puzzles, writes reports, manages their schedule.</div>
+  <div class="role student"><h4>🎓 Student</h4>Learns: joins live classes, does homework &amp; puzzles, analyses games in the PGN Lab, tracks progress, downloads the report card &amp; certificates.</div>
+  <div class="role parent"><h4>👨‍👩‍👧 Parent</h4>Monitors: views the child's progress, attendance, reports, fees, schedule and gives feedback — updated in real time.</div>
+</div>
+<div class="note"><b>Real-time</b> Most data syncs live. When a coach assigns homework
+or uploads a resource, it appears in the student's portal within seconds — no refresh needed.</div>
+
+<h2 id="login">3. Logging in</h2>
+<ol class="steps">
+  <li>Open the ChessKidoo website and click <span class="btn">Log In</span> in the top menu.</li>
+  <li>Enter the <b>email</b> and <b>password</b> the academy gave you.</li>
+  <li>You are taken straight to your portal (Admin / Coach / Student / Parent) based on your role.</li>
+  <li>To sign out, use the menu in your portal header.</li>
+</ol>
+<div class="warn"><b>Forgot password?</b> Contact the academy — an Admin can reset
+any login from the <a href="#admin-access">Access Manager</a>.</div>
+<div class="shot"><b>Screenshot slot:</b> the login screen. (See §14 for how to add real screenshots.)</div>
+
+<h2 id="landing">4. Website &amp; enrolment (for new families)</h2>
+<p>The public website lets new families learn about the academy and book a free demo.</p>
+<h3>Book a free demo class</h3>
+<ol class="steps">
+  <li>On the home page click <span class="btn gold">Book Free Demo</span> (or any "Explore Course" button).</li>
+  <li>Fill in the parent's name and the child's age.</li>
+  <li>Pick your <b>country code</b> from the dropdown (auto-detected) and type the WhatsApp number.</li>
+  <li>Choose your <b>Country</b>; the city is optional.</li>
+  <li>Click <span class="btn gold">Book Free Demo</span> — you'll be handed to WhatsApp/email to confirm, and the academy receives the lead.</li>
+</ol>
+<div class="tip"><b>International friendly</b> The pricing section has a 🌐 <b>Language</b>
+and 💱 <b>Currency</b> switcher, and prices convert automatically — handy for families abroad.</div>
+
+<h2 id="admin">5. Admin portal</h2>
+<p>The control centre for the academy. Use the left sidebar to move between sections.</p>
+
+<h3 id="admin-enroll">Enrol a new student</h3>
+<ol class="steps">
+  <li>Go to the students/dashboard area and click <span class="btn teal">+ Enroll</span>.</li>
+  <li>Fill in name, parent phone, level, batch, coach and fee details.</li>
+  <li>Click <span class="btn gold">Confirm Enrollment</span>. The student record is created.</li>
+  <li>Give the student a login from the <a href="#admin-access">Access Manager</a>.</li>
+</ol>
+
+<h3 id="admin-access">Access Manager (logins &amp; roles)</h3>
+<p>This is where you control who can log in and as what role. It updates in real time
+when new students are enrolled.</p>
+<table>
+  <tr><th>Action</th><th>How</th></tr>
+  <tr><td>Search a user</td><td>Type a name/email in the 🔍 search; filter by role.</td></tr>
+  <tr><td>Set / reset a password</td><td>Click <span class="btn">🔑 Set Password</span> on the row.</td></tr>
+  <tr><td>Change role</td><td>Use the role dropdown on the row (student / coach / parent).</td></tr>
+  <tr><td>Revoke access</td><td>Click <span class="btn red">✕ Revoke</span>.</td></tr>
+  <tr><td>Add a parent &amp; link child</td><td><span class="btn blue">➕ Add Parent Account</span>, then <span class="btn">🔗 Set Child</span>.</td></tr>
+  <tr><td>Bulk passwords</td><td>"Set Password — All Students / Coaches".</td></tr>
+</table>
+
+<h3 id="admin-classes">Classes &amp; timetable</h3>
+<p>Create recurring classes (days, time, batch, coach). Each active class is given a
+Google Meet room <b>automatically</b> — coaches and students get the join link without
+anyone pasting it.</p>
+
+<h3 id="admin-other">Fees, resources, broadcasts, tournaments, analytics</h3>
+<ul>
+  <li><b>Resources:</b> upload PDFs/links/videos with <span class="btn gold">+ Upload File</span> — they appear in students' Learning Resources.</li>
+  <li><b>Expenses &amp; fees:</b> record academy expenses and student fee status.</li>
+  <li><b>Broadcasts:</b> push announcements to portals.</li>
+  <li><b>Tournaments:</b> create and manage events.</li>
+  <li><b>Analytics:</b> revenue, enrolment and activity overviews.</li>
+</ul>
+
+<h2 id="coach">6. Coach portal</h2>
+<p>Everything a coach needs to teach and track students.</p>
+
+<h3 id="coach-hw">Assign homework</h3>
+<ol class="steps">
+  <li>Open <span class="btn">🎓 Classroom</span> → <span class="btn">📋 Homework</span> tab.</li>
+  <li>Enter a <b>title</b>, paste the <b>PGN</b>, choose a <b>type</b> (Study / Guess Move / Practice).</li>
+  <li>In <b>Assign To</b> pick a specific student (the list shows your real students) or <b>All Students</b>.</li>
+  <li>Set an optional due date and description, then click <span class="btn teal">📝 Assign Homework</span>.</li>
+</ol>
+<div class="tip"><b>Instant delivery</b> The moment you assign, it appears in that
+student's Homework section (and their nav badge updates) — live.</div>
+
+<h3 id="coach-grades">See submissions &amp; grades</h3>
+<p>Open the <span class="btn">Grades</span> tab. For each assignment you see which
+<b>students submitted</b> (by name), their <b>accuracy</b>, moves studied and notes —
+updated live as students submit.</p>
+
+<h3 id="coach-live">Run a live session</h3>
+<ol class="steps">
+  <li>Open Classroom → <span class="btn">📡 Live Class</span> tab.</li>
+  <li>The Google Meet link is <b>auto-filled</b> from your class room (or generated if missing).</li>
+  <li>Optionally paste a PGN to broadcast a position, then start the session.</li>
+  <li>Students see your live board + engine eval + your notes, and a big <span class="btn gold">Join Google Meet</span> button.</li>
+</ol>
+
+<h3 id="coach-res">Upload learning resources / e-library</h3>
+<ol class="steps">
+  <li>Open the <span class="btn">📚 Resources</span> section.</li>
+  <li>Click <span class="btn gold">+ Upload</span>.</li>
+  <li>Choose <b>File</b> (PDF, etc.) or <b>Link</b>, add a title, level and batch.</li>
+  <li>Publish — it appears instantly in your students' <b>Learning Resources → Coach Assignments</b> tab.</li>
+</ol>
+
+<h3 id="coach-puz">Assign &amp; track puzzles</h3>
+<p>Open <span class="btn">🧩 Puzzles</span>. Use <span class="btn blue">🎯 Assign &amp; Track</span>
+to give puzzles to students, and the <b>Student Puzzle Progress</b> card to see every
+puzzle each of your students has solved (live from the database).</p>
+
+<h2 id="student">7. Student portal</h2>
+<p>Your learning home. The sidebar holds every tool.</p>
+
+<h3 id="student-hw">Homework</h3>
+<ol class="steps">
+  <li>Click <span class="btn">📒 Homework</span> in the sidebar (a badge shows pending count).</li>
+  <li>Each card shows the coach, type, due date and a status (⏳ Pending / ✓ Done).</li>
+  <li>Click <span class="btn blue">▶ Start</span> to open it on the board, study/solve, then <span class="btn teal">✓ Submit Homework</span>.</li>
+  <li>Use <span class="btn">⬇ PGN</span> on any card to download it, or <span class="btn gold">⬇ Download all (PGN)</span> for everything.</li>
+</ol>
+
+<h3 id="student-puz">My Puzzles</h3>
+<ol class="steps">
+  <li>Click <span class="btn">🧩 My Puzzles</span>. Filter by All / Easy / Medium / Hard.</li>
+  <li>Pick a puzzle and drag the best move on the board; the opponent replies automatically.</li>
+  <li>Solve cleanly for a 🌟 <b>Perfect</b> — build a streak for 🔥 bonus praise and confetti!</li>
+  <li>Solved puzzles are saved, so your progress and "Completed" count persist.</li>
+</ol>
+
+<h3 id="student-lab">PGN Stockfish Lab</h3>
+<p>Analyse any game with the engine. See the <a href="#pgn">deep-dive</a> for full detail.</p>
+<ul>
+  <li>Paste a PGN and click <span class="btn blue">🔬 Analyze PGN</span>, or open a famous game from the library.</li>
+  <li>Step through moves; the evaluation bar and last-move highlight follow along.</li>
+  <li>Import your own games from <b>Lichess</b> or <b>Chess.com</b> into <b>My Games Vault</b>.</li>
+  <li>Save a position with <span class="btn gold">🗄️ Save to Vault</span>.</li>
+</ul>
+
+<h3 id="student-live">Live classroom</h3>
+<ol class="steps">
+  <li>Open <span class="btn">🎓 My Classroom</span> → <span class="btn">📡 Live Class</span>.</li>
+  <li>When class is live, a <span class="btn gold">Join Google Meet</span> card appears — tap it for video.</li>
+  <li>The board below mirrors the coach's position with live engine eval and notes.</li>
+</ol>
+
+<h3 id="student-report">Report card</h3>
+<ol class="steps">
+  <li>Open <span class="btn">📊 Report Card</span>.</li>
+  <li>Use <span class="btn">👁 View</span> to open a clean printable version, <span class="btn gold">⬇ Download PDF</span> to save it, or <span class="btn blue">🖨 Print</span>.</li>
+</ol>
+<p>The report shows your rating, competency rings (openings, tactics, endgame, etc.),
+a rating chart and your coach's assessment.</p>
+
+<h3 id="student-more">Other student sections</h3>
+<table>
+  <tr><th>Section</th><th>What it does</th></tr>
+  <tr><td>My Progress</td><td>Live score across attendance, puzzles, rating, games &amp; homework, with charts.</td></tr>
+  <tr><td>Opening Trainer</td><td>Practise openings and track mastery.</td></tr>
+  <tr><td>Game Tracker</td><td>Log your games and see win/loss stats.</td></tr>
+  <tr><td>Tournaments</td><td>Find events and register interest.</td></tr>
+  <tr><td>Linked Accounts</td><td>Connect Lichess / Chess.com / FIDE to sync ratings; <span class="btn red">⏏ Unlink</span> to swap accounts.</td></tr>
+  <tr><td>Learning Resources</td><td>E-Library, videos and your coach's uploaded materials.</td></tr>
+  <tr><td>Certificates</td><td>Earn and download level certificates as PDF.</td></tr>
+  <tr><td>Rank &amp; XP / Arcade</td><td>Earn XP, climb the leaderboard, and play chess mini-games (incl. King's Escape).</td></tr>
+</table>
+
+<h2 id="parent">8. Parent portal</h2>
+<p>A read-only window into your child's journey — updated live.</p>
+<table>
+  <tr><th>Section</th><th>Shows</th></tr>
+  <tr><td>Dashboard</td><td>Child overview &amp; key stats.</td></tr>
+  <tr><td>Progress</td><td>Rating trend and performance.</td></tr>
+  <tr><td>Attendance</td><td>Class attendance record.</td></tr>
+  <tr><td>Schedule</td><td>Upcoming classes.</td></tr>
+  <tr><td>Reports</td><td>Coach report cards.</td></tr>
+  <tr><td>Fees</td><td>Payment status.</td></tr>
+  <tr><td>Feedback</td><td>Send feedback to the academy.</td></tr>
+</table>
+<div class="note"><b>Linked by Admin</b> If you see "Child not linked", ask the academy
+to link your child's account from the Access Manager.</div>
+
+<h2 id="workflows">9. Key workflows (diagrams)</h2>
+
+<figure class="diagram">
+<svg viewBox="0 0 900 120" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI" font-size="13">
+  <defs><marker id="a" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#e8b84b"/></marker></defs>
+  <g>
+    <rect x="10" y="38" width="150" height="44" rx="9" fill="#7c3aed"/><text x="85" y="65" fill="#fff" text-anchor="middle">Coach assigns HW</text>
+    <line x1="162" y1="60" x2="208" y2="60" stroke="#e8b84b" stroke-width="2" marker-end="url(#a)"/>
+    <rect x="212" y="38" width="160" height="44" rx="9" fill="#2563eb"/><text x="292" y="65" fill="#fff" text-anchor="middle">Student sees it (live)</text>
+    <line x1="374" y1="60" x2="420" y2="60" stroke="#e8b84b" stroke-width="2" marker-end="url(#a)"/>
+    <rect x="424" y="38" width="150" height="44" rx="9" fill="#0d9488"/><text x="499" y="65" fill="#fff" text-anchor="middle">Solve &amp; Submit</text>
+    <line x1="576" y1="60" x2="622" y2="60" stroke="#e8b84b" stroke-width="2" marker-end="url(#a)"/>
+    <rect x="626" y="38" width="160" height="44" rx="9" fill="#d97706"/><text x="706" y="65" fill="#fff" text-anchor="middle">Coach grades (live)</text>
+    <line x1="788" y1="60" x2="834" y2="60" stroke="#e8b84b" stroke-width="2" marker-end="url(#a)"/>
+    <rect x="838" y="38" width="52" height="44" rx="9" fill="#22c55e"/><text x="864" y="65" fill="#fff" text-anchor="middle">XP</text>
+  </g>
+</svg>
+<figcaption>Homework workflow — coach ⇄ student, fully real-time</figcaption>
+</figure>
+
+<figure class="diagram">
+<svg viewBox="0 0 900 140" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI" font-size="13">
+  <defs><marker id="b" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#14b8a6"/></marker></defs>
+  <rect x="10" y="50" width="175" height="44" rx="9" fill="#2563eb"/><text x="97" y="77" fill="#fff" text-anchor="middle">Import / Upload PGN</text>
+  <line x1="187" y1="72" x2="233" y2="72" stroke="#14b8a6" stroke-width="2" marker-end="url(#b)"/>
+  <rect x="237" y="50" width="150" height="44" rx="9" fill="#0f766e"/><text x="312" y="77" fill="#fff" text-anchor="middle">Vault stores game</text>
+  <line x1="389" y1="72" x2="435" y2="72" stroke="#14b8a6" stroke-width="2" marker-end="url(#b)"/>
+  <rect x="439" y="50" width="150" height="44" rx="9" fill="#1a2333"/><text x="514" y="77" fill="#fff" text-anchor="middle">Stockfish queue</text>
+  <line x1="591" y1="72" x2="637" y2="72" stroke="#14b8a6" stroke-width="2" marker-end="url(#b)"/>
+  <rect x="641" y="50" width="150" height="44" rx="9" fill="#0d9488"/><text x="716" y="77" fill="#fff" text-anchor="middle">Analysis + report</text>
+  <line x1="793" y1="72" x2="839" y2="72" stroke="#14b8a6" stroke-width="2" marker-end="url(#b)"/>
+  <rect x="843" y="50" width="48" height="44" rx="9" fill="#22c55e"/><text x="867" y="77" fill="#fff" text-anchor="middle">📈</text>
+</svg>
+<figcaption>PGN analysis flow (cloud vault + Stockfish queue)</figcaption>
+</figure>
+
+<figure class="diagram">
+<svg viewBox="0 0 900 120" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI" font-size="13">
+  <defs><marker id="c" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#5b9cf6"/></marker></defs>
+  <rect x="10" y="38" width="170" height="44" rx="9" fill="#d97706"/><text x="95" y="65" fill="#fff" text-anchor="middle">Admin creates class</text>
+  <line x1="182" y1="60" x2="228" y2="60" stroke="#5b9cf6" stroke-width="2" marker-end="url(#c)"/>
+  <rect x="232" y="38" width="190" height="44" rx="9" fill="#1a2333"/><text x="327" y="65" fill="#fff" text-anchor="middle">Auto Meet link created</text>
+  <line x1="424" y1="60" x2="470" y2="60" stroke="#5b9cf6" stroke-width="2" marker-end="url(#c)"/>
+  <rect x="474" y="38" width="160" height="44" rx="9" fill="#0d9488"/><text x="554" y="65" fill="#fff" text-anchor="middle">Coach goes live</text>
+  <line x1="636" y1="60" x2="682" y2="60" stroke="#5b9cf6" stroke-width="2" marker-end="url(#c)"/>
+  <rect x="686" y="38" width="204" height="44" rx="9" fill="#2563eb"/><text x="788" y="65" fill="#fff" text-anchor="middle">Student joins (Meet + board)</text>
+</svg>
+<figcaption>Live class &amp; automatic Google Meet scheduling</figcaption>
+</figure>
+
+<h2 id="pgn">10. PGN Stockfish Lab — deep-dive</h2>
+<p>The Lab is where games are studied with engine help. It uses a <b>hybrid</b> model:
+your games are stored locally/in the academy cloud, while master games and player
+data are pulled from Lichess &amp; Chess.com.</p>
+<h3>What you can do</h3>
+<ul>
+  <li><b>Analyze:</b> paste a PGN → <span class="btn blue">🔬 Analyze PGN</span>; step with ⏮ ◀ ▶ ⏭; the eval bar &amp; last-move arrow follow.</li>
+  <li><b>Famous Games Library:</b> 30+ curated master games by level, plus live Lichess/Chess.com import.</li>
+  <li><b>My Games Vault:</b> import your Lichess/Chess.com games in one click; search, filter (win/loss/draw, source, colour) and see win-rate &amp; best/worst opening analytics.</li>
+  <li><b>Save &amp; report:</b> <span class="btn gold">🗄️ Save to Vault</span> stores a game; the academy can run server-side Stockfish to produce accuracy/blunder reports.</li>
+</ul>
+<div class="note"><b>Activating server analysis</b> The cloud Stockfish worker
+(<code>analyze-pgn</code>) must be deployed by the academy for full engine reports.
+Until then, the Lab still analyses live in your browser and stores your games.</div>
+
+<h2 id="tom">11. AI Coach Tom</h2>
+<p>Tom is the in-app assistant. Today he answers common questions (classes, fees,
+payments, how features work) and surfaces game stats. Ask him from the chat bubble.</p>
+<div class="warn"><b>Be aware</b> Tom is currently a <b>guided assistant</b>, not a
+full AI engine-coach. For move-by-move "why was this bad?" explanations, use the
+PGN Lab with the engine. (An LLM upgrade is on the roadmap.)</div>
+
+<h2 id="faq">12. FAQ &amp; troubleshooting</h2>
+<table>
+  <tr><th>Problem</th><th>Fix</th></tr>
+  <tr><td>Can't log in</td><td>Ask the academy to reset your password (Access Manager).</td></tr>
+  <tr><td>No homework showing</td><td>You only see homework assigned to you or "All Students". Check back after the coach assigns.</td></tr>
+  <tr><td>Join Meet button missing</td><td>It appears when your class is live; the coach must start the session.</td></tr>
+  <tr><td>Resource not visible</td><td>Resources appear under Learning Resources → Coach Assignments, filtered to your level/batch.</td></tr>
+  <tr><td>Board pieces not loading</td><td>Needs internet (pieces load from chess.com). Check your connection.</td></tr>
+  <tr><td>Parent shows "child not linked"</td><td>Admin must link the child in Access Manager (🔗 Set Child).</td></tr>
+</table>
+
+<h2 id="glossary">13. Glossary</h2>
+<table>
+  <tr><th>Term</th><th>Meaning</th></tr>
+  <tr><td>PGN</td><td>Portable Game Notation — the standard text format of a chess game.</td></tr>
+  <tr><td>FEN</td><td>Text describing a single board position.</td></tr>
+  <tr><td>Stockfish</td><td>The world-class chess engine used for analysis.</td></tr>
+  <tr><td>Accuracy</td><td>How close your moves were to the engine's best moves (0–100%).</td></tr>
+  <tr><td>Blunder / Mistake / Inaccuracy</td><td>Move errors, from most to least serious.</td></tr>
+  <tr><td>Vault</td><td>Your personal saved-games library in the Lab.</td></tr>
+  <tr><td>Batch / Level</td><td>The class group and skill tier a student belongs to.</td></tr>
+  <tr><td>XP</td><td>Experience points earned by puzzles, homework and wins.</td></tr>
+</table>
+
+<h2 id="screens">14. Adding real screenshots</h2>
+<p>This manual uses workflow diagrams. To add real screenshots (the dashed slots and
+each section), have someone log into each portal and capture the screens, then place
+the images beside the matching heading. Suggested shots:</p>
+<ul>
+  <li>Login page; each portal home (Admin, Coach, Student, Parent).</li>
+  <li>Access Manager; Enrol-student form; Classes/timetable.</li>
+  <li>Coach: Assign-homework form; Grades; Live session; Upload resource.</li>
+  <li>Student: Homework section; My Puzzles; PGN Lab; Report card; Resources.</li>
+  <li>Parent: Dashboard; Progress; Reports.</li>
+</ul>
+<div class="tip"><b>Tip</b> Capture on both a laptop and a phone so the manual shows the
+desktop and mobile layouts.</div>
+
+</main>
+</div>
+
+<footer>
+  ChessKidoo — Academy Management Platform · User Manual · © 2026 ChessKidoo Academy<br>
+  Bhavani, Erode, Tamil Nadu · chesskidoo37@gmail.com
+</footer>
+
+</body>
+</html>

@@ -1104,15 +1104,26 @@ CK.admin = {
     const coachesHtml = coaches.length ? `
       <div class="live-section-title">👨‍🏫 Coach Status (${coaches.length})</div>
       <div class="live-coach-grid">
-         ${coaches.map(c => {
+         ${(() => {
+           const _todayDow = new Date().toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 3).toLowerCase();
+           return coaches.map(c => {
            const _e = CK.esc || (s => s);
            const attendedToday = coachAttn.some(a => a.coachId === c.id && a.date === todayStr);
+           // Does this coach actually have a class scheduled TODAY (real timetable)?
+           const hasClassToday = (this.classesDb || []).some(cl =>
+             (cl.coachName === c.full_name || cl.coach === c.full_name) && (cl.active !== false) &&
+             (cl.days || []).some(d => String(d).slice(0, 3).toLowerCase() === _todayDow));
            const presAge = _presAge(c.id);
            const isOnline = presAge === 'Active now' || presAge?.includes('m ago') && parseInt(presAge) < 10;
            const initial = c.full_name?.[0]?.toUpperCase() || 'C';
            const myStudents = students.filter(s => s.coach === c.full_name).length;
+           // 3-state, schedule-aware status
+           let statusLabel, statusCls;
+           if (hasClassToday && attendedToday) { statusLabel = '✅ Attended today'; statusCls = 'online'; }
+           else if (hasClassToday)             { statusLabel = '🕒 Class today — not marked'; statusCls = 'away'; }
+           else                                { statusLabel = 'No class scheduled today'; statusCls = 'offline'; }
            return `
-             <div class="p-live-card ${attendedToday ? 'online' : 'offline'}">
+             <div class="p-live-card ${statusCls}">
                <div class="p-live-avatar" style="background:var(--p-surface3);color:var(--p-blue);position:relative;">
                  ${initial}
                  ${isOnline ? '<span style="position:absolute;bottom:0;right:0;width:9px;height:9px;background:var(--p-teal);border-radius:50%;border:2px solid var(--p-surface2);"></span>' : ''}
@@ -1121,13 +1132,13 @@ CK.admin = {
                  <div class="p-live-name">${_e(c.full_name)}</div>
                  <div class="p-live-sub">${myStudents} students · ${_e(String(c.puzzle || 'Coach'))}${presAge ? ' · ' + _e(presAge) : ''}</div>
                  <div class="p-live-status">
-                   <span class="p-status-dot ${attendedToday ? 'online' : 'offline'}"></span>
-                   ${attendedToday ? 'Active Today' : 'No Class Today'}
+                   <span class="p-status-dot ${statusCls}"></span>
+                   ${statusLabel}
                  </div>
                </div>
                <button class="p-icon-btn" title="View Coach Details" onclick="CK.admin.viewCoachDetails && CK.admin.viewCoachDetails(${JSON.stringify(c.id)})">📊</button>
              </div>`;
-         }).join('')}
+         }).join(''); })()}
       </div>` : '';
 
     // Students section — grouped by fee status
@@ -1379,10 +1390,12 @@ CK.admin = {
       return el && el.classList.contains('active');
     });
 
-    if (activePanel === 'students') this.openStudentModal();
-    if (activePanel === 'coaches') this.openCoachModal();
-    if (activePanel === 'classes') this.openClassModal();
-    if (activePanel === 'expenses') this.openExpenseModal();
+    // Context-aware modal; defaults to "Enroll Student" so the gold
+    // "+ Add Student" button ALWAYS works (it did nothing on dashboard/live).
+    if (activePanel === 'coaches') return this.openCoachModal();
+    if (activePanel === 'classes') return this.openClassModal();
+    if (activePanel === 'expenses') return this.openExpenseModal();
+    this.openStudentModal();
   },
 
   async openStudentModal(studentId = null) {
@@ -1684,16 +1697,13 @@ CK.admin = {
         created_at: new Date().toISOString()
       });
 
-      // Mark each assigned student as present for today
-      if (selectedUserIds.length) {
-        await Promise.all(selectedUserIds.map(uid =>
-          CK.db.saveAttendance({ userid: uid, date: today, status: 'present', class_title: customName })
-        ));
-      }
+      // NOTE: uploading a resource/homework does NOT mark attendance.
+      // Homework and attendance are separate — attendance is recorded only in
+      // the Attendance section (or when a student actually joins a live class).
 
       CK.showToast(
         `✅ ${storageKind === 'link' ? 'Link' : 'File'} published` +
-        (selectedUserIds.length ? ` · ${selectedUserIds.length} student(s) marked present.` : '.'),
+        (selectedUserIds.length ? ` · assigned to ${selectedUserIds.length} student(s).` : '.'),
         'success'
       );
       CK.closeModal('uploadModal');

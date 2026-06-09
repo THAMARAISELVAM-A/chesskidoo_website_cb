@@ -39,6 +39,106 @@ CK.classroom = (() => {
   let _hwBoard = null, _hwHistory = [], _hwCurrentMove = 0;
   let _hwMode = 'study', _hwAssignment = null, _hwGuessFrom = null;
   let _hwCorrect = 0;
+  let _editingHwId = null;   // set when editing an existing homework
+  let _editingHwAttachments = [];  // attachments carried through an edit
+
+  /* Classify an attachment by file name / mime. */
+  function _attachKind(name = '', mime = '') {
+    const n = String(name).toLowerCase();
+    if (/^image\//.test(mime) || /\.(png|jpe?g|gif|webp|bmp|svg)$/.test(n)) return 'image';
+    if (mime === 'application/pdf' || /\.pdf$/.test(n)) return 'pdf';
+    return 'doc';
+  }
+
+  /* Upload every file from a <input type=file> to the public `documents`
+     bucket under `prefix/`. Returns [{ name, url, kind }]. Falls back to an
+     inline data URL for small files when storage is unavailable, so images
+     still load offline. Shared by homework attachments AND student submissions. */
+  async function _uploadInputFiles(inputId, prefix) {
+    const out = [];
+    const input = document.getElementById(inputId);
+    const files = (input && input.files) ? Array.from(input.files) : [];
+    for (const file of files) {
+      if (file.size > 16 * 1024 * 1024) { CK.showToast(`"${file.name}" skipped — over 16 MB.`, 'warning'); continue; }
+      const kind = _attachKind(file.name, file.type);
+      let url = '';
+      const path = `${prefix}/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+      if (window.supabaseClient && navigator.onLine) {
+        try {
+          const { error } = await window.supabaseClient.storage.from('documents').upload(path, file, { upsert: false });
+          if (!error) { const { data } = window.supabaseClient.storage.from('documents').getPublicUrl(path); url = data?.publicUrl || ''; }
+        } catch (e) {}
+      }
+      if (!url && file.size <= 2 * 1024 * 1024) {
+        url = await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => res(''); fr.readAsDataURL(file); });
+      }
+      if (url) out.push({ name: file.name, url, kind });
+      else CK.showToast(`Could not upload "${file.name}".`, 'warning');
+    }
+    return out;
+  }
+
+  /* Coach: files chosen in the assign form + an optional reading link. */
+  async function _collectHwAttachments() {
+    const out = await _uploadInputFiles('ccHwFiles', 'homework');
+    const link = (document.getElementById('ccHwLink')?.value || '').trim();
+    if (link) { try { new URL(link); out.push({ name: link.replace(/^https?:\/\//, '').slice(0, 48), url: link, kind: 'link' }); } catch (_) { CK.showToast('Reading link is not a valid URL — skipped.', 'warning'); } }
+    return out;
+  }
+
+  /* Build the attachment block shown on homework cards (coach + student). */
+  function _renderAttachments(a) {
+    const _e = (window.CK && CK.esc) ? CK.esc : (s => String(s == null ? '' : s));
+    let list = a.attachments || a.attachment || [];
+    if (typeof list === 'string') { try { list = JSON.parse(list); } catch (_) { list = []; } }
+    if (!Array.isArray(list) || !list.length) return '';
+    const imgs  = list.filter(x => x && x.kind === 'image' && x.url);
+    const files = list.filter(x => x && x.kind !== 'image' && x.url);
+    let html = '<div class="hw-attach">';
+    if (imgs.length) {
+      html += '<div class="hw-attach-imgs">' + imgs.map(im =>
+        `<a class="hw-attach-img" href="${_e(im.url)}" target="_blank" rel="noopener" title="${_e(im.name)}"><img src="${_e(im.url)}" loading="lazy" alt="${_e(im.name)}"></a>`
+      ).join('') + '</div>';
+    }
+    if (files.length) {
+      html += '<div class="hw-attach-files">' + files.map(f => {
+        const ic = f.kind === 'pdf' ? '📄' : f.kind === 'link' ? '🔗' : '📎';
+        const isHttp = /^https?:/i.test(f.url);
+        const dl = (f.kind === 'link' || !isHttp) ? '' :
+          `<a class="hw-attach-dl" href="${_e(f.url)}${f.url.includes('?') ? '&' : '?'}download" title="Download ${_e(f.name)}">⬇</a>`;
+        return `<span class="hw-attach-file"><a href="${_e(f.url)}" target="_blank" rel="noopener" title="${_e(f.name)}">${ic} ${_e(f.name)}</a>${dl}</span>`;
+      }).join('') + '</div>';
+    }
+    return html + '</div>';
+  }
+
+  /* Preview + remove attachments while editing a homework. */
+  function _renderEditingAttachments() {
+    const host = document.getElementById('ccHwAttachExisting');
+    if (!host) return;
+    if (!_editingHwAttachments.length) { host.innerHTML = ''; return; }
+    const _e = (window.CK && CK.esc) ? CK.esc : (s => String(s == null ? '' : s));
+    host.innerHTML = '<div class="cls-attach-current-label">Current attachments:</div>' +
+      _editingHwAttachments.map((f, i) => {
+        const ic = f.kind === 'image' ? '🖼' : f.kind === 'pdf' ? '📄' : f.kind === 'link' ? '🔗' : '📎';
+        return `<span class="cls-attach-chip">${ic} ${_e(f.name)}<button type="button" class="cls-attach-x" title="Remove" onclick="CK.classroom.removeEditingAttachment(${i})">×</button></span>`;
+      }).join('');
+  }
+
+  function removeEditingAttachment(i) {
+    _editingHwAttachments.splice(i, 1);
+    _renderEditingAttachments();
+  }
+
+  /* Coach's grade + feedback shown back to the student on their homework card. */
+  function _renderFeedback(sub) {
+    if (!sub || !sub.reviewed || (!sub.feedback && !sub.grade)) return '';
+    const _e = (window.CK && CK.esc) ? CK.esc : (s => String(s == null ? '' : s));
+    return `<div class="hw-feedback">
+      <div class="hw-feedback-head">🎓 Coach feedback${sub.grade ? ` · <b>${_e(sub.grade)}</b>` : ''}</div>
+      ${sub.feedback ? `<div class="hw-feedback-body">${_e(sub.feedback)}</div>` : ''}
+    </div>`;
+  }
 
   let _liveBoard = null, _livePollTimer = null, _lastLiveFen = null;
   let _ccLiveBoard = null, _ccLiveHistory = [], _ccLiveMove = 0;
@@ -301,6 +401,8 @@ CK.classroom = (() => {
             <div class="cls-hw-title">${a.title}</div>
             <div class="cls-hw-meta">${a.coach}${due} · <em>${a.type} mode</em> · ${a.moves || '?'} moves</div>
             ${a.description ? `<div class="cls-hw-desc">${a.description}</div>` : ''}
+            ${_renderAttachments(a)}
+            ${_renderFeedback(sub)}
           </div>
           <div class="cls-hw-right">
             ${badge}
@@ -364,6 +466,8 @@ CK.classroom = (() => {
           <div class="hw-item-title">${_e(a.title)}</div>
           <div class="hw-item-meta">${_e(a.coach || 'Coach')} · ${_e(a.type)} mode · ${a.moves || '?'} moves · ${due}</div>
           ${a.description ? `<div class="hw-item-desc">${_e(a.description)}</div>` : ''}
+          ${_renderAttachments(a)}
+          ${_renderFeedback(sub)}
           <div class="hw-item-actions">
             <button class="p-btn p-btn-blue p-btn-sm" onclick="CK.classroom.openHomeworkFromSection('${a.id}')">${done ? '🔄 Review' : '▶ Start'}</button>
             <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.classroom.downloadAssignmentPgn('${a.id}')">⬇ PGN</button>
@@ -567,6 +671,12 @@ CK.classroom = (() => {
           : Math.min(100, Math.round((_hwCurrentMove / total) * 100)))
       : 100;
 
+    const sBtn = document.getElementById('scHwSubmitBtn');
+    const sLabel = sBtn ? sBtn.textContent : '';
+    if (sBtn) { sBtn.disabled = true; sBtn.textContent = '⏳ Uploading your work…'; }
+    let files = [];
+    try { files = await _uploadInputFiles('scHwSubmitFiles', 'submissions'); } catch (e) { console.warn('[Homework] submission upload issue:', e); }
+
     const submission = {
       id:           uid(),
       assignment_id: _hwAssignment.id,
@@ -576,10 +686,12 @@ CK.classroom = (() => {
       movesStudied: _hwCurrentMove,
       totalMoves:   total,
       note,
+      files,
       completed:    true,
       submittedAt:  new Date().toISOString()
     };
     await saveSubmission(submission);
+    if (sBtn) { sBtn.disabled = false; sBtn.textContent = sLabel || '✓ Submit Homework'; }
 
     // Award XP based on accuracy: 50 base + bonus for high accuracy
     if (CK.db && CK.db.awardXP && userId) {
@@ -589,7 +701,9 @@ CK.classroom = (() => {
       try { await CK.db.awardXP(userId, xp, `Homework: ${_hwAssignment.title || 'Assignment'} (${accuracy}%)`); } catch(e){}
     }
 
-    CK.showToast(`✅ Homework submitted! Accuracy ${accuracy}% · +${accuracy >= 90 ? 100 : accuracy >= 75 ? 75 : 50} XP earned`, 'success');
+    CK.showToast(`✅ Homework submitted!${files.length ? ` ${files.length} file${files.length > 1 ? 's' : ''} sent to your coach ·` : ''} Accuracy ${accuracy}% · +${accuracy >= 90 ? 100 : accuracy >= 75 ? 75 : 50} XP earned`, 'success');
+    const sf = document.getElementById('scHwSubmitFiles'); if (sf) sf.value = '';
+    const sp = document.getElementById('scHwSubmitPreview'); if (sp) sp.innerHTML = '';
     await closeHomework();
   }
 
@@ -857,14 +971,31 @@ CK.classroom = (() => {
     const g = new Chess();
     if (!g.load_pgn(pgn)) { CK.showToast('Invalid PGN — check the notation', 'warning'); return; }
 
-    // Supabase `assignments` schema: assignedTo is an ARRAY, there is no `created`
-    // column (it's created_at, DB-defaulted). Sending those broke the upsert
-    // silently → homework never persisted/synced to students. Match the schema.
-    const assignment = { id: uid(), title, pgn, type, assignedTo: (to && to !== 'all') ? [to] : ['all'], dueDate: due, description: desc, coach, moves: g.history().length };
+    const isEdit = !!_editingHwId;
+    const aBtn = document.getElementById('ccHwAssignBtn');
+    const restoreLabel = aBtn ? aBtn.textContent : '';
+    if (aBtn) { aBtn.disabled = true; aBtn.textContent = '⏳ Uploading attachments…'; }
+
+    let attachments = [];
+    try {
+      const fresh = await _collectHwAttachments();           // upload new files + link
+      attachments = (isEdit ? _editingHwAttachments : []).concat(fresh);
+    } catch (e) { console.warn('[Homework] attachment upload issue:', e); }
+
+    // Supabase `assignments` schema: assignedTo is an ARRAY, attachments is jsonb,
+    // there is no `created` column (it's created_at, DB-defaulted). Sending an
+    // unknown key breaks the upsert silently → match the schema exactly.
+    const assignment = { id: _editingHwId || uid(), title, pgn, type, assignedTo: (to && to !== 'all') ? [to] : ['all'], dueDate: due, description: desc, coach, moves: g.history().length, attachments };
     await saveAssignment(assignment);
 
-    CK.showToast(`✓ Assigned: "${title}" (${g.history().length} moves, ${type} mode)`, 'success');
-    ['ccHwTitle', 'ccHwPgn', 'ccHwDesc'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const nAtt = attachments.length;
+    CK.showToast(`${isEdit ? '✓ Updated' : '✓ Assigned'}: "${title}" (${g.history().length} moves${nAtt ? ', ' + nAtt + ' attachment' + (nAtt > 1 ? 's' : '') : ''})`, 'success');
+    _editingHwId = null;
+    _editingHwAttachments = [];
+    if (aBtn) { aBtn.disabled = false; aBtn.textContent = '📝 Assign Homework'; }
+    ['ccHwTitle', 'ccHwPgn', 'ccHwDesc', 'ccHwLink'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const fInput = document.getElementById('ccHwFiles'); if (fInput) fInput.value = '';
+    _renderEditingAttachments();
     await renderCoachAssignments();
   }
 
@@ -892,29 +1023,95 @@ CK.classroom = (() => {
     const container = document.getElementById('ccAssignmentList');
     if (!container) return;
     const assignments = await getAssignments();
-    if (!assignments.length) { container.innerHTML = '<div class="cls-empty">No assignments yet</div>'; return; }
+    const _cnt0 = document.getElementById('ccAssignCount'); if (_cnt0) _cnt0.textContent = '0';
+    if (!assignments.length) { container.innerHTML = '<div class="cls-empty">📭 No homework assigned yet.<br>Create one on the left — it appears for your students instantly.</div>'; return; }
+    const _e = (window.CK && CK.esc) ? CK.esc : (s => String(s == null ? '' : s));
+    let students = [];
+    try { students = (await CK.db.getProfiles('student')) || []; } catch (e) {}
+    const nameOf = (id) => { const u = students.find(x => x.id === id || x.userid === id || x.email === id); return u ? (u.full_name || u.name || id) : id; };
+    const recipients = (a) => {
+      const to = a.assignedTo || a.assigned_to;
+      if (!to || (Array.isArray(to) && (to.length === 0 || to.includes('all')))) return 'All students';
+      const arr = Array.isArray(to) ? to : [to];
+      const names = arr.map(nameOf);
+      return names.length <= 2 ? names.join(', ') : `${names.slice(0, 2).join(', ')} +${names.length - 2} more`;
+    };
+    const cnt = document.getElementById('ccAssignCount');
+    if (cnt) cnt.textContent = assignments.length;
+    const modeLabel = { study: 'Study', guess: 'Guess Move', practice: 'Practice' };
     container.innerHTML = assignments.map(a => {
       const icon = { study: '📖', guess: '🎯', practice: '⚡' }[a.type] || '📖';
-      const d    = new Date(a.created || a.created_at).toLocaleDateString();
+      const mode = (a.type || 'study').toLowerCase();
+      const dt = a.created || a.created_at;
+      const when = dt ? new Date(dt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+      const rcp = recipients(a);
+      const toAll = /^all students$/i.test(rcp);
+      let _atl = a.attachments || []; if (typeof _atl === 'string') { try { _atl = JSON.parse(_atl); } catch (_) { _atl = []; } }
+      const nAtt = Array.isArray(_atl) ? _atl.length : 0;
+      // Due-date urgency
+      let dueChip = '';
+      if (a.dueDate) {
+        const d = new Date(a.dueDate); const today = new Date(); today.setHours(0,0,0,0);
+        const days = Math.round((d - today) / 86400000);
+        const cls = days < 0 ? 'cls-chip-overdue' : days <= 2 ? 'cls-chip-soon' : 'cls-chip-due';
+        const txt = days < 0 ? 'Overdue' : days === 0 ? 'Due today' : days === 1 ? 'Due tomorrow' : 'Due ' + _e(a.dueDate);
+        dueChip = `<span class="cls-chip ${cls}">📅 ${txt}</span>`;
+      }
       return `
-        <div class="cls-assign-row">
+        <div class="cls-assign-row" data-mode="${_e(mode)}">
           <span class="cls-type-icon">${icon}</span>
           <div class="cls-assign-info">
-            <strong>${a.title}</strong>
-            <span>${a.type} · ${a.moves} moves · ${d}${a.dueDate ? ' · due ' + a.dueDate : ''}</span>
+            <div class="cls-assign-head">
+              <strong>${_e(a.title)}</strong>
+              <span class="cls-mode-tag">${_e(modeLabel[mode] || a.type || 'Study')}</span>
+            </div>
+            <div class="cls-assign-meta">
+              <span class="cls-chip ${toAll ? 'cls-chip-all' : 'cls-chip-to'}">👤 ${_e(rcp)}</span>
+              <span class="cls-chip cls-chip-moves">♟ ${a.moves || '?'} moves</span>
+              ${dueChip}
+              ${nAtt ? `<span class="cls-chip cls-chip-att">📎 ${nAtt} file${nAtt > 1 ? 's' : ''}</span>` : ''}
+              <span class="cls-chip cls-chip-time">🕒 ${_e(when)}</span>
+            </div>
+            ${_renderAttachments(a)}
           </div>
-          <div style="display:flex;gap:5px;flex-shrink:0;">
-            <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.classroom._loadAssignInLab('${a.id}')">Open Lab</button>
-            <button class="p-btn p-btn-ghost p-btn-sm" style="color:#ef4444;" onclick="CK.classroom.deleteAssignment('${a.id}')">🗑</button>
+          <div class="cls-assign-acts">
+            <button type="button" class="cls-act cls-act-edit" onclick="CK.classroom.editAssignment('${a.id}')" title="Edit homework">✏️</button>
+            <button type="button" class="cls-act cls-act-lab" onclick="CK.classroom._loadAssignInLab('${a.id}')" title="Open in PGN Lab">🔬</button>
+            <button type="button" class="cls-act cls-act-del" onclick="CK.classroom.deleteAssignment('${a.id}')" title="Delete homework">🗑</button>
           </div>
         </div>`;
     }).join('');
   }
 
+  /* Edit an existing homework: pre-fill the assign form + switch to update mode. */
+  async function editAssignment(id) {
+    const a = (await getAssignments()).find(x => x.id === id);
+    if (!a) { CK.showToast('Assignment not found.', 'warning'); return; }
+    _editingHwId = id;
+    let atts = a.attachments || [];
+    if (typeof atts === 'string') { try { atts = JSON.parse(atts); } catch (_) { atts = []; } }
+    _editingHwAttachments = Array.isArray(atts) ? atts.slice() : [];
+    _renderEditingAttachments();
+    const set = (eid, v) => { const el = document.getElementById(eid); if (el) el.value = v == null ? '' : v; };
+    set('ccHwTitle', a.title); set('ccHwPgn', a.pgn); set('ccHwType', a.type || 'study');
+    set('ccHwDue', a.dueDate || ''); set('ccHwDesc', a.description || ''); set('ccHwLink', '');
+    const fInput = document.getElementById('ccHwFiles'); if (fInput) fInput.value = '';
+    await populateAssignTo();
+    const sel = document.getElementById('ccHwAssignTo');
+    if (sel) { const to = a.assignedTo || a.assigned_to; sel.value = (!to || (Array.isArray(to) && to.includes('all'))) ? 'all' : (Array.isArray(to) ? to[0] : to); }
+    const btn = document.getElementById('ccHwAssignBtn');
+    if (btn) btn.textContent = '💾 Update Homework';
+    CK.showToast('Editing homework — change details and click Update.', 'info');
+    const t = document.getElementById('ccHwTitle'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
   async function deleteAssignment(id) {
+    const a = (await getAssignments()).find(x => x.id === id);
+    const name = a ? (a.title || 'this homework') : 'this homework';
+    if (!window.confirm(`Delete "${name}"? Students will no longer see it. This cannot be undone.`)) return;
     await CK.db.deleteAssignment(id);
     await renderCoachAssignments();
-    CK.showToast('Assignment deleted', 'info');
+    CK.showToast('Homework deleted', 'info');
   }
 
   async function _loadAssignInLab(id) {
@@ -1114,37 +1311,63 @@ CK.classroom = (() => {
       const u = students.find(x => x.id === id || x.userid === id || x.email === id);
       return u ? (u.full_name || u.name || u.email || id) : id;
     };
+    const _e = (window.CK && CK.esc) ? CK.esc : (s => String(s == null ? '' : s));
     if (!assignments.length) { container.innerHTML = '<div class="cls-empty">No assignments yet</div>'; return; }
 
     container.innerHTML = assignments.map(a => {
       const subs = submissions.filter(s => s.assignment_id === a.id);
-      const avg  = subs.length ? Math.round(subs.reduce((s, x) => s + x.accuracy, 0) / subs.length) : null;
-      const rows = subs.length
+      const avg  = subs.length ? Math.round(subs.reduce((s, x) => s + (x.accuracy || 0), 0) / subs.length) : null;
+      const cards = subs.length
         ? subs.map(s => {
-            const acc = s.accuracy;
+            const acc = s.accuracy || 0;
             const col = acc >= 80 ? 'var(--p-teal)' : acc >= 60 ? 'var(--p-gold)' : '#ef4444';
-            return `<tr>
-              <td>${s.student_name || nameOf(s.student_id)}</td>
-              <td style="color:${col};font-weight:700;">${acc}%</td>
-              <td>${s.movesStudied}/${s.totalMoves}</td>
-              <td style="color:var(--p-text-muted);">${new Date(s.submittedAt || s.created_at).toLocaleDateString()}</td>
-              <td style="color:var(--p-text-muted);font-size:0.82rem;">${s.note || '—'}</td>
-            </tr>`;
+            const when = new Date(s.submittedAt || s.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+            const files = _renderAttachments({ attachments: s.files });   // reuse the image/file renderer
+            const reviewed = s.reviewed;
+            return `
+              <div class="cls-sub-card${reviewed ? ' cls-sub-reviewed' : ''}">
+                <div class="cls-sub-head">
+                  <div class="cls-sub-who">
+                    <strong>${_e(s.student_name || nameOf(s.student_id))}</strong>
+                    <span class="cls-sub-when">🕒 ${_e(when)}</span>
+                  </div>
+                  <span class="cls-sub-acc" style="color:${col};">${acc}% · ${s.movesStudied || 0}/${s.totalMoves || 0}</span>
+                </div>
+                ${s.note ? `<div class="cls-sub-note">📝 ${_e(s.note)}</div>` : ''}
+                ${files ? `<div class="cls-sub-files"><div class="cls-sub-label">Submitted work:</div>${files}</div>` : '<div class="cls-sub-nofile">No files attached — board work only.</div>'}
+                <div class="cls-sub-eval">
+                  <input id="grade_${_e(s.id)}" class="p-form-control cls-grade-in" placeholder="Grade (e.g. A, 8/10, Excellent)" value="${_e(s.grade || '')}">
+                  <textarea id="fb_${_e(s.id)}" class="p-form-control cls-fb-in" placeholder="Feedback for the student…">${_e(s.feedback || '')}</textarea>
+                  <button type="button" class="p-btn p-btn-teal p-btn-sm" onclick="CK.classroom.saveEvaluation('${_e(s.id)}')">${reviewed ? '💾 Update Evaluation' : '✓ Send Evaluation'}</button>
+                  ${reviewed ? '<span class="cls-sub-badge">✓ Reviewed</span>' : ''}
+                </div>
+              </div>`;
           }).join('')
-        : `<tr><td colspan="5" style="color:rgba(255,255,255,0.3);text-align:center;padding:12px;">No submissions yet</td></tr>`;
+        : `<div class="cls-sub-empty">No submissions yet for this homework.</div>`;
 
       return `
         <div class="cls-grade-section">
           <div class="cls-grade-title">
-            ${a.title}
-            <span style="color:var(--p-text-muted);font-size:0.8rem;font-weight:400;"> · ${a.type} · ${subs.length} submitted${avg !== null ? ` · avg ${avg}%` : ''}</span>
+            ${_e(a.title)}
+            <span style="color:var(--p-text-muted);font-size:0.8rem;font-weight:400;"> · ${_e(a.type)} · ${subs.length} submitted${avg !== null ? ` · avg ${avg}%` : ''}</span>
           </div>
-          <table class="cls-grade-table">
-            <thead><tr><th>Student</th><th>Accuracy</th><th>Moves</th><th>Submitted</th><th>Notes</th></tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
+          <div class="cls-sub-list">${cards}</div>
         </div>`;
     }).join('');
+  }
+
+  /* Coach saves a grade + feedback on a student's submission. */
+  async function saveEvaluation(subId) {
+    const subs = await getSubmissions();
+    const s = subs.find(x => String(x.id) === String(subId));
+    if (!s) { CK.showToast('Submission not found.', 'warning'); return; }
+    const grade = (document.getElementById('grade_' + subId)?.value || '').trim();
+    const feedback = (document.getElementById('fb_' + subId)?.value || '').trim();
+    if (!grade && !feedback) { CK.showToast('Add a grade or feedback first.', 'warning'); return; }
+    s.grade = grade; s.feedback = feedback; s.reviewed = true; s.reviewedAt = new Date().toISOString();
+    await saveSubmission(s);
+    CK.showToast(`✓ Evaluation sent to ${s.student_name || 'student'}.`, 'success');
+    await renderGrades();
   }
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -1255,10 +1478,10 @@ CK.classroom = (() => {
     downloadAssignmentPgn, downloadAllHomeworkPgn,
     joinLiveClass, _stopPolling,
     /* Coach */
-    coachTab, assignHomework, renderCoachAssignments, deleteAssignment,
-    populateAssignTo, _loadAssignInLab,
+    coachTab, assignHomework, renderCoachAssignments, deleteAssignment, editAssignment,
+    populateAssignTo, _loadAssignInLab, removeEditingAttachment,
     coachStartLive, coachEndLive, coachLiveNav, coachBroadcastNote,
-    renderGrades,
+    renderGrades, saveEvaluation,
     saveToLibrary, renderLibrary, _libLoadInLab, _libAssign, _libDelete
   };
 })();
