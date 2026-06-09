@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" fill="#D97706"/>
+  <text x="256" y="256" dy="0.34em" text-anchor="middle" font-size="300" fill="#ffffff"
+    font-family="'Segoe UI Symbol','Noto Sans Symbols2','Apple Symbols','DejaVu Sans',sans-serif">&#9816;</text>
+</svg>

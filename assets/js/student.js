@@ -6,6 +6,36 @@
 
 const CK = window.CK = window.CK || {};
 
+function parseTimeMinutes(t) {
+  const s = String(t || '').trim();
+  const m = s.match(/^(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m?)?$/i);
+  if (!m) return null;
+  let h = +m[1];
+  const mn = +(m[2] || 0);
+  const ap = (m[3] || '').toLowerCase().replace('.', '');
+  if (ap) {
+    if (ap.startsWith('p') && h < 12) h += 12;
+    if (ap.startsWith('a') && h === 12) h = 0;
+  }
+  return h * 60 + mn;
+}
+
+function parseDateFromTime(date, t) {
+  if (!date) return null;
+  const mins = parseTimeMinutes(t);
+  if (mins == null) return null;
+  const dt = new Date(date + 'T00:00:00');
+  dt.setHours(Math.floor(mins / 60), mins % 60, 0, 0);
+  return dt;
+}
+
+function compareDateTime(a, b) {
+  const da = parseDateFromTime(a.date, a.time);
+  const db = parseDateFromTime(b.date, b.time);
+  if (da && db) return da.getTime() - db.getTime();
+  return String((a.date || '') + (a.time || '')).localeCompare(String((b.date || '') + (b.time || '')));
+}
+
 CK.student = {
   userProfile: null,
   activePuzzleId: null,
@@ -1765,7 +1795,7 @@ CK.student = {
     const allMeetings = (await CK.db.getMeetings()) || [];
     const meetings = allMeetings
       .filter(m => m.date >= todayStr && m.time && (!m.batch || m.batch === p.batch))
-      .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+      .sort(compareDateTime);
 
     // Cache in localStorage for the welcome banner fallback
     localStorage.setItem('ck_meetings', JSON.stringify(allMeetings));
@@ -1782,13 +1812,12 @@ CK.student = {
     // so it updates automatically when a coach edits the timetable.
     let schedNext = null;
     try {
-      const _parseMin = (t) => { const s = String(t || '').trim(); const m = s.match(/(\d{1,2}):?(\d{2})?/); if (!m) return null; let h = +m[1]; const mn = +(m[2] || 0); const ap = s.match(/([ap])\.?\s*m/i); if (ap) { const pm = /p/i.test(ap[1]); if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; } return h * 60 + mn; };
       const _dayIdx = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
       const allClasses = (await CK.db.getClasses()) || [];
       const myClasses = allClasses.filter(c => (c.studentIds || []).includes(p.id));
       const now = new Date();
       myClasses.forEach(c => {
-        const mins = _parseMin(c.time); if (mins == null) return;
+        const mins = parseTimeMinutes(c.time); if (mins == null) return;
         (c.days || []).forEach(d => {
           const di = _dayIdx[String(d).slice(0, 3).toLowerCase()]; if (di == null) return;
           const dt = new Date(now); dt.setHours(Math.floor(mins / 60), mins % 60, 0, 0);
@@ -1809,10 +1838,7 @@ CK.student = {
       classStudents = (schedNext.c.studentIds || []).length;
     } else if (meetings.length) {
       const next = meetings[0];
-      const match = (next.time || '').match(/(\d{1,2}):(\d{2})/);
-      if (match) {
-        classTime = new Date(next.date + 'T' + match[1].padStart(2,'0') + ':' + match[2] + ':00');
-      }
+      classTime = parseDateFromTime(next.date, next.time);
       classTitle = next.title || next.type || classTitle;
       classCoach = next.coachName || next.coach || classCoach;
       classDuration = next.duration || null;
@@ -1877,46 +1903,70 @@ CK.student = {
         el.style.color = remaining < 15 ? 'var(--p-danger)' : '';
       } else {
         const h = Math.floor(remaining / 60);
-        el.innerText = `Starts in ${h}h ${remaining % 60}m`;
-        el.style.color = '';
+        const displayStart = classTime
+          ? classTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+          : '';
+        el.innerText = displayStart ? `Starts at ${displayStart}` : `Starts in ${h}h ${remaining % 60}m`;
+        el.style.color = remaining < 15 ? 'var(--p-danger)' : '';
       }
     };
     tick();
     window.studentCountdownTimer = setInterval(tick, 30000);
   },
 
-  joinClass() {
+  async joinClass() {
     this._trackDailyGoal('lessons');
-    CK.showToast("Opening secure class session with Coach...", "success");
     const sessionTitleEl = document.getElementById('studentSessionTitle');
-    if (sessionTitleEl) sessionTitleEl.innerText = `Connecting to '${this.userProfile ? this.userProfile.level : 'Intermediate'} Strategy' Meeting...`;
-
     const joinBtn = document.getElementById('studentJoinBtn');
-    if (!joinBtn) return;
-    joinBtn.innerText = "Connecting...";
-    joinBtn.disabled = true;
+    if (joinBtn) {
+      joinBtn.innerText = 'Connecting...';
+      joinBtn.disabled = true;
+    }
 
-    setTimeout(async () => {
-      CK.showToast("Successfully connected! Opening Google Meet class room.", "success");
-      joinBtn.innerText = "Connected";
+    const profile = this.userProfile || CK.currentUser || {};
+    let meetInfo = null;
+    try {
+      meetInfo = CK.classroom && CK.classroom.resolveStudentMeetUrl
+        ? await CK.classroom.resolveStudentMeetUrl(profile)
+        : null;
+    } catch (err) {
+      console.warn('[Join Class] Failed to resolve coach-provided link:', err);
+    }
 
-      const links = (window.CK && CK.batchManager) ? await CK.batchManager.getLinks() : {};
-      const meetUrl = links[this.userProfile ? this.userProfile.level : ''] ||
-                      links[this.userProfile?.batch || ''] || '';
-      if (!meetUrl) {
-        CK.showToast('Class link not yet set. Ask your coach or admin for the meeting URL.', 'warning');
+    if (!meetInfo || !meetInfo.url) {
+      CK.showToast('Class link not yet set. Ask your coach to paste the Google Meet URL for this class.', 'warning');
+      if (sessionTitleEl) sessionTitleEl.innerText = 'Waiting for coach-provided class link';
+      if (joinBtn) {
         joinBtn.innerText = ' Join Class Room';
         joinBtn.disabled = false;
-        return;
       }
-      window.open(meetUrl, '_blank');
+      return;
+    }
 
-      setTimeout(() => {
-        joinBtn.innerText = " Rejoin Class Room";
+    if (sessionTitleEl) sessionTitleEl.innerText = `Joining ${meetInfo.label || 'class'}...`;
+    CK.showToast(`Opening class link added by your coach...`, 'success');
+
+    if (CK.classroom && CK.classroom.openMeetUrl) {
+      CK.classroom.openMeetUrl(meetInfo.url);
+    } else {
+      window.open(meetInfo.url, '_blank', 'noopener,noreferrer');
+    }
+
+    if (CK.classroom && CK.classroom.recordStudentJoinAttendance) {
+      try {
+        await CK.classroom.recordStudentJoinAttendance(meetInfo, profile);
+      } catch (err) {
+        console.warn('[Join Class] Attendance save failed:', err);
+      }
+    }
+
+    setTimeout(() => {
+      if (joinBtn) {
+        joinBtn.innerText = ' Rejoin Class Room';
         joinBtn.disabled = false;
-        if (sessionTitleEl) sessionTitleEl.innerText = "Class session is currently active!";
-      }, 3000);
-    }, 1500);
+      }
+      if (sessionTitleEl) sessionTitleEl.innerText = `${meetInfo.label || 'Class'} link is ready`;
+    }, 3000);
   },
 
   async renderReportCard() {

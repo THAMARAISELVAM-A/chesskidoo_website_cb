@@ -21,7 +21,14 @@ CK.classroom = (() => {
       try {
         const payload = d ? { id: 'global_live', fen: d.fen, pgn: d.coachNote || '', coach: window.CK?.currentUser?.full_name || 'Coach', ts: Date.now() } : null;
         if (payload) {
-          window.supabaseClient.from('broadcasts').upsert(payload).then();
+          window.supabaseClient.from('broadcasts').upsert({
+            id: 'global_live',
+            fen: d.fen,
+            pgn: d.coachNote || '',
+            coach: window.CK?.currentUser?.full_name || 'Coach',
+            ts: Date.now(),
+            meet_url: d.meetUrl || ''
+          }).then();
         } else {
           window.supabaseClient.from('broadcasts').delete().eq('id', 'global_live').then();
         }
@@ -34,6 +41,257 @@ CK.classroom = (() => {
   const me              = () => (window.CK && CK.currentUser)
                                   ? (CK.currentUser.id || CK.currentUser.email || 'student')
                                   : 'student';
+  const _e              = (s) => (s === null || s === undefined ? '' : String(s))
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+  function parseTimeMinutes(t) {
+    const s = String(t || '').trim();
+    const m = s.match(/^(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m?)?$/i);
+    if (!m) return null;
+    let h = +m[1];
+    const mn = +(m[2] || 0);
+    const ap = (m[3] || '').toLowerCase().replace('.', '');
+    if (ap) {
+      if (ap.startsWith('p') && h < 12) h += 12;
+      if (ap.startsWith('a') && h === 12) h = 0;
+    }
+    return h * 60 + mn;
+  }
+
+  function parseDateFromTime(date, t) {
+    if (!date) return null;
+    const mins = parseTimeMinutes(t);
+    if (mins === null) return null;
+    const dt = new Date(date + 'T00:00:00');
+    dt.setHours(Math.floor(mins / 60), mins % 60, 0, 0);
+    return dt;
+  }
+
+  function compareDateTime(a, b) {
+    const da = parseDateFromTime(a.date, a.time);
+    const db = parseDateFromTime(b.date, b.time);
+    if (da && db) return da.getTime() - db.getTime();
+    return String((a.date || '') + (a.time || '')).localeCompare(String((b.date || '') + (b.time || '')));
+  }
+
+  function normalizeMeetUrl(raw) {
+    const value = String(raw || '').trim();
+    if (!value) return '';
+    try {
+      const url = new URL(value);
+      return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : '';
+    } catch (_) {
+      return /^meet\.google\.com\//i.test(value) ? `https://${value}` : '';
+    }
+  }
+
+  function openMeetUrl(url) {
+    const safeUrl = normalizeMeetUrl(url);
+    if (!safeUrl) return false;
+    const opened = window.open(safeUrl, '_blank', 'noopener,noreferrer');
+    if (!opened) window.location.href = safeUrl;
+    return true;
+  }
+
+  function splitCsv(value) {
+    return String(value || '')
+      .split(',')
+      .map(x => x.trim())
+      .filter(Boolean);
+  }
+
+  function classMatchesStudent(profile, cls) {
+    const ids = [profile?.id, profile?.userid, profile?.email].filter(Boolean).map(String);
+    const studentIds = Array.isArray(cls.studentIds) ? cls.studentIds.map(String) : splitCsv(cls.studentIds);
+    if (studentIds.length && ids.length && !studentIds.some(id => ids.includes(id))) return false;
+
+    const batch = String(profile?.batch || profile?.session || '').toLowerCase();
+    const classBatch = String(cls.batch || '').toLowerCase();
+    if (batch && classBatch && !classBatch.includes(batch)) return false;
+
+    const coach = String(profile?.coach || '').toLowerCase();
+    const classCoach = String(cls.coachName || cls.coach || '').toLowerCase();
+    if (coach && classCoach && classCoach !== coach && !classCoach.includes(coach) && !coach.includes(classCoach)) return false;
+
+    const level = String(profile?.level || '').toLowerCase();
+    const classLevel = String(cls.level || '').toLowerCase();
+    if (level && classLevel && classLevel !== level) return false;
+
+    return true;
+  }
+
+  function meetingMatchesStudent(profile, meeting) {
+    const ids = [profile?.id, profile?.userid, profile?.email].filter(Boolean).map(String);
+    const studentIds = Array.isArray(meeting.studentIds) ? meeting.studentIds.map(String) : splitCsv(meeting.studentIds);
+    if (studentIds.length && ids.length && !studentIds.some(id => ids.includes(id))) return false;
+
+    const batch = String(profile?.batch || profile?.session || '').toLowerCase();
+    const meetingBatch = String(meeting.batch || '').toLowerCase();
+    if (batch && meetingBatch && !meetingBatch.includes(batch)) return false;
+
+    const coach = String(profile?.coach || '').toLowerCase();
+    const meetingCoach = String(meeting.coachName || meeting.coach || '').toLowerCase();
+    if (coach && meetingCoach && meetingCoach !== coach && !meetingCoach.includes(coach) && !coach.includes(meetingCoach)) return false;
+
+    return true;
+  }
+
+  function matrixMatchesStudent(profile, row, slot) {
+    const ids = [profile?.id, profile?.userid, profile?.email].filter(Boolean).map(String);
+    const students = String(slot.student || '').toLowerCase();
+    if (ids.length && ids.some(id => students.includes(id.toLowerCase()))) return true;
+
+    const batch = String(profile?.batch || profile?.session || '').toLowerCase();
+    const slotBatch = String(slot.batch || '').toLowerCase();
+    if (batch && slotBatch && slotBatch.includes(batch)) return true;
+
+    const coach = String(profile?.coach || '').toLowerCase();
+    const rowCoach = String(row.coach || '').toLowerCase();
+    if (coach && rowCoach && rowCoach !== coach && !rowCoach.includes(coach) && !coach.includes(rowCoach)) return false;
+    if (coach && rowCoach && (rowCoach === coach || rowCoach.includes(coach) || coach.includes(rowCoach))) return true;
+
+    return false;
+  }
+
+  function slotStartMinutes(time) {
+    const match = String(time || '').match(/(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m?)/i);
+    if (!match) return parseTimeMinutes(time) || 0;
+    let h = +match[1];
+    const mn = +(match[2] || 0);
+    const ap = (match[3] || '').toLowerCase().replace('.', '');
+    if (ap) {
+      if (ap.startsWith('p') && h < 12) h += 12;
+      if (ap.startsWith('a') && h === 12) h = 0;
+    }
+    return h * 60 + mn;
+  }
+
+  async function resolveClassMeetUrl(profile) {
+    if (!(CK.db && CK.db.getClasses)) return null;
+    const classes = (await CK.db.getClasses())
+      .filter(cls => normalizeMeetUrl(cls.zoomLink) && classMatchesStudent(profile, cls))
+      .sort((a, b) => (parseTimeMinutes(a.time) || 0) - (parseTimeMinutes(b.time) || 0));
+    const cls = classes[0];
+    return cls ? { url: normalizeMeetUrl(cls.zoomLink), label: cls.title || cls.batch || 'Class', source: 'class', meta: cls } : null;
+  }
+
+  async function resolveMeetingMeetUrl(profile) {
+    if (!(CK.db && CK.db.getMeetings)) return null;
+    const today = new Date().toISOString().slice(0, 10);
+    const meetings = (await CK.db.getMeetings())
+      .filter(m => normalizeMeetUrl(m.link) && meetingMatchesStudent(profile, m) && (m.status === 'live' || (m.date || '') >= today));
+    const live = meetings.find(m => m.status === 'live');
+    const next = (live ? [live] : meetings).sort(compareDateTime)[0];
+    return next ? { url: normalizeMeetUrl(next.link), label: next.title || next.type || 'Class', source: 'meeting', meta: next } : null;
+  }
+
+  async function resolveMatrixMeetUrl(profile) {
+    if (!(CK.schedulePro && CK.schedulePro.getTimetable)) return null;
+    const data = await CK.schedulePro.getTimetable();
+    const day = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getDay()];
+    const slots = [];
+    for (const row of data || []) {
+      for (const slot of row.slots?.[day] || []) {
+        const url = normalizeMeetUrl(slot.link);
+        if (url && matrixMatchesStudent(profile, row, slot)) {
+          slots.push({ row, slot, url });
+        }
+      }
+    }
+    slots.sort((a, b) => slotStartMinutes(a.slot.time) - slotStartMinutes(b.slot.time));
+    const first = slots[0];
+    return first ? { url: first.url, label: first.slot.batch || first.row.coach || 'Class', source: 'matrix', meta: first.slot } : null;
+  }
+
+  async function resolveBatchMeetUrl(profile) {
+    if (!(CK.batchManager && CK.batchManager.getLinks)) return null;
+    const links = await CK.batchManager.getLinks();
+    const keys = [profile?.level, profile?.batch, profile?.coach, profile?.full_name];
+    for (const key of keys) {
+      const url = normalizeMeetUrl(links?.[key]);
+      if (url) return { url, label: key || 'Batch class', source: 'batch-link', meta: { batch: key } };
+    }
+    return null;
+  }
+
+  async function resolveStudentMeetUrl(profile = {}) {
+    const live = getLive();
+    const liveUrl = normalizeMeetUrl(live?.meetUrl);
+    if (liveUrl && live?.active) {
+      return { url: liveUrl, label: 'Live class', source: 'live-session', meta: live };
+    }
+
+    return await resolveMeetingMeetUrl(profile)
+      || await resolveClassMeetUrl(profile)
+      || await resolveMatrixMeetUrl(profile)
+      || await resolveBatchMeetUrl(profile)
+      || null;
+  }
+
+  async function recordStudentJoinAttendance(info, profile = {}) {
+    if (!(CK.db && CK.db.saveAttendance)) return;
+    try {
+      const meta = info?.meta || {};
+      const userId = profile.id || profile.userid || me();
+      const studentName = profile.full_name || profile.name || CK.currentUser?.full_name || 'Student';
+      const today = new Date().toISOString().slice(0, 10);
+      const sourceName = {
+        'live-session': 'Live Class',
+        meeting: meta.title || meta.type || 'Scheduled Class',
+        class: meta.title || meta.batch || 'Recurring Class',
+        matrix: meta.batch || 'Timetable Class',
+        'batch-link': meta.batch || 'Batch Class'
+      }[info?.source] || 'Class';
+      await CK.db.saveAttendance({
+        id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        userid: userId,
+        studentId: userId,
+        studentName,
+        classId: meta.id || info?.source || 'class',
+        className: sourceName,
+        coachId: meta.coachId || meta.coach || profile.coach || '',
+        coachName: meta.coachName || meta.coach || profile.coach || 'Coach',
+        date: today,
+        status: 'present',
+        markedAt: new Date().toISOString()
+      });
+    } catch (err) {
+      console.warn('[Attendance] Failed to record student join attendance:', err);
+    }
+  }
+
+  function renderMeetCard(container, info, waiting = false) {
+    if (!container) return;
+    container.style.display = 'block';
+    if (info?.url) {
+      const label = /meet\.google\.com/i.test(info.url) ? 'Join Google Meet →' : 'Join Class Link →';
+      container.innerHTML = `
+        <div class="ck-meet-card">
+          <div class="ck-meet-ic">📹</div>
+          <div class="ck-meet-body">
+            <div class="ck-meet-title">Your live video class is ready</div>
+            <div class="ck-meet-sub">Click to join the class link your coach added manually. The board below mirrors their position.</div>
+          </div>
+          <a href="${_e(info.url)}" target="_blank" rel="noopener noreferrer" class="ck-meet-join">${label}</a>
+        </div>`;
+    } else if (waiting) {
+      container.innerHTML = `
+        <div class="ck-meet-card ck-meet-card-wait">
+          <div class="ck-meet-ic">⏳</div>
+          <div class="ck-meet-body">
+            <div class="ck-meet-title">Waiting for your coach to add a class link</div>
+            <div class="ck-meet-sub">Ask your coach to paste the Google Meet URL for this class.</div>
+          </div>
+        </div>`;
+    } else {
+      container.innerHTML = '';
+      container.style.display = 'none';
+    }
+  }
 
   /* ─── Board state ─── */
   let _hwBoard = null, _hwHistory = [], _hwCurrentMove = 0;
@@ -241,8 +499,12 @@ CK.classroom = (() => {
 
     // Save auto-updated ELO if it's vastly different
     if (Math.abs(predictedElo - (profile.rating || 1200)) > 20 && profile.id) {
-       await CK.db.updateProfile(profile.id, { rating: predictedElo });
-       profile.rating = predictedElo;
+       const freshProfile = await CK.db.getProfile(profile.id);
+       if (freshProfile) {
+         freshProfile.rating = predictedElo;
+         await CK.db.saveProfile(freshProfile);
+         profile.rating = predictedElo;
+       }
     }
 
     // Set textual fields
@@ -726,10 +988,17 @@ CK.classroom = (() => {
            } else if (payload.new) {
              const d = payload.new;
              const curr = getLive() || {};
-             localStorage.setItem(LIVE_KEY, JSON.stringify({
-               active: true, fen: d.fen, coachNote: d.pgn, updatedAt: d.ts,
-               orientation: curr.orientation || 'white', currentMove: curr.currentMove || 0
-             }));
+              localStorage.setItem(LIVE_KEY, JSON.stringify({
+                active: true,
+                fen: d.fen,
+                coachNote: d.pgn,
+                meetUrl: normalizeMeetUrl(d.meet_url || d.meetUrl),
+                coachName: d.coach || curr.coachName,
+                coachId: d.coachId || curr.coachId,
+                updatedAt: d.ts,
+                orientation: curr.orientation || 'white',
+                currentMove: curr.currentMove || 0
+              }));
            }
            _syncLive(); // Instantly update UI when socket message arrives
         }).subscribe();
@@ -739,101 +1008,30 @@ CK.classroom = (() => {
       CK.webrtc.joinStream();
     }
 
-    // Auto-mark student join attendance
+    // Auto-mark student join attendance only after a coach-provided link is available.
     (async () => {
       try {
         const studentProfile = (window.CK && CK.student && CK.student.userProfile) || {};
-        const studentUserId = studentProfile.id || me();
-        const studentName = studentProfile.full_name || (window.CK && CK.currentUser && CK.currentUser.full_name) || 'Student';
-        const today = new Date().toISOString().split('T')[0];
-
-        // Fetch all meetings to find the one that is currently live
-        const meetings = (await CK.db.getMeetings()) || [];
-        const liveMeeting = meetings.find(m => m.status === 'live' && (!m.batch || m.batch === studentProfile.batch));
-
-        const classId = liveMeeting ? liveMeeting.id : 'Class';
-        const className = liveMeeting ? (liveMeeting.title || liveMeeting.type) : 'Chess Class';
-        const coachName = liveMeeting ? liveMeeting.coach : (studentProfile.coach || 'Coach');
-
-        const log = {
-          id: 'att-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
-          userid: studentUserId,
-          studentId: studentUserId,
-          studentName: studentName,
-          classId: classId,
-          className: className,
-          coachId: coachName,
-          coachName: coachName,
-          markedAt: new Date().toISOString(),
-          date: today,
-          status: 'present'
-        };
-
-        await CK.db.saveAttendance(log);
-        console.log(`[Attendance] Marked student "${studentName}" present for class "${className}".`);
+        const meetInfo = await resolveStudentMeetUrl(studentProfile);
+        if (!meetInfo) return;
+        await recordStudentJoinAttendance(meetInfo, studentProfile);
+        console.log(`[Attendance] Marked student present for "${meetInfo.label || 'class'}".`);
       } catch (err) {
         console.warn("[Attendance] Failed to record student join attendance:", err);
       }
     })();
 
-    // Google Meet join — resolve a link from (1) batch links, (2) the student's
-    // own class room (auto-generated zoomLink), (3) any currently-live meeting.
+    // Google Meet join — use only links manually added by the coach to a live
+    // session, scheduled meeting, recurring class, timetable slot, or batch link.
     (async () => {
       try {
         const studentProfile = (window.CK && CK.student && CK.student.userProfile) || {};
-        const level = studentProfile.level || '';
-        const batch = studentProfile.batch || '';
-        const today = new Date().toISOString().split('T')[0];
-
-        let meetUrl = '';
-        try {
-          const links = (window.CK && CK.batchManager) ? await CK.batchManager.getLinks() : {};
-          meetUrl = links[level] || links[batch] || '';
-        } catch (e) {}
-
-        if (!meetUrl && CK.db && CK.db.getClasses) {
-          const classes = (await CK.db.getClasses()) || [];
-          const myClass = classes.find(c => (c.active !== false) && String(c.zoomLink || '').trim() && (
-            (batch && (c.batch || '').toLowerCase().includes(batch.toLowerCase())) ||
-            (studentProfile.coach && c.coachName === studentProfile.coach) ||
-            (level && (c.level || '') === level)
-          ));
-          if (myClass) meetUrl = myClass.zoomLink;
-        }
-        if (!meetUrl && CK.db && CK.db.getMeetings) {
-          const meetings = (await CK.db.getMeetings()) || [];
-          const live = meetings.find(m => m.status === 'live' && m.link)
-                    || meetings.find(m => m.link && (m.date || '') >= today);
-          if (live) meetUrl = live.link;
-        }
-
+        const meetInfo = await resolveStudentMeetUrl(studentProfile);
         const meetBtnContainer = document.getElementById('scMeetButtonContainer');
-        if (meetBtnContainer) {
-          if (meetUrl) {
-            meetBtnContainer.style.display = 'block';
-            meetBtnContainer.innerHTML = `
-              <div class="ck-meet-card">
-                <div class="ck-meet-ic">📹</div>
-                <div class="ck-meet-body">
-                  <div class="ck-meet-title">Your live video class is in Google Meet</div>
-                  <div class="ck-meet-sub">Click to join — your coach is teaching live. The board below mirrors their position.</div>
-                </div>
-                <a href="${meetUrl}" target="_blank" rel="noopener" class="ck-meet-join">Join Google Meet →</a>
-              </div>`;
-          } else {
-            meetBtnContainer.style.display = 'block';
-            meetBtnContainer.innerHTML = `
-              <div class="ck-meet-card ck-meet-card-wait">
-                <div class="ck-meet-ic">⏳</div>
-                <div class="ck-meet-body">
-                  <div class="ck-meet-title">Waiting for your coach to start the class</div>
-                  <div class="ck-meet-sub">The Join button will appear here the moment your class goes live.</div>
-                </div>
-              </div>`;
-          }
-        }
+        renderMeetCard(meetBtnContainer, meetInfo, true);
       } catch (err) {
         console.warn("[Meet] Failed to render Meet button:", err);
+        renderMeetCard(document.getElementById('scMeetButtonContainer'), null, true);
       }
     })();
   }
@@ -876,9 +1074,10 @@ CK.classroom = (() => {
     }
     if (noteEl && session.coachNote) noteEl.textContent = session.coachNote;
 
-    // Surface a prominent "Join Google Meet" button if the coach provided
-    // a meeting URL. Idempotent — only injects once per active session.
-    if (session.meetUrl) {
+    // Surface a prominent "Join Google Meet" button only when the coach provided
+    // a meeting URL manually for this live session.
+    const sessionMeetUrl = normalizeMeetUrl(session.meetUrl);
+    if (sessionMeetUrl) {
       let meetBtn = document.getElementById('scLiveMeetBtn');
       if (!meetBtn && wrap && wrap.parentNode) {
         meetBtn = document.createElement('a');
@@ -890,7 +1089,7 @@ CK.classroom = (() => {
         // Insert right BEFORE the live board so it's the first thing students see
         wrap.parentNode.insertBefore(meetBtn, wrap);
       }
-      if (meetBtn) meetBtn.href = session.meetUrl;
+      if (meetBtn) meetBtn.href = sessionMeetUrl;
     } else {
       // Coach didn't provide a meeting URL — remove any stale button
       const stale = document.getElementById('scLiveMeetBtn');
@@ -1137,21 +1336,12 @@ CK.classroom = (() => {
     } else {
       if (statusEl) statusEl.textContent = 'No active session';
     }
-    // Auto-fill the Meet URL with the coach's own auto-generated class room,
-    // so going live is one click (the scheduler keeps each class's link fresh).
+    // Keep this field empty so coaches paste the exact Google Meet URL manually.
     (async () => {
       try {
         const urlEl = document.getElementById('ccLiveMeetUrl');
-        if (!urlEl || urlEl.value.trim() || !(CK.db && CK.db.getClasses)) return;
-        const coach = (window.CK && CK.currentUser && (CK.currentUser.full_name || CK.currentUser.name)) || '';
-        const classes = (await CK.db.getClasses()) || [];
-        let mine = classes.find(c => (c.active !== false) && String(c.zoomLink || '').trim() &&
-                   (!coach || c.coachName === coach || c.coach === coach));
-        if (!mine && CK.gmeetScheduler && CK.gmeetScheduler.createMeet) {
-          urlEl.value = await CK.gmeetScheduler.createMeet();   // none yet → make one
-        } else if (mine) {
-          urlEl.value = mine.zoomLink;
-        }
+        if (!urlEl || urlEl.value.trim()) return;
+        urlEl.placeholder = 'Paste the Google Meet URL for this class';
       } catch (e) {}
     })();
   }
@@ -1161,12 +1351,9 @@ CK.classroom = (() => {
     // Capture optional Google Meet / Zoom / Jitsi URL — shown to students
     // as a prominent "Join Meet" button alongside the live board.
     const meetUrlRaw = document.getElementById('ccLiveMeetUrl')?.value.trim() || '';
-    let meetUrl = '';
-    if (meetUrlRaw) {
-      try { new URL(meetUrlRaw); meetUrl = meetUrlRaw; }
-      catch (_) {
-        CK.showToast('Meeting URL doesn\'t look valid — starting without it.', 'warning');
-      }
+    const meetUrl = normalizeMeetUrl(meetUrlRaw);
+    if (meetUrlRaw && !meetUrl) {
+      CK.showToast('Meeting URL is not valid — start live without a Meet link.', 'warning');
     }
 
     const g = new Chess();
@@ -1477,6 +1664,7 @@ CK.classroom = (() => {
     renderStudentHomeworkSection, openHomeworkFromSection,
     downloadAssignmentPgn, downloadAllHomeworkPgn,
     joinLiveClass, _stopPolling,
+    resolveStudentMeetUrl, openMeetUrl, renderMeetCard, recordStudentJoinAttendance,
     /* Coach */
     coachTab, assignHomework, renderCoachAssignments, deleteAssignment, editAssignment,
     populateAssignTo, _loadAssignInLab, removeEditingAttachment,

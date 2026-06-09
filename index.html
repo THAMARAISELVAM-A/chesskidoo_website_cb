@@ -5179,17 +5179,13 @@
                         <!-- Google Meet URL — students see a"Join Meet" button when set -->
                         <div style="margin-bottom:12px;">
                           <label style="font-size:0.82rem;color:var(--p-text-muted);display:flex;align-items:center;gap:6px;margin-bottom:7px;">
-                            <span>📹</span> Google Meet / Zoom URL (optional — students get a Join button)
+                            <span>📹</span> Google Meet / Zoom URL (paste manually — students get a Join button)
                           </label>
                           <div style="display:flex;gap:8px;">
                             <input id="ccLiveMeetUrl" type="url"
                               class="p-form-control"
-                              placeholder="https://meet.google.com/abc-defg-hij"
+                              placeholder="Paste Google Meet URL manually: https://meet.google.com/abc-defg-hij"
                               style="flex:1;font-family:monospace;font-size:0.85rem;"/>
-                            <button type="button" class="p-btn p-btn-ghost p-btn-sm"
-                              onclick="window.open('https://meet.google.com/new','_blank','noopener')"
-                              title="Generate a new Google Meet link"
-                              style="white-space:nowrap;">➕ New Meet</button>
                           </div>
                         </div>
 
@@ -7001,14 +6997,14 @@
   <!-- Feature Modules -->
   <script defer src="assets/js/board-fx.js?v=20260608a"></script>
   <script defer src="assets/js/i18n-enroll.js?v=20260608a"></script>
-  <script defer src="assets/js/gmeet-scheduler.js?v=20260608a"></script>
+  <script defer src="assets/js/gmeet-scheduler.js?v=20260610a"></script>
   <script defer type="module" src="assets/js/engine.js?v=20260608a"></script>
   <script defer type="module" src="assets/js/engine-play.js?v=20260608a"></script>
   <script defer type="module" src="assets/js/multiplayer.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/classroom.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/classroom.js?v=20260610a"></script>
   <script defer type="module" src="assets/js/webrtc-stream.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/classes-system.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/schedule-pro.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/classes-system.js?v=20260610a"></script>
+  <script defer type="module" src="assets/js/schedule-pro.js?v=20260610a"></script>
   <script defer src="assets/js/schedule-matrix.js?v=20260608a"></script>
   <script defer type="module" src="assets/js/puzzles-pro.js?v=20260608a"></script>
   <script defer type="module" src="assets/js/certs.js?v=20260608a"></script>
@@ -7034,7 +7030,7 @@
   <script defer src="assets/js/gsap-effects.js?v=20260608a"></script>
   <script defer src="assets/js/landing-fx.js?v=20260608a"></script>
   <script defer type="module" src="assets/js/admin.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/student.js?v=20260608a"></script>
+  <script defer type="module" src="assets/js/student.js?v=20260610a"></script>
   <script defer type="module" src="assets/js/coach.js?v=20260608a"></script>
   <script defer type="module" src="assets/js/pgn-library.js?v=20260608a"></script>
   <script defer src="assets/js/pgn-vault.js?v=20260608a"></script>
@@ -7055,6 +7051,7 @@
   <script defer type="module" src="assets/js/arena.js?v=20260608a"></script>
   <script defer type="module" src="assets/js/arcade.js?v=20260608a"></script>
   <script defer type="module" src="assets/js/arcade-extra.js?v=20260608a"></script>
+  <script defer src="assets/js/pwa-install.js?v=20260609a"></script>
 
   <script>
     const CK = window.CK = window.CK || {};

@@ -101,7 +101,7 @@ CK.scheduleMatrix = (() => {
       const cells = DAYS.map(day => {
         const dayClasses = coachClasses
           .filter(c => classOnDay(c, day))
-          .sort((a, b) => String(a.time).localeCompare(String(b.time)));
+          .sort((a, b) => (parseMinutes(a.time) || 0) - (parseMinutes(b.time) || 0));
         if (!dayClasses.length) {
           return `<td class="smx-empty">${editable
             ? `<button class="smx-add" title="Add a class on ${day}" onclick="CK.scheduleMatrix._add('${esc(coach.id || '')}','${esc(coach.name || '')}','${day}')">+</button>`
