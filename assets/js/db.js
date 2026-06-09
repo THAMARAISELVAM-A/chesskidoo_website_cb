@@ -1722,6 +1722,27 @@
             </tbody>
           </table>
         </div>`;
+      this._subRealtime();
+    },
+
+    /* Live-refresh the access table when the users table changes (new
+       enrollments, role edits) — but never while the admin is mid-edit. */
+    _subRealtime() {
+      if (this._accRtDone) return;
+      if (!window.supabaseClient || !window.supabaseClient.channel) return;
+      this._accRtDone = true;
+      try {
+        window.supabaseClient.channel('ck_access_rt')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
+            const cid = this._lastContainerId || 'adminAccessTable';
+            const cont = document.getElementById(cid);
+            if (!cont) return;
+            const ae = document.activeElement;
+            if (ae && cont.contains(ae)) return; // don't yank focus while typing
+            this.renderAccessTable(cid);
+          })
+          .subscribe();
+      } catch (e) { /* realtime optional */ }
     },
 
     _rows(users, creds) {

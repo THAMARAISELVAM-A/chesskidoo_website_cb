@@ -10,13 +10,19 @@
 (function () {
   const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* Remove old reveal markers so the legacy observers don't fight GSAP. */
+  /* Remove old reveal markers so the legacy observers don't fight GSAP.
+     Also strip data-aos: GSAP is taking over this element's reveal, so AOS
+     must NOT also animate it (was double-animating → flicker/jank). */
   function claim(el) {
     if (!el) return;
     el.classList.remove('reveal');
     el.classList.add('visible');
     el.removeAttribute('data-stagger');
     el.removeAttribute('data-anim');
+    if (el.hasAttribute('data-aos')) {
+      el.removeAttribute('data-aos');
+      el.classList.add('aos-animate');   // ensure it's visible if AOS already hid it
+    }
   }
 
   /* Wrap the hero headline into per-word spans (keeps <br> and <em>). */

@@ -53,6 +53,22 @@ CK.certs = (() => {
     return cert;
   }
 
+  /* Draw a filled 5-point star — jsPDF core fonts (times/helvetica) cannot
+     render Unicode chess glyphs (♛/♚), so they'd come out blank in the PDF. */
+  function _star(doc, cx, cy, rO, rI, color) {
+    const pts = 5, verts = [];
+    for (let i = 0; i < pts * 2; i++) {
+      const r = (i % 2 === 0) ? rO : rI;
+      const a = (Math.PI / pts) * i - Math.PI / 2;
+      verts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+    }
+    const deltas = [];
+    for (let i = 1; i < verts.length; i++) deltas.push([verts[i][0] - verts[i - 1][0], verts[i][1] - verts[i - 1][1]]);
+    deltas.push([verts[0][0] - verts[verts.length - 1][0], verts[0][1] - verts[verts.length - 1][1]]);
+    doc.setFillColor(color[0], color[1], color[2]);
+    doc.lines(deltas, verts[0][0], verts[0][1], [1, 1], 'F', true);
+  }
+
   /* ─── Generate PDF certificate using jsPDF ─── */
   function generatePDF(cert) {
     if (!window.jspdf && !window.jsPDF) {
@@ -99,11 +115,8 @@ CK.certs = (() => {
       doc.setDrawColor(...GOLD);
       doc.setLineWidth(0.3);
       doc.circle(x + cornerSize/2, y + cornerSize/2, 8, 'S');
-      // Center icon
-      doc.setFont('times', 'normal');
-      doc.setFontSize(14);
-      doc.setTextColor(...GOLD);
-      doc.text('♛', x + cornerSize/2, y + cornerSize/2 + 4, { align: 'center' });
+      // Center star (vector — PDF core fonts can't render ♛ glyphs)
+      _star(doc, x + cornerSize/2, y + cornerSize/2, 5, 2.1, GOLD);
     });
 
     // ─── Typography & Content ───
@@ -190,10 +203,7 @@ CK.certs = (() => {
     doc.circle(sealX, sealY, 13, 'F');
     doc.setFillColor(15, 23, 42);
     doc.circle(sealX, sealY, 11, 'F');
-    doc.setFont('times', 'bold');
-    doc.setFontSize(24);
-    doc.setTextColor(...GOLD);
-    doc.text('♚', sealX, sealY + 8, { align: 'center' });
+    _star(doc, sealX, sealY, 7, 2.9, GOLD);
 
     // Right Signature
     doc.setDrawColor(120, 130, 150);

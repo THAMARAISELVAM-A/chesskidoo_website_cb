@@ -242,6 +242,7 @@ CK.coach = {
     if (panelId === 'schedule')   this.renderSchedulePro();
     if (panelId === 'notes')      { this.initReportEditor(); this.loadCoachNotes(); this.initInlineNoteForm(); }
     if (panelId === 'attendance') { this.loadAttendance(); this.loadAttendanceAdvanced(); }
+    if (panelId === 'puzzles')    this.renderStudentPuzzleProgress('coachStudentPuzzleProgress');
     if (panelId === 'classes')    this.renderClassesPanel();
     if (panelId === 'reports')    this.renderReportsPanel();
     if (panelId === 'effectiveness') this.renderEffectivenessPanel();
@@ -373,14 +374,29 @@ CK.coach = {
     CK.showToast(`All ${myStudents.length} students marked Present for today!`, 'success');
   },
 
+  _subResourcesRealtime() {
+    if (this._resourcesRtSubbed) return;
+    if (!window.supabaseClient || !window.supabaseClient.channel) return;
+    this._resourcesRtSubbed = true;
+    try {
+      window.supabaseClient.channel('ck_coach_docs_rt')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'document' }, () => {
+          const panel = document.getElementById('coach-panel-resources');
+          if (panel && panel.classList.contains('active')) this.renderResources();
+        })
+        .subscribe();
+    } catch (e) {}
+  },
+
   async renderResources() {
     const container = document.getElementById('coachResourcesContainer');
     if (!container) return;
+    this._subResourcesRealtime();
 
     const resources = await CK.db.getDocuments();
 
     if (resources.length === 0) {
-      container.innerHTML = '<div class="cls-empty">📚 No resources uploaded yet. Use the Admin panel to upload learning materials.</div>';
+      container.innerHTML = '<div class="cls-empty">📚 No resources yet. Click <strong>+ Upload</strong> above to share PDFs, links, books or videos — they appear instantly in your students\' Learning Resources.</div>';
       return;
     }
 
@@ -1112,6 +1128,38 @@ CK.coach = {
     host.innerHTML = `
       <div style="font-size:.82rem;color:var(--p-text-muted);margin-bottom:10px;">${assigns.length} assignment${assigns.length > 1 ? 's' : ''} · ${solvedCount} solved · ${assigns.length - solvedCount} pending</div>
       <table class="p-table" style="width:100%;"><thead><tr><th style="text-align:left;">Puzzle</th><th style="text-align:left;">Student</th><th>Assigned</th><th>Status</th><th>Time</th></tr></thead><tbody>${rows}</tbody></table>`;
+  },
+
+  /* Every puzzle each of the coach's students has actually solved
+     (from puzzle_scores — not just assigned ones). */
+  async renderStudentPuzzleProgress(hostId) {
+    const host = document.getElementById(hostId);
+    if (!host) return;
+    const _e = CK.esc || (s => String(s == null ? '' : s));
+    const coachName = (CK.currentUser?.full_name || CK.currentUser?.name || '').toLowerCase();
+    const students = (await CK.db.getProfiles('student')) || [];
+    const mine = students.filter(s => !coachName || (s.coach || '').toLowerCase() === coachName);
+    const list = mine.length ? mine : students;
+    const scores = (await CK.db.getPuzzleScores()) || [];
+    const titleOf = (id) => {
+      const p = ((window.CK && CK.puzzlesPro && CK.puzzlesPro.PUZZLES) || []).find(x => x.id === id);
+      return p ? (p.title || p.id) : id;
+    };
+    if (!list.length) { host.innerHTML = '<div style="opacity:.5;padding:14px;">No students assigned to you yet.</div>'; return; }
+
+    const totalSolved = scores.filter(s => s.solved).length;
+    host.innerHTML = `<div style="font-size:.82rem;color:var(--p-text-muted);margin-bottom:12px;">${list.length} student${list.length>1?'s':''} · ${totalSolved} puzzles solved overall</div>` +
+      list.map(s => {
+        const sid = s.id, name = s.full_name || s.name || s.email || sid;
+        const solved = scores.filter(x => x.solved && (x.userId === sid || x.userId === s.userid || (x.userName && x.userName === s.full_name)));
+        const chips = solved.length
+          ? solved.slice(0, 16).map(x => `<span class="cpz-chip">${_e(titleOf(x.puzzleId))}${x.time != null ? ' · ' + x.time + 's' : ''}</span>`).join('') + (solved.length > 16 ? `<span class="cpz-more">+${solved.length - 16} more</span>` : '')
+          : '<span class="cpz-none">No puzzles solved yet</span>';
+        return `<div class="cpz-row">
+          <div class="cpz-head"><span class="cpz-name">${_e(name)}</span><span class="cpz-count">${solved.length} solved</span></div>
+          <div class="cpz-chips">${chips}</div>
+        </div>`;
+      }).join('');
   },
 
   /* ── Effectiveness Panel ── */

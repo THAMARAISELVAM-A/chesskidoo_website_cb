@@ -388,6 +388,65 @@ CREATE POLICY IF NOT EXISTS "anon_read_users" ON users FOR SELECT TO anon USING 
 CREATE POLICY IF NOT EXISTS "anon_read_attendance" ON attendance FOR SELECT TO anon USING (true);
 CREATE POLICY IF NOT EXISTS "anon_read_ratings" ON ratings FOR SELECT TO anon USING (true);
 
+-- ─── TOURNAMENT INTERESTS TABLE ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS tournament_interests (
+  id TEXT PRIMARY KEY,
+  student_id TEXT NOT NULL,
+  student_name TEXT NOT NULL,
+  tournament_id TEXT NOT NULL,
+  tournament_title TEXT NOT NULL,
+  status TEXT NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_ti_student ON tournament_interests(student_id);
+CREATE INDEX IF NOT EXISTS idx_ti_tournament ON tournament_interests(tournament_id);
+ALTER TABLE tournament_interests ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "ti_all_access" ON tournament_interests FOR ALL USING (true);
+
+-- ─── ELIBRARY PROGRESS TABLE ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS elibrary_progress (
+  id TEXT PRIMARY KEY,
+  student_id TEXT NOT NULL,
+  book_id TEXT NOT NULL,
+  pages_read INTEGER DEFAULT 0,
+  reading_time_seconds INTEGER DEFAULT 0,
+  completion_pct INTEGER DEFAULT 0,
+  bookmarks JSONB DEFAULT '[]',
+  notes JSONB DEFAULT '[]',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_ep_student_book ON elibrary_progress(student_id, book_id);
+ALTER TABLE elibrary_progress ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "ep_all_access" ON elibrary_progress FOR ALL USING (true);
+
+-- ─── VIDEO PROGRESS TABLE ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS video_progress (
+  id TEXT PRIMARY KEY,
+  student_id TEXT NOT NULL,
+  video_id TEXT NOT NULL,
+  timestamp_seconds REAL DEFAULT 0,
+  saved_for_later BOOLEAN DEFAULT FALSE,
+  completed BOOLEAN DEFAULT FALSE,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_vp_student_video ON video_progress(student_id, video_id);
+ALTER TABLE video_progress ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "vp_all_access" ON video_progress FOR ALL USING (true);
+
+-- ─── LIVE CLASS CHATS TABLE ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS live_class_chats (
+  id TEXT PRIMARY KEY,
+  class_id TEXT NOT NULL,
+  sender_id TEXT NOT NULL,
+  sender_name TEXT NOT NULL,
+  message TEXT NOT NULL,
+  timestamp TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_lcc_class ON live_class_chats(class_id);
+ALTER TABLE live_class_chats ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "lcc_all_access" ON live_class_chats FOR ALL USING (true);
+
 -- ═══════════════════════════════════════════════════════════════════════════
 -- DONE! Your ChessKidoo database is ready.
 -- ═══════════════════════════════════════════════════════════════════════════
+

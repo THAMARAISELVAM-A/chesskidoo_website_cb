@@ -1014,7 +1014,9 @@ CK.schedulePro = (() => {
       btn.textContent = '⏳...';
       btn.disabled = true;
       try {
-        const link = (CK.gmeet && CK.gmeet.createMeetSpace) ? await CK.gmeet.createMeetSpace() : `https://meet.google.com/mock-${uid()}`;
+        const link = (CK.gmeetScheduler && CK.gmeetScheduler.createMeet)
+          ? await CK.gmeetScheduler.createMeet()
+          : (CK.gmeet && CK.gmeet.createMeetSpace) ? await CK.gmeet.createMeetSpace() : `https://meet.google.com/mock-${uid()}`;
         modal.querySelector('#mm_link').value = link;
         btn.textContent = '✅ Generated';
       } catch (err) {

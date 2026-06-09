@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Clearing Cache...</title>
+</head>
+<body>
+  <h2>Clearing old data and caches... Please wait.</h2>
+  <script>
+    async function clearAll() {
+      try {
+        // 1. Unregister all Service Workers
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (let reg of registrations) {
+            await reg.unregister();
+            console.log('Unregistered SW:', reg);
+          }
+        }
+        // 2. Delete all Cache Storage caches
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          for (let key of keys) {
+            await caches.delete(key);
+            console.log('Deleted cache:', key);
+          }
+        }
+        // 3. Clear localStorage / sessionStorage (optional, but good for a full reset if needed, actually let's keep user session but wipe SW)
+        // localStorage.removeItem('ck_user'); // (We will NOT do this so you don't have to login again)
+        
+        document.body.innerHTML = '<h2 style="color:green;">Cache cleared successfully! Redirecting...</h2>';
+        setTimeout(() => {
+          // Redirect to index.html with a timestamp to bypass HTTP cache
+          window.location.href = 'index.html?t=' + Date.now();
+        }, 1000);
+      } catch (e) {
+        document.body.innerHTML = '<h2 style="color:red;">Error clearing cache: ' + e.message + '</h2>';
+      }
+    }
+    clearAll();
+  </script>
+</body>
+</html>

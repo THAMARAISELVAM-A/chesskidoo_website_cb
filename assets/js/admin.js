@@ -1189,7 +1189,7 @@ CK.admin = {
       const getPieceHtml = (code) => {
         if (!code) return '';
         const c = code === code.toUpperCase() ? 'w' : 'b';
-        return `<img src="https://lichess1.org/assets/piece/cburnett/${c}${code.toUpperCase()}.svg" style="width:85%; height:85%; object-fit:contain; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4));" />`;
+        return `<img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/${c}${code.toLowerCase()}.png" style="width:85%; height:85%; object-fit:contain; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4));" />`;
       };
       
       boardEl.innerHTML = pieces.map((p, idx) => {

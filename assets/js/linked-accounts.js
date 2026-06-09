@@ -66,9 +66,32 @@ CK.linkedAccounts = (() => {
     CK.showToast('Accounts linked successfully! Your stats will sync automatically.', 'success');
   }
 
+  /**
+   * Unlink an external platform by clearing its stored username.
+   * @param {'lichess'|'chesscom'|'fide'} platform
+   */
+  async function unlink(platform) {
+    if (!CK.currentUser) {
+      CK.showToast('You must be logged in to unlink accounts', 'warning');
+      return;
+    }
+    const fieldMap = {
+      lichess:  'lichess_username',
+      chesscom: 'chesscom_username',
+      fide:     'fide_id'
+    };
+    const field = fieldMap[platform];
+    if (!field) return;
+    const updates = { [field]: null };
+    await CK.db.updateProfile(CK.currentUser.id || CK.currentUser.userid, updates);
+    CK.currentUser = { ...CK.currentUser, ...updates };
+    CK.showToast('Account unlinked. You can link a new one now.', 'success');
+  }
+
   return {
     fetchLichess,
     fetchChesscom,
-    linkAccounts
+    linkAccounts,
+    unlink
   };
 })();

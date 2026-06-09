@@ -57,6 +57,32 @@ CK.parents = (() => {
     if (_parentRefreshTimer) { clearInterval(_parentRefreshTimer); _parentRefreshTimer = null; }
   }
 
+  // Realtime: refresh the active parent panel the moment the child's data
+  // changes (rating, attendance, puzzles, homework) — no 45s wait.
+  let _parentRtSubbed = false;
+  function _subscribeRealtime() {
+    if (_parentRtSubbed) return;
+    if (!window.supabaseClient || !window.supabaseClient.channel) { setTimeout(_subscribeRealtime, 1500); return; }
+    _parentRtSubbed = true;
+    const refresh = () => {
+      const activePanel = document.querySelector('#parent-page .par-panel.active');
+      if (!activePanel || !_childProfile) return;
+      const panelId = activePanel.id.replace('par-panel-', '');
+      if (panelId === 'dashboard') renderChildProfile();
+      else if (panelId === 'progress') renderProgress();
+      else if (panelId === 'attendance') renderAttendance();
+      else if (panelId === 'reports') renderReports();
+    };
+    try {
+      window.supabaseClient.channel('ck_parent_rt')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, refresh)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, refresh)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'puzzle_scores' }, refresh)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'hw_submissions' }, refresh)
+        .subscribe();
+    } catch (e) {}
+  }
+
   async function init() {
     const currentUser = CK.currentUser || JSON.parse(localStorage.getItem('ck_user') || 'null');
     if (!currentUser || currentUser.role !== 'parent') {
@@ -76,6 +102,7 @@ CK.parents = (() => {
       renderFees();
       renderFeedbackList();
       startAutoRefresh();
+      _subscribeRealtime();
     } else {
       const content = document.getElementById('parentMainContent');
       if (content) content.innerHTML = `

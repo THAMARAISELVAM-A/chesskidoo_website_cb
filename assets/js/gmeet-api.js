@@ -1,6 +1,14 @@
 /* assets/js/gmeet-api.js --------------------------------------------------
    ChessKidoo Google Meet API Integration via Service Account.
-   WARNING: Frontend-only prototype integration. Exposes SA Private Key.
+
+   ⚠️ SECURITY: this file embeds a service-account PRIVATE KEY in client code,
+   which is exposed to anyone who views the site. The key below is COMPROMISED
+   and must be ROTATED/REVOKED in Google Cloud Console.
+
+   The secure replacement is the `create-meet` Supabase edge function, which
+   keeps the key server-side (env secret). The app now prefers it via
+   CK.gmeetScheduler.createMeet(). Once `create-meet` is deployed, delete the
+   SA_CREDS block below and have createMeetSpace() call the edge function only.
 ------------------------------------------------------------------------ */
 
 window.CK = window.CK || {};

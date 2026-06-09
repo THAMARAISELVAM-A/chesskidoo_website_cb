@@ -1,0 +1,82 @@
+/* assets/css/mobile-optimize-2026.css ---------------------------------------
+   ChessKidoo — Responsive pass for the 2026 components + portal pain points.
+   Loaded last; everything lives inside media queries so desktop is untouched.
+   --------------------------------------------------------------- */
+
+/* ===== Phones (≤640px) ===================================================== */
+@media (max-width: 640px) {
+
+  /* Generic: any wide table scrolls instead of overflowing the viewport */
+  .p-card-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .p-table { min-width: 480px; font-size: 0.82rem; }
+  .p-table th, .p-table td { padding: 8px 10px; }
+
+  /* Comfortable tap targets everywhere */
+  .p-btn, .la-act, .ckv-btn, .cal-tab-btn, .sc-tab-btn, .cc-tab-btn { min-height: 40px; }
+  button, select, input, textarea { font-size: 16px; } /* stop iOS zoom-on-focus */
+
+  /* Button groups wrap instead of overflowing card headers */
+  .p-card-header { flex-wrap: wrap; gap: 8px; row-gap: 10px; }
+
+  /* ---- Redesigned hero / live banner ---- */
+  .ck-rd-hero { padding: 16px 16px; }
+  .ck-rd-hero-row { gap: 12px; }
+  .ck-rd-hero-title { font-size: 1.1rem; }
+  .ck-rd-hero-ic { width: 46px; height: 46px; font-size: 1.4rem; }
+  .ck-rd-hero-chip { font-size: 0.72rem; padding: 5px 11px; }
+  .ck-live-banner { padding: 11px 13px; }
+
+  /* ---- PGN Vault ---- */
+  .ckv-toolbar { flex-direction: column; align-items: stretch; }
+  .ckv-search { width: 100%; min-width: 0; }
+  .ckv-import { width: 100%; }
+  .ckv-import .ckv-mini { flex: 1; width: auto; min-width: 0; }
+  .ckv-analytics { grid-template-columns: repeat(2, 1fr); }
+  .ckv-grid { grid-template-columns: 1fr; }
+  .ckv-filters { gap: 8px; }
+  .ckv-sort { margin-left: 0; width: 100%; }
+
+  /* ---- Report card ---- */
+  #printableReportCard { padding: 20px 16px !important; }
+  #printableReportCard h1 { font-size: 1.4rem !important; }
+  #printableReportCard [style*="grid-template-columns: repeat(auto-fit, minmax(280px"] { grid-template-columns: 1fr !important; }
+  #printableReportCard [style*="grid-template-columns: repeat(auto-fit, minmax(200px"] { grid-template-columns: 1fr !important; }
+
+  /* ---- Access manager ---- */
+  .acc-stats-row { grid-template-columns: repeat(2, 1fr) !important; }
+  .acc-search-row { flex-direction: column; align-items: stretch; }
+  .acc-search-row #accRoleFilter { width: 100% !important; }
+  .acc-bulk-row .p-btn { flex: 1 1 auto; }
+
+  /* ---- Coach puzzle progress chips ---- */
+  .cpz-head { flex-wrap: wrap; gap: 6px; }
+
+  /* ---- Pricing language + currency row ---- */
+  #pricing .pricing-grid { grid-template-columns: 1fr; }
+
+  /* ---- Lab / play boards: keep boards within the screen ---- */
+  .lab-main-grid, .pvc-layout, .pz-layout, .lab-board-with-vbar { grid-template-columns: 1fr !important; display: block; }
+  #pvBoard, .lab-board-container, .pv-board-el { max-width: 92vw; margin-left: auto; margin-right: auto; }
+
+  /* ---- Demo modal fields stack neatly ---- */
+  #contactModal .modal-card { max-width: 94vw; }
+
+  /* ---- Tournaments cards ---- */
+  #student-panel-tournaments .p-tournament-card { flex-direction: column; align-items: stretch; }
+  #student-panel-tournaments .p-tournament-card .p-btn { width: 100%; }
+}
+
+/* ===== Small phones (≤400px) ============================================== */
+@media (max-width: 400px) {
+  .ckv-analytics { grid-template-columns: 1fr 1fr; }
+  .acc-stats-row { grid-template-columns: 1fr 1fr !important; }
+  .ck-rd-hero-sub, .ck-live-banner-sub { font-size: 0.78rem; }
+  .p-card { border-radius: 14px; }
+}
+
+/* ===== Respect notches / safe areas on the landing CTA bars ============== */
+@supports (padding: max(0px)) {
+  @media (max-width: 640px) {
+    body { padding-bottom: env(safe-area-inset-bottom); }
+  }
+}

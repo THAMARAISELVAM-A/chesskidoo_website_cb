@@ -164,7 +164,7 @@ CK.enginePlay = (() => {
   };
 
   /* ─── Play vs Computer mode state ─── */
-  let _pvGame = null, _pvBoard = null, _pvDifficulty = 'Intermediate', _pvPlayerColor = 'w';
+  let _pvGame = null, _pvBoard = null, _pvBoardElId = 'pvBoard', _pvDifficulty = 'Intermediate', _pvPlayerColor = 'w';
   let _pvStatus = '', _pvThinking = false;
   let _pvClocks = { w: 0, b: 0 }, _pvIncrement = 0, _pvTimeControl = 'unlimited';
   let _pvClockInterval = null, _pvClockActive = null, _pvGameOver = false;
@@ -250,6 +250,8 @@ CK.enginePlay = (() => {
     _pvIncrement = tc.increment;
 
     _pvGame = new Chess();
+    _pvBoardElId = boardId;
+    if (CK.boardFx) CK.boardFx.clear(boardId);
 
     if (_pvBoard) { try { _pvBoard.destroy(); } catch(e) {} _pvBoard = null; }
     _pvBoard = Chessboard(boardId, {
@@ -287,6 +289,8 @@ CK.enginePlay = (() => {
     _pvStopClock();
     _pvGame = new Chess();
     _pvGame.load(fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+    _pvBoardElId = 'pvBoard';
+    if (CK.boardFx) CK.boardFx.clear('pvBoard');
 
     if (_pvBoard) { try { _pvBoard.destroy(); } catch(e) {} _pvBoard = null; }
     _pvBoard = Chessboard('pvBoard', {
@@ -312,6 +316,12 @@ CK.enginePlay = (() => {
     if (!_pvGame || !_pvBoard) return;
     _pvGame.load(fen);
     _pvBoard.position(fen, true);
+    // Highlight the opponent's last move from the synced history
+    if (CK.boardFx) {
+      const hist = _pvGame.history({ verbose: true });
+      const lm = hist[hist.length - 1];
+      if (lm) CK.boardFx.highlightLastMove(_pvBoardElId, lm.from, lm.to, { variant: 'opponent', san: lm.san });
+    }
     if (_pvGame.game_over()) {
        _pvEndGame();
     } else {
@@ -323,6 +333,9 @@ CK.enginePlay = (() => {
     if (_pvGameOver) return 'snapback';
     const move = _pvGame.move({ from, to, promotion: 'q' });
     if (!move) return 'snapback';
+
+    // Show YOUR move (subtle blue) so the board reads clearly between turns
+    if (CK.boardFx) CK.boardFx.highlightLastMove(_pvBoardElId, move.from, move.to, { variant: 'self', san: move.san });
 
     // Multiplayer Hook
     if (window.CK && CK.multiplayer && CK.multiplayer.activeGameId) {
@@ -403,6 +416,8 @@ CK.enginePlay = (() => {
     
     _pvGame.move(bestMoveObj);
     if (_pvBoard) _pvBoard.position(_pvGame.fen(), true);
+    // Make the opponent's reply unmistakable (amber highlight + arrow + banner)
+    if (CK.boardFx) CK.boardFx.highlightLastMove(_pvBoardElId, bestMoveObj.from, bestMoveObj.to, { variant: 'opponent', san: bestMoveObj.san });
     _pvThinking = false;
 
     // Stop computer clock, add increment, start player clock
@@ -485,6 +500,8 @@ CK.enginePlay = (() => {
 
   window.addEventListener('resize', () => {
     if (_pvBoard) _pvBoard.resize();
+    // chessboard.js rebuilds squares on resize — redraw our highlight + arrow
+    if (CK.boardFx) setTimeout(() => CK.boardFx.reapply(_pvBoardElId), 60);
   });
 
   return {

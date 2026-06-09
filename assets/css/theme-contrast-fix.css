@@ -1,0 +1,51 @@
+/* assets/css/theme-contrast-fix.css -----------------------------------------
+   ChessKidoo — contrast corrections (loaded last so it wins specificity ties).
+   Targets the two real-world failure modes: white text on a light field
+   (light modals / enrollment) and dark text on the dark portal theme.
+   --------------------------------------------------------------- */
+
+/* 1) Native dropdown items must be readable no matter how the <select> is
+      themed (some OS/browsers paint option text in the control's colour,
+      producing white-on-white or dark-on-dark popups). */
+select option,
+select optgroup {
+  color: #0f172a !important;
+  background: #ffffff !important;
+}
+
+/* 2) Any field that declares a LIGHT inline background must use dark text,
+      so a global light-text rule can never make it white-on-white. */
+input[style*="background:#f8fafc"],  input[style*="background: #f8fafc"],
+input[style*="background:#fff"],     input[style*="background: #fff"],
+input[style*="background:white"],
+textarea[style*="background:#f8fafc"], textarea[style*="background:#fff"],
+select[style*="background:#f8fafc"],  select[style*="background:#fff"] {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a;
+}
+input[style*="background:#f8fafc"]::placeholder,
+textarea[style*="background:#f8fafc"]::placeholder { color: #94a3b8; }
+
+/* 3) Light modals (Book-a-Demo / contact) — guarantee readable fields. */
+#contactModal input,
+#contactModal select,
+#contactModal textarea { color: #0f172a; -webkit-text-fill-color: #0f172a; }
+#contactModal select option { color: #0f172a; }
+
+/* 4) Dark-theme portal form controls keep light text + visible placeholders
+      (guards against dark-on-dark when an inline style strips the colour). */
+.p-panel .p-form-control,
+.p-modal .p-form-control,
+.p-form-control {
+  color: var(--p-text, #e8eefc);
+}
+.p-panel .p-form-control::placeholder,
+.p-modal  .p-form-control::placeholder { color: rgba(255,255,255,0.42); }
+
+/* 5) Portal <select> popups: dark control, but readable (light) option list. */
+.p-form-control option { color: #0f172a; background: #ffffff; }
+
+/* 6) Common low-contrast helper text on the dark theme — nudge up so it is
+      legible without changing the design language. */
+.p-text-muted,
+.p-card-sub { color: var(--p-text-muted, #9aa6bf); }

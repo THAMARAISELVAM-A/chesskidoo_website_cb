@@ -4824,6 +4824,8 @@ body:has(.page.active:not(#landing-page)) {
 .la-link-btn:hover, .la-act:hover { filter:brightness(1.1); transform:translateY(-1px); }
 .la-actions { display:flex; gap:10px; flex-wrap:wrap; }
 .la-act-ghost { background:transparent; color:var(--la); border:1px solid var(--la); }
+.la-act-danger { background:transparent; color:#f87171; border:1px solid rgba(248,113,113,0.5); }
+.la-act-danger:hover { background:rgba(248,113,113,0.12); color:#fca5a5; filter:none; }
 
 /* ─── Learning Resources: tabs + category bar ─── */
 .resource-tabs { display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; border-bottom:1px solid var(--p-border); padding-bottom:14px; }

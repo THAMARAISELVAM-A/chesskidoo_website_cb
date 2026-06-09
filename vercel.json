@@ -7,7 +7,7 @@
   "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/((?!assets/|public/|sw\\.js|manifest\\.json|robots\\.txt|sitemap\\.xml|.*\\.[a-zA-Z0-9]+$).*)",
+      "source": "/((?!assets/|public/|sw\\.js|manifest\\.json|robots\\.txt|sitemap\\.xml|clear\\.html|.*\\.[a-zA-Z0-9]+$).*)",
       "destination": "/index.html"
     }
   ],

@@ -65,6 +65,9 @@
   <link rel="stylesheet" href="assets/css/tomai.css?v=20260608a">
   <link rel="stylesheet" href="assets/css/enterprise.css?v=20260608a">
   <link rel="stylesheet" href="assets/css/animations.css?v=20260608a">
+  <link rel="stylesheet" href="assets/css/redesign-2026.css?v=20260608a">
+  <link rel="stylesheet" href="assets/css/theme-contrast-fix.css?v=20260608a">
+  <link rel="stylesheet" href="assets/css/mobile-optimize-2026.css?v=20260608a">
   <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
   <!-- Backend: Supabase JS SDK -->
@@ -1219,6 +1222,16 @@
           <h2 data-translate="pricing_title">Simple, Affordable Plans</h2>
           <p class="lead" data-translate="pricing_lead">No hidden fees. Every plan includes a free demo class to start.
           </p>
+          <div style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;">
+            <span style="display:inline-flex;align-items:center;gap:8px;font-size:0.85rem;opacity:0.7;">🌐 Language
+              <select data-ck-lang aria-label="Language"
+                style="height:38px;border-radius:10px;border:1.5px solid rgba(148,163,184,0.4);background:rgba(255,255,255,0.04);color:inherit;padding:0 12px;font-size:0.9rem;font-weight:600;cursor:pointer;"></select>
+            </span>
+            <span style="display:inline-flex;align-items:center;gap:8px;font-size:0.85rem;opacity:0.7;">💱 Currency
+              <select data-ck-currency aria-label="Currency"
+                style="height:38px;border-radius:10px;border:1.5px solid rgba(148,163,184,0.4);background:rgba(255,255,255,0.04);color:inherit;padding:0 12px;font-size:0.9rem;font-weight:600;cursor:pointer;"></select>
+            </span>
+          </div>
         </div>
         <div class="pricing-grid">
           <!-- Pawn Plan -->
@@ -1226,7 +1239,7 @@
             <div class="price-rank">Starter</div>
             <h3 class="price-title">Pawn Plan</h3>
             <p class="price-desc">Build a Rock-Solid Chess Foundation (Ages 6-10)</p>
-            <div class="price-amount">₹999<span>/mo</span></div>
+            <div class="price-amount"><span data-inr="999">₹999</span><span>/mo</span></div>
             <ul class="price-features">
               <li><span class="check">✓</span> 8 live sessions/month (1 hr each)</li>
               <li><span class="check">✓</span> Beginner curriculum (Level 1)</li>
@@ -1243,7 +1256,7 @@
             <div class="price-rank">Most Popular &middot; Best Value</div>
             <h3 class="price-title">Bishop Plan</h3>
             <p class="price-desc">Accelerate Tactical & Strategic Mastery (Ages 10-14)</p>
-            <div class="price-amount">₹1,799<span>/mo</span></div>
+            <div class="price-amount"><span data-inr="1799">₹1,799</span><span>/mo</span></div>
             <ul class="price-features">
               <li><span class="check">✓</span> 12 live sessions/month (1 hr each)</li>
               <li><span class="check">✓</span> Levels 1 & 2 curriculum access</li>
@@ -1261,7 +1274,7 @@
             <div class="price-rank">Elite</div>
             <h3 class="price-title">Queen Plan</h3>
             <p class="price-desc">The Ultimate Tournament Mastery Path (Ages 14-18)</p>
-            <div class="price-amount">₹2,999<span>/mo</span></div>
+            <div class="price-amount"><span data-inr="2999">₹2,999</span><span>/mo</span></div>
             <ul class="price-features">
               <li><span class="check">✓</span> 16 live sessions/month (1 hr each)</li>
               <li><span class="check">✓</span> All 3 levels + advanced content</li>
@@ -2674,6 +2687,7 @@
                 class="icon">🔬</span><span>PGN Stockfish Lab</span></button>
             <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('classroom')}"><span class="icon">🎓</span><span>My
                 Classroom</span></button>
+            <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('homework')}"><span class="icon">📒</span><span>Homework</span><span class="p-nav-badge" id="studentHomeworkBadge" style="display:none;">0</span></button>
             <div class="p-nav-section-label">Practice</div>
             <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('puzzles')}"><span class="icon">🧩</span><span>My
                 Puzzles</span><span class="p-nav-badge" id="studentPuzzleBadge">0</span></button>
@@ -3116,6 +3130,19 @@
 
             <!-- PROGRESS -->
             <div class="p-panel" id="student-panel-progress">
+
+              <!-- Redesigned hero header -->
+              <div class="ck-rd-hero">
+                <div class="ck-rd-hero-row">
+                  <div class="ck-rd-hero-ic">📈</div>
+                  <div>
+                    <div class="ck-rd-hero-title">My Progress</div>
+                    <div class="ck-rd-hero-sub">Your live performance across attendance, puzzles, rating, games &amp; homework — all in one place.</div>
+                  </div>
+                  <div class="ck-rd-hero-spacer"></div>
+                  <span class="ck-rd-hero-chip"><span class="ck-rd-pulse"></span> Live calculated</span>
+                </div>
+              </div>
 
               <!-- Real Progress Score Card -->
               <div class="p-card" style="margin-bottom:18px;">
@@ -3698,9 +3725,13 @@
             <!-- VIEW REPORT CARD -->
             <div class="p-panel" id="student-panel-report">
               <div class="p-card" style="max-width:800px; margin:0 auto; border-color:rgba(91,156,246,0.3);">
-                <div class="p-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="p-card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                   <div class="p-card-title">📊 Official Student Report Card</div>
-                  <button class="p-btn p-btn-blue p-btn-sm" onclick="window.print()">Print Report Card</button>
+                  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.student.viewReportCard()">👁 View</button>
+                    <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.student.exportReportCardToPDF()">⬇ Download PDF</button>
+                    <button class="p-btn p-btn-blue p-btn-sm" onclick="CK.student.printReportCard()">🖨 Print</button>
+                  </div>
                 </div>
                 <div class="p-card-body" style="padding:30px;">
                   <div
@@ -3872,11 +3903,13 @@
                       <textarea id="labPgnInput" class="p-form-control"
                         style="height:95px;font-family:monospace;font-size:0.8rem;margin-bottom:10px;background:var(--p-surface3);color:#fff;border:1px solid rgba(255,255,255,0.1);resize:vertical;"
                         placeholder="Paste PGN here… e.g. 1. e4 e5 2. Nf3 Nc6"></textarea>
-                      <div style="display:flex;gap:8px;margin-bottom:14px;">
-                        <button class="p-btn p-btn-blue" style="flex:1;"
+                      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+                        <button class="p-btn p-btn-blue" style="flex:1;min-width:120px;"
                           onclick="CK.lab.analyzePgn(document.getElementById('labPgnInput').value,'studentLabBoard')">🔬 Analyze PGN</button>
-                        <button class="p-btn p-btn-blue" style="flex:1;background:var(--p-teal);"
+                        <button class="p-btn p-btn-blue" style="flex:1;min-width:120px;background:var(--p-teal);"
                           onclick="CK.lab.loadRandomPuzzle('studentLabBoard')">🧩 Load Puzzle</button>
+                        <button class="p-btn p-btn-blue" style="flex:1;min-width:120px;background:var(--p-gold);color:#1a1407;"
+                          onclick="CK.pgnVault&&CK.pgnVault.saveCurrentLabPgn('studentLabBoard')">🗄️ Save to Vault</button>
                       </div>
                       <div id="studentPgnDbExplorer" class="lab-db-explorer" style="display:none;margin-bottom:14px;"></div>
                       <div class="lab-eval-panel">
@@ -3919,6 +3952,18 @@
                       </div>
                     </div>
                     <div id="studentPgnLibStrip" class="pgn-lib-strip"></div>
+                  </div>
+
+                  <!-- My Games Vault (hybrid local + cloud) -->
+                  <div class="pgn-lib-section" style="margin-top:18px;">
+                    <div class="pgn-lib-header">
+                      <div>
+                        <div class="pgn-lib-header-title">🗄️ My Games Vault</div>
+                        <div class="pgn-lib-header-sub">Your personal game library — import from Lichess/Chess.com, search &amp; filter, win/loss analytics, and Stockfish reports.
+                        </div>
+                      </div>
+                    </div>
+                    <div id="studentPgnVault"></div>
                   </div>
 
                   <!-- Play vs Computer Panel -->
@@ -4016,6 +4061,30 @@
             </div>
 
             <!-- STUDENT CLASSROOM -->
+            <!-- HOMEWORK (dedicated section) -->
+            <div class="p-panel" id="student-panel-homework">
+              <div class="ck-rd-hero">
+                <div class="ck-rd-hero-row">
+                  <div class="ck-rd-hero-ic">📒</div>
+                  <div>
+                    <div class="ck-rd-hero-title">My Homework</div>
+                    <div class="ck-rd-hero-sub">Assignments from your coach — open them, study the positions, and download the PGN to review offline.</div>
+                  </div>
+                  <div class="ck-rd-hero-spacer"></div>
+                  <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.classroom&&CK.classroom.downloadAllHomeworkPgn()">⬇ Download all (PGN)</button>
+                </div>
+              </div>
+              <div class="p-card">
+                <div class="p-card-header">
+                  <div class="p-card-title">📋 Assigned Homework</div>
+                  <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.classroom&&CK.classroom.renderStudentHomeworkSection('studentHomeworkSection')">↻ Refresh</button>
+                </div>
+                <div class="p-card-body" id="studentHomeworkSection" style="padding:16px;">
+                  <div style="text-align:center;opacity:.45;padding:30px;">Loading your homework…</div>
+                </div>
+              </div>
+            </div>
+
             <div class="p-panel" id="student-panel-classroom">
               <div class="p-card" style="border-color:rgba(91,156,246,0.28);">
                 <div class="p-card-header">
@@ -4086,6 +4155,13 @@
 
                   <!-- Live Class Tab -->
                   <div id="scTabLive" style="display:none;">
+                    <div class="ck-live-banner">
+                      <span class="ck-live-dot"></span>
+                      <div>
+                        <div class="ck-live-banner-title">Live Classroom</div>
+                        <div class="ck-live-banner-sub">Your board, the engine eval and your coach's notes sync here in real time during class.</div>
+                      </div>
+                    </div>
                     <div id="scLiveStatus" style="margin-bottom:16px;font-size:0.9rem;"></div>
                     <!-- Google Meet Fallback Button Container -->
                     <div id="scMeetButtonContainer" style="margin-bottom:16px; display:none;"></div>
@@ -4112,15 +4188,15 @@
                           <div style="font-size:0.82rem;font-weight:700;color:var(--p-teal);margin-bottom:8px;">📢 Coach's Note</div>
                           <div id="scLiveCoachNote" style="font-size:0.87rem;color:var(--p-text-muted);line-height:1.65;min-height:60px;">Waiting for coach to broadcast…</div>
                           
-                          <!-- WebRTC Video Stub (Phase 4) -->
+                          <!-- Coach video runs in Google Meet -->
                           <div style="margin-top:20px;">
-                            <div style="font-size:0.82rem;font-weight:700;color:var(--p-blue);margin-bottom:8px;display:flex;justify-content:space-between;">
-                              <span>📹 Coach Video Stream</span>
-                              <span style="font-size:0.7rem;opacity:0.6;">● LIVE (WebRTC Stub)</span>
+                            <div style="font-size:0.82rem;font-weight:700;color:var(--p-blue);margin-bottom:8px;">
+                              📹 Coach Video
                             </div>
-                            <div id="scLiveVideoBox" style="width:100%; height:140px; background:#000; border-radius:8px; border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.3); font-size:0.85rem; position:relative; overflow:hidden;">
-                                <div style="position:absolute;top:10px;left:10px;background:red;color:white;font-size:0.6rem;padding:2px 6px;border-radius:4px;font-weight:bold;">REC</div>
-                                Video Stream Pending (Phase 4)
+                            <div id="scLiveVideoBox" class="ck-live-videobox">
+                              <div class="ck-live-videobox-ic">📹</div>
+                              <div style="font-weight:700;color:#e8eefc;">HD video runs in Google Meet</div>
+                              <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);max-width:240px;text-align:center;">Use the <b style="color:var(--p-gold)">Join Google Meet</b> button above for face-to-face teaching. This panel mirrors the live board &amp; engine eval.</div>
                             </div>
                           </div>
                       </div>
@@ -4637,6 +4713,18 @@
 
             <!-- ASSIGN PUZZLES -->
             <div class="p-panel" id="coach-panel-puzzles">
+
+              <!-- Student Puzzle Progress (live from puzzle_scores) -->
+              <div class="p-card" style="margin-bottom:18px;">
+                <div class="p-card-header">
+                  <div class="p-card-title">✅ Student Puzzle Progress</div>
+                  <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.coach.renderStudentPuzzleProgress('coachStudentPuzzleProgress')">↻ Refresh</button>
+                </div>
+                <div class="p-card-body" id="coachStudentPuzzleProgress" style="padding:16px;">
+                  <div style="text-align:center;opacity:.45;padding:24px;">Loading student puzzle activity…</div>
+                </div>
+              </div>
+
               <!-- Stats bar -->
               <div class="p-stats-grid" style="grid-template-columns:repeat(3,1fr);">
                 <div class="p-stat-card">
@@ -6588,9 +6676,13 @@
         </div>
         <div class="form-group" style="margin-bottom:16px;">
           <label style="font-weight:600; font-size:0.85rem; margin-bottom:6px; display:block; color:#334155;">WhatsApp Number *</label>
-          <input type="tel" name="phone" required placeholder="+91 98765 43210" pattern="[0-9+\s\-]{10,15}"
-            style="width:100%; height:48px; border-radius:12px; border:1.5px solid #e2e8f0; padding:0 14px; font-size:16px; transition:border-color 0.2s; outline:none; background:#f8fafc;"
-            onfocus="this.style.borderColor='#D97706'" onblur="this.style.borderColor='#e2e8f0'">
+          <div style="display:flex; gap:8px;">
+            <select name="dialCode" data-ck-dialcode aria-label="Country code"
+              style="width:118px; height:48px; border-radius:12px; border:1.5px solid #e2e8f0; padding:0 8px; font-size:15px; outline:none; background:#f8fafc; color:#0f172a;"></select>
+            <input type="tel" name="phone" required placeholder="98765 43210" pattern="[0-9+\s\-]{6,15}"
+              style="flex:1; height:48px; border-radius:12px; border:1.5px solid #e2e8f0; padding:0 14px; font-size:16px; transition:border-color 0.2s; outline:none; background:#f8fafc; color:#0f172a;"
+              onfocus="this.style.borderColor='#D97706'" onblur="this.style.borderColor='#e2e8f0'">
+          </div>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
           <div class="form-group">
@@ -6602,9 +6694,14 @@
           <div class="form-group">
             <label style="font-weight:600; font-size:0.85rem; margin-bottom:6px; display:block; color:#334155;">City</label>
             <input type="text" name="city" placeholder="e.g. Chennai"
-              style="width:100%; height:48px; border-radius:12px; border:1.5px solid #e2e8f0; padding:0 14px; font-size:16px; outline:none; background:#f8fafc;"
+              style="width:100%; height:48px; border-radius:12px; border:1.5px solid #e2e8f0; padding:0 14px; font-size:16px; outline:none; background:#f8fafc; color:#0f172a;"
               onfocus="this.style.borderColor='#D97706'" onblur="this.style.borderColor='#e2e8f0'">
           </div>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label style="font-weight:600; font-size:0.85rem; margin-bottom:6px; display:block; color:#334155;">Country</label>
+          <select name="country" data-ck-country
+            style="width:100%; height:48px; border-radius:12px; border:1.5px solid #e2e8f0; padding:0 12px; font-size:16px; outline:none; background:#f8fafc; color:#0f172a;"></select>
         </div>
         <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:12px 14px; margin-bottom:20px; display:flex; align-items:center; gap:10px;">
           <span style="font-size:1.3rem;">🎯</span>
@@ -6885,6 +6982,9 @@
    <script defer type="module" src="assets/js/router.js?v=20260608a"></script>
 
   <!-- Feature Modules -->
+  <script defer src="assets/js/board-fx.js?v=20260608a"></script>
+  <script defer src="assets/js/i18n-enroll.js?v=20260608a"></script>
+  <script defer src="assets/js/gmeet-scheduler.js?v=20260608a"></script>
   <script defer type="module" src="assets/js/engine.js?v=20260608a"></script>
   <script defer type="module" src="assets/js/engine-play.js?v=20260608a"></script>
   <script defer type="module" src="assets/js/multiplayer.js?v=20260608a"></script>
@@ -6915,16 +7015,21 @@
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   <script defer src="assets/js/gsap-effects.js?v=20260608a"></script>
+  <script defer src="assets/js/landing-fx.js?v=20260608a"></script>
   <script defer type="module" src="assets/js/admin.js?v=20260608a"></script>
   <script defer type="module" src="assets/js/student.js?v=20260608a"></script>
   <script defer type="module" src="assets/js/coach.js?v=20260608a"></script>
   <script defer type="module" src="assets/js/pgn-library.js?v=20260608a"></script>
+  <script defer src="assets/js/pgn-vault.js?v=20260608a"></script>
   <script defer type="module" src="assets/js/chessboard.js?v=20260608a"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (window.CK && CK.pgnLibrary) {
         CK.pgnLibrary.renderCards('studentPgnLibStrip', 'studentLabBoard');
         CK.pgnLibrary.renderCards('coachPgnLibStrip', 'coachLabBoard');
+      }
+      if (window.CK && CK.pgnVault) {
+        CK.pgnVault.render('studentPgnVault', 'studentLabBoard');
       }
     });
   </script>
@@ -7263,7 +7368,31 @@
 
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <script>
-    window.addEventListener("load", () => { AOS.init({ duration: 800, easing: "ease-out-cubic", once: true, offset: 50 }); });
+    (function () {
+      function initAOS() {
+        if (window.AOS && AOS.init) {
+          AOS.init({ duration: 800, easing: "ease-out-cubic", once: true, offset: 50 });
+          return true;
+        }
+        return false;
+      }
+      // Init as early as possible AND on full load (was load-only → blank
+      // sections if a slow image delayed `load`).
+      if (document.readyState !== "loading") initAOS();
+      else document.addEventListener("DOMContentLoaded", initAOS);
+      window.addEventListener("load", initAOS);
+      // Safety net: if the AOS CDN is blocked/offline, force-reveal every
+      // [data-aos] element so the page is never stuck invisible.
+      setTimeout(function () {
+        if (!window.AOS) {
+          document.querySelectorAll("[data-aos]").forEach(function (el) {
+            el.classList.add("aos-animate");
+            el.style.opacity = "1";
+            el.style.transform = "none";
+          });
+        } else { try { AOS.refresh(); } catch (e) {} }
+      }, 2500);
+    })();
   </script>
 
     <!-- Curriculum Portal Modal -->

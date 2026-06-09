@@ -264,12 +264,25 @@ CK.classroom = (() => {
   async function renderStudentHomework() {
     const list = document.getElementById('scHomeworkList');
     if (!list) return;
-    const assignments = await getAssignments();
+    const allAssignments = await getAssignments();
     const submissions = await getSubmissions();
     const userId = me();
+    const prof   = (window.CK && CK.currentUser) ? CK.currentUser : {};
+    const myBatch = prof.batch || prof.session || null;
+
+    // Only show homework actually addressed to this student (or to everyone).
+    const assignments = allAssignments.filter(a => {
+      const to = a.assignedTo || a.assigned_to;
+      if (!to || (Array.isArray(to) && to.length === 0)) return true; // legacy → visible to all
+      const arr = Array.isArray(to) ? to : [to];
+      return arr.includes('all')
+          || arr.includes(userId)
+          || arr.includes(prof.id) || arr.includes(prof.email)
+          || (myBatch && arr.includes(myBatch));
+    });
 
     if (!assignments.length) {
-      list.innerHTML = `<div class="cls-empty">📭 No homework assigned yet — check back soon!</div>`;
+      list.innerHTML = `<div class="cls-empty">📭 No homework assigned to you yet — check back soon!</div>`;
       return;
     }
 
@@ -302,6 +315,110 @@ CK.classroom = (() => {
   /* ═══════════════════════════════════════════════════════════════════
      STUDENT — HOMEWORK BOARD
   ═══════════════════════════════════════════════════════════════════ */
+
+  /* Shared recipient filter (used by both the classroom tab and the dedicated
+     Homework section). */
+  function _filterMyAssignments(allAssignments) {
+    const userId = me();
+    const prof = (window.CK && CK.currentUser) ? CK.currentUser : {};
+    const myBatch = prof.batch || prof.session || null;
+    return (allAssignments || []).filter(a => {
+      const to = a.assignedTo || a.assigned_to;
+      if (!to || (Array.isArray(to) && to.length === 0)) return true;
+      const arr = Array.isArray(to) ? to : [to];
+      return arr.includes('all') || arr.includes(userId) || arr.includes(prof.id) || arr.includes(prof.email) || (myBatch && arr.includes(myBatch));
+    });
+  }
+
+  /* Dedicated student Homework section (sidebar → Homework): list + downloads. */
+  async function renderStudentHomeworkSection(containerId) {
+    const host = document.getElementById(containerId);
+    if (!host) return;
+    const _e = (window.CK && CK.esc) ? CK.esc : (s => String(s == null ? '' : s));
+    const assignments = _filterMyAssignments(await getAssignments());
+    const submissions = await getSubmissions();
+    const userId = me();
+
+    const pending = assignments.filter(a => !submissions.find(s =>
+      (s.assignment_id === a.id || s.assignmentId === a.id) &&
+      (s.student_id === userId || s.studentId === userId) && s.completed)).length;
+    const badge = document.getElementById('studentHomeworkBadge');
+    if (badge) { badge.textContent = pending; badge.style.display = pending ? '' : 'none'; }
+
+    if (!assignments.length) {
+      host.innerHTML = `<div class="cls-empty">📭 No homework assigned to you yet — check back soon!</div>`;
+      return;
+    }
+
+    host.innerHTML = '<div class="hw-grid">' + assignments.map(a => {
+      const sub = submissions.find(s => (s.assignment_id === a.id || s.assignmentId === a.id) && (s.student_id === userId || s.studentId === userId));
+      const done = sub && sub.completed;
+      const icon = { study: '📖', guess: '🎯', practice: '⚡' }[a.type] || '📖';
+      const due = a.dueDate ? `Due ${_e(a.dueDate)}` : 'No due date';
+      const status = done
+        ? `<span class="p-badge p-badge-green">✓ Done · ${sub.accuracy}%</span>`
+        : `<span class="p-badge p-badge-yellow">⏳ Pending</span>`;
+      return `
+        <div class="hw-item">
+          <div class="hw-item-top"><span class="hw-item-icon">${icon}</span>${status}</div>
+          <div class="hw-item-title">${_e(a.title)}</div>
+          <div class="hw-item-meta">${_e(a.coach || 'Coach')} · ${_e(a.type)} mode · ${a.moves || '?'} moves · ${due}</div>
+          ${a.description ? `<div class="hw-item-desc">${_e(a.description)}</div>` : ''}
+          <div class="hw-item-actions">
+            <button class="p-btn p-btn-blue p-btn-sm" onclick="CK.classroom.openHomeworkFromSection('${a.id}')">${done ? '🔄 Review' : '▶ Start'}</button>
+            <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.classroom.downloadAssignmentPgn('${a.id}')">⬇ PGN</button>
+          </div>
+        </div>`;
+    }).join('') + '</div>';
+  }
+
+  function openHomeworkFromSection(id) {
+    if (window.CK && CK.student && CK.student.nav) CK.student.nav('classroom');
+    setTimeout(() => { studentTab('homework'); setTimeout(() => openHomework(id), 140); }, 140);
+  }
+
+  function _downloadText(filename, text, mime) {
+    try {
+      const blob = new Blob([text], { type: mime || 'application/x-chess-pgn' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+    } catch (e) { if (CK.showToast) CK.showToast('Could not download file.', 'error'); }
+  }
+
+  // Build a clean, valid PGN (with headers) so it opens in any chess app.
+  function _assignmentPgn(a) {
+    const esc = (s) => String(s == null ? '' : s).replace(/"/g, '');
+    const tags = [
+      ['Event', a.title || 'ChessKidoo Homework'],
+      ['Site', 'ChessKidoo Academy'],
+      ['Date', String(a.dueDate || new Date().toISOString().slice(0, 10)).replace(/-/g, '.')],
+      ['White', 'Student'], ['Black', 'Study'],
+      ['Annotator', a.coach || 'Coach'], ['Result', '*']
+    ];
+    const header = tags.map(t => `[${t[0]} "${esc(t[1])}"]`).join('\n');
+    let body = (a.pgn || '').trim();
+    if (a.description) body = `{ ${esc(a.description)} }\n` + body;
+    if (!body) body = '*';
+    return header + '\n\n' + body + (/[*]|1-0|0-1|1\/2-1\/2$/.test(body) ? '' : ' *') + '\n';
+  }
+
+  async function downloadAssignmentPgn(id) {
+    const a = (await getAssignments()).find(x => x.id === id);
+    if (!a) { if (CK.showToast) CK.showToast('Homework not found.', 'warning'); return; }
+    const safe = (a.title || 'homework').replace(/[^\w\-]+/g, '_').slice(0, 40);
+    _downloadText(`ChessKidoo_${safe}.pgn`, _assignmentPgn(a));
+    if (CK.showToast) CK.showToast('Homework PGN downloaded.', 'success');
+  }
+
+  async function downloadAllHomeworkPgn() {
+    const mine = _filterMyAssignments(await getAssignments());
+    if (!mine.length) { if (CK.showToast) CK.showToast('No homework to download yet.', 'warning'); return; }
+    _downloadText('ChessKidoo_All_Homework.pgn', mine.map(_assignmentPgn).join('\n\n'));
+    if (CK.showToast) CK.showToast(`Downloaded ${mine.length} homework PGN${mine.length > 1 ? 's' : ''}.`, 'success');
+  }
 
   async function openHomework(id) {
     const assignments = await getAssignments();
@@ -454,6 +571,7 @@ CK.classroom = (() => {
       id:           uid(),
       assignment_id: _hwAssignment.id,
       student_id:    userId,
+      student_name:  (window.CK && CK.currentUser) ? (CK.currentUser.full_name || CK.currentUser.name || CK.currentUser.email || userId) : userId,
       accuracy,
       movesStudied: _hwCurrentMove,
       totalMoves:   total,
@@ -544,33 +662,64 @@ CK.classroom = (() => {
       }
     })();
 
-    // Meet fallback link rendering
+    // Google Meet join — resolve a link from (1) batch links, (2) the student's
+    // own class room (auto-generated zoomLink), (3) any currently-live meeting.
     (async () => {
       try {
         const studentProfile = (window.CK && CK.student && CK.student.userProfile) || {};
-        const links = (window.CK && CK.batchManager) ? await CK.batchManager.getLinks() : {};
         const level = studentProfile.level || '';
         const batch = studentProfile.batch || '';
-        const meetUrl = links[level] || links[batch] || '';
-        
+        const today = new Date().toISOString().split('T')[0];
+
+        let meetUrl = '';
+        try {
+          const links = (window.CK && CK.batchManager) ? await CK.batchManager.getLinks() : {};
+          meetUrl = links[level] || links[batch] || '';
+        } catch (e) {}
+
+        if (!meetUrl && CK.db && CK.db.getClasses) {
+          const classes = (await CK.db.getClasses()) || [];
+          const myClass = classes.find(c => (c.active !== false) && String(c.zoomLink || '').trim() && (
+            (batch && (c.batch || '').toLowerCase().includes(batch.toLowerCase())) ||
+            (studentProfile.coach && c.coachName === studentProfile.coach) ||
+            (level && (c.level || '') === level)
+          ));
+          if (myClass) meetUrl = myClass.zoomLink;
+        }
+        if (!meetUrl && CK.db && CK.db.getMeetings) {
+          const meetings = (await CK.db.getMeetings()) || [];
+          const live = meetings.find(m => m.status === 'live' && m.link)
+                    || meetings.find(m => m.link && (m.date || '') >= today);
+          if (live) meetUrl = live.link;
+        }
+
         const meetBtnContainer = document.getElementById('scMeetButtonContainer');
         if (meetBtnContainer) {
           if (meetUrl) {
             meetBtnContainer.style.display = 'block';
             meetBtnContainer.innerHTML = `
-              <div style="margin-top: 10px; margin-bottom: 10px; text-align: center;">
-                <a href="${meetUrl}" target="_blank" class="p-btn p-btn-gold p-btn-sm" style="display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); text-decoration: none;">
-                  🔗 Open Google Meet Video Call
-                </a>
-              </div>
-            `;
+              <div class="ck-meet-card">
+                <div class="ck-meet-ic">📹</div>
+                <div class="ck-meet-body">
+                  <div class="ck-meet-title">Your live video class is in Google Meet</div>
+                  <div class="ck-meet-sub">Click to join — your coach is teaching live. The board below mirrors their position.</div>
+                </div>
+                <a href="${meetUrl}" target="_blank" rel="noopener" class="ck-meet-join">Join Google Meet →</a>
+              </div>`;
           } else {
-            meetBtnContainer.style.display = 'none';
-            meetBtnContainer.innerHTML = '';
+            meetBtnContainer.style.display = 'block';
+            meetBtnContainer.innerHTML = `
+              <div class="ck-meet-card ck-meet-card-wait">
+                <div class="ck-meet-ic">⏳</div>
+                <div class="ck-meet-body">
+                  <div class="ck-meet-title">Waiting for your coach to start the class</div>
+                  <div class="ck-meet-sub">The Join button will appear here the moment your class goes live.</div>
+                </div>
+              </div>`;
           }
         }
       } catch (err) {
-        console.warn("[Meet Fallback] Failed to render Meet button:", err);
+        console.warn("[Meet] Failed to render Meet button:", err);
       }
     })();
   }
@@ -683,7 +832,7 @@ CK.classroom = (() => {
     const btn   = document.querySelector(`.cc-tab-btn[data-tab="${tab}"]`);
     if (panel) panel.style.display = 'block';
     if (btn)   btn.classList.add('active');
-    if (tab === 'assign')  await renderCoachAssignments();
+    if (tab === 'assign')  { await renderCoachAssignments(); populateAssignTo(); }
     if (tab === 'grades')  await renderGrades();
     if (tab === 'library') renderLibrary();
     if (tab === 'live')    _initCoachLiveUI();
@@ -717,6 +866,26 @@ CK.classroom = (() => {
     CK.showToast(`✓ Assigned: "${title}" (${g.history().length} moves, ${type} mode)`, 'success');
     ['ccHwTitle', 'ccHwPgn', 'ccHwDesc'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     await renderCoachAssignments();
+  }
+
+  // Fill the coach "Assign To" dropdown with their real students (+ All).
+  async function populateAssignTo() {
+    const sel = document.getElementById('ccHwAssignTo');
+    if (!sel) return;
+    const _e = (window.CK && CK.esc) ? CK.esc : (s => String(s == null ? '' : s));
+    let students = [];
+    try { students = (await CK.db.getProfiles('student')) || []; } catch (e) {}
+    const coach = (window.CK && CK.currentUser) ? CK.currentUser : {};
+    const coachName = coach.full_name || coach.name;
+    const mine = students.filter(s => !coachName || !s.coach || s.coach === coachName || s.coach === coach.id);
+    const list = mine.length ? mine : students;
+    const prev = sel.value;
+    sel.innerHTML = ['<option value="all">👥 All Students</option>']
+      .concat(list.map(s => {
+        const label = s.full_name || s.name || s.email || s.id;
+        return `<option value="${_e(s.id)}">${_e(label)}${s.batch ? ' · ' + _e(s.batch) : ''}</option>`;
+      })).join('');
+    if (prev) sel.value = prev;
   }
 
   async function renderCoachAssignments() {
@@ -771,6 +940,23 @@ CK.classroom = (() => {
     } else {
       if (statusEl) statusEl.textContent = 'No active session';
     }
+    // Auto-fill the Meet URL with the coach's own auto-generated class room,
+    // so going live is one click (the scheduler keeps each class's link fresh).
+    (async () => {
+      try {
+        const urlEl = document.getElementById('ccLiveMeetUrl');
+        if (!urlEl || urlEl.value.trim() || !(CK.db && CK.db.getClasses)) return;
+        const coach = (window.CK && CK.currentUser && (CK.currentUser.full_name || CK.currentUser.name)) || '';
+        const classes = (await CK.db.getClasses()) || [];
+        let mine = classes.find(c => (c.active !== false) && String(c.zoomLink || '').trim() &&
+                   (!coach || c.coachName === coach || c.coach === coach));
+        if (!mine && CK.gmeetScheduler && CK.gmeetScheduler.createMeet) {
+          urlEl.value = await CK.gmeetScheduler.createMeet();   // none yet → make one
+        } else if (mine) {
+          urlEl.value = mine.zoomLink;
+        }
+      } catch (e) {}
+    })();
   }
 
   function coachStartLive() {
@@ -922,6 +1108,12 @@ CK.classroom = (() => {
     if (!container) return;
     const assignments = await getAssignments();
     const submissions = await getSubmissions();
+    let students = [];
+    try { students = (await CK.db.getProfiles('student')) || []; } catch (e) {}
+    const nameOf = (id) => {
+      const u = students.find(x => x.id === id || x.userid === id || x.email === id);
+      return u ? (u.full_name || u.name || u.email || id) : id;
+    };
     if (!assignments.length) { container.innerHTML = '<div class="cls-empty">No assignments yet</div>'; return; }
 
     container.innerHTML = assignments.map(a => {
@@ -932,7 +1124,7 @@ CK.classroom = (() => {
             const acc = s.accuracy;
             const col = acc >= 80 ? 'var(--p-teal)' : acc >= 60 ? 'var(--p-gold)' : '#ef4444';
             return `<tr>
-              <td>${s.student_id}</td>
+              <td>${s.student_name || nameOf(s.student_id)}</td>
               <td style="color:${col};font-weight:700;">${acc}%</td>
               <td>${s.movesStudied}/${s.totalMoves}</td>
               <td style="color:var(--p-text-muted);">${new Date(s.submittedAt || s.created_at).toLocaleDateString()}</td>
@@ -1026,14 +1218,45 @@ CK.classroom = (() => {
     if (_ccLiveBoard) _ccLiveBoard.resize();
   });
 
+  /* ═══════════════════════════════════════════════════════════════════
+     REALTIME — live homework + submission sync via Supabase
+  ═══════════════════════════════════════════════════════════════════ */
+  let _rtSubbed = false;
+  function _visible(id) { const el = document.getElementById(id); return el && el.style.display !== 'none'; }
+  function _panelActive(id) { const el = document.getElementById(id); return el && el.classList.contains('active'); }
+  function _subscribeRealtime() {
+    if (_rtSubbed) return;
+    if (!window.supabaseClient || !window.supabaseClient.channel) { setTimeout(_subscribeRealtime, 1500); return; }
+    _rtSubbed = true;
+    try {
+      window.supabaseClient
+        .channel('ck_classroom_rt')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'assignments' }, () => {
+          if (_visible('scTabHomework')) renderStudentHomework();
+          if (_panelActive('student-panel-homework')) renderStudentHomeworkSection('studentHomeworkSection');
+          else if (document.getElementById('studentHomeworkSection')) renderStudentHomeworkSection('studentHomeworkSection'); // keeps nav badge fresh
+          if (_visible('ccTabAssign'))  renderCoachAssignments();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'hw_submissions' }, () => {
+          if (_visible('ccTabGrades')) renderGrades();
+          if (_visible('scTabHomework')) renderStudentHomework();
+          if (_panelActive('student-panel-homework')) renderStudentHomeworkSection('studentHomeworkSection');
+        })
+        .subscribe();
+    } catch (e) { console.warn('[classroom] realtime subscribe failed', e); }
+  }
+  _subscribeRealtime();
+
   return {
     /* Student */
     studentTab, renderStudentHomework, openHomework, closeHomework,
     hwFirst, hwPrev, hwNext, hwLast, hwGuessClick, submitHomework,
+    renderStudentHomeworkSection, openHomeworkFromSection,
+    downloadAssignmentPgn, downloadAllHomeworkPgn,
     joinLiveClass, _stopPolling,
     /* Coach */
     coachTab, assignHomework, renderCoachAssignments, deleteAssignment,
-    _loadAssignInLab,
+    populateAssignTo, _loadAssignInLab,
     coachStartLive, coachEndLive, coachLiveNav, coachBroadcastNote,
     renderGrades,
     saveToLibrary, renderLibrary, _libLoadInLab, _libAssign, _libDelete

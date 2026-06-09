@@ -524,9 +524,12 @@
     const form = e.target;
     const btn = form.querySelector('[type="submit"]');
     const name = form.fullName.value;
-    const phone = form.phone.value;
+    const dial = form.dialCode ? form.dialCode.value : '';
+    const phone = (window.CK && CK.intl) ? CK.intl.fullPhone(dial, form.phone.value) : form.phone.value;
     const age = form.age.value;
-    const city = form.city.value || 'Not specified';
+    const country = form.country ? form.country.value : '';
+    const cityRaw = form.city.value || '';
+    const city = [cityRaw, country].filter(Boolean).join(', ') || 'Not specified';
 
     btn.textContent = 'Booking...';
     btn.disabled = true;
@@ -1445,6 +1448,14 @@ ta: {
 
     updateAnalysis(fen, lastMoveObj) {
       this._updateMoveCounter();
+      // Highlight the move just played on the analysis board (teal "Last move")
+      if (window.CK && CK.boardFx) {
+        if (lastMoveObj && lastMoveObj.from) {
+          CK.boardFx.highlightLastMove(this._activeBoardId, lastMoveObj.from, lastMoveObj.to, { variant: 'review', san: lastMoveObj.san });
+        } else {
+          CK.boardFx.clear(this._activeBoardId);
+        }
+      }
       // Real engine evaluation — async overlay from Lichess Cloud Analysis & Stockfish WASM
       if (fen && window.CK && CK.engine) {
         document.querySelectorAll('.labEvalText').forEach(el => {

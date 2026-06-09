@@ -2067,8 +2067,141 @@ CK.arcade = (() => {
     _bsStartSpawning();
   };
 
-  // Keep King's Escape entry point working (just redirects to bottle shooter)
-  ARC.startKingEscapeGame = ARC.startBottleShooter;
+  /* ==========================================================
+     KING'S ESCAPE — White King flees a roaming Black Queen to
+     the back rank (rank 8). A real, on-brand chess minigame
+     (was previously aliased to the off-brand bottle shooter).
+     ========================================================== */
+  const _keFiles = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+  const _keSq = (f, r) => _keFiles[f] + (r + 1);            // f,r are 0..7 (r=0 → rank 1)
+  const _keFr = (sq) => [_keFiles.indexOf(sq[0]), parseInt(sq[1], 10) - 1];
+
+  function _keNewRound() {
+    const kf = 3 + Math.floor(Math.random() * 2);           // King on d1 / e1
+    const kingPos = _keSq(kf, 0);
+    // Queen guards near the goal (rank 7), random file — the king must slip past.
+    // Higher levels: occasionally she patrols a rank lower to cut off escapes.
+    const qRank = 6 - (level >= 3 ? Math.floor(Math.random() * 2) : 0);
+    let qf = Math.floor(Math.random() * 8);
+    if (Math.abs(qf - kf) < 2) qf = (qf + 4) % 8;            // don't start right above the king
+    state = { kingPos, queenPos: _keSq(qf, qRank), moves: 0, level };
+  }
+
+  function _keKingMoves(kingPos, queenPos) {
+    const [kf, kr] = _keFr(kingPos);
+    const out = [];
+    for (let df = -1; df <= 1; df++) for (let dr = -1; dr <= 1; dr++) {
+      if (!df && !dr) continue;
+      const nf = kf + df, nr = kr + dr;
+      if (nf < 0 || nf > 7 || nr < 0 || nr > 7) continue;
+      const s = _keSq(nf, nr);
+      if (s === queenPos) continue;                          // can't step onto the queen
+      out.push(s);
+    }
+    return out;
+  }
+
+  // Queen chases one step toward the king (greedy king-style move → fair & winnable).
+  function _keQueenChase(queenPos, kingPos) {
+    const [qf, qr] = _keFr(queenPos), [kf, kr] = _keFr(kingPos);
+    return _keSq(qf + Math.sign(kf - qf), qr + Math.sign(kr - qr));
+  }
+
+  ARC.startKingEscapeGame = () => {
+    currentGameType = 'escape';
+    score = 0;
+    level = 1;
+    _keNewRound();
+    showOverlay();
+    renderKingEscape();
+  };
+
+  function renderKingEscape() {
+    const content = document.getElementById('arcade-cabinet-content');
+    if (!content) return;
+    const ranksTop = ['8', '7', '6', '5', '4', '3', '2', '1'];
+    const moves = _keKingMoves(state.kingPos, state.queenPos);
+
+    let boardHTML = '';
+    ranksTop.forEach(rank => {
+      _keFiles.forEach(file => {
+        const sq = file + rank;
+        const isDark = (_keFiles.indexOf(file) + ranksTop.indexOf(rank)) % 2 !== 0;
+        const isKing = state.kingPos === sq;
+        const isQueen = state.queenPos === sq;
+        const isMove = moves.includes(sq);
+        const isGoal = rank === '8';
+        let inner = '';
+        if (isKing) inner = '<img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/wk.png" style="width:82%;height:82%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 0 8px rgba(255,255,255,0.7));">';
+        else if (isQueen) inner = '<img src="https://images.chesscomfiles.com/chess-themes/pieces/neo/150/bq.png" style="width:82%;height:82%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 0 9px rgba(239,68,68,0.85));">';
+        const goalStyle = isGoal && !isKing && !isQueen ? 'box-shadow:inset 0 0 0 2px rgba(245,158,11,0.55);' : '';
+        boardHTML += `<div class="arcade-sq ${isDark ? 'dark' : 'light'} ${isMove ? 'valid-dest' : ''}" data-sq="${sq}" style="${goalStyle}">${inner ? `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">${inner}</div>` : ''}</div>`;
+      });
+    });
+
+    content.innerHTML = `
+      <div class="arcade-header">
+        <div class="arcade-title-area">
+          <span class="arcade-game-icon">🏃‍♂️</span>
+          <div class="arcade-title">King's <span>Escape</span></div>
+        </div>
+        <button class="arcade-exit-btn" onclick="CK.arcade.exitGame()">✕ Exit Arcade</button>
+      </div>
+      <div class="arcade-main">
+        <div class="arcade-play-area">
+          <div class="arcade-board-wrap"><div class="arcade-board" id="kingescape-board">${boardHTML}</div></div>
+        </div>
+        <div class="arcade-dashboard">
+          <div class="arcade-hud-card">
+            <div class="arcade-game-title">Flee to the back rank!</div>
+            <p class="arcade-game-desc">Move your White King (green squares) to <b style="color:#f59e0b">rank 8</b> at the top. The Black Queen chases one step each turn — juke sideways to slip past her!</p>
+            <div class="arcade-stats-row">
+              <div class="arcade-stat-box"><div class="arcade-stat-label">Level</div><div class="arcade-stat-val">${state.level}</div></div>
+              <div class="arcade-stat-box"><div class="arcade-stat-label">Score</div><div class="arcade-stat-val">${score}</div></div>
+              <div class="arcade-stat-box"><div class="arcade-stat-label">Moves</div><div class="arcade-stat-val">${state.moves}</div></div>
+            </div>
+          </div>
+          <div class="arcade-btn-group">
+            <button class="arcade-action-btn primary" onclick="window.CK.arcade.startKingEscapeGame()">Restart</button>
+          </div>
+        </div>
+      </div>`;
+
+    // No safe move left → caught
+    if (!moves.length) {
+      setTimeout(() => gameComplete('escape', score, 'Cornered!', `The Black Queen boxed in your King at level ${state.level}. Final score: ${score}. Keep more open space next time!`, 'CK.arcade.startKingEscapeGame()'), 500);
+      return;
+    }
+
+    document.querySelectorAll('#kingescape-board .arcade-sq').forEach(cell => {
+      const dest = cell.getAttribute('data-sq');
+      if (!moves.includes(dest)) return;
+      cell.addEventListener('click', () => {
+        if (state.locked) return;                            // ignore clicks during transitions
+        state.kingPos = dest;
+        state.moves++;
+        if (_keFr(dest)[1] === 7) {                          // reached rank 8 → round cleared
+          score += Math.max(60, 180 - state.moves * 5);
+          level++;
+          state.locked = true;
+          if (typeof playSFX === 'function') playSFX('win');
+          renderKingEscape();                                // show the King safe on rank 8
+          setTimeout(() => { _keNewRound(); renderKingEscape(); }, 750);
+          return;
+        }
+        const qNext = _keQueenChase(state.queenPos, state.kingPos);
+        state.queenPos = qNext;
+        if (typeof playSFX === 'function') playSFX('select');
+        if (qNext === state.kingPos) {                       // queen captured the king
+          state.locked = true;
+          renderKingEscape();
+          setTimeout(() => gameComplete('escape', score, 'King Captured!', `The Black Queen caught your King at level ${state.level} after ${state.moves} moves. Final score: ${score}. Slip past her on the flank next time!`, 'CK.arcade.startKingEscapeGame()'), 550);
+          return;
+        }
+        renderKingEscape();
+      });
+    });
+  }
 
   function _bsSpawnRate() {
     // ms between spawns — faster at higher levels

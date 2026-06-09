@@ -160,7 +160,14 @@ CK.student = {
         CK.schedulePro.renderStudentSchedule('studentScheduleList', this.userProfile);
       }
     }
-    if (targetPanelId === 'puzzles' && CK.puzzlesPro) CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', this.userProfile?.id, this.userProfile?.full_name);
+    if (targetPanelId === 'puzzles') {
+      // Hydrate previously-solved puzzles from the DB so solved badges + the
+      // "Completed X/Y" stat survive a page reload (was resetting every session).
+      this._hydrateSolvedPuzzles().then(() => {
+        this.renderPuzzlesList();
+        if (CK.puzzlesPro) CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', this.userProfile?.id, this.userProfile?.full_name);
+      });
+    }
     if (targetPanelId === 'vault') this.renderReplayVault();
     if (targetPanelId === 'openings' && CK.openingTrainer) { CK.openingTrainer.renderOpeningList('otGrid', this.userProfile?.id, 'all'); CK.openingTrainer.renderMasteryOverview('otMasteryOverview', this.userProfile?.id); }
     if (targetPanelId === 'games' && CK.gameTracker) { CK.gameTracker.renderStatsBanner('gtStatsBanner', this.userProfile?.id); CK.gameTracker.renderSubmitForm('gtSubmitForm', this.userProfile?.id); CK.gameTracker.renderGameList('gtGameList', this.userProfile?.id); }
@@ -196,8 +203,12 @@ CK.student = {
       tournaments: 'Tournaments',
       myrank: 'My Rank & XP',
       studyplan: 'AI Study Plan',
-      classroom: 'My Classroom'
+      classroom: 'My Classroom',
+      homework: 'My Homework'
     };
+    if (targetPanelId === 'homework' && window.CK && CK.classroom && CK.classroom.renderStudentHomeworkSection) {
+      CK.classroom.renderStudentHomeworkSection('studentHomeworkSection');
+    }
     const titleEl = document.getElementById('studentPanelTitle');
     if (titleEl) titleEl.innerText = titles[panelId] || 'Dashboard';
   },
@@ -471,8 +482,26 @@ CK.student = {
   },
 
 
+  _subDocsRealtime() {
+    if (this._docsRtSubbed) return;
+    if (!window.supabaseClient || !window.supabaseClient.channel) return;
+    this._docsRtSubbed = true;
+    try {
+      window.supabaseClient.channel('ck_student_docs_rt')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'document' }, () => {
+          const panel = document.getElementById('student-panel-resources');
+          if (panel && panel.classList.contains('active')) {
+            if (this._activeResourceTab === 'assignments') this.renderAssignedResources();
+            CK.showToast && CK.showToast('📚 New learning resource from your coach!', 'info');
+          }
+        })
+        .subscribe();
+    } catch (e) {}
+  },
+
   async renderResources() {
     if (!this._activeResourceTab) this._activeResourceTab = 'elibrary';
+    this._subDocsRealtime();
     const list = document.getElementById('studentResourcesList');
     if (list && !document.getElementById('studentELibrarySection')) {
       // Build the tabbed scaffold once (E-Library / Video Academy / Coach Assignments).
@@ -728,26 +757,54 @@ CK.student = {
     if (modal) modal.style.display = 'none';
   },
 
+  /* Use the real 60-puzzle chess.com-style set from puzzles-pro.js (CC0 Lichess
+     themed tactics with FULL multi-move solutions), not the 7 fake puzzles. */
+  _pzList() {
+    const pro = (window.CK && CK.puzzlesPro && CK.puzzlesPro.PUZZLES) || [];
+    if (!pro.length) return this.puzzlesDb;
+    return pro.map(p => ({
+      id: p.id, title: p.title, type: (p.theme || 'tactics').replace(/_/g, ' '),
+      diff: p.rating < 900 ? 'Easy' : p.rating < 1100 ? 'Medium' : 'Hard',
+      rating: p.rating, fen: p.fen, moves: p.moves || [], hint: p.hint || ''
+    }));
+  },
+
+  /* Load this student's solved puzzles from puzzle_scores into the in-memory
+     set, so solved state + stats persist across reloads. */
+  async _hydrateSolvedPuzzles() {
+    try {
+      const sid = this.userProfile?.id || this.userProfile?.userid;
+      const name = this.userProfile?.full_name;
+      if (!sid && !name) return;
+      const scores = (await CK.db.getPuzzleScores()) || [];
+      scores.forEach(s => {
+        if (s.solved && (s.userId === sid || s.userId === this.userProfile?.userid || (name && s.userName === name))) {
+          this._solvedPuzzles.add(s.puzzleId);
+        }
+      });
+    } catch (e) { /* offline → keep session set */ }
+  },
+
   renderPuzzlesList() {
     const container = document.getElementById('puzzlesListPanel');
     if (!container) return;
+    const list = this._pzList();
     const diffColor = { Easy: 'p-badge-green', Medium: 'p-badge-yellow', Hard: 'p-badge-red' };
-    container.innerHTML = this.puzzlesDb.map(p => {
+    container.innerHTML = list.map(p => {
       const solved = this._solvedPuzzles.has(p.id);
       return `
         <div class="p-puzzle-card ${this.activePuzzleId === p.id ? 'active' : ''}" onclick="CK.student.loadPuzzle('${p.id}')">
-          <div class="p-puzzle-icon">${solved ? '' : ''}</div>
+          <div class="p-puzzle-icon">${solved ? '✓' : '🧩'}</div>
           <div class="p-puzzle-info">
             <div class="p-puzzle-title">${p.title}</div>
-            <div class="p-puzzle-sub">${p.type}  <span class="p-badge ${diffColor[p.diff] || 'p-badge-blue'}" style="font-size:0.7rem; padding:1px 6px;">${p.diff}</span></div>
+            <div class="p-puzzle-sub">${p.type} · ⭐${p.rating} · <span class="p-badge ${diffColor[p.diff] || 'p-badge-blue'}" style="font-size:0.7rem; padding:1px 6px;">${p.diff}</span></div>
           </div>
           <button class="p-btn ${solved ? 'p-btn-ghost' : 'p-btn-gold'} p-btn-sm">${solved ? 'Redo' : 'Solve'}</button>
         </div>`;
     }).join('');
 
-    // Update stats bar
     const pzSolvedEl = document.getElementById('pzStatSolved');
-    if (pzSolvedEl) pzSolvedEl.textContent = `${this._solvedPuzzles.size}/${this.puzzlesDb.length}`;
+    if (pzSolvedEl) pzSolvedEl.textContent = `${this._solvedPuzzles.size}/${list.length}`;
     const pzStarEl = document.getElementById('pzStatStars');
     if (pzStarEl && this.userProfile) pzStarEl.textContent = `${this.userProfile.star || 0}/5`;
   },
@@ -757,32 +814,46 @@ CK.student = {
     setTimeout(() => this.loadPuzzle(id), 80);
   },
 
+  /* Highlight the last move's from/to squares so the student can SEE where the
+     opponent (or they themselves) just moved. Pure DOM — no chessboard.js hook. */
+  _pzHighlight(from, to) {
+    const wrap = document.getElementById('studentPuzzleBoardContainer');
+    if (!wrap) return;
+    wrap.querySelectorAll('.pz-hl-from, .pz-hl-to').forEach(el => el.classList.remove('pz-hl-from', 'pz-hl-to'));
+    if (!from || !to) return;
+    const f = wrap.querySelector('[data-square="' + from + '"]'); if (f) f.classList.add('pz-hl-from');
+    const t = wrap.querySelector('[data-square="' + to + '"]'); if (t) t.classList.add('pz-hl-to');
+  },
+
   loadPuzzle(id) {
-    const p = this.puzzlesDb.find(x => x.id === id);
+    const p = this._pzList().find(x => x.id === id);
     if (!p) return;
-
+    if (!p.fen || !Array.isArray(p.moves) || !p.moves.length) {
+      CK.showToast('This puzzle is missing data — pick another.', 'warning'); return;
+    }
     this.activePuzzleId = id;
+    this._activePuzzle = p;
+    this._pzMoveIdx = 0;
+    this._puzzleSeconds = 0;
+    this._puzzleMistakes = 0;
+    this._pzAwaiting = false;
 
-    // Show active area, hide placeholder
     const placeholder = document.getElementById('pzPlaceholder');
     const activeArea = document.getElementById('pzActiveArea');
     if (placeholder) placeholder.style.display = 'none';
     if (activeArea) activeArea.style.display = 'flex';
 
-    // Highlight active puzzle in list
     document.querySelectorAll('#puzzlesListPanel .p-puzzle-card').forEach(el => el.classList.remove('active'));
-    const matchEl = [...document.querySelectorAll('#puzzlesListPanel .p-puzzle-card')].find(el => el.onclick && el.getAttribute('onclick') && el.getAttribute('onclick').includes(id));
+    const matchEl = [...document.querySelectorAll('#puzzlesListPanel .p-puzzle-card')].find(el => el.getAttribute('onclick') && el.getAttribute('onclick').includes(id));
     if (matchEl) matchEl.classList.add('active');
 
-    // Update title
     const titleEl = document.getElementById('puzzleTitle');
     if (titleEl) titleEl.textContent = p.title;
 
-    // Update instructions
     const instrEl = document.getElementById('puzzleInstructions');
     if (instrEl) instrEl.innerHTML = `
-      <span class="p-badge ${p.diff === 'Easy' ? 'p-badge-green' : p.diff === 'Hard' ? 'p-badge-red' : 'p-badge-yellow'}" style="font-size:0.72rem; padding:2px 8px;">${p.type}  ${p.diff}</span>
-      <p style="margin:8px 0 0; color:rgba(255,255,255,0.7);">${p.instruction}</p>
+      <span class="p-badge ${p.diff === 'Easy' ? 'p-badge-green' : p.diff === 'Hard' ? 'p-badge-red' : 'p-badge-yellow'}" style="font-size:0.72rem; padding:2px 8px;">${p.type} · ${p.diff} · ⭐${p.rating}</span>
+      <p style="margin:8px 0 0; color:rgba(255,255,255,0.78);">Drag a piece to make the best move. The opponent will reply automatically.</p>
     `;
 
     // Hide previous feedback
@@ -792,132 +863,173 @@ CK.student = {
     // Start puzzle timer
     this.startPuzzleTimer();
 
-    // Render board with Chessboard.js (chess.com neo pieces via CDN)
+    // Build position: play the setup move (moves[0]) so the student solves from
+    // index 1 — exactly how Lichess/Chess.com puzzle trainers work.
     const boardEl = document.getElementById('studentPuzzleBoardContainer');
     if (!boardEl) return;
+    this._pzGame = new Chess(p.fen);
+    const setup = p.moves[0];
+    if (setup) {
+      this._pzGame.move({ from: setup.slice(0, 2), to: setup.slice(2, 4), promotion: setup[4] || 'q' });
+      this._pzMoveIdx = 1;
+    }
+    const orientation = this._pzGame.turn() === 'w' ? 'white' : 'black';
+    const instrEl2 = document.getElementById('puzzleInstructions');
+    if (instrEl2) instrEl2.insertAdjacentHTML('beforeend',
+      `<div class="pz-tomove"><span class="pz-tomove-dot ${orientation}"></span>${orientation === 'white' ? 'White' : 'Black'} to move — your turn</div>`);
 
-    this._puzzleFen = p.fen || 'start';
-    this._pzGame = new Chess(this._puzzleFen);
-    const pzBoardTarget = 'studentPuzzleBoard';
-    if (this._pzBoardInstance) { try { this._pzBoardInstance.destroy(); } catch(_) {} this._pzBoardInstance = null; }
-    boardEl.innerHTML = '<div id="' + pzBoardTarget + '" style="width:100%;max-width:420px;margin:0 auto;"></div>';
-    requestAnimationFrame(() => {
-      this._pzBoardInstance = Chessboard(pzBoardTarget, {
-        pieceTheme: function (piece) {
-          return 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + piece.toLowerCase() + '.png';
-        },
+    const target = 'studentPuzzleBoard';
+    if (this._pzBoardInstance) { try { this._pzBoardInstance.destroy(); } catch (_) {} this._pzBoardInstance = null; }
+    boardEl.innerHTML = '<div id="' + target + '" style="width:100%;max-width:440px;margin:0 auto;"></div>';
+    const self = this;
+    const mk = () => {
+      const el = document.getElementById(target);
+      if (!el || el.getBoundingClientRect().width < 20) { requestAnimationFrame(mk); return; }
+      self._pzBoardInstance = Chessboard(target, {
+        pieceTheme: (pc) => 'https://images.chesscomfiles.com/chess-themes/pieces/neo/150/' + pc.toLowerCase() + '.png',
+        position: self._pzGame.fen(),
+        orientation,
         draggable: true,
-        onDrop: function(source, target, piece) {
-          const stu = CK.student;
-          if (!stu || !stu._pzGame) return 'snapback';
-          const game = stu._pzGame;
-          const promotion = piece && piece.type === 'p' && target.charAt(1) === '8' ? 'q' : undefined;
-          const move = game.move({ from: source, to: target, promotion: promotion });
-          if (!move) return 'snapback';
-          const p = stu.puzzlesDb.find(x => x.id === stu.activePuzzleId);
-          if (!p) return;
-          if (target === p.solution) {
-            stu.stopPuzzleTimer();
-            const xp = stu.getXPForPuzzle(p.diff, stu._puzzleSeconds, stu._puzzleMistakes);
-            stu._puzzleXP += xp;
-            stu.showXPPopup(xp);
-            CK.showToast(' Brilliant! +' + xp + ' XP earned!', 'success');
-            stu._solvedPuzzles.add(p.id);
-            stu._srs.record(p.id, true);
-            stu._trackDailyGoal('puzzles');
-            stu.renderSRSQueue();
-            const fb = document.getElementById('puzzleFeedback');
-            if (fb) {
-              fb.style.display = 'block';
-              fb.className = 'pz-feedback success';
-              fb.innerHTML = ' <strong>' + (CK.esc ? CK.esc(p.title || '') : (p.title || '')) + ' solved!</strong><br><span style="font-size:0.85rem;opacity:0.85;">' + (CK.esc ? CK.esc(p.desc || '') : (p.desc || '')) + '</span>';
-            }
-            stu.userProfile.puzzle = (parseInt(stu.userProfile.puzzle) || 0) + 1;
-            if ((stu.userProfile.star || 0) < 5) {
-              stu.userProfile.star = (parseInt(stu.userProfile.star) || 0) + 1;
-            }
-            CK.db.saveProfile(stu.userProfile).then(function() {
-              CK.db.savePuzzleScore({
-                id: Date.now().toString(36) + Math.random().toString(36).slice(2),
-                userId: stu.userProfile.id || stu.userProfile.userid,
-                userName: stu.userProfile.full_name || '',
-                puzzleId: p.id,
-                solved: true,
-                time: stu._puzzleSeconds,
-                mistakes: stu._puzzleMistakes,
-                xp: xp,
-                date: new Date().toISOString()
-              }).then(function() {
-                stu.updateProfile();
-                stu.renderDashboard();
-                stu.renderPuzzlesList();
-                stu.renderAchievementsTab();
-              });
-            });
-            setTimeout(function() {
-              if (stu._pzBoardInstance) {
-                stu._pzBoardInstance.position(game.fen(), true);
-              }
-            }, 10);
-            setTimeout(function() { stu.nextPuzzle(); }, 3000);
-          } else {
-            stu._puzzleMistakes++;
-            stu._srs.record(p.id, false);
-            CK.showToast(' Not quite — try again!', 'warning');
-            const fb2 = document.getElementById('puzzleFeedback');
-            if (fb2) {
-              fb2.style.display = 'block';
-              fb2.className = 'pz-feedback error';
-              fb2.textContent = ' Incorrect square. Think carefully — look for the move that forces an immediate decisive result.';
-            }
-            game.undo();
-            if (stu._pzBoardInstance) {
-              stu._pzBoardInstance.position(game.fen(), true);
-            }
-          }
-        }
+        onDrop: (src, tgt) => self._pzOnDrop(src, tgt),
+        onSnapEnd: () => { if (self._pzBoardInstance) self._pzBoardInstance.position(self._pzGame.fen()); }
       });
-    });
+      // Indicate the opponent's setup move so the student sees what just happened.
+      if (setup) setTimeout(() => self._pzHighlight(setup.slice(0, 2), setup.slice(2, 4)), 60);
+    };
+    requestAnimationFrame(() => requestAnimationFrame(mk));
+  },
+
+  /* Professional multi-move solve: validate the player's move against the
+     solution line; correct → auto-play the opponent's reply (highlighted) and
+     continue; wrong → snap back, count a mistake. */
+  _pzOnDrop(source, target) {
+    if (this._pzAwaiting) return 'snapback';
+    const p = this._activePuzzle, g = this._pzGame;
+    if (!p || !g) return 'snapback';
+    const move = g.move({ from: source, to: target, promotion: 'q' });
+    if (!move) return 'snapback';
+    const expected = p.moves[this._pzMoveIdx] || '';
+    if (move.from === expected.slice(0, 2) && move.to === expected.slice(2, 4)) {
+      this._pzMoveIdx++;
+      this._pzHighlight(move.from, move.to);
+      setTimeout(() => { if (this._pzBoardInstance) this._pzBoardInstance.position(g.fen(), true); }, 10);
+      if (this._pzMoveIdx >= p.moves.length) { this._pzSolved(p); return; }
+      // opponent replies
+      this._pzAwaiting = true;
+      this._pzFeedback('success', '✓ Correct! Keep going…');
+      setTimeout(() => {
+        const opp = p.moves[this._pzMoveIdx];
+        if (opp) {
+          const om = g.move({ from: opp.slice(0, 2), to: opp.slice(2, 4), promotion: opp[4] || 'q' });
+          this._pzMoveIdx++;
+          if (this._pzBoardInstance) this._pzBoardInstance.position(g.fen(), true);
+          if (om) setTimeout(() => this._pzHighlight(om.from, om.to), 130);
+        }
+        this._pzAwaiting = false;
+      }, 480);
+    } else {
+      this._puzzleMistakes++;
+      if (this._srs) this._srs.record(p.id, false);
+      g.undo();
+      setTimeout(() => { if (this._pzBoardInstance) this._pzBoardInstance.position(g.fen(), false); }, 10);
+      this._pzFeedback('error', '✗ Not the best move — look for a more forcing one and try again.');
+      return 'snapback';
+    }
+  },
+
+  _pzFeedback(kind, msg) {
+    const fb = document.getElementById('puzzleFeedback');
+    if (!fb) return;
+    fb.style.display = 'block';
+    fb.className = 'pz-feedback ' + (kind === 'success' ? 'success' : kind === 'error' ? 'error' : 'hint');
+    fb.innerHTML = msg;
+  },
+
+  /* A burst of confetti over the puzzle board — makes solving feel rewarding. */
+  _pzCelebrate(perfect) {
+    try {
+      const host = document.getElementById('studentPuzzleBoardContainer') || document.body;
+      const rect = host.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2, cy = rect.top + Math.max(40, rect.height / 2);
+      const colors = ['#f59e0b', '#22c55e', '#3b82f6', '#ef4444', '#a855f7', '#14b8a6', '#fde047'];
+      const layer = document.createElement('div');
+      layer.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:99999;overflow:hidden;';
+      document.body.appendChild(layer);
+      const n = perfect ? 64 : 38;
+      for (let i = 0; i < n; i++) {
+        const d = document.createElement('div');
+        const size = 6 + Math.random() * 9;
+        d.style.cssText = `position:absolute;left:${cx}px;top:${cy}px;width:${size}px;height:${size}px;background:${colors[i % colors.length]};border-radius:${Math.random() < 0.5 ? '50%' : '2px'};`;
+        layer.appendChild(d);
+        const ang = Math.random() * Math.PI * 2, dist = 90 + Math.random() * 230;
+        const tx = Math.cos(ang) * dist, ty = Math.sin(ang) * dist + 140;
+        if (d.animate) d.animate([
+          { transform: 'translate(0,0) rotate(0)', opacity: 1 },
+          { transform: `translate(${tx}px,${ty}px) rotate(${Math.random() * 720 - 360}deg)`, opacity: 0 }
+        ], { duration: 900 + Math.random() * 800, easing: 'cubic-bezier(.2,.7,.3,1)' });
+      }
+      setTimeout(() => layer.remove(), 1900);
+    } catch (e) {}
+  },
+
+  _pzSolved(p) {
+    if (this.stopPuzzleTimer) this.stopPuzzleTimer();
+    const xp = this.getXPForPuzzle ? this.getXPForPuzzle(p.diff, this._puzzleSeconds, this._puzzleMistakes) : 30;
+    this._puzzleXP = (this._puzzleXP || 0) + xp;
+    if (this.showXPPopup) this.showXPPopup(xp);
+    const perfect = (this._puzzleMistakes || 0) === 0;
+    this._pzStreak = perfect ? (this._pzStreak || 0) + 1 : 0;
+    this._pzCelebrate(perfect);
+    const praise = perfect
+      ? (this._pzStreak >= 5 ? '🏆 Unstoppable!' : this._pzStreak >= 3 ? '🔥 On fire!' : '🌟 Perfect!')
+      : '🎉 Solved!';
+    CK.showToast(`${praise} +${xp} XP${this._pzStreak >= 2 ? ' · 🔥 ' + this._pzStreak + ' in a row' : ''}`, 'success');
+    this._solvedPuzzles.add(p.id);
+    if (this._srs) this._srs.record(p.id, true);
+    if (this._trackDailyGoal) this._trackDailyGoal('puzzles');
+    if (this.renderSRSQueue) this.renderSRSQueue();
+    this._pzFeedback('success', `${perfect ? '⭐ <strong>Perfect solve!</strong>' : '🎉 <strong>Solved!</strong>'} “${CK.esc ? CK.esc(p.title) : p.title}” · +${xp} XP · ${this._puzzleMistakes} mistake${this._puzzleMistakes === 1 ? '' : 's'}${this._pzStreak >= 2 ? ` · 🔥 <strong>${this._pzStreak} perfect in a row!</strong>` : ''}`);
+    if (this.userProfile) {
+      this.userProfile.puzzle = (parseInt(this.userProfile.puzzle) || 0) + 1;
+      if ((this.userProfile.star || 0) < 5) this.userProfile.star = (parseInt(this.userProfile.star) || 0) + 1;
+      const sid = this.userProfile.id || this.userProfile.userid;
+      CK.db.saveProfile(this.userProfile).then(() => {
+        CK.db.savePuzzleScore({ id: Date.now().toString(36) + Math.random().toString(36).slice(2), userId: sid, userName: this.userProfile.full_name || '', puzzleId: p.id, solved: true, time: this._puzzleSeconds, mistakes: this._puzzleMistakes, xp, date: new Date().toISOString() })
+          .then(() => { if (this.updateProfile) this.updateProfile(); this.renderPuzzlesList(); });
+      });
+    }
+    setTimeout(() => { if (this.activePuzzleId === p.id) this.nextPuzzle(); }, 2600);
   },
 
   showPuzzleHint() {
-    const p = this.puzzlesDb.find(x => x.id === this.activePuzzleId);
+    const p = this._activePuzzle;
     if (!p) return;
-    const fb = document.getElementById('puzzleFeedback');
-    if (!fb) return;
-    const hints = {
-      P1: ' Hint: Your rook can slide all the way up the d-file to the back rank!',
-      P2: ' Hint: Your knight jumps in an L-shape. Look for a square that attacks both the king and rook.',
-      P3: ' Hint: The black king is trapped in the corner by its own pieces. A knight jump can end the game!',
-      P4: ' Hint: Your queen and the enemy rook share the h-file. Slide straight up for a free piece!',
-      P5: ' Hint: Find the one square where your knight attacks BOTH the black king and rook at the same time!',
-      P6: ' Hint: The black rook on c3 is pinned along the diagonal to the king  it cannot move. Simply capture it!',
-      P7: ' Hint: Your pawn is on e7, one step from queening. Push it all the way to e8!'
-    };
-    fb.style.display = 'block';
-    fb.className = 'pz-feedback hint';
-    fb.textContent = hints[p.id] || ' Look for forcing moves  checks, captures, and threats!';
+    // Theme hint + a square nudge: highlight the from-square of the next correct move.
+    const next = (p.moves && p.moves[this._pzMoveIdx]) || '';
+    if (next) this._pzHighlight(next.slice(0, 2), null);
+    this._pzFeedback('hint', '💡 ' + (p.hint || 'Look for forcing moves — checks, captures, and threats.') + (next ? ' <em>(the glowing square is your piece to move)</em>' : ''));
   },
 
   showPuzzleSolution() {
-    const p = this.puzzlesDb.find(x => x.id === this.activePuzzleId);
+    const p = this._activePuzzle;
     if (!p) return;
-    const fb = document.getElementById('puzzleFeedback');
-    if (!fb) return;
-    fb.style.display = 'block';
-    fb.className = 'pz-feedback hint';
-     fb.innerHTML = `<strong>Solution:</strong> Click square <strong>${p?.solution?.toUpperCase() || p.solution}</strong>. ` + (CK.esc ? CK.esc(p.desc || '') : (p.desc || ''));
-
-
+    const next = (p.moves && p.moves[this._pzMoveIdx]) || '';
+    if (!next) { this._pzFeedback('hint', 'No further moves — the puzzle is complete.'); return; }
+    this._pzHighlight(next.slice(0, 2), next.slice(2, 4));
+    this._pzFeedback('hint', `<strong>Solution:</strong> play <strong>${next.slice(0, 2)} → ${next.slice(2, 4)}</strong>. ${p.hint || ''}`);
   },
 
   nextPuzzle() {
-    const idx = this.puzzlesDb.findIndex(x => x.id === this.activePuzzleId);
-    const next = this.puzzlesDb[idx + 1];
-    if (next) {
+    const list = this._pzList();
+    // Prefer the next UNSOLVED puzzle; fall back to the next in order.
+    const idx = list.findIndex(x => x.id === this.activePuzzleId);
+    let next = list.slice(idx + 1).find(x => !this._solvedPuzzles.has(x.id))
+            || list.find(x => !this._solvedPuzzles.has(x.id))
+            || list[idx + 1];
+    if (next && next.id !== this.activePuzzleId) {
       this.loadPuzzle(next.id);
     } else {
-      CK.showToast(' All puzzles completed! Great work!', 'success');
+      CK.showToast('🏆 You have solved every puzzle — outstanding!', 'success');
     }
   },
 
@@ -1881,7 +1993,7 @@ CK.student = {
           <!-- Header Section -->
           <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 40px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 20px;">
             <div style="display:flex; align-items:center; gap: 20px;">
-              <div style="width: 70px; height: 70px; border-radius: 16px; background: linear-gradient(135deg, var(--p-gold), #d97706); display:flex; align-items:center; justify-content:center; font-size: 2.5rem; box-shadow: 0 8px 16px rgba(232,184,75,0.3);"></div>
+              <div style="width: 70px; height: 70px; border-radius: 16px; background: linear-gradient(135deg, var(--p-gold), #d97706); display:flex; align-items:center; justify-content:center; font-size: 2.5rem; box-shadow: 0 8px 16px rgba(232,184,75,0.3);">♔</div>
               <div>
                 <h1 style="margin:0; font-size:2rem; font-family:var(--font-display); color:#fff; letter-spacing:-0.5px;">Performance Analytics</h1>
                 <div style="color:var(--p-text-muted); font-size: 0.95rem;">ChessKidoo Official Academic Report</div>
@@ -1889,28 +2001,28 @@ CK.student = {
             </div>
             <div style="text-align:right;">
               <div style="font-size:0.8rem; color:var(--p-text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Term</div>
-              <div style="font-weight:700; color:var(--p-teal); font-size:1.1rem; background: rgba(0,201,167,0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0,201,167,0.3);">Summer 2026</div>
+              <div style="font-weight:700; color:var(--p-teal); font-size:1.1rem; background: rgba(0,201,167,0.1); padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0,201,167,0.3);">${new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</div>
             </div>
           </div>
 
           <!-- Student Meta Profile -->
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px;">
             <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; display:flex; align-items:center; gap: 16px;">
-              <div style="width:50px; height:50px; border-radius:50%; background:var(--p-surface2); display:flex; align-items:center; justify-content:center; font-size:1.5rem;"></div>
+              <div style="width:50px; height:50px; border-radius:50%; background:var(--p-surface2); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">👤</div>
               <div>
                 <div style="font-size:0.75rem; color:var(--p-text-muted); text-transform:uppercase; letter-spacing:1px;">Athlete</div>
                 <div style="font-size:1.1rem; font-weight:700; color:#fff;">${_e(p.full_name || '')}</div>
               </div>
             </div>
             <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; display:flex; align-items:center; gap: 16px;">
-              <div style="width:50px; height:50px; border-radius:50%; background:var(--p-surface2); display:flex; align-items:center; justify-content:center; font-size:1.5rem;"></div>
+              <div style="width:50px; height:50px; border-radius:50%; background:var(--p-surface2); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">🏆</div>
               <div>
                 <div style="font-size:0.75rem; color:var(--p-text-muted); text-transform:uppercase; letter-spacing:1px;">Division</div>
                 <div style="font-size:1.1rem; font-weight:700; color:var(--p-blue);">${_e(p.level || 'Intermediate')}</div>
               </div>
             </div>
             <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; display:flex; align-items:center; gap: 16px;">
-              <div style="width:50px; height:50px; border-radius:50%; background:var(--p-surface2); display:flex; align-items:center; justify-content:center; font-size:1.5rem;"></div>
+              <div style="width:50px; height:50px; border-radius:50%; background:var(--p-surface2); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">⚡</div>
               <div>
                 <div style="font-size:0.75rem; color:var(--p-text-muted); text-transform:uppercase; letter-spacing:1px;">Peak Rating</div>
                 <div style="font-size:1.4rem; font-weight:900; color:var(--p-gold); font-family:monospace;">${p.rating || 1120}</div>
@@ -1921,16 +2033,16 @@ CK.student = {
           <!-- Subject Analytics Grids -->
           <div style="margin-bottom: 20px;">
             <h3 style="font-size: 1.2rem; color: #fff; margin-bottom: 20px; font-weight: 600; display:flex; align-items:center; gap:8px;">
-              <span style="color:var(--p-gold);"></span> Core Competencies
+              <span style="color:var(--p-gold);">🎯</span> Core Competencies
             </h3>
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
               ${[
-                {name: 'Opening Repertoire', score: rc.opening, icon: ''},
-                {name: 'Middlegame Strategy', score: rc.middlegame, icon: ''},
-                {name: 'Tactical Vision', score: rc.tactics, icon: ''},
-                {name: 'Endgame Technique', score: rc.endgame, icon: ''},
-                {name: 'Time Management', score: rc.time, icon: ''},
-                {name: 'Sportsmanship & Ethics', score: rc.sports, icon: ''}
+                {name: 'Opening Repertoire', score: rc.opening, icon: '♟'},
+                {name: 'Middlegame Strategy', score: rc.middlegame, icon: '♞'},
+                {name: 'Tactical Vision', score: rc.tactics, icon: '⚡'},
+                {name: 'Endgame Technique', score: rc.endgame, icon: '♚'},
+                {name: 'Time Management', score: rc.time, icon: '⏱️'},
+                {name: 'Sportsmanship & Ethics', score: rc.sports, icon: '🤝'}
               ].map(s => `
                 <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.04); padding: 16px; border-radius: 12px; display:flex; align-items:center; gap: 16px; transition: transform 0.2s;">
                   <div style="position:relative; width: 60px; height: 60px;">
@@ -1956,7 +2068,7 @@ CK.student = {
           <div style="background: linear-gradient(180deg, rgba(30,41,59,0.5) 0%, rgba(15,23,42,0.8) 100%); border: 1px solid rgba(255,255,255,0.05); padding: 30px; border-radius: 16px; margin-top: 30px;">
             <div style="display:flex; gap: 30px; flex-wrap: wrap;">
               <div style="flex:2; min-width:300px;">
-                <h3 style="font-size: 1.1rem; color: #fff; margin-bottom: 12px; display:flex; align-items:center; gap:8px;"><span style="color:var(--p-blue);"></span> Coach's Assessment</h3>
+                <h3 style="font-size: 1.1rem; color: #fff; margin-bottom: 12px; display:flex; align-items:center; gap:8px;"><span style="color:var(--p-blue);">💬</span> Coach's Assessment</h3>
                 <p style="color: var(--p-text); font-size: 0.95rem; line-height: 1.7; font-style: italic; opacity: 0.9; margin: 0;">"${rc.remarks}"</p>
                 <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
                   <div style="font-size: 0.8rem; color: var(--p-text-muted); margin-bottom: 10px; text-transform:uppercase; letter-spacing:1px;">Action Plan / Objectives</div>
@@ -2006,6 +2118,39 @@ CK.student = {
     } catch (err) {
       CK.showToast('Failed to export PDF.', 'error');
     }
+  },
+
+  /* Open the report card on its own in a clean, print-ready window so it can
+     be read full-screen, printed, or saved as PDF by the browser. */
+  viewReportCard() {
+    const el = document.getElementById('printableReportCard');
+    if (!el) { CK.showToast('Open the Report Card tab first.', 'warning'); return; }
+    const name = (this.userProfile && this.userProfile.full_name) || 'Student';
+    const win = window.open('', '_blank', 'width=960,height=900');
+    if (!win) { CK.showToast('Allow pop-ups to view the report card.', 'warning'); return; }
+    win.document.write(`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+      <title>ChessKidoo Report Card — ${(CK.esc ? CK.esc(name) : name)}</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        :root{--p-surface:#0f1623;--p-surface2:#1a2333;--p-text:#e8eefc;--p-text-muted:#8aa0c0;
+              --p-gold:#e8b84b;--p-teal:#14b8a6;--p-blue:#5b9cf6;--p-danger:#ef4444;--font-display:'Poppins',sans-serif;}
+        *{box-sizing:border-box;}
+        body{margin:0;background:#070b12;color:var(--p-text);font-family:'Inter',system-ui,sans-serif;padding:28px;}
+        @media print{body{background:#fff;padding:0;}.no-print{display:none;}}
+        .tb{max-width:920px;margin:0 auto 16px;display:flex;gap:10px;justify-content:flex-end;}
+        .tb button{background:var(--p-gold);color:#1a1407;border:none;border-radius:9px;padding:9px 16px;font-weight:700;cursor:pointer;}
+        .tb button.alt{background:var(--p-blue);color:#fff;}
+      </style></head><body>
+      <div class="tb no-print"><button class="alt" onclick="window.print()">🖨 Print / Save as PDF</button><button onclick="window.close()">Close</button></div>
+      ${el.outerHTML}
+      </body></html>`);
+    win.document.close();
+  },
+
+  printReportCard() {
+    // Print just the report card cleanly via the dedicated view window.
+    this.viewReportCard();
+    CK.showToast('Use “Print / Save as PDF” in the report window.', 'info');
   },
 
   renderFeesGateway() {
@@ -2508,6 +2653,17 @@ CK.student = {
     if (!container) return;
 
     container.innerHTML = `
+      <div class="ck-rd-hero">
+        <div class="ck-rd-hero-row">
+          <div class="ck-rd-hero-ic">🏆</div>
+          <div>
+            <div class="ck-rd-hero-title">Tournaments</div>
+            <div class="ck-rd-hero-sub">FIDE, State &amp; District events near you — plus online arenas, auto-synced from Lichess &amp; Chess.com.</div>
+          </div>
+          <div class="ck-rd-hero-spacer"></div>
+          <span class="ck-rd-hero-chip"><span class="ck-rd-pulse"></span> Auto-syncing</span>
+        </div>
+      </div>
       <div class="p-card" style="margin-bottom:20px;">
         <div class="p-card-header" style="display:flex; justify-content:space-between; align-items:center;">
           <div>
@@ -2570,7 +2726,7 @@ CK.student = {
         color: '#5b9cf6', logo: '♞', title: 'Lichess Account', subtitle: 'Sync ratings & import recent games from Lichess.org',
         linked: !!p.lichess_username, heroRating: p.rating, heroLabel: 'Rapid Rating',
         stats: [{label:'Username',val:p.lichess_username},{label:'Rapid',val:p.rating},{label:'Blitz',val:p.lichess_blitz},{label:'Games',val:p.lichess_games},{label:'Title',val:p.lichess_title}],
-        actions: `<button class="la-act" onclick="CK.student.linkLichess('${u(p.lichess_username)}')">↻ Refresh</button><button class="la-act la-act-ghost" onclick="CK.gameTracker&&CK.gameTracker.importFromLichess(CK.currentUser?.id,'${u(p.lichess_username)}')">⬇ Import Games</button>`,
+        actions: `<button class="la-act" onclick="CK.student.linkLichess('${u(p.lichess_username)}')">↻ Refresh</button><button class="la-act la-act-ghost" onclick="CK.gameTracker&&CK.gameTracker.importFromLichess(CK.currentUser?.id,'${u(p.lichess_username)}')">⬇ Import Games</button><button class="la-act la-act-danger" onclick="CK.student.unlinkLichess()">⏏ Unlink</button>`,
         note: 'Link your Lichess account to automatically sync your rating and import games.',
         inputId: 'lichessUsernameInput', placeholder: 'e.g. Magnus2024', linkLabel: 'Link Lichess',
         linkOnclick: "CK.student.linkLichess(document.getElementById('lichessUsernameInput').value.trim())"
@@ -2579,7 +2735,7 @@ CK.student = {
         color: '#7fa650', logo: '♟', title: 'Chess.com Account', subtitle: 'Sync your ratings from Chess.com',
         linked: !!p.chesscom_username, heroRating: p.chesscom_rapid, heroLabel: 'Rapid Rating',
         stats: [{label:'Username',val:p.chesscom_username},{label:'Rapid',val:p.chesscom_rapid},{label:'Blitz',val:p.chesscom_blitz}],
-        actions: `<button class="la-act" onclick="CK.student.linkChesscom('${u(p.chesscom_username)}')">↻ Refresh</button>`,
+        actions: `<button class="la-act" onclick="CK.student.linkChesscom('${u(p.chesscom_username)}')">↻ Refresh</button><button class="la-act la-act-danger" onclick="CK.student.unlinkChesscom()">⏏ Unlink</button>`,
         note: 'Link your Chess.com account to sync your ratings.',
         inputId: 'chesscomUsernameInput', placeholder: 'e.g. Hikaru', linkLabel: 'Link Chess.com',
         linkOnclick: "CK.student.linkChesscom(document.getElementById('chesscomUsernameInput').value.trim())"
@@ -2588,7 +2744,7 @@ CK.student = {
         color: '#e8b84b', logo: '♚', title: 'FIDE Profile', subtitle: 'Show your official international rating',
         linked: !!p.fide_id, heroRating: p.fide_rating, heroLabel: 'Standard Rating',
         stats: [{label:'FIDE ID',val:p.fide_id},{label:'Standard',val:p.fide_rating},{label:'Rapid',val:p.fide_rapid},{label:'Blitz',val:p.fide_blitz},{label:'Title',val:p.fide_title},{label:'Federation',val:p.fide_federation}],
-        actions: `<button class="la-act" onclick="CK.student.linkFide('${u(String(p.fide_id))}')">↻ Refresh</button><a class="la-act la-act-ghost" href="https://ratings.fide.com/profile/${_e(String(p.fide_id))}" target="_blank" rel="noopener" style="text-decoration:none;">↗ View on FIDE</a>`,
+        actions: `<button class="la-act" onclick="CK.student.linkFide('${u(String(p.fide_id))}')">↻ Refresh</button><a class="la-act la-act-ghost" href="https://ratings.fide.com/profile/${_e(String(p.fide_id))}" target="_blank" rel="noopener" style="text-decoration:none;">↗ View on FIDE</a><button class="la-act la-act-danger" onclick="CK.student.unlinkFide()">⏏ Unlink</button>`,
         note: 'Enter your FIDE ID to display your official international rating. Find it at ratings.fide.com.',
         inputId: 'fideIdInput', placeholder: 'e.g. 35027789', linkLabel: 'Link FIDE',
         linkOnclick: "CK.student.linkFide(document.getElementById('fideIdInput').value.trim())"
@@ -2732,6 +2888,34 @@ CK.student = {
       </div>
     `;
   },
+
+  /*  Unlink an external account — clears the stored username/id only,
+      so the user can immediately link a different account. Imported
+      games and cached stats are kept.  */
+  async _unlinkPlatform(fields, label) {
+    if (!this.userProfile) { CK.showToast('You must be logged in.', 'warning'); return; }
+    const ok = (typeof window !== 'undefined' && window.confirm)
+      ? window.confirm(`Unlink your ${label} account?\n\nYou can link a different ${label} username afterwards. Your imported games stay saved.`)
+      : true;
+    if (!ok) return;
+    try {
+      const updates = {};
+      fields.forEach(f => { updates[f] = null; });
+      const merged = { ...this.userProfile, ...updates };
+      await CK.db.saveProfile(merged);
+      this.userProfile = merged;
+      if (CK.currentUser) CK.currentUser = { ...CK.currentUser, ...updates };
+      CK.showToast(`${label} account unlinked. You can link a new one now.`, 'success');
+      this.renderLinkedAccounts();
+      this.updateProfile();
+    } catch (err) {
+      CK.showToast(`Could not unlink ${label}. Please try again.`, 'error');
+    }
+  },
+
+  unlinkLichess()  { return this._unlinkPlatform(['lichess_username'], 'Lichess'); },
+  unlinkChesscom() { return this._unlinkPlatform(['chesscom_username'], 'Chess.com'); },
+  unlinkFide()     { return this._unlinkPlatform(['fide_id'], 'FIDE'); },
 
   /*  Auto-sync Lichess data on login (background, no toast spam)  */
   async _autoSyncLichess() {
