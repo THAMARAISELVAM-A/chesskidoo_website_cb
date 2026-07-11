@@ -1,6 +1,6 @@
 # ChessKidoo Academy
 
-Online management platform for ChessKidoo — Chennai's premier chess academy.
+Online management platform for ChessKidoo — INDIA's premier chess academy.
 Three portals: Admin, Coach, Student/Parent. Built with Vite + Supabase.
 
 ## Stack
