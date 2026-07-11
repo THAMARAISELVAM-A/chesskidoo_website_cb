@@ -5,7 +5,7 @@
  */
 import { supabase } from './supabase.js';
 import { showToast } from './toast.js';
-import { navigate }  from './router.js';
+import { navigate } from './router.js';
 
 const ADMIN_UUID = import.meta.env.VITE_ADMIN_UUID;
 
@@ -42,7 +42,9 @@ export async function signOut() {
  * Used by route guards before mounting a protected page.
  */
 export async function requireAuth() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return null;
 
   return fetchOrCreateProfile(user);
@@ -69,22 +71,18 @@ export async function requireRole(role) {
 // ─── Profile helpers ──────────────────────────────────────────────────────────
 
 async function fetchOrCreateProfile(user) {
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
 
   if (profile) return profile;
 
   // First-time login: auto-create profile row
   const isAdmin = user.id === ADMIN_UUID || user.email === 'admin@gmail.com';
   const newProfile = {
-    id:        user.id,
-    email:     user.email,
+    id: user.id,
+    email: user.email,
     full_name: isAdmin ? 'Academy Admin' : user.email.split('@')[0],
-    role:      isAdmin ? 'admin' : 'student',
-    userid:    isAdmin ? 'admin' : String(100 + Math.floor(Math.random() * 900)),
+    role: isAdmin ? 'admin' : 'student',
+    userid: isAdmin ? 'admin' : String(100 + Math.floor(Math.random() * 900)),
   };
 
   const { data: created, error: createErr } = await supabase

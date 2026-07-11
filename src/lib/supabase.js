@@ -11,26 +11,30 @@ const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 if (!URL || !KEY) {
   throw new Error(
     '[ChessKidoo] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY.\n' +
-    'Copy .env.example → .env.local and fill in your project credentials.'
+      'Copy .env.example → .env.local and fill in your project credentials.'
   );
 }
 
 export const supabase = createClient(URL, KEY, {
   auth: {
     autoRefreshToken: true,
-    persistSession:   true,
+    persistSession: true,
     detectSessionInUrl: false,
   },
 });
 
 /** Convenience: current signed-in user (null if not authenticated) */
 export async function getUser() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   return user;
 }
 
 /** Convenience: current session (null if not authenticated) */
 export async function getSession() {
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   return session;
 }

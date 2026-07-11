@@ -38,6 +38,9 @@ export function showToast(msg, type = 'info', duration = 4000) {
 
 /** Dismiss the current toast immediately. */
 export function hideToast() {
-  if (_timer) { clearTimeout(_timer); _timer = null; }
-  if (_toast)  _toast.classList.remove('show');
+  if (_timer) {
+    clearTimeout(_timer);
+    _timer = null;
+  }
+  if (_toast) _toast.classList.remove('show');
 }

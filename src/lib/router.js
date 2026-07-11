@@ -40,7 +40,8 @@ export function initRouter(routes, { outletId = 'app-outlet', defaultPath = '/' 
     const anchor = e.target.closest('a[href]');
     if (!anchor) return;
     const href = anchor.getAttribute('href');
-    if (!href || href.startsWith('http') || href.startsWith('mailto') || href.startsWith('#')) return;
+    if (!href || href.startsWith('http') || href.startsWith('mailto') || href.startsWith('#'))
+      return;
     e.preventDefault();
     navigate(href);
   });
@@ -74,9 +75,7 @@ async function _resolve(rawPath) {
   // Auth guard
   if (def.guard && def.guard !== 'public') {
     const role = def.guard === 'auth' ? null : def.guard;
-    const profile = role
-      ? await requireRole(role)
-      : await requireAuth();
+    const profile = role ? await requireRole(role) : await requireAuth();
 
     if (!profile) return; // requireAuth/requireRole handles redirect
   }
@@ -125,7 +124,8 @@ function _extractParams(pattern, path) {
 
 function _render404() {
   if (_outlet) {
-    _outlet.innerHTML = '<div class="cls-empty" style="padding:40px 0;"><h2>404 — Page not found</h2><a href="/" style="color:var(--p-teal)">← Go home</a></div>';
+    _outlet.innerHTML =
+      '<div class="cls-empty" style="padding:40px 0;"><h2>404 — Page not found</h2><a href="/" style="color:var(--p-teal)">← Go home</a></div>';
   }
 }
 
