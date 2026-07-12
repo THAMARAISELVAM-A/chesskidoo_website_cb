@@ -52,7 +52,7 @@ async function getAssignmentById(id: string) {
     // Add recipient_count
     if (data) {
       if (data.target_type === 'all') {
-        const { count } = await supabase.from('students').select('id', { count: 'exact', head: true }).eq('status', 'active').or('status.eq.active,status.eq.pending');
+        const { count } = await supabase.from('students').select('id', { count: 'exact', head: true }).in('status', ['active', 'pending']);
         data.recipient_count = count || 0;
       } else if (data.target_type === 'batch' && data.batch_id) {
         const { data: batch } = await supabase.from('batches').select('student_ids').eq('id', data.batch_id).single();
@@ -115,11 +115,11 @@ Deno.serve(async (req) => {
         return jsonResponse(assignment);
       }
 
-const assignments = await getAllAssignments();
+       const assignments = await getAllAssignments();
        const assignmentsWithRecipients = [];
        for (const a of (assignments || [])) {
          if (a.target_type === 'all') {
-           const { count } = await supabase.from('students').select('id', { count: 'exact', head: true }).eq('status', 'active').or('status.eq.active,status.eq.pending');
+           const { count } = await supabase.from('students').select('id', { count: 'exact', head: true }).in('status', ['active', 'pending']);
            assignmentsWithRecipients.push({ ...a, recipient_count: count || 0 });
          } else if (a.target_type === 'batch' && a.batch_id) {
            const { data: batch } = await supabase.from('batches').select('student_ids').eq('id', a.batch_id).single();
