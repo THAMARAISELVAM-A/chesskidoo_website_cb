@@ -1544,9 +1544,17 @@
     const s = currentStudent;
     const status = getStudentPaymentStatus(s);
     const fee = getStudentMonthlyFee(s) || 0;
-    const dueDate = s.due_date
-      ? new Date(s.due_date).toLocaleDateString()
-      : "Not set";
+    const dueDate = (() => {
+      if (!s.due_date) return "Not set";
+      const match = String(s.due_date).match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (match) {
+        const _dd = parseInt(match[3], 10);
+        const y = window.reportYear !== undefined ? window.reportYear : new Date().getFullYear();
+        const m = window.reportMonth !== undefined ? window.reportMonth : new Date().getMonth();
+        return new Date(y, m, _dd).toLocaleDateString();
+      }
+      return new Date(s.due_date).toLocaleDateString();
+    })();
     const myPayments = allPayments.filter(
       (p) => String(p.student_id) === String(s.id),
     );
@@ -7813,19 +7821,17 @@ setTimeout(function () {
               "Nov",
               "Dec",
             ];
-            // Due Date: show the EXACT date the admin entered/updated (s.due_date),
-            // with no month-selector shifting or auto-rollover. Fall back to the
+            // Due Date: Auto rollover according to the selected month,
+            // using the explicit day from s.due_date if available. Fall back to the
             // day-of-month billing computation only when no explicit date is stored.
             let dueDateString, dueDateObj;
             const _ddMatch = String(s.due_date || "").match(
               /(\d{4})-(\d{2})-(\d{2})/,
             );
             if (_ddMatch) {
-              const _yy = +_ddMatch[1],
-                _mm = +_ddMatch[2] - 1,
-                _dd = +_ddMatch[3];
-              dueDateObj = new Date(_yy, _mm, _dd, 23, 59, 59);
-              dueDateString = `${String(_dd).padStart(2, "0")}-${months[_mm]}-${_yy}`;
+              const _dd = +_ddMatch[3];
+              dueDateObj = new Date(targetYear, targetMonth, _dd, 23, 59, 59);
+              dueDateString = `${String(_dd).padStart(2, "0")}-${months[targetMonth]}-${targetYear}`;
             } else {
               const dueCfg = getStudentDueConfig(
                 s,
@@ -14376,7 +14382,15 @@ Best regards,
             Level: getStudentLevel(s),
             "Elo Rating": getStudentRating(s),
             "Join Date": getStudentDate(s),
-            "Fee Due Date": s.due_date || "N/A",
+            "Fee Due Date": (() => {
+              if (!s.due_date) return "N/A";
+              const match = String(s.due_date).match(/(\d{4})-(\d{2})-(\d{2})/);
+              if (match) {
+                const _dd = parseInt(match[3], 10);
+                return `${String(_dd).padStart(2, "0")}/${String(targetMonth + 1).padStart(2, "0")}/${targetYear}`;
+              }
+              return s.due_date;
+            })(),
             "Monthly Fee": getStudentMonthlyFee(s),
             "Payment Status": getStudentPaymentStatus(
               s,
