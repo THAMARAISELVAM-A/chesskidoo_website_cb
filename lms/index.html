@@ -109,7 +109,13 @@
 </div>
 
 <nav class="sidebar" id="sidebar">
-  <div class="logo" style="padding: 16px 20px;"><img src="/assets/img/new-logo-full.png" alt="ChessKidoo Academy" style="max-height: 54px; width: auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));"></div>
+    <div class="logo" style="padding: 16px 20px; display:flex; align-items:center; gap:10px;">
+      <div class="logo-crest" style="width:42px;height:42px;font-size:24px;margin-bottom:0;border-radius:10px;">♘</div>
+      <div style="display:flex; flex-direction:column;">
+        <span style="font-family:var(--font-head);font-weight:700;font-size:18px;color:var(--gold);line-height:1;letter-spacing:1px;">CHESSKIDOO</span>
+        <span style="font-size:9px;color:var(--ivory3);text-transform:uppercase;letter-spacing:2px;font-weight:600;margin-top:4px;">Academy</span>
+      </div>
+    </div>
   <div class="nav-group">
     <div class="nav-item admin-only" id="nav-dash" onclick="setPage('dash')"><span class="ico">📊</span> Dashboard</div>
     <div class="nav-item coach-only" id="nav-coach-dash" onclick="setPage('coach-dash')"><span class="ico">🏠</span> My Portal</div>
