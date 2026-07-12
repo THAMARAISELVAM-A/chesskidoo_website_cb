@@ -1,5 +1,5 @@
 /**
- * ChessKidoo Executive Reporting Module
+ * Chesskidoo Executive Reporting Module
  * Handles boardroom-ready analytics and PDF generation.
  */
 
@@ -49,7 +49,7 @@ window.generateReportPDF = async function() {
 
      // 1. Data Aggregation (Filtered by Period)
      const monthEndLimit = new Date(Date.UTC(targetYear, targetMonth + 1, 0)); // last day of month at 00:00 UTC
-     const baseline = new Date(Date.UTC(2026, 5, 1, 0, 0, 0)); // June 1st Baseline (UTC)
+     const baseline = new Date(Date.UTC(2026, 3, 1, 0, 0, 0)); // April 1st Baseline (UTC)
      
      const targetStudents = allStudents.filter(s => {
           const sStatus = getStudentStatus(s);
@@ -100,7 +100,9 @@ window.generateReportPDF = async function() {
       const seenStuds = new Set();
       return allPayments.reduce((sum, p) => {
         const pDate = new Date(p.payment_date || p.created_at);
-        if (pDate.getUTCMonth() === month && pDate.getUTCFullYear() === year && p.status === 'paid') {
+        const pMonthKey = p.applied_month || `${pDate.getUTCFullYear()}-${String(pDate.getUTCMonth() + 1).padStart(2, '0')}`;
+      const targetMonthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+      if ((pMonthKey === targetMonthKey || (pDate.getUTCMonth() === month && pDate.getUTCFullYear() === year)) && p.status === 'paid') {
           const sid = String(p.student_id).toLowerCase();
           if (seenStuds.has(sid)) return sum;
           
@@ -157,22 +159,15 @@ window.generateReportPDF = async function() {
     // Fetch real-time expenditures for the reporting month
     const monthStr = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`;
     let totalExp = 0;
-    let expCategoryTotals = {};
     try {
         const res = await (window.apiCall || fetch)(`/api/expenditures?mode=summary&month=${monthStr}`);
         if (res.ok) {
             const summary = await res.json();
             totalExp = parseFloat(summary.total_expense || 0);
-            expCategoryTotals = summary.category_totals || {};
         }
     } catch (e) {
         console.error("Failed to fetch expenditures for report", e);
     }
-
-    // Payment-mode split for the month (roadmap §17 dashboard requirement)
-    const payModeSummary = (typeof window.getPaymentModeSummary === 'function')
-        ? window.getPaymentModeSummary(targetYear, targetMonth)
-        : {};
     
     const netProfit = collected - payroll - totalExp;
     
@@ -216,7 +211,9 @@ window.generateReportPDF = async function() {
       
       let coachRev = (allPayments || []).reduce((sum, p) => {
           const pDate = new Date(p.payment_date || p.created_at);
-          if (pDate.getUTCMonth() === targetMonth && pDate.getUTCFullYear() === targetYear && p.status === 'paid') {
+          const pMonthKey = p.applied_month || `${pDate.getUTCFullYear()}-${String(pDate.getUTCMonth() + 1).padStart(2, '0')}`;
+      const targetMonthKey = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`;
+      if ((pMonthKey === targetMonthKey || (pDate.getUTCMonth() === targetMonth && pDate.getUTCFullYear() === targetYear)) && p.status === 'paid') {
               const sid = String(p.student_id).toLowerCase();
               if (coachStudIds.has(sid)) {
                   return sum + (parseFloat(p.amount) || 0);
@@ -364,18 +361,16 @@ window.generateReportPDF = async function() {
   <script src="/lib/chart.umd.min.js"></script>
   <style>
     :root {
-      /* White executive theme — matches the printed output instead of the
-         old black boardroom look. */
-      --gold: #8c6a08;
-      --gold-dark: #6d5306;
-      --bg: #eef0f4;
-      --card-bg: #ffffff;
-      --border: rgba(140, 106, 8, 0.25);
-      --text: #22263a;
-      --text-dim: #667085;
-      --sapphire: #2f6fd6;
-      --emerald: #1e7e34;
-      --ruby: #c0392b;
+      --gold: #c9960c;
+      --gold-dark: #8c6a08;
+      --bg: #0a0a0b;
+      --card-bg: #111113;
+      --border: rgba(201, 150, 12, 0.2);
+      --text: #e0e0e0;
+      --text-dim: #888;
+      --sapphire: #5a9fff;
+      --emerald: #52c41a;
+      --ruby: #ff4d4f;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     @page { size: A4; margin: 14mm; }
@@ -417,9 +412,9 @@ window.generateReportPDF = async function() {
       thead { display: table-header-group; }
     }
     body { background: var(--bg); font-family: 'Cormorant Garamond', serif; color: var(--text); line-height: 1.5; padding: 50px 0; display: flex; flex-direction: column; align-items: center; }
-    .page { width: 950px; padding: 80px; position: relative; min-height: 1300px; background: var(--card-bg); margin-bottom: 50px; box-shadow: 0 18px 50px rgba(15, 23, 42, 0.12); border: 1px solid #e4e6ec; overflow: hidden; }
-
-    .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-family: 'Cinzel', serif; font-size: 100px; font-weight: 900; color: rgba(140, 106, 8, 0.05); pointer-events: none; white-space: nowrap; z-index: 0; }
+    .page { width: 950px; padding: 80px; position: relative; min-height: 1300px; background: var(--card-bg); margin-bottom: 50px; box-shadow: 0 40px 100px rgba(0,0,0,0.6); border: 1px solid var(--border); overflow: hidden; }
+    
+    .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-family: 'Cinzel', serif; font-size: 100px; font-weight: 900; color: rgba(201, 150, 12, 0.04); pointer-events: none; white-space: nowrap; z-index: 0; }
 
     .header { text-align: left; margin-bottom: 60px; border-bottom: 2px solid var(--gold); padding-bottom: 30px; position: relative; z-index: 1; }
     .header h1 { font-family: 'Cinzel', serif; font-size: 42px; font-weight: 900; letter-spacing: 2px; color: var(--gold); margin-bottom: 5px; text-transform: uppercase; }
@@ -429,13 +424,13 @@ window.generateReportPDF = async function() {
     .heartbeat { color: var(--emerald); font-weight: 600; }
 
     .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 50px; position: relative; z-index: 1; }
-    .kpi-card { background: #faf7ef; border: 1px solid #e3d6a8; padding: 20px 10px; text-align: center; border-radius: 4px; position: relative; }
+    .kpi-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 20px 10px; text-align: center; border-radius: 4px; position: relative; }
     .kpi-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim); margin-bottom: 10px; font-family: 'Syne', sans-serif; }
     .kpi-value { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 600; color: var(--gold); }
     .kpi-sub { font-size: 10px; color: #555; margin-top: 5px; font-style: italic; }
 
     .analytics-row { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; margin-bottom: 60px; align-items: center; position: relative; z-index: 1; }
-    .chart-box { background: #fbfbfd; padding: 30px; border: 1px solid #e2e2e2; border-radius: 8px; height: 350px; position: relative; }
+    .chart-box { background: rgba(255,255,255,0.01); padding: 30px; border: 1px solid var(--border); border-radius: 8px; height: 350px; position: relative; }
     .data-story { font-size: 18px; color: var(--text); }
     .data-story p { margin-bottom: 20px; }
     .strategic-insight { background: rgba(201, 150, 12, 0.05); border-left: 5px solid var(--gold); padding: 20px; font-style: italic; margin-top: 30px; border-radius: 0 8px 8px 0; font-size: 16px; }
@@ -450,7 +445,7 @@ window.generateReportPDF = async function() {
     .text-right { text-align: right; }
     .loss { color: var(--ruby) !important; font-weight: 600; }
     .gain { color: var(--emerald) !important; font-weight: 600; }
-    .bold { font-weight: 700; color: #000; }
+    .bold { font-weight: 700; color: #fff; }
 
     .footer { position: absolute; bottom: 50px; left: 80px; right: 80px; display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 25px; font-size: 10px; color: var(--text-dim); font-family: 'DM Mono', monospace; letter-spacing: 1px; }
     
@@ -468,7 +463,7 @@ window.generateReportPDF = async function() {
     <div class="header">
       <h1>ACADEMY FINANCIAL REPORT</h1>
       <div class="header-meta">
-        <div>REPORT ID: TKCA-FIN-${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${generatedAt.getTime().toString(36).toUpperCase()}</div>
+        <div>REPORT ID: CKD-FIN-${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${generatedAt.getTime().toString(36).toUpperCase()}</div>
         <div class="confidential">EXECUTIVE REPORT // PRIVATE & CONFIDENTIAL</div>
         <div style="color:var(--gold);font-weight:700;letter-spacing:1px;margin-top:5px">REPORT PERIOD: ${dateStr.toUpperCase()}</div>
         <div class="heartbeat">SYNC STATUS: REAL-TIME &middot; GENERATED ${fullStamp.toUpperCase()}</div>
@@ -551,41 +546,6 @@ window.generateReportPDF = async function() {
       </div>
     </div>
 
-    <h3>I-C. Payment Mode & Expenditure Breakdown</h3>
-    <div class="analytics-row">
-      <div style="flex:1;">
-        <table>
-          <thead>
-            <tr><th>Payment Mode</th><th>Transactions</th><th>Amount Collected</th></tr>
-          </thead>
-          <tbody>
-            ${Object.keys(payModeSummary).length
-              ? Object.entries(payModeSummary)
-                  .sort((a, b) => b[1].amount - a[1].amount)
-                  .map(([mode, v]) => `<tr><td>${mode}</td><td>${v.count}</td><td>₹${v.amount.toLocaleString()}</td></tr>`)
-                  .join('')
-              : `<tr><td colspan="3" style="color:#888;">No collections recorded for ${dateStr}.</td></tr>`}
-          </tbody>
-        </table>
-      </div>
-      <div style="flex:1;">
-        <table>
-          <thead>
-            <tr><th>Expenditure Category</th><th>Amount Spent</th></tr>
-          </thead>
-          <tbody>
-            ${Object.keys(expCategoryTotals).length
-              ? Object.entries(expCategoryTotals)
-                  .sort((a, b) => parseFloat(b[1]) - parseFloat(a[1]))
-                  .map(([cat, amt]) => `<tr><td>${cat}</td><td>₹${parseFloat(amt || 0).toLocaleString()}</td></tr>`)
-                  .join('')
-              : `<tr><td colspan="2" style="color:#888;">No expenditures recorded for ${dateStr}.</td></tr>`}
-            <tr style="font-weight:bold; border-top:2px solid #daa33e;"><td>Total Expenditure</td><td>₹${totalExp.toLocaleString()}</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
     <h3>II. Coaching Operations & Fee Returns</h3>
     <table>
       <thead>
@@ -612,7 +572,7 @@ window.generateReportPDF = async function() {
     </table>
 
     <div class="footer">
-      <div>© ChessKidoo ACADEMY MANAGEMENT</div>
+      <div>© CHESSKIDOO ACADEMY MANAGEMENT</div>
       <div>CLASSIFICATION: EXECUTIVE</div>
       <div>PAGE 01 / 03</div>
     </div>
@@ -713,7 +673,7 @@ window.generateReportPDF = async function() {
     </div>
 
     <div class="footer">
-      <div>© ChessKidoo ACADEMY MANAGEMENT</div>
+      <div>© CHESSKIDOO ACADEMY MANAGEMENT</div>
       <div>AUTHENTICATED BY: CKD-AI-CORE</div>
       <div>PAGE 02 / 03</div>
     </div>
@@ -766,7 +726,7 @@ window.generateReportPDF = async function() {
     </div>
 
     <div class="footer">
-      <div>&copy; ChessKidoo ACADEMY MANAGEMENT</div>
+      <div>&copy; CHESSKIDOO ACADEMY MANAGEMENT</div>
       <div>AUDIT TRAIL: ${generatedAt.toISOString()}</div>
       <div>PAGE 03 / 03</div>
     </div>
@@ -785,16 +745,16 @@ window.generateReportPDF = async function() {
           labels: ['Profit', 'Payroll', 'Pending Arrears'],
           datasets: [{
             data: [${netProfit > 0 ? netProfit : 0}, ${payroll}, ${currPendingAmount}],
-            backgroundColor: ['#1e7e34', '#334155', '#e8a830'],
-            borderColor: '#ffffff',
-            borderWidth: 2
+            backgroundColor: ['#52c41a', '#1a1a1a', '#e8a830'],
+            borderColor: 'rgba(201,150,12,0.5)',
+            borderWidth: 1
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { position: 'bottom', labels: { color: '#555', font: { family: 'Syne', size: 10 } } }
+            legend: { position: 'bottom', labels: { color: '#888', font: { family: 'Syne', size: 10 } } }
           }
         }
       });
@@ -806,8 +766,8 @@ window.generateReportPDF = async function() {
           datasets: [{
             label: 'Units',
             data: [${levels['Beginner']}, ${levels['Intermediate']}, ${levels['Advanced']}, ${levels['Elite']}],
-            backgroundColor: ['#c9960c', '#2f6fd6', '#1e7e34', '#c0392b'],
-            borderColor: 'rgba(0,0,0,0.1)',
+            backgroundColor: ['#c9960c', '#5a9fff', '#52c41a', '#ff4d4f'],
+            borderColor: 'rgba(255,255,255,0.1)',
             borderWidth: 1
           }]
         },
@@ -815,8 +775,8 @@ window.generateReportPDF = async function() {
           responsive: true,
           maintainAspectRatio: false,
           scales: {
-            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.07)' }, ticks: { color: '#555', precision: 0 } },
-            x: { grid: { display: false }, ticks: { color: '#555' } }
+            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#666', precision: 0 } },
+            x: { grid: { display: false }, ticks: { color: '#666' } }
           },
           plugins: { legend: { display: false } }
         }
@@ -828,8 +788,8 @@ window.generateReportPDF = async function() {
           labels: ['Morning', 'Evening', 'Weekend'],
           datasets: [{
             data: [${timings['Morning']}, ${timings['Evening']}, ${timings['Weekend']}],
-            backgroundColor: ['#dca33e', '#2f6fd6', '#1e7e34'],
-            borderColor: '#ffffff',
+            backgroundColor: ['#dca33e', '#5a9fff', '#52c41a'],
+            borderColor: '#111113',
             borderWidth: 2
           }]
         },
@@ -837,7 +797,7 @@ window.generateReportPDF = async function() {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { position: 'bottom', labels: { color: '#555', font: { family: 'Syne', size: 10 } } }
+            legend: { position: 'bottom', labels: { color: '#888', font: { family: 'Syne', size: 10 } } }
           }
         }
       });
@@ -930,7 +890,7 @@ window.generateReportPPT = async function() {
         const targetYM = `${targetYear}-${targetMonth}`;
         const monthStr = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`;
         const monthEndLimit = new Date(Date.UTC(targetYear, targetMonth + 1, 0));
-        const baseline = new Date(Date.UTC(2026, 5, 1, 0, 0, 0));
+        const baseline = new Date(Date.UTC(2026, 3, 1, 0, 0, 0));
 
         const targetStudents = allStudents.filter(s => {
             const sStatus = getStudentStatus(s);
@@ -951,7 +911,9 @@ window.generateReportPPT = async function() {
             const seenStuds = new Set();
             return allPayments.reduce((sum, p) => {
                 const pDate = new Date(p.payment_date || p.created_at);
-                if (pDate.getUTCMonth() === month && pDate.getUTCFullYear() === year && p.status === 'paid') {
+                const pMonthKey = p.applied_month || `${pDate.getUTCFullYear()}-${String(pDate.getUTCMonth() + 1).padStart(2, '0')}`;
+      const targetMonthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+      if ((pMonthKey === targetMonthKey || (pDate.getUTCMonth() === month && pDate.getUTCFullYear() === year)) && p.status === 'paid') {
                     const sid = String(p.student_id).toLowerCase();
                     if (seenStuds.has(sid)) return sum;
                     
@@ -1165,7 +1127,9 @@ window.generateReportPPT = async function() {
             const coachStudIds = new Set(coachStuds.map(s => String(s.id).toLowerCase()));
             let coachRev = (allPayments || []).reduce((sum, p) => {
                 const pDate = new Date(p.payment_date || p.created_at);
-                if (pDate.getUTCMonth() === targetMonth && pDate.getUTCFullYear() === targetYear && p.status === 'paid') {
+                const pMonthKey = p.applied_month || `${pDate.getUTCFullYear()}-${String(pDate.getUTCMonth() + 1).padStart(2, '0')}`;
+      const targetMonthKey = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`;
+      if ((pMonthKey === targetMonthKey || (pDate.getUTCMonth() === targetMonth && pDate.getUTCFullYear() === targetYear)) && p.status === 'paid') {
                     const sid = String(p.student_id).toLowerCase();
                     if (coachStudIds.has(sid)) {
                         return sum + (parseFloat(p.amount) || 0);
@@ -1208,7 +1172,7 @@ window.generateReportPPT = async function() {
         
         slide1.addShape('rect', { x: 0.5, y: 0.5, w: 9.0, h: 4.625, line: { color: goldAccent, width: 2 } });
         
-        slide1.addText("ChessKidoo ACADEMY", {
+        slide1.addText("CHESSKIDOO ACADEMY", {
             x: 1.0, y: 1.6, w: 8.0, h: 0.8,
             fontSize: 36, fontFace: 'Georgia', color: goldAccent, bold: true, align: 'center'
         });
@@ -1236,7 +1200,7 @@ window.generateReportPPT = async function() {
 
         // Helper function to add footer info
         function addSlideFooter(slide, pageNum) {
-            slide.addText("ChessKidoo EXECUTIVE AUDIT  |  CONFIDENTIAL", {
+            slide.addText("CHESSKIDOO EXECUTIVE AUDIT  |  CONFIDENTIAL", {
                 x: 0.6, y: 5.25, w: 7.0, h: 0.2,
                 fontSize: 8, fontFace: 'Arial', color: textMuted
             });
@@ -1488,67 +1452,7 @@ window.generateReportPPT = async function() {
 
         addSlideFooter(slide6, 6);
 
-        // ────────── SLIDE 7: Payment Modes & Net Position ──────────
-        let slidePay = pptx.addSlide();
-        slidePay.background = { fill: darkBG };
-        addSlideHeader(slidePay, "COLLECTIONS BY PAYMENT MODE & NET POSITION");
-
-        const payModes = (typeof window.getPaymentModeSummary === 'function')
-            ? window.getPaymentModeSummary(targetYear, targetMonth)
-            : {};
-        const modeEntries = Object.entries(payModes).sort((a, b) => b[1].amount - a[1].amount);
-
-        const modeTableRows = [[
-            { text: 'PAYMENT MODE', options: { bold: true, color: goldAccent, fontSize: 10 } },
-            { text: 'TXNS', options: { bold: true, color: goldAccent, fontSize: 10 } },
-            { text: 'AMOUNT', options: { bold: true, color: goldAccent, fontSize: 10 } }
-        ]];
-        if (modeEntries.length) {
-            modeEntries.forEach(([mode, v]) => {
-                modeTableRows.push([
-                    { text: mode, options: { color: textWhite, fontSize: 10 } },
-                    { text: String(v.count), options: { color: textWhite, fontSize: 10 } },
-                    { text: `₹${v.amount.toLocaleString()}`, options: { color: textWhite, fontSize: 10 } }
-                ]);
-            });
-        } else {
-            modeTableRows.push([
-                { text: 'No collections recorded this period', options: { color: textMuted, fontSize: 10, colspan: 3 } }
-            ]);
-        }
-        slidePay.addTable(modeTableRows, {
-            x: 0.6, y: 1.2, w: 4.2, colW: [2.0, 0.8, 1.4],
-            border: { pt: 0.5, color: '2D2D35' },
-            fill: { color: '17171C' },
-            rowH: 0.35
-        });
-
-        // Net position blocks (collected / payroll / expenditures / net)
-        const plRows = [
-            { label: 'FEES COLLECTED', value: `₹${collected.toLocaleString()}`, color: '3CCB7F' },
-            { label: 'COACH PAYROLL', value: `₹${payroll.toLocaleString()}`, color: 'EF4444' },
-            { label: 'ACADEMY EXPENDITURES', value: `₹${totalExp.toLocaleString()}`, color: 'EF4444' },
-            { label: 'NET POSITION', value: `₹${netProfit.toLocaleString()}`, color: netProfit >= 0 ? '3CCB7F' : 'EF4444' }
-        ];
-        plRows.forEach((row, idx) => {
-            slidePay.addShape('rect', {
-                x: 5.2, y: 1.2 + idx * 0.95, w: 4.2, h: 0.8,
-                fill: { color: '17171C' },
-                line: { color: idx === 3 ? goldAccent : '2D2D35', width: idx === 3 ? 1.5 : 1 }
-            });
-            slidePay.addText(row.label, {
-                x: 5.4, y: 1.28 + idx * 0.95, w: 3.8, h: 0.3,
-                fontSize: 9, fontFace: 'Arial', color: textMuted, bold: true
-            });
-            slidePay.addText(row.value, {
-                x: 5.4, y: 1.55 + idx * 0.95, w: 3.8, h: 0.4,
-                fontSize: 16, fontFace: 'Arial', color: row.color, bold: true
-            });
-        });
-
-        addSlideFooter(slidePay, 7);
-
-        // ────────── SLIDE 8: Boardroom AI Strategy ──────────
+        // ────────── SLIDE 7: Boardroom AI Strategy ──────────
         let slide7 = pptx.addSlide();
         slide7.background = { fill: darkBG };
         addSlideHeader(slide7, "BOARDROOM STRATEGIC RECOMMENDATIONS");
@@ -1579,10 +1483,10 @@ window.generateReportPPT = async function() {
             });
         });
 
-        addSlideFooter(slide7, 8);
+        addSlideFooter(slide7, 7);
 
         // 3. Save File
-        pptx.writeFile({ fileName: `twoknights_Executive_Slides_${monthStr}.pptx` });
+        pptx.writeFile({ fileName: `Chesskidoo_Executive_Slides_${monthStr}.pptx` });
         toast('Presentation generated! PowerPoint slides downloaded. ✨', 'success');
 
     } catch (err) {
@@ -1677,40 +1581,7 @@ window.getAcademySnapshot = function() {
             attendanceSampleSize: monthAtt.length
         },
         roster: coachData,
-        systemHealth: monthAtt.length > 0 ? 'Optimal' : 'Limited Telemetry',
-        // Full lists so the AI advisor (TOM) reports real student/coach counts
-        // and can run its analysis (weak students, coach performance, finance…).
-        // Without these, the server falls back to ctx.students_list which is
-        // absent here, so TOM shows "0 active students and 0 coaches".
-        students_list: students.map((s) => ({
-            id: s.id,
-            name: typeof getStudentName === 'function' ? getStudentName(s) : (s.name || s.full_name || ''),
-            status: typeof getStudentStatus === 'function' ? getStudentStatus(s) : (s.status || 'active'),
-            rating: typeof getStudentRating === 'function' ? getStudentRating(s) : (s.rating || 0),
-            level: typeof getStudentLevel === 'function' ? getStudentLevel(s) : (s.level || ''),
-            coach_id: s.coach_id || '',
-            coach_name: s.coach_id ? getCoachName(coaches.find((c) => String(c.id) === String(s.coach_id)) || {}) : '',
-            fee: typeof getStudentMonthlyFee === 'function' ? getStudentMonthlyFee(s) : (s.monthly_fee || 0),
-            payment_status: typeof getStudentPaymentStatus === 'function' ? getStudentPaymentStatus(s, tm, ty) : (s.payment_status || ''),
-            attendance_rate: s.attendance_rate != null ? s.attendance_rate : (s.attendanceRate != null ? s.attendanceRate : null),
-            lichess_username: s.lichess_username || '',
-            chesscom_username: s.chesscom_username || ''
-        })),
-        coaches_list: coaches
-            .filter((c) => (c.status || 'active') !== 'archived')
-            .map((c) => ({
-                id: c.id,
-                name: typeof getCoachName === 'function' ? getCoachName(c) : (c.name || 'Coach'),
-                specialty: c.specialty || '',
-                studentCount: students.filter(
-                    (s) => String(s.coach_id) === String(c.id) &&
-                        ((typeof getStudentStatus === 'function' ? getStudentStatus(s) : (s.status || 'active')) !== 'archived')
-                ).length,
-                salary_cost: c.salary || 0,
-                collected_revenue: 0,
-                net_profit: 0,
-                roi: 'N/A'
-            }))
+        systemHealth: monthAtt.length > 0 ? 'Optimal' : 'Limited Telemetry'
     };
 };
 
@@ -1863,13 +1734,13 @@ window.generateEventCertificates = async function() {
        
        certHTML += `<div class="cert-page">
          <div class="c-title">CERTIFICATE OF PARTICIPATION</div>
-         <div class="c-sub">ChessKidoo ACADEMY</div>
+         <div class="c-sub">CHESSKIDOO ACADEMY</div>
          <div style="font-family: Montserrat; font-size: 16px; margin-bottom: 20px;">This is to proudly certify that</div>
          <div class="c-name">${name}</div>
          <div class="c-body">has successfully participated and demonstrated excellent sportsmanship in the <strong>${e.title}</strong> held on ${new Date(e.date || e.event_date).toLocaleDateString()}.</div>
          <div class="c-footer">
            <div class="c-sig">${new Date().toLocaleDateString()}<br><span style="font-weight:normal; font-size:12px;">Date</span></div>
-           <div class="c-sig" style="font-family: Great Vibes; font-size: 30px; padding-top:0; border:none; line-height:0.8;">CHESSKIDOO<br><span style="font-family: Montserrat; font-size:12px; font-weight:normal; border-top: 1px solid #333; display:block; padding-top:10px; margin-top:10px;">Academy Director</span></div>
+           <div class="c-sig" style="font-family: Great Vibes; font-size: 30px; padding-top:0; border:none; line-height:0.8;">ChessKidoo<br><span style="font-family: Montserrat; font-size:12px; font-weight:normal; border-top: 1px solid #333; display:block; padding-top:10px; margin-top:10px;">Academy Director</span></div>
          </div>
        </div>`;
     });
