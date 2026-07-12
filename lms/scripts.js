@@ -3180,6 +3180,28 @@
   function getStudentRating(s) {
     return s.rating || s.current_rating || 800;
   }
+  // Helper: normalize any applied_month string to "YYYY-MM" format
+  function normalizeMonth(raw) {
+    if (!raw) return null;
+    const s = String(raw).trim();
+    // Already "YYYY-MM" (e.g. "2026-07")
+    if (/^\d{4}-\d{1,2}$/.test(s)) {
+      const [y, m] = s.split("-");
+      return y + "-" + m.padStart(2, "0");
+    }
+    // Try "Month YYYY" (e.g. "July 2026")
+    const d = new Date(s + " 1");
+    if (!isNaN(d.getTime())) {
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+    }
+    // Try plain Date parse
+    const d2 = new Date(s);
+    if (!isNaN(d2.getTime())) {
+      return d2.getUTCFullYear() + "-" + String(d2.getUTCMonth() + 1).padStart(2, "0");
+    }
+    return null;
+  }
+
   function getStudentDate(s) {
     const d = s.enrollment_date || s.join_date || s.created_at;
     if (!d) return "";
@@ -3418,27 +3440,7 @@
 
     // 2. Check Payment History for this specific month first
     const sIdKey = String(s.id || "").trim().toLowerCase();
-    // Helper: normalize any applied_month string to "YYYY-MM" format
-    function normalizeMonth(raw) {
-      if (!raw) return null;
-      const s = String(raw).trim();
-      // Already "YYYY-MM" (e.g. "2026-07")
-      if (/^\d{4}-\d{1,2}$/.test(s)) {
-        const [y, m] = s.split("-");
-        return y + "-" + m.padStart(2, "0");
-      }
-      // Try "Month YYYY" (e.g. "July 2026")
-      const d = new Date(s + " 1");
-      if (!isNaN(d.getTime())) {
-        return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
-      }
-      // Try plain Date parse
-      const d2 = new Date(s);
-      if (!isNaN(d2.getTime())) {
-        return d2.getUTCFullYear() + "-" + String(d2.getUTCMonth() + 1).padStart(2, "0");
-      }
-      return null;
-    }
+
 
     const currentMonthPayment = (allPayments || []).find((p) => {
       if (String(p.student_id || "").trim().toLowerCase() !== sIdKey) return false;
@@ -7055,13 +7057,26 @@ setTimeout(function () {
     if (year < 2026 || (year === 2026 && month < 0)) return 0;
     const seenStuds = new Set();
     return allPayments.reduce((sum, p) => {
-      const pDate = new Date(p.payment_date || p.created_at);
-      const pMonthKey = p.applied_month || `${pDate.getUTCFullYear()}-${String(pDate.getUTCMonth() + 1).padStart(2, '0')}`;
       const targetMonthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
-      if (
-        pMonthKey === targetMonthKey &&
-        p.status === "paid"
-      ) {
+      const st = (p.status || "").toLowerCase();
+      if (st !== "paid" && st !== "completed") return sum;
+
+      let isMatch = false;
+      // Check 1: applied_month
+      if (p.applied_month) {
+        const norm = normalizeMonth(p.applied_month);
+        if (norm === targetMonthKey) isMatch = true;
+      }
+      // Check 2: always fallback to payment_date
+      if (!isMatch) {
+        const pd = new Date(p.payment_date || p.created_at);
+        if (!isNaN(pd.getTime())) {
+          const pm = pd.getUTCFullYear() + "-" + String(pd.getUTCMonth() + 1).padStart(2, "0");
+          if (pm === targetMonthKey) isMatch = true;
+        }
+      }
+
+      if (isMatch) {
         const sid = String(p.student_id).toLowerCase();
         if (seenStuds.has(sid)) return sum;
         seenStuds.add(sid);
