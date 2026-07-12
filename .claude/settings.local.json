@@ -87,7 +87,9 @@
       "Bash(gh repo *)",
       "Bash(grep -rniE \"password|passwd|secret|api[_-]?key|service[_-]?role|bearer|token|eyJ[A-Za-z0-9_-]{10,}|postgres://|@[a-z0-9.-]+\\\\.supabase|BEGIN \\(RSA|PRIVATE\\)\" update_credentials.sql master_seed.sql seed_students.sql seed_students.js import_students_0608.sql seed_classes.sql supabase_pgn_vault.sql supabase_realtime_enable.sql AUDIT_2026-06.md clear.html test-portals.cjs)",
       "Bash(grep -rniE \"service[_-]?role|BEGIN \\(RSA |EC \\)?PRIVATE KEY|eyJ[A-Za-z0-9_-]{30,}|GOOGLE_SA_PRIVATE_KEY\\\\s*=\\\\s*[\\\\\"'][^\\\\\"'…]|sk-[A-Za-z0-9]{20}\" supabase/functions)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(git fetch *)",
+      "Bash(gh auth *)"
     ]
   }
 }

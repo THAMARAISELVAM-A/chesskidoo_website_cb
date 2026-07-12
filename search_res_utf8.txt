@@ -1,0 +1,17 @@
+﻿8: content="ChessKidoo ù India's 1st Chess Student Tracking System and Premier Academy. FIDE-certified 
+9: <meta name="keywords" content="chess academy India, FIDE chess coaching, chess for kids, online ches
+17: <meta property="og:description" content="FIDE-certified chess coaching for students aged 6û18. Track
+27: <meta name="twitter:description" content="FIDE-certified chess coaching for students aged 6û18. Trac
+79: {"@type":"LocalBusiness","@id":"https://chesskidoo.com/#business","name":"ChessKidoo Academy","descr
+82: {"@type":"Course","name":"Chess Beginner Programme","description":"Master chess fundamentals ù piece
+84: {"@type":"Course","name":"Chess Intermediate Programme","description":"Tactical patterns, positional
+87: {"@type":"Question","name":"What age groups does ChessKidoo teach?","acceptedAnswer": {"@type":"Answ
+89: {"@type":"Question","name":"Are the coaches FIDE certified?","acceptedAnswer": {"@type":"Answer","te
+158: <button class="nav-link" data-section="coaches" data-translate="coaches"
+159: onclick="CK.navigate('coaches')">Coaches</button>
+168: <button id="loginNavBtn" class="nav-link btn btn-ghost nav-login" data-translate="login"
+169: onclick="CK.showPage('login-page')" style="padding: 8px 16px; font-size: 0.9rem;">Log In</button>
+197: <span data-translate="hero_badge">INDIA'S #1 STUDENT TRACKING SYSTEM</span>
+215: <div class="hero-stat-label" data-translate="hero_stat_students">Active Students</div>
+219: <div class="stat-item-label hero-stat-label" data-translate="hero_stat_coaches">FIDE Coaches</div>
+228: <div class="stat-item-label hero-stat-label" data-translate="hero_stat_rating">Parent Rating</div>

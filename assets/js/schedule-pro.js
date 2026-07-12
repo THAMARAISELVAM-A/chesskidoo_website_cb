@@ -1,4 +1,4 @@
-/* assets/js/schedule-pro.js
+﻿/* assets/js/schedule-pro.js
    ChessKidoo — Rebuilt Advanced Schedule & Meeting Management
    Includes Google Calendar style views and the Coach Master Schedule Matrix. */
 
@@ -17,6 +17,24 @@ CK.schedulePro = (() => {
   const get = async () => await CK.db.getMeetings();
   const today = () => new Date().toISOString().split('T')[0];
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  const parseTimeMinutes = (t) => {
+    const s = String(t || '').trim();
+    const m = s.match(/^(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m?)?$/i);
+    if (!m) return null;
+    let h = +m[1];
+    const mn = +(m[2] || 0);
+    const ap = (m[3] || '').toLowerCase().replace('.', '');
+    if (ap) {
+      if (ap.startsWith('p') && h < 12) h += 12;
+      if (ap.startsWith('a') && h === 12) h = 0;
+    }
+    return h * 60 + mn;
+  };
+  const compareSlots = (a, b) => (parseTimeMinutes(a.time) || 0) - (parseTimeMinutes(b.time) || 0);
+  const compareMeetings = (a, b) => {
+    const da = parseTimeMinutes(a.time), db = parseTimeMinutes(b.time);
+    return String(a.date + a.time).localeCompare(String(b.date + b.time)) || ((da || 0) - (db || 0));
+  };
 
   // Fallback initial roster matching the user's HTML matrix exactly
   const INITIAL_TIMETABLE = [
@@ -390,7 +408,7 @@ CK.schedulePro = (() => {
       <div class="p-modal" style="max-width: 440px;">
         <div class="p-modal-header">
           <div class="p-modal-title">✏️ Edit Timetable Slot (${row.coach} - ${day})</div>
-          <button class="p-modal-close" onclick="this.closest('.p-modal-overlay').remove()">✕</button>
+          <button class="cls-modal-close" onclick="this.closest('.p-modal-overlay').remove()">✕</button>
         </div>
         <div class="p-modal-body">
           <div class="p-form-group">
@@ -450,13 +468,15 @@ CK.schedulePro = (() => {
       
       let dayCols = '';
       days.forEach(day => {
-        const slots = row.slots[day] || [];
+        const slots = (row.slots[day] || []).sort(compareSlots);
         if (slots.length === 0) {
           dayCols += `<td class="empty-cell">&mdash;</td>`;
         } else {
           let blocksHtml = '';
           slots.forEach((s, idx) => {
-            const clickHandler = isMyRow ? `onclick="window.CK.schedulePro.editMatrixSlot('${row.coach}', '${day}', ${idx})"` : '';
+            const safeCoach = row.coach.replace(/'/g, "\\'");
+      const safeDay = day.replace(/'/g, "\\'");
+      const clickHandler = isMyRow ? `onclick="window.CK.schedulePro.editMatrixSlot('${safeCoach}', '${safeDay}', ${idx})"` : '';
             blocksHtml += `
               <div class="matrix-block ${row.bgClass}" ${clickHandler} title="Click to Edit (Coach/Admin Only)\nTopic: ${s.topic || 'None'}\nLink: ${s.link || 'None'}">
                 ${s.batch}
@@ -538,9 +558,9 @@ CK.schedulePro = (() => {
       const cellClass = `calendar-day-cell ${isToday ? 'today' : ''}`;
 
       // Filter meetings for this date
-      const dMeetings = meetings.filter(m => m.date === dateStr);
+      const dMeetings = meetings.filter(m => m.date === dateStr).sort(compareMeetings);
       // Filter matrix recurring slots for this day of the week
-      const dMatrix = matrixSlots[dayLabel] || [];
+      const dMatrix = (matrixSlots[dayLabel] || []).sort(compareSlots);
 
       let eventsHtml = '';
       
@@ -594,31 +614,25 @@ CK.schedulePro = (() => {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const currentDayLabel = days[now.getDay()];
     const studentName = profile?.full_name || '';
+    const studentNameLower = studentName.toLowerCase();
 
-    // Extract student's matrix slots (classes containing student's name)
     const myMatrixClasses = [];
     Object.entries(matrixSlots).forEach(([day, slots]) => {
       slots.forEach(s => {
-        if (s.student.toLowerCase().includes(studentName.toLowerCase())) {
+        if (studentNameLower && s.student && s.student.toLowerCase().includes(studentNameLower)) {
           myMatrixClasses.push({ day, ...s });
         }
       });
     });
 
-    // Today's classes: one-off meetings today + recurring matrix classes today
-    const todayMeetings = meetings.filter(m => m.date === todayStr);
-    const todayMatrix = myMatrixClasses.filter(c => c.day === currentDayLabel);
-
-    // Upcoming classes
-    const upcomingMeetings = meetings.filter(m => m.date > todayStr).slice(0, 5);
-    const upcomingMatrix = myMatrixClasses.filter(c => c.day !== currentDayLabel);
-
-    // Missed classes: meetings past and unchecked
-    const missedMeetings = meetings.filter(m => m.date < todayStr && m.status !== 'Completed').slice(0, 5);
+    const todayMeetings = meetings.filter(m => m.date === todayStr).sort(compareMeetings);
+    const todayMatrix = myMatrixClasses.filter(c => c.day === currentDayLabel).sort(compareSlots);
+    const upcomingMeetings = meetings.filter(m => m.date > todayStr).sort(compareMeetings).slice(0, 5);
+    const upcomingMatrix = myMatrixClasses.filter(c => c.day !== currentDayLabel).sort(compareSlots);
+    const missedMeetings = meetings.filter(m => m.date < todayStr && m.status !== 'Completed').sort(compareMeetings).slice(0, 5);
 
     let html = '';
 
-    // 1. TODAY'S CLASSES
     html += `<div class="sched-section-title" style="color:var(--p-teal); border-bottom-color:var(--p-teal);">🔴 Today's Classes</div>`;
     if (todayMeetings.length === 0 && todayMatrix.length === 0) {
       html += `<div class="cls-empty">No classes scheduled for today. Enjoy your day off! ♟️</div>`;
@@ -646,7 +660,6 @@ CK.schedulePro = (() => {
       });
     }
 
-    // 2. UPCOMING CLASSES
     html += `<div class="sched-section-title" style="margin-top:24px; color:var(--p-blue); border-bottom-color:var(--p-blue);">📅 Upcoming Classes (This Week)</div>`;
     if (upcomingMeetings.length === 0 && upcomingMatrix.length === 0) {
       html += `<div class="cls-empty">No upcoming scheduled classes.</div>`;
@@ -671,7 +684,6 @@ CK.schedulePro = (() => {
       });
     }
 
-    // 3. MISSED CLASSES
     if (missedMeetings.length > 0) {
       html += `<div class="sched-section-title" style="margin-top:24px; color:#ef4444; border-bottom-color:#ef4444;">⏮ Missed Classes</div>`;
       missedMeetings.forEach(m => {
@@ -759,7 +771,7 @@ CK.schedulePro = (() => {
     const coachName = CK.currentUser?.full_name || 'Coach';
     
     // Filter meetings
-    const myMeetings = meetings.filter(m => m.coachId === coachId || (m.coachName && m.coachName.toLowerCase().includes(coachName.toLowerCase())));
+    const myMeetings = meetings.filter(m => String(m.coachId || '') === String(coachId || '') || (m.coachName && m.coachName.toLowerCase().includes(coachName.toLowerCase())));
 
     // Group slots by day
     const matrixSlotsByDay = {};
@@ -826,19 +838,18 @@ CK.schedulePro = (() => {
     const meetings = await get();
 
     const studentName = profile?.full_name || CK.currentUser?.full_name || '';
+    const studentNameLower = studentName.toLowerCase();
 
-    // Filter student's personal meetings
     const myMeetings = meetings.filter(m => 
       m.studentIds?.includes(profile?.id) || 
       (profile?.batch && m.batch?.toLowerCase().includes(profile.batch.toLowerCase()))
     );
 
-    // Filter student's matrix slots
     const myMatrixSlotsByDay = {};
     data.forEach(row => {
       Object.entries(row.slots).forEach(([day, slots]) => {
         slots.forEach(s => {
-          if (s.student.toLowerCase().includes(studentName.toLowerCase())) {
+          if (studentNameLower && s.student && s.student.toLowerCase().includes(studentNameLower)) {
             myMatrixSlotsByDay[day] = myMatrixSlotsByDay[day] || [];
             myMatrixSlotsByDay[day].push({ coach: row.coach, ...s });
           }
@@ -918,7 +929,7 @@ CK.schedulePro = (() => {
   };
 
   // Expose extra meeting schedulers
-  window.CK.schedulePro.coachAddMeeting = (coachId, coachName, containerId) => {
+  window.CK.schedulePro.coachAddMeeting = async (coachId, coachName, containerId) => {
     openMeetingModal(null, coachId, async (data) => {
       const baseMeeting = { coachId, coachName, ...data, studentIds: [] };
       let count = 1;
@@ -966,7 +977,7 @@ CK.schedulePro = (() => {
       <div class="cls-modal">
         <div class="cls-modal-header">
           <h3>${existing ? '✏️ Edit Meeting' : '➕ Schedule New Meeting'}</h3>
-          <button class="cls-modal-close" onclick="this.closest('.p-modal-overlay').remove()">✕</button>
+          <button class="cls-modal-close" onclick="this.closest('.cls-modal-overlay').remove()">✕</button>
         </div>
         <div class="cls-modal-body">
           <div class="cls-form-row"><label>Title</label><input class="p-input" id="mm_title" value="${existing?.title || ''}" placeholder="e.g. Tactics Workshop"></div>
@@ -993,11 +1004,8 @@ CK.schedulePro = (() => {
           </div>
           <div class="cls-form-row"><label>Duration (min)</label><input class="p-input" type="number" id="mm_dur" value="${existing?.duration || 60}" min="15" max="180"></div>
           <div class="cls-form-row">
-            <label>Class Link</label>
-            <div style="display:flex; gap:8px;">
-              <input class="p-input" id="mm_link" value="${existing?.link || ''}" placeholder="https://meet.google.com/xxx" style="flex:1;">
-              <button class="p-btn p-btn-ghost" id="mm_gen_link" style="padding:0 12px; white-space:nowrap;" type="button">🪄 Generate</button>
-            </div>
+            <label>Google Meet Link (paste manually)</label>
+            <input class="p-input" id="mm_link" value="${existing?.link || ''}" placeholder="https://meet.google.com/xxx-xxxx-xxx">
           </div>
           <div class="cls-form-row"><label>Notes for Students</label><textarea class="p-input" id="mm_notes" rows="2" placeholder="Pre-class preparation, topics to review...">${existing?.notes || ''}</textarea></div>
         </div>
@@ -1008,25 +1016,8 @@ CK.schedulePro = (() => {
       </div>`;
     document.body.appendChild(modal);
 
-    modal.querySelector('#mm_gen_link').onclick = async (e) => {
-      e.preventDefault();
-      const btn = e.target;
-      btn.textContent = '⏳...';
-      btn.disabled = true;
-      try {
-        const link = (CK.gmeetScheduler && CK.gmeetScheduler.createMeet)
-          ? await CK.gmeetScheduler.createMeet()
-          : (CK.gmeet && CK.gmeet.createMeetSpace) ? await CK.gmeet.createMeetSpace() : `https://meet.google.com/mock-${uid()}`;
-        modal.querySelector('#mm_link').value = link;
-        btn.textContent = '✅ Generated';
-      } catch (err) {
-        btn.textContent = '❌ Failed';
-      }
-      setTimeout(() => { btn.disabled = false; btn.textContent = '🪄 Generate'; }, 2000);
-    };
-
-    modal.querySelector('#mm_save').onclick = () => {
-      onSave({
+    modal.querySelector('#mm_save').onclick = async () => {
+      const data = {
         title:      modal.querySelector('#mm_title').value.trim(),
         type:       modal.querySelector('#mm_type').value,
         recurrence: modal.querySelector('#mm_recurrence').value,
@@ -1036,7 +1027,8 @@ CK.schedulePro = (() => {
         duration:   parseInt(modal.querySelector('#mm_dur').value),
         link:       modal.querySelector('#mm_link').value.trim(),
         notes:      modal.querySelector('#mm_notes').value.trim()
-      });
+      };
+      onSave(data);
       modal.remove();
     };
   }
@@ -1052,7 +1044,7 @@ CK.schedulePro = (() => {
   }
 
   return {
-    get, renderCoachSchedule, renderStudentSchedule, renderAdminSchedule, upcomingCount,
+    get, getTimetable, renderCoachSchedule, renderStudentSchedule, renderAdminSchedule, upcomingCount,
     editMeeting, deleteMeeting
   };
 })();

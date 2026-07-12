@@ -55,7 +55,7 @@ CK.classSystem = (() => {
           <div class="cls-class-body">
             <div class="cls-class-link">
               <span>🔗</span>
-              <a href="${c.zoomLink}" target="_blank" class="cls-zoom-link" onclick="CK.classSystem.markCoachAttendance('${c.id}','${coachId}'); return true;">${c.zoomLink}</a>
+              <a href="${_e(c.zoomLink)}" target="_blank" class="cls-zoom-link" onclick="CK.classSystem.markCoachAttendance('${_e(c.id)}','${_e(coachId)}'); return true;">${_e(c.zoomLink)}</a>
             </div>
             <div class="cls-class-footer">
               <span>👥 ${studCount} / ${c.maxStudents} students</span>
@@ -155,7 +155,7 @@ CK.classSystem = (() => {
             <input class="p-input" type="number" id="cmod_max" value="${existing?.maxStudents || 10}" min="1" max="30">
           </div>
           <div class="cls-form-row">
-            <label>Class Link (Zoom / Google Meet)</label>
+            <label>Class Link (Google Meet / Zoom — paste manually)</label>
             <input class="p-input" id="cmod_zoom" value="${existing?.zoomLink || ''}" placeholder="https://meet.google.com/xxx-yyy-zzz">
           </div>
         </div>

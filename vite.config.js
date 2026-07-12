@@ -44,9 +44,14 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/functions/v1': {
-        target:    'https://hcjuyqicftkgpiyrkscr.supabase.co',
+        target:    'https://vseombfkrvpffnpgbsnk.supabase.co',
         changeOrigin: true,
         rewrite: (p) => p,
+      },
+      '/api': {
+        target: 'https://vseombfkrvpffnpgbsnk.supabase.co/functions/v1',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },

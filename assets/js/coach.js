@@ -6,6 +6,20 @@
 
 const CK = window.CK = window.CK || {};
 
+function parseTimeMinutes(t) {
+  const s = String(t || '').trim();
+  const m = s.match(/^(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m?)?$/i);
+  if (!m) return null;
+  let h = +m[1];
+  const mn = +(m[2] || 0);
+  const ap = (m[3] || '').toLowerCase().replace('.', '');
+  if (ap) {
+    if (ap.startsWith('p') && h < 12) h += 12;
+    if (ap.startsWith('a') && h === 12) h = 0;
+  }
+  return h * 60 + mn;
+}
+
 CK.coach = {
   coachProfile: null,
   classesDb: [],
@@ -19,7 +33,7 @@ CK.coach = {
       if (currentUser) CK.currentUser = currentUser;
     }
     if (!currentUser) {
-      CK.showPage('login-page');
+      window.location.href = '/lms';
       return;
     }
 
@@ -43,9 +57,19 @@ CK.coach = {
       (c.coachName && _coachName && String(c.coachName).toLowerCase() === String(_coachName).toLowerCase());
     const _onToday = (c) => (c.days || []).some(d => String(d).slice(0, 3).toLowerCase() === _dayShort.toLowerCase());
     const _todayClasses = _allClasses.filter(c => _mine(c) && _onToday(c))
-      .sort((a, b) => String(a.time).localeCompare(String(b.time)));
+      .sort((a, b) => (parseTimeMinutes(a.time) || 0) - (parseTimeMinutes(b.time) || 0));
     const _meetings = await CK.db.getMeetings();
-    const _todayMeetings = _meetings.filter(m => (m.coach === _coachName || !m.coach) && m.date === _todayStr);
+    const _mineMeeting = (m) => {
+      const coachNameMatch = _coachName && ((m.coachName && String(m.coachName).toLowerCase() === String(_coachName).toLowerCase()) || (m.coach && String(m.coach).toLowerCase() === String(_coachName).toLowerCase()));
+      return m.date === _todayStr && (
+        String(m.coachId || '') === String(_coachId || '') ||
+        String(m.coach || '') === String(_coachId || '') ||
+        coachNameMatch ||
+        (!m.coach && !m.coachName)
+      );
+    };
+    const _todayMeetings = _meetings.filter(_mineMeeting)
+      .sort((a, b) => (parseTimeMinutes(a.time) || 0) - (parseTimeMinutes(b.time) || 0));
 
     const entries = _todayClasses.map((c, i) => ({
       id: c.id || `C${i + 1}`,

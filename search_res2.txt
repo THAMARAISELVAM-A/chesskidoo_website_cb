@@ -1,0 +1,921 @@
+8: content="ChessKidoo — India's 1st Chess Student Tracking System and Premier Academy. FIDE-certified 
+9: <meta name="keywords" content="chess academy India, FIDE chess coaching, chess for kids, online ches
+17: <meta property="og:description" content="FIDE-certified chess coaching for students aged 6–18. Track
+27: <meta name="twitter:description" content="FIDE-certified chess coaching for students aged 6–18. Trac
+79: {"@type":"LocalBusiness","@id":"https://chesskidoo.com/#business","name":"ChessKidoo Academy","descr
+82: {"@type":"Course","name":"Chess Beginner Programme","description":"Master chess fundamentals — piece
+84: {"@type":"Course","name":"Chess Intermediate Programme","description":"Tactical patterns, positional
+87: {"@type":"Question","name":"What age groups does ChessKidoo teach?","acceptedAnswer": {"@type":"Answ
+89: {"@type":"Question","name":"Are the coaches FIDE certified?","acceptedAnswer": {"@type":"Answer","te
+158: <button class="nav-link" data-section="coaches" data-translate="coaches"
+159: onclick="CK.navigate('coaches')">Coaches</button>
+168: <button id="loginNavBtn" class="nav-link btn btn-ghost nav-login" data-translate="login"
+169: onclick="CK.showPage('login-page')" style="padding: 8px 16px; font-size: 0.9rem;">Log In</button>
+197: <span data-translate="hero_badge">INDIA'S #1 STUDENT TRACKING SYSTEM</span>
+215: <div class="hero-stat-label" data-translate="hero_stat_students">Active Students</div>
+219: <div class="stat-item-label hero-stat-label" data-translate="hero_stat_coaches">FIDE Coaches</div>
+228: <div class="stat-item-label hero-stat-label" data-translate="hero_stat_rating">Parent Rating</div>
+304: <div class="trust-item">👨‍🎓 200+ Active Students</div>
+305: <div class="trust-item">⭐ 4.9/5 Parent Rating</div>
+308: <div class="trust-item">🎯 India's #1 Student Tracking System</div>
+309: <div class="trust-item">♜ FIDE-Rated Coaches</div>
+315: <div class="trust-item">👨‍🎓 200+ Active Students</div>
+316: <div class="trust-item">⭐ 4.9/5 Parent Rating</div>
+319: <div class="trust-item">🎯 India's #1 Student Tracking System</div>
+320: <div class="trust-item">♜ FIDE-Rated Coaches</div>
+331: <p class="lead" data-translate="features_lead">One-stop solution for kids learning chess - tracking,
+339: <h3 data-translate="feature_tracking">Smart Student Tracking</h3>
+340: <p data-translate="feature_tracking_desc">Manage profiles, game history, and ratings for every stude
+346: <p data-translate="feature_progress_desc">Visual insights into each student's performance trends and
+357: <h3 data-translate="feature_coaches">Certified Coaches</h3>
+358: <p data-translate="feature_coaches_desc">Learn from professionals trained under FIDE's rigorous glob
+370: <p data-translate="feature_feedback_desc">Every game is reviewed and discussed with the coach for co
+385: <p data-translate="feature_bilingual_desc">Coaching available in <strong>English</strong> &amp; <str
+397: <p>A dedicated parent portal with weekly progress reports, attendance alerts, fee receipts, and dire
+415: <figcaption class="tvid-caption">⭐ Student Review</figcaption>
+422: <figcaption class="tvid-caption">⭐ Parents Review</figcaption>
+439: <div class="eyebrow" style="display:block;text-align:center;margin-bottom:12px;">Student Journey</di
+546: <p data-translate="level_beginner_desc">Ideal for students new to chess. Focuses on basic moves, ope
+656: <!-- Coaches Section -->
+657: <section id="coaches" class="section-padding">
+660: <h2 data-translate="coaches_title">Meet the Minds Behind the Moves</h2>
+661: <p class="lead" data-translate="coaches_lead">8+ FIDE-certified coaches with international ratings a
+664: <div class="coach-grid">
+666: <!-- ═══ ADVANCED COACHES ═══ -->
+669: <div class="coach-card-premium" data-aos="fade-up">
+670: <div class="coach-level-badge">Advanced</div>
+671: <div class="coach-img-box">
+674: <div class="coach-card-body">
+676: <p>FIDE-certified coach with 2 years of experience in training young talents.</p>
+681: <div class="coach-card-premium" data-aos="fade-up">
+682: <div class="coach-level-badge">Advanced</div>
+683: <div class="coach-img-box">
+686: <div class="coach-card-body">
+688: <p>Chennai chess &amp; FIDE rating specialist with 4 years of advanced coaching experience.</p>
+692: <!-- ═══ INTERMEDIATE COACHES ═══ -->
+695: <div class="coach-card-premium" data-aos="fade-up">
+696: <div class="coach-level-badge">Intermediate</div>
+697: <div class="coach-img-box">
+700: <div class="coach-card-body">
+707: <div class="coach-card-premium" data-aos="fade-up">
+708: <div class="coach-level-badge">Intermediate</div>
+709: <div class="coach-img-box">
+712: <div class="coach-card-body">
+714: <p>FIDE-certified coach with 2 years of experience in competitive training.</p>
+719: <div class="coach-card-premium" data-aos="fade-up">
+720: <div class="coach-level-badge">Intermediate</div>
+721: <div class="coach-img-box">
+724: <div class="coach-card-body">
+730: <!-- ═══ BEGINNER COACHES ═══ -->
+733: <div class="coach-card-premium" data-aos="fade-up">
+734: <div class="coach-level-badge">Beginner</div>
+735: <div class="coach-img-box">
+738: <div class="coach-card-body">
+740: <p>Child specialist coach &amp; AFM title player with a passion for early learning.</p>
+745: <div class="coach-card-premium" data-aos="fade-up">
+746: <div class="coach-level-badge">Beginner</div>
+747: <div class="coach-img-box">
+750: <div class="coach-card-body">
+752: <p>Specialist in beginner and child-friendly chess coaching methodology.</p>
+757: <div class="coach-card-premium" data-aos="fade-up">
+758: <div class="coach-level-badge">Beginner</div>
+759: <div class="coach-img-box">
+762: <div class="coach-card-body">
+764: <p>Chess psychology specialist — Student Chess Council certified trainer.</p>
+776: <p class="lead" data-translate="achievements_lead">Recognizing the excellence of our students, coach
+783: <p data-translate="achievement_championships_desc">Students and teams winning state and national lev
+788: <h3 data-translate="achievement_students">200+ Active Students</h3>
+789: <p data-translate="achievement_students_desc">Young chess enthusiasts actively learning and competin
+794: <p data-translate="achievement_rating_desc">Highest parent satisfaction rating among chess academies
+798: <!-- Student Showcase Gallery -->
+802: 🌟 Our Student Champions
+807: <img loading="lazy" src="assets/img/acivements img.jpeg" alt="Student Achievement ANUSHYA">
+816: <img loading="lazy" src="assets/img/acivements img 1.jpeg" alt="Student Achievement Ayush M">
+825: <img loading="lazy" src="assets/img/img fpweb.jpeg" alt="Student Achievement Poonthalir">
+835: <img loading="lazy" src="assets/img/acivements img4.jpeg" alt="Student Achievement Varun">
+845: <img loading="lazy" src="assets/img/awards1.jpeg" alt="Student Achievement Raskitha">
+849: <p>8th Position — Out of 16 Class 🏅 Erode District · Coach Gyanasurya</p>
+855: <img loading="lazy" src="assets/img/awardss.jpeg" alt="Student Achievement Krishna">
+859: <p>2nd Place Winner — Out of 40 Class ⭐ Coach Rohith</p>
+865: <img loading="lazy" src="assets/img/awards.jpeg" alt="Student Achievement Buvargan">
+875: <img loading="lazy" src="assets/img/acivements img3.jpeg" alt="Student Achievement Riyas">
+908: <!-- Parent Reviews Section — Premium Redesign -->
+911: <div class="eyebrow">Parent Reviews</div>
+925: <div class="review-name">Parent of U-15 Riyas</div>
+933: <p class="review-text">"My son's confidence has grown tremendously after joining ChessKidoo. The coa
+938: <div class="review-name">Parent of U-15 Adhavan</div>
+951: <div class="review-name">Parent of U-12 Saran</div>
+959: <p class="review-text">"The online classes are highly interactive and the student portal is brillian
+964: <div class="review-name">Parent of U-10 Priya</div>
+973: district tournament within 8 months. The coaches are world-class."</p>
+977: <div class="review-name">Parent of U-14 Karthik</div>
+985: <p class="review-text">"Best investment in my child's education. The FIDE-rated coaches, AI puzzle e
+990: <div class="review-name">Parent of U-13 Vignesh</div>
+1006: for champions, trusted by parents.</p>
+1013: <p>AI flags mistakes and strengths after every practice game, so students improve faster with
+1035: <p>Students compete in internal tournaments every week, building competitive experience from the ver
+1042: <h4>FIDE-Rated &amp; Titled Coaches</h4>
+1043: <p>Every coach is FIDE-rated or holds a title, with an average ELO above 1800 — world-class instruct
+1051: <p>Parents and students get live dashboards showing ELO growth, attendance, puzzles solved, and
+1221: <div class="eyebrow">Transparent Pricing</div>
+1246: <li><span class="check">✓</span> Parent progress dashboard</li>
+1263: <li><span class="check">✓</span> Full parent & student portal</li>
+1281: <li><span class="check">✓</span> 1-on-1 coaching sessions</li>
+1301: data-translate="faq_lead">Everything parents want to know before booking a demo class.</p>
+1318: up. Our coaches specialize in teaching early learners with playful, interactive, and gamified method
+1337: coaches, combined with automated game reviews on our custom student portal.</div>
+1372: interactive session with a senior FIDE-certified coach. The coach assesses your child's current
+1390: <div class="faq-content-inner" data-translate="faq_a5">Yes, absolutely! Our Advanced and elite coach
+1408: <div class="faq-content-inner" data-translate="faq_a6">Yes! Parents get access to our real-time Stud
+1410: FIDE rating progression charts, and direct coach feedback notes.</div>
+1439: style="position:absolute; inset:0; background:radial-gradient(ellipse 70% 60% at 50% 50%, rgba(232,1
+1454: data-translate="cta_lead">Join 200+ students and families who chose ChessKidoo. No experience needed
+1469: <span>🎓 200+ Students</span>
+1488: India's #1 FIDE-certified chess academy for students aged 6-18. Building champions, one move at a ti
+1533: <button class="footer-link-btn" onclick="CK.navigate('coaches')">Coaching Class</button>
+1554: <h5 class="footer-col-title">Coaching Classes</h5>
+1636: <div id="login-page" class="page">
+1637: <section class="login-bg-section"
+1641: <header class="login-header">
+1642: <a href="/" onclick="event.preventDefault(); CK.showPage('landing-page')" class="login-header-logo">
+1643: <div class="login-header-logo-box">
+1644: <span class="login-header-logo-symbol">♘</span>
+1646: <span class="login-header-logo-text">Chess<span>Kidoo</span></span>
+1648: <nav class="login-header-nav">
+1649: <button class="login-header-nav-btn active" onclick="CK.navigate('home')">Home</button>
+1650: <button class="login-header-nav-btn" onclick="CK.navigate('features')">Features</button>
+1651: <button class="login-header-nav-btn" onclick="CK.navigate('levels')">Curriculum</button>
+1652: <button class="login-header-nav-btn" onclick="CK.navigate('coaches')">Coaches</button>
+1653: <button class="login-header-nav-btn" onclick="CK.navigate('achievements')">Achievements</button>
+1654: <button class="login-header-nav-btn" onclick="CK.navigate('pricing')">Pricing</button>
+1655: <button class="login-header-nav-btn" onclick="CK.navigate('faq')">FAQ</button>
+1659: <!-- Redesigned Login Card Container -->
+1662: <div class="login-card-v2" data-aos="fade-up" style="margin: 0 auto; width: 100%; max-width: 480px;"
+1665: <div class="login-card-v2-icon">♛</div>
+1668: <div class="login-card-v2-brand">Chess<span>Kidoo</span></div>
+1670: <h2 class="login-card-v2-title">Welcome Back</h2>
+1671: <p class="login-card-v2-subtitle">Please enter your details to access your dashboard.</p>
+1674: <form id="loginForm" onsubmit="CK.handleLogin(event)">
+1685: <button type="button" onclick="CK.togglePassword('loginForm')" class="form-group-v2-eye">
+1695: <button type="button" onclick="CK.showPage('landing-page')" class="login-card-v2-back">← Back to
+1697: <a href="#" class="login-card-v2-forgot" onclick="event.preventDefault(); CK.forgotPassword(document
+1700: <button type="submit" class="login-card-v2-btn">Sign In</button>
+1703: <div class="login-card-v2-divider">
+1707: <button type="button" class="login-card-v2-google"
+1708: onclick="CK.handleGoogleLogin()">
+1726: have an account? <a href="#" onclick="event.preventDefault(); CK.showToast('Contact the academy to g
+1735: <div id="admin-page" class="page">
+1736: <!-- Floating Calculator Widget (admin-only; hidden with the page via opacity/pointer-events) -->
+1788: <div class="p-brand-role">Admin Portal</div>
+1794: <button class="p-nav-item active" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('
+1797: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('live')}
+1802: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('student
+1803: <span class="icon">🎓</span><span>Students</span>
+1804: <span class="p-nav-badge" id="badge-students">0</span>
+1806: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('coaches
+1807: <span class="icon">👨‍🏫</span><span>Coaches</span>
+1809: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('classes
+1812: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('attenda
+1816: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('tournam
+1819: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('achieve
+1822: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('files')
+1825: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('expense
+1828: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('reports
+1831: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('access'
+1834: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('feedbac
+1837: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('schedul
+1840: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('coachat
+1841: <span class="icon">👨‍🏫</span><span>Coach Attendance</span>
+1843: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('coachfi
+1844: <span class="icon">💵</span><span>Coach Finance</span>
+1847: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('analyti
+1850: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('leaderb
+1853: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('audit')
+1856: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('logs')}
+1861: <button class="p-nav-item" onclick="if(CK&&CK.admin&&CK.admin.showPanel){CK.admin.showPanel('setting
+1870: <div class="p-user-avatar" id="adminSidebarAvatar">A</div>
+1872: <div class="p-user-name" id="adminSidebarName">Admin</div>
+1873: <div class="p-user-email">admin@chesskidoo.com</div>
+1880: <div class="p-drawer-overlay" id="adminDrawerOverlay" onclick="CK.togglePortalNav(false)"></div>
+1882: <button class="p-hamburger-btn" id="adminHamburgerBtn" onclick="CK.togglePortalNav()" aria-label="Op
+1885: <div class="p-topbar-title" id="adminPanelTitle">Dashboard</div>
+1888: <input type="text" placeholder="Search students, coaches…" id="adminGlobalSearch"
+1889: oninput="CK.admin.handleSearch(this.value)" />
+1897: onclick="CK.notifs&&CK.notifs.toggleDrawer('admin')" style="position:relative;cursor:pointer;">🔔<spa
+1899: <div class="p-icon-btn" title="Help & Support" onclick="CK.showHelp&&CK.showHelp('admin')"
+1901: <button class="p-btn p-btn-gold p-btn-sm" id="adminTopActionBtn" onclick="CK.admin.topAction()">+ Ad
+1902: Student</button>
+1908: <!-- Admin Welcome Banner -->
+1912: <h2>Admin Command Center</h2>
+1913: <p id="adminWelcomeSub">Good day! Everything is running smoothly. Check live tracking for today's
+1917: <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.admin.showPanel('live')">📡 Live
+1919: <button class="p-btn p-btn-teal p-btn-sm" onclick="CK.admin.openStudentModal()">+ Enroll
+1920: Student</button>
+1926: <div class="p-stat-val" id="stat-students">0</div>
+1927: <div class="p-stat-label">Total Students</div>
+1932: <div class="p-stat-val" id="stat-coaches">0</div>
+1933: <div class="p-stat-label">Active Coaches</div>
+1957: <div class="p-stat-label">Parent Rating</div>
+1972: <div class="p-card-title">🎯 Student Levels</div>
+1987: <!-- Coach Scorecards -->
+1990: <div class="p-card-title">👨‍🏫 Coach Performance</div>
+1992: student ELO</div>
+1995: <div id="adminCoachScorecards" class="adm-coach-grid"></div>
+2012: <tbody id="adminActivityTable"></tbody>
+2023: <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.renderLive()">🔄 Refresh</button>
+2025: <div style="font-size:.78rem;color:rgba(255,255,255,.3);" id="adminLiveCount"></div>
+2026: <div style="font-size:.72rem;color:rgba(255,255,255,.2);" id="adminLiveRefreshTs"></div>
+2029: <div class="p-card-body" id="adminLiveGrid" style="padding:16px;"></div>
+2032: <!-- ══ STUDENTS PANEL ══ -->
+2033: <div class="p-panel" id="p-panel-students">
+2036: <div class="p-card-title">🎓 Student Registry</div>
+2039: placeholder="Filter by name/coach..." id="adminStudentSearch"
+2040: oninput="CK.admin.filterStudents()" />
+2041: <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.admin.openStudentModal()">+ New
+2043: <button class="p-btn p-btn-blue p-btn-sm" onclick="CK.admin.exportStudentsCSV()">📥 Export
+2052: <th>Student</th>
+2054: <th>Coach</th>
+2064: <tbody id="adminStudentsTable"></tbody>
+2069: <!-- ══ COACHES PANEL — Expandable Card Grid ══ -->
+2070: <div class="p-panel" id="p-panel-coaches">
+2073: <div class="p-card-title">👨‍🏫 Coach Management</div>
+2074: <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.admin.openCoachModal()">+ Add Coach</button>
+2076: <!-- Cards container — populated by CK.admin.loadCoaches() -->
+2077: <div id="adminCoachesGrid" class="ck-coach-grid"></div>
+2079: <tbody id="adminCoachesTable" style="display:none;"></tbody>
+2087: <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.admin.openClassModal()">+ Schedule
+2097: <th>Coach</th>
+2099: <th>Students</th>
+2104: <tbody id="adminClassesTable"></tbody>
+2114: <input type="date" class="p-form-control" style="width:auto" id="adminAttendanceDate"
+2115: onchange="CK.admin.loadAttendance()" />
+2121: <th>Student</th>
+2123: <th>Coach</th>
+2129: <tbody id="adminAttendanceTable"></tbody>
+2139: <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.admin.openUploadModal('admin')">+ Upload File<
+2153: <tbody id="adminFilesTable"></tbody>
+2163: <div class="p-stat-val" id="adminExpTotalMonth">₹0</div>
+2169: <div class="p-stat-val" id="adminExpTotalIncome">₹0</div>
+2175: <div class="p-stat-val" id="adminExpNetProfit">₹0</div>
+2182: onclick="CK.openModal('adminExpenseModal')">+ Add Expense Record</button>
+2191: <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.openModal('adminExpenseModal')">+ Add
+2207: <tbody id="adminExpensesTable"></tbody>
+2219: <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.tournament&&CK.tournament.showCreateForm('admi
+2222: <div class="p-card-body" id="adminTournamentCreate"></div>
+2228: <div class="p-card-body" id="adminTournamentList" style="padding:16px;">
+2240: onclick="CK.admin.openIssueCertModal()">+ Issue Certificate</button>
+2249: <p style="font-size:0.85rem; color:var(--p-text-muted); margin-bottom:18px;">2 students reached 5
+2270: district & state medals across all students.</p>
+2272: onclick="CK.admin.showPanel('tournaments')">View Championships</button>
+2281: <div class="p-card-body" id="adminIssuedCertsList">
+2291: <div class="p-card-title">📊 Student Progress Reports</div>
+2293: <input type="text" class="p-form-control" placeholder="Search student..."
+2295: oninput="CK.admin.filterStudents()" />
+2296: <button class="p-btn p-btn-teal p-btn-sm" onclick="CK.admin.exportReportsCSV()">📥 Export Reports</bu
+2297: <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.admin.markAllPaid()">✅ Mark All Paid</button>
+2298: <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.sendFeeReminders()">💬 Fee Reminders</bu
+2305: <th>Student</th>
+2311: <th>Coach Note</th>
+2314: <tbody id="adminReportsTable">
+2330: <div class="p-card-body" id="adminEngagementOverview" style="padding:20px;">
+2331: <div style="text-align:center;opacity:.4;padding:30px;">Analyzing student data...</div>
+2336: <div class="p-card-body" id="adminDropoutRisk" style="padding:20px;">
+2342: <div class="p-card-header"><div class="p-card-title">👨‍🏫 Coach Effectiveness Scorecard</div></div>
+2343: <div class="p-card-body" id="adminCoachEffectiveness" style="padding:20px;">
+2344: <div style="text-align:center;opacity:.4;padding:30px;">Calculating coach metrics...</div>
+2349: <div class="p-card-title">🎯 Student Weakness Radar</div>
+2350: <select class="p-form-control" id="adminWeaknessStudentSelect" style="max-width:250px;" onchange="CK
+2351: <option value="">Select a student...</option>
+2355: <div id="adminWeaknessChart" style="padding:20px; min-height:300px;">
+2356: <div style="text-align:center;opacity:.4;padding:60px;">Select a student to view their weakness anal
+2358: <div id="adminStudyPlan" style="padding:20px;">
+2370: <div class="p-card-body" id="adminLeaderboard" style="padding:16px;">
+2377: <div class="p-card-body" id="adminXPFeed" style="padding:16px; max-height:400px; overflow-y:auto;">
+2383: <div class="p-card-body" id="adminBadgeShowcase" style="padding:16px;">
+2396: <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.security&&CK.security.renderAuditLog('adminAu
+2398: <div class="p-card-body" id="adminAuditLogTable" style="padding:16px;">
+2405: <div class="p-card-body" id="adminFairPlayReports" style="padding:16px;">
+2411: <div class="p-card-body" id="adminRBACOverview" style="padding:16px;">
+2428: <div class="p-card-body" id="adminLiveLogsContainer" style="padding:16px;">
+2454: onclick="CK.admin.saveAcademyProfile()">Save Profile</button></div>
+2470: <div class="p-settings-desc">Notify parents when student is absent</div>
+2483: <div class="p-settings-label">Coach Performance Reports</div>
+2484: <div class="p-settings-desc">Weekly coach summary to admin email</div>
+2510: <div class="p-settings-desc">Show real-time student game feed</div>
+2516: <div class="p-settings-label">Parent Portal Access</div>
+2517: <div class="p-settings-desc">Allow parents to view report cards</div>
+2539: onclick="CK.admin.saveFeeConfig()">Save Fee Config</button>
+2554: <div class="p-settings-label">Two-Factor Admin Login</div>
+2555: <div class="p-settings-desc">OTP verification on admin sign-in</div>
+2560: <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.exportStudentsCSV()">📥 Export Students
+2579: onclick="CK.accessManager && CK.accessManager.addParentDialog()">+ Add Parent</button>
+2581: <div class="p-card-body" id="adminAccessTable" style="padding:16px;">
+2594: onclick="CK.parents && CK.parents.renderAllFeedback('adminFeedbackList')">All</button>
+2596: onclick="CK.parents && CK.parents.renderAllFeedback('adminFeedbackList','parent')">Parents</button>
+2598: onclick="CK.parents && CK.parents.renderAllFeedback('adminFeedbackList','student')">Students</button
+2601: <div class="p-card-body" id="adminFeedbackList" style="padding:16px;">
+2613: <div class="p-card-body" id="adminAllSchedule" style="padding:16px;">
+2619: <!-- ══ COACH ATTENDANCE PANEL ══ -->
+2620: <div class="p-panel" id="p-panel-coachattendance">
+2623: <div class="p-card-title">👨‍🏫 Coach Attendance Report</div>
+2625: <div class="p-card-body" id="adminCoachAttnReport" style="padding:16px;">
+2626: <div style="text-align:center;opacity:.45;padding:30px;">Loading coach attendance…</div>
+2631: <!-- ══ COACH FINANCE / PAYROLL PANEL ══ -->
+2632: <div class="p-panel" id="p-panel-coachfinance">
+2633: <div id="adminCoachFinanceStats" class="acc-stats-row" style="margin-bottom:18px;"></div>
+2636: <div class="p-card-title">💵 Coach Finance & Payroll</div>
+2637: <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.admin.renderCoachFinance()">🔄 Refresh</button
+2639: <div class="p-card-body" id="adminCoachFinanceBody" style="padding:16px;">
+2640: <div style="text-align:center;opacity:.45;padding:30px;">Loading coach finance…</div>
+2645: <div class="p-card-body" id="adminCoachPaymentsBody" style="padding:16px;">
+2656: <div id="student-page" class="page">
+2662: <div class="p-brand-icon student-portal-icon">♞</div>
+2665: <div class="p-brand-role">Student Portal</div>
+2671: <button class="p-nav-item active" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('home')
+2673: <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('progress')}">
+2675: <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('schedule')}">
+2677: <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('session')}"><
+2679: <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('resources')}"
+2681: <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('path')}"><spa
+2683: <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('vault')}"><sp
+2686: onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('lab'); setTimeout(() => CK.lab.initBoard
+2688: <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('classroom')}"
+2690: <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('homework')}">
+2692: <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('puzzles')}"><
+2693: Puzzles</span><span class="p-nav-badge" id="studentPuzzleBadge">0</span></button>
+2695: onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('openings');setTimeout(()=>{if(CK.opening
+2698: onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('games');setTimeout(()=>CK.gameTracker&&(
+2700: <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('reviews')}"><
+2702: <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('tournaments')
+2704: <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('myrank')}"><s
+2706: <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('studyplan')}"
+2708: <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('achievements'
+2710: <div class="p-nav-section-label">Administration</div>
+2711: <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('fees')}"><spa
+2713: <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('report')}"><s
+2715: <button class="p-nav-item" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('linked')}"><s
+2721: <div class="p-user-avatar" id="studentSidebarAvatar">EW</div>
+2723: <div class="p-user-name" id="studentSidebarName">Student</div>
+2724: <div class="p-user-sub" id="studentSidebarSub">Intermediate · ELO 0</div>
+2731: <div class="p-drawer-overlay" id="studentDrawerOverlay" onclick="CK.togglePortalNav(false)"></div>
+2733: <button class="p-hamburger-btn" id="studentHamburgerBtn" onclick="CK.togglePortalNav()" aria-label="
+2736: <div class="p-topbar-title" id="studentPanelTitle">My Dashboard</div>
+2746: onclick="CK.notifs&&CK.notifs.toggleDrawer('student')" style="position:relative;cursor:pointer;">🔔<s
+2748: <div class="p-icon-btn" title="Help & Support" onclick="CK.showHelp&&CK.showHelp('student')"
+2757: <div class="p-panel active" id="student-panel-home">
+2759: <div id="studentLiveClassBanner" class="p-welcome-banner" style="display: none; background: linear-g
+2763: <p id="studentLiveClassSub" style="color: #fca5a5;">Your coach is currently live-streaming a session
+2766: <button class="p-btn p-btn-gold p-btn-sm" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav
+2773: <h2>Welcome back, <span id="studentWelcomeName">Champion</span>! ♟</h2>
+2774: <p id="studentWelcomeSub">Ready to master your next move? You have new puzzles and a class scheduled
+2778: <button class="p-btn p-btn-gold p-btn-sm" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav
+2779: <button class="p-btn p-btn-teal p-btn-sm" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav
+2791: <div class="sd-session-live-badge" id="studentLiveBadge">● UPCOMING</div>
+2794: <span class="sd-session-countdown-val" id="studentCountdown">—</span>
+2802: <div class="sd-session-coach" id="nextClassSub">Check your schedule</div>
+2804: <span class="sd-meta-chip" id="studentSessionDuration">⏱ 60 mins</span>
+2806: <span class="sd-meta-chip" id="studentSessionStudents">👥 — students</span>
+2809: <button class="sd-join-btn" onclick="if(CK&&CK.student&&CK.student.nav){CK.student.nav('session')}">
+2817: <div class="p-stat-val" id="studentStatLessons">0</div>
+2822: <div class="p-stat-val" id="studentStatPuzzles">0</div>
+2827: <div class="p-stat-val" id="studentStatStars">0</div>
+2832: <div class="p-stat-val" id="studentStatRating">800</div>
+2837: <div class="p-stat-val" id="studentStatStreak">0</div>
+2842: <div class="p-stat-val" id="studentStatWinRate">0%</div>
+2848: <div id="studentRankCard" style="margin-bottom:4px;"></div>
+2853: <div id="studentDailyGoals">
+2887: <div class="pz-daily-card" onclick="CK.student.loadAndGoToPuzzle(CK.student.getDailyPuzzleId())">
+2956: <div class="sd-lesson-prog-label">Recommended by your Coach</div>
+2977: id="studentCurrentLevel">Beginner</div>
+2979: id="studentCurrentRating">800 ELO</div>
+2981: <div class="p-progress-fill" id="studentEloBar" style="width:0%;background:var(--p-gold)"></div>
+2986: <span id="studentEloNext">Next Milestone: 1000 ELO</span>
+2996: <span id="studentMyRank" style="font-size:.85rem;font-weight:700;color:var(--p-teal);">—</span>
+2999: <div class="p-card-body" style="padding:16px" id="studentLeaderboardBody">
+3009: <div class="p-panel" id="student-panel-resources">
+3014: <div class="p-card-body" id="studentResourcesList">
+3021: <div class="p-panel" id="student-panel-tournaments">
+3071: onclick="CK.showToast('Tournament info sent to your coach for approval.', 'info')">Request
+3080: <div class="p-panel" id="student-panel-myrank">
+3082: <div id="studentRankCardFull" style="min-height:200px;"></div>
+3085: <div class="p-card-body" id="studentXPFeed" style="padding:16px; max-height:350px; overflow-y:auto;"
+3092: <div class="p-card-body" id="studentLeaderboard" style="padding:16px;">
+3098: <div class="p-card-body" id="studentBadgeGrid" style="padding:16px;">
+3105: <div class="p-panel" id="student-panel-studyplan">
+3109: <div class="p-card-body" id="studentWeaknessChart" style="padding:20px; min-height:300px;">
+3115: <div class="p-card-body" id="studentELOPrediction" style="padding:20px;">
+3123: <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.student.regenerateStudyPlan()">🔄 Regenerate Pl
+3125: <div class="p-card-body" id="studentStudyPlan" style="padding:20px;">
+3132: <div class="p-panel" id="student-panel-progress">
+3267: <div class="p-card-body" id="studentAttendanceCalendar"
+3298: <div class="p-panel" id="student-panel-schedule">
+3303: <div class="p-card-body" id="studentScheduleList" style="padding:16px;">
+3309: <div class="p-panel" id="student-panel-session">
+3315: id="studentSessionTitle">No active session</div>
+3316: <button class="p-btn p-btn-blue" id="studentJoinBtn" onclick="CK.student.joinClass()">▶ Join Class
+3323: <div class="p-panel" id="student-panel-path">
+3338: <div class="p-panel" id="student-panel-vault">
+3364: onclick="CK.openVaultSession('Isolated Pawns & Dynamic Center', 'Coach')">▶ Study
+3389: onclick="CK.openVaultSession('Rook Endgames: Lucena & Philidor', 'Coach')">▶ Study
+3398: <div class="p-panel" id="student-panel-puzzles">
+3406: onclick="CK.puzzlesPro && CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', CK.currentUser && C
+3408: onclick="CK.puzzlesPro && CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', CK.currentUser && C
+3410: onclick="CK.puzzlesPro && CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', CK.currentUser && C
+3412: onclick="CK.puzzlesPro && CK.puzzlesPro.renderPuzzleList('studentPuzzleProList', CK.currentUser && C
+3415: <div class="p-card-body" id="studentPuzzleProList"
+3490: <div id="studentPuzzleBoardContainer" class="pz-board-inner"></div>
+3494: <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.student.showPuzzleHint()">💡 Hint</button>
+3495: <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.student.showPuzzleSolution()">👁
+3497: <button class="p-btn p-btn-blue p-btn-sm" onclick="CK.student.nextPuzzle()">Next →</button>
+3498: <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.student.openLeaderboard()">🏆 Board</button>
+3506: <!-- LEADERBOARD MODAL (inside student page so it overlays correctly) -->
+3508: onclick="if(event.target===this)CK.student.closeLeaderboard()">
+3512: <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.student.closeLeaderboard()">✕ Close</button>
+3522: <!-- COACH REVIEWS -->
+3523: <div class="p-panel" id="student-panel-reviews">
+3526: <div class="p-card-title">📝 Coach Reviews & Feedback</div>
+3528: <div class="p-card-body" id="studentReviewsContainer" style="padding:20px;">
+3529: <div style="opacity:0.6; padding:20px; text-align:center;">No coach reviews posted yet.</div>
+3535: <div class="p-panel" id="student-panel-achievements">
+3538: <div id="studentCertSection" style="margin-bottom:18px;"></div>
+3558: onclick="CK.student.downloadCertificate()">Download Certificate</button>
+3573: <div class="p-panel" id="student-panel-fees">
+3587: <div id="payStudentName" class="pay-order-student">Student: —</div>
+3652: <div id="studentUpiQrCode" style="width:100%; height:100%;"></div>
+3657: <span style="font-family:monospace; color:#cbd5e1; word-break:break-all; font-weight:600;" id="stude
+3658: <button class="p-btn p-btn-ghost p-btn-sm" style="padding:3px 8px; font-size:0.72rem;" onclick="CK.s
+3663: <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.student.openUpiApp('gpay')" style="font-size:
+3664: <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.student.openUpiApp('phonepe')" style="font-si
+3665: <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.student.openUpiApp('paytm')" style="font-size
+3666: <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.student.openUpiApp('upi')" style="font-size:0
+3673: <input type="text" id="studentUpiUtrInput" class="p-input" placeholder="e.g. 12-digit Ref No. / UTR"
+3674: <button id="studentUpiConfirmBtn" class="pay-submit-btn" onclick="CK.student.submitUtrPayment()" sty
+3719: onclick="CK.student.downloadReceipt()">📥 Download Official Receipt</button>
+3726: <div class="p-panel" id="student-panel-report">
+3729: <div class="p-card-title">📊 Official Student Report Card</div>
+3731: <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.student.viewReportCard()">👁 View</button>
+3732: <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.student.exportReportCardToPDF()">⬇ Download PD
+3733: <button class="p-btn p-btn-blue p-btn-sm" onclick="CK.student.printReportCard()">🖨 Print</button>
+3747: <div style="color:var(--p-text-muted); font-size:0.9rem;" id="rcCoachName">Coach: —</div>
+3780: <h4 style="margin:0 0 10px; color:var(--p-text);">Coach Feedback & Recommendations</h4>
+3785: <div style="margin-top:15px; text-align:right; font-weight:bold; color:var(--p-blue);" id="rcCoachSi
+3792: <div class="p-panel" id="student-panel-linked">
+3797: <div class="p-panel" id="student-panel-lab">
+3819: onclick="CK.lab.openPgnLibraryBrowser('studentLabBoard')"
+3824: onclick="CK.lab.loadRandomPuzzle('studentLabBoard')"
+3838: <div id="studentPgnLibraryBrowser" class="ck-pgn-lib-browser" style="display:none;"></div>
+3862: <div class="lab-main-grid" id="studentLabMainGrid">
+3874: <div id="studentLabBoard" class="lab-board-container"></div>
+3886: <button class="p-btn p-btn-ghost p-btn-sm" id="studentFollowCoachBtn" onclick="CK.lab.toggleFollowCo
+3887: title="Follow Coach board in real-time" style="display:inline-flex;align-items:center;gap:6px;">
+3889: <span>📡 Follow Coach</span>
+3897: onchange="CK.lab.handleFileUpload(event,'studentLabBoard')">
+3908: onclick="CK.lab.analyzePgn(document.getElementById('labPgnInput').value,'studentLabBoard')">🔬 Analyz
+3910: onclick="CK.lab.loadRandomPuzzle('studentLabBoard')">🧩 Load Puzzle</button>
+3912: onclick="CK.pgnVault&&CK.pgnVault.saveCurrentLabPgn('studentLabBoard')">🗄️ Save to Vault</button>
+3914: <div id="studentPgnDbExplorer" class="lab-db-explorer" style="display:none;margin-bottom:14px;"></di
+3928: <div class="labCoachExplanation"
+3940: <div id="studentLabMoveList" class="lab-move-list"></div>
+3954: <div id="studentPgnLibStrip" class="pgn-lib-strip"></div>
+3966: <div id="studentPgnVault"></div>
+4063: <!-- STUDENT CLASSROOM -->
+4065: <div class="p-panel" id="student-panel-homework">
+4071: <div class="ck-rd-hero-sub">Assignments from your coach — open them, study the positions, and downlo
+4080: <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.classroom&&CK.classroom.renderStudentHomework
+4082: <div class="p-card-body" id="studentHomeworkSection" style="padding:16px;">
+4088: <div class="p-panel" id="student-panel-classroom">
+4093: <div style="font-size:0.83rem;color:var(--p-text-muted);">Coach-assigned PGN homework · Live class
+4098: onclick="CK.classroom.studentTab('homework')">📋 Homework</button>
+4099: <button class="sc-tab-btn" data-tab="live" onclick="CK.classroom.studentTab('live')">📡 Live
+4170: <div class="ck-live-banner-sub">Your board, the engine eval and your coach's notes sync here in real
+4196: <div style="font-size:0.82rem;font-weight:700;color:var(--p-teal);margin-bottom:8px;">📢 Coach's Note
+4197: <div id="scLiveCoachNote" style="font-size:0.87rem;color:var(--p-text-muted);line-height:1.65;min-he
+4199: <!-- Coach video runs in Google Meet -->
+4202: 📹 Coach Video
+4213: seconds when your coach is running a live session.</div>
+4219: </div><!-- /student-panel-classroom: was unclosed → it was nesting the Opening Trainer + Game Tracke
+4222: <div class="p-panel" id="student-panel-openings">
+4249: <div class="p-panel" id="student-panel-games">
+4279: <div id="coach-page" class="page">
+4285: <div class="p-brand-icon coach-portal-icon">♟</div>
+4288: <div class="p-brand-role">Coach Portal</div>
+4294: <button class="p-nav-item active" onclick="if(CK&&CK.coach&&CK.coach.nav){CK.coach.nav('home')}"><sp
+4296: <button class="p-nav-item" onclick="if(CK&&CK.coach&&CK.coach.nav){CK.coach.nav('session')}"><span c
+4299: <button class="p-nav-item" onclick="if(CK&&CK.coach&&CK.coach.nav){CK.coach.nav('students')}"><span 
+4300: Students</span></button>
+4301: <button class="p-nav-item" onclick="if(CK&&CK.coach&&CK.coach.nav){CK.coach.nav('attendance')}"><spa
+4303: <button class="p-nav-item" onclick="if(CK&&CK.coach&&CK.coach.nav){CK.coach.nav('schedule')}"><span 
+4305: <button class="p-nav-item" onclick="if(CK&&CK.coach&&CK.coach.nav){CK.coach.nav('notes')}"><span cla
+4308: <button class="p-nav-item" onclick="if(CK&&CK.coach&&CK.coach.nav){CK.coach.nav('resources')}"><span
+4310: <button class="p-nav-item" onclick="if(CK&&CK.coach&&CK.coach.nav){CK.coach.nav('puzzles')}"><span c
+4313: onclick="if(CK&&CK.coach&&CK.coach.nav){CK.coach.nav('lab'); setTimeout(() => CK.lab.initBoard('coac
+4315: <button class="p-nav-item" onclick="if(CK&&CK.coach&&CK.coach.nav){CK.coach.nav('classroom')}"><span
+4317: <button class="p-nav-item" onclick="if(CK&&CK.coach&&CK.coach.nav){CK.coach.nav('classes')}"><span c
+4319: <button class="p-nav-item" onclick="if(CK&&CK.coach&&CK.coach.nav){CK.coach.nav('effectiveness')}"><
+4320: <button class="p-nav-item" onclick="if(CK&&CK.coach&&CK.coach.nav){CK.coach.nav('reports')}"><span c
+4327: <div class="p-user-avatar" id="coachSidebarAvatar">SC</div>
+4329: <div class="p-user-name" id="coachSidebarName">Coach</div>
+4330: <div class="p-user-sub" id="coachSidebarSub">FIDE 0 · Elite</div>
+4337: <div class="p-drawer-overlay" id="coachDrawerOverlay" onclick="CK.togglePortalNav(false)"></div>
+4339: <button class="p-hamburger-btn" id="coachHamburgerBtn" onclick="CK.togglePortalNav()" aria-label="Op
+4342: <div class="p-topbar-title" id="coachPanelTitle">My Dashboard</div>
+4348: onclick="CK.notifs&&CK.notifs.toggleDrawer('coach')" style="position:relative;cursor:pointer;">🔔<spa
+4350: <div class="p-icon-btn" title="Help & Support" onclick="CK.showHelp&&CK.showHelp('coach')"
+4352: <button class="p-btn p-btn-teal p-btn-sm" id="coachTopBtn" onclick="CK.coach.topAction()">+ Add
+4358: <div class="p-panel active" id="coach-panel-home">
+4359: <!-- Coach Welcome Banner -->
+4363: <h2>Coach Command Center</h2>
+4364: <p id="coachWelcomeSub">Ready to inspire your students today? Review today's schedule and start your
+4368: <button class="p-btn p-btn-teal p-btn-sm" onclick="if(CK&&CK.coach&&CK.coach.nav){CK.coach.nav('sess
+4369: <button class="p-btn p-btn-ghost p-btn-sm" onclick="if(CK&&CK.coach&&CK.coach.nav){CK.coach.nav('stu
+4375: <div class="p-stat-val" id="coachStatStudents">0</div>
+4376: <div class="p-stat-label">My Students</div>
+4381: <div class="p-stat-val" id="coachStatAttend">0%</div>
+4387: <div class="p-stat-val" id="coachStatClasses">0</div>
+4393: <div class="p-stat-val" id="coachStatAvgElo">800</div>
+4394: <div class="p-stat-label">Avg Student ELO</div>
+4409: <th>Students</th>
+4414: <tbody id="coachTodayClasses"></tbody>
+4420: <div class="p-panel" id="coach-panel-session">
+4425: <div class="session-title" id="coachSessionName"
+4428: <div id="coachSessionSub" style="font-size:.78rem; color:var(--p-text-muted)">--</div>
+4430: <div class="session-timer" id="coachSessionTimer"
+4435: <button class="p-btn p-btn-teal" id="coachStartBtn" onclick="CK.coach.toggleSession()">▶ Start Live 
+4436: <button class="p-btn p-btn-ghost" onclick="CK.coach.endSession()">⬛ End Session</button>
+4445: <div id="coachCommandCenter"
+4447: <!-- Pane 1: Video & Student Spotlight -->
+4453: <div id="coachCommandCenterVideoFeed"
+4457: Live: Coach</div>
+4464: <span>👥 Connected Students:</span>
+4470: Student Spotlight</div>
+4472: <span style="color:#fff; font-size:0.9rem;" id="spotlightStudentName">—</span>
+4474: onclick="const n=document.getElementById('spotlightStudentName').textContent;CK.showToast('Spotlight
+4490: <div id="coachVaultBoard"
+4515: tactics puzzle to all student scratchpads.</p>
+4517: onclick="CK.showToast('Challenge position pushed to 12 students!', 'success')">🚀 Push to
+4535: <!-- STUDENTS -->
+4536: <div class="p-panel" id="coach-panel-students">
+4539: <div class="p-card-title">🎓 My Students</div>
+4542: <div id="coachStudentsSummary" style="font-size:.82rem;color:var(--p-text-muted);margin-bottom:12px;
+4543: <div class="p-live-grid" id="coachStudentsGrid"></div>
+4549: <div class="p-panel" id="coach-panel-resources">
+4553: <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.admin.openUploadModal('coach')">+ Upload
+4556: <div class="p-card-body" id="coachResourcesContainer">
+4563: <div class="p-panel" id="coach-panel-attendance">
+4568: <input type="date" class="p-form-control" id="coachAttendanceDate"
+4570: onchange="CK.coach.loadAttendance()" />
+4571: <button class="p-btn p-btn-teal p-btn-sm" onclick="CK.coach.loadAttendance()">🔄 Refresh</button>
+4572: <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.coach.markAllPresentToday()">✅ All Present</bu
+4575: <div id="coachAttendanceSummary" style="font-size:.82rem;color:var(--p-text-muted);padding:8px 16px;
+4580: <th>Student</th>
+4588: <tbody id="coachAttendanceTable">
+4601: <span style="font-size:.78rem;color:var(--p-text-muted);">Mark present / absent / late per student p
+4604: <div class="p-card-body" id="coachAttendanceMarker" style="padding:16px;">
+4611: <div class="p-panel" id="coach-panel-schedule">
+4616: onclick="CK.coach.createMeeting && CK.coach.createMeeting()">+ Create Meeting</button>
+4618: <div class="p-card-body" id="coachSchedList" style="padding:16px;">
+4625: <div class="p-panel" id="coach-panel-notes">
+4633: <label class="p-form-label">Select Student</label>
+4634: <select class="p-form-control" id="coach_inline_note_student"></select>
+4638: <textarea class="p-form-control" id="coach_inline_note_text" rows="3" placeholder="Type your persona
+4642: <input type="number" class="p-form-control" id="coach_inline_note_rating_delta" value="0" style="max
+4645: <button class="p-btn p-btn-teal" onclick="CK.coach.saveInlineNote()">✉️ Send Note to Student Inbox</
+4655: <div class="p-card-body" style="padding:20px;" id="coachNotesContainer">
+4664: <div class="p-card-title" style="color:var(--p-teal);">📊 Weekly Student Report Card Editor</div>
+4668: <label class="p-form-label">Select Student to Edit</label>
+4669: <select class="p-form-control" id="coachReportStudentSelect"
+4670: onchange="CK.coach.loadStudentReport(this.value)"></select>
+4676: oninput="document.getElementById('grade_opening').innerText=CK.coach.getGrade(this.value)" />
+4681: oninput="document.getElementById('grade_middlegame').innerText=CK.coach.getGrade(this.value)" />
+4686: oninput="document.getElementById('grade_tactics').innerText=CK.coach.getGrade(this.value)" />
+4691: oninput="document.getElementById('grade_endgame').innerText=CK.coach.getGrade(this.value)" />
+4696: oninput="document.getElementById('grade_time').innerText=CK.coach.getGrade(this.value)" />
+4701: oninput="document.getElementById('grade_sports').innerText=CK.coach.getGrade(this.value)" />
+4705: <label class="p-form-label">Coach's Diagnostic Remarks</label>
+4716: onclick="CK.coach.saveStudentReport()">💾 Save Report Card</button>
+4723: <div class="p-panel" id="coach-panel-puzzles">
+4725: <!-- Student Puzzle Progress (live from puzzle_scores) -->
+4728: <div class="p-card-title">✅ Student Puzzle Progress</div>
+4729: <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.coach.renderStudentPuzzleProgress('coachStude
+4731: <div class="p-card-body" id="coachStudentPuzzleProgress" style="padding:16px;">
+4732: <div style="text-align:center;opacity:.45;padding:24px;">Loading student puzzle activity…</div>
+4759: <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.coach.openPuzzleCreator()">➕ Create
+4761: <button class="p-btn p-btn-blue p-btn-sm" onclick="CK.coach.openAssignPuzzle()">🎯 Assign &amp;
+4866: <!-- COACH PUZZLE CREATOR MODAL -->
+4867: <div id="coachPuzzleCreatorModal" class="pz-lb-overlay" style="display:none;"
+4868: onclick="if(event.target===this)CK.coach.closePuzzleCreator()">
+4872: <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.coach.closePuzzleCreator()">✕ Close</button>
+4911: <label class="p-form-label">Explanation / Coach Notes</label>
+4913: placeholder="Explain why this move wins — students see this after solving…"></textarea>
+4916: <button class="p-btn p-btn-ghost" onclick="CK.coach.closePuzzleCreator()">Cancel</button>
+4917: <button class="p-btn p-btn-gold" onclick="CK.coach.savePuzzle()">💾 Save to Library</button>
+4923: <div class="p-panel" id="coach-panel-lab">
+4927: <div class="p-card-title">🔬 Coach PGN Studio & Live Broadcast</div>
+4929: Broadcast to Students</div>
+4932: <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.lab.broadcastCoach()">📢 Broadcast to Class</bu
+4933: <button class="p-btn p-btn-rose p-btn-sm" onclick="CK.coach.openPuzzleCreatorFromLab()">🎯 Assign as 
+4941: onclick="CK.lab.openPgnLibraryBrowser('coachLabBoard')"
+4946: onclick="CK.lab.loadRandomPuzzle('coachLabBoard')"
+4951: <input id="coachLabUrlInput" class="p-form-control"
+4955: onclick="CK.lab._importUrlFor('coachLabUrlInput','coachLabBoard')" style="white-space:nowrap;">⬇ Imp
+4960: <div id="coachPgnLibraryBrowser" class="ck-pgn-lib-browser" style="display:none;"></div>
+4966: <label style="font-size:0.82rem;color:var(--p-gold);font-weight:600;display:block;margin-bottom:6px;
+4967: <input id="coachLichessEmbedInput" type="text" class="p-form-control" placeholder="https://lichess.o
+4969: <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.lab.lichessEmbed('coachLichessEmbedInput','coa
+4970: <button class="p-btn p-btn-ghost p-btn-sm" onclick="document.getElementById('coachLichessEmbedCard')
+4972: <div id="coachLichessEmbedCard" style="display:none;margin-top:12px;border-radius:8px;overflow:hidde
+4973: <div id="coachLichessEmbedFrame"></div>
+4990: <div id="coachLabBoard" class="lab-board-container" style="border-color:var(--p-teal);"></div>
+5002: <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.lab.broadcastCoach()"
+5003: title="Broadcast board to students" style="color:var(--p-teal);font-weight:700;">📢 Broadcast</button
+5009: <input type="file" id="coachPgnFileUpload" accept=".pgn,.txt" style="display:none"
+5010: onchange="CK.lab.handleFileUpload(event,'coachLabBoard')">
+5011: <div class="lab-upload-strip" onclick="document.getElementById('coachPgnFileUpload').click()" style=
+5016: <textarea id="coachLabPgnInput" class="p-form-control"
+5021: onclick="CK.lab.analyzePgn(document.getElementById('coachLabPgnInput').value,'coachLabBoard')">🔬 Eva
+5023: onclick="CK.lab.loadRandomPuzzle('coachLabBoard')">🧩 Load Puzzle</button>
+5025: <div id="coachPgnDbExplorer" class="lab-db-explorer" style="display:none;margin-bottom:14px;"></div>
+5040: <div class="labCoachExplanation"
+5052: <div id="coachLabMoveList" class="lab-move-list"></div>
+5057: <!-- Famous Games Library (Coach) -->
+5065: <div id="coachPgnLibStrip" class="pgn-lib-strip"></div>
+5072: <!-- COACH CLASSROOM MANAGER -->
+5073: <div class="p-panel" id="coach-panel-classroom">
+5082: <button class="cc-tab-btn active" data-tab="assign" onclick="CK.classroom.coachTab('assign')">📝
+5084: <button class="cc-tab-btn" data-tab="live" onclick="CK.classroom.coachTab('live')">📡 Live
+5086: <button class="cc-tab-btn" data-tab="grades" onclick="CK.classroom.coachTab('grades')">📊
+5088: <button class="cc-tab-btn" data-tab="library" onclick="CK.classroom.coachTab('library')">📚 PGN
+5111: <label class="p-label">Instructions for Students</label>
+5113: placeholder="What should students focus on? Any specific questions?"></textarea>
+5138: <option value="all">All Students</option>
+5175: onclick="CK.classroom.coachStartLive()">🔴 Start Live</button>
+5179: <!-- Google Meet URL — students see a"Join Meet" button when set -->
+5182: <span>📹</span> Google Meet / Zoom URL (paste manually — students get a Join button)
+5196: onclick="CK.classroom.coachLiveNav('first')">⏮</button>
+5197: <button class="p-btn p-btn-teal p-btn-sm" onclick="CK.classroom.coachLiveNav('prev')">◀
+5201: <button class="p-btn p-btn-teal p-btn-sm" onclick="CK.classroom.coachLiveNav('next')">Next
+5204: onclick="CK.classroom.coachLiveNav('last')">⏭</button>
+5206: onclick="CK.classroom.coachEndLive()">⏹ End</button>
+5212: Students</div>
+5217: onclick="CK.classroom.coachBroadcastNote()">Send Note Live</button>
+5218: <div style="font-size:0.78rem;color:rgba(255,255,255,0.3);line-height:1.5;margin-bottom:15px;">Stude
+5222: <!-- WebRTC Coach Broadcast Controls (Phase 4) -->
+5281: <!-- COACH CLASS MANAGER -->
+5282: <div class="p-panel" id="coach-panel-classes">
+5288: students · Mark attendance via class link</div>
+5291: onclick="CK.classSystem && CK.classSystem.openClassModal(null, function(d){CK.classSystem.createClas
+5294: <div class="p-card-body" id="coachClassesList"
+5301: <!-- COACH MONTHLY REPORTS -->
+5302: <!-- COACH EFFECTIVENESS -->
+5303: <div class="p-panel" id="coach-panel-effectiveness">
+5308: <div class="p-card-body" id="coachEffectivenessCard" style="padding:20px;">
+5314: <div class="p-card-header"><div class="p-card-title">📈 Student Progress Under Me</div></div>
+5315: <div class="p-card-body" id="coachStudentProgress" style="padding:16px;">
+5316: <div style="text-align:center;opacity:.4;padding:30px;">Loading student metrics...</div>
+5320: <div class="p-card-header"><div class="p-card-title">🎯 Student Weakness Overview</div></div>
+5321: <div class="p-card-body" id="coachWeaknessOverview" style="padding:16px;">
+5328: <div class="p-panel" id="coach-panel-reports">
+5331: <div class="p-card-title">📊 Monthly Student Reports</div>
+5332: <span style="font-size:.8rem;color:var(--p-text-muted);">Write per-student monthly performance
+5335: <div class="p-card-body" id="coachReportsList" style="padding:16px;">
+5336: <div style="text-align:center;opacity:.45;padding:30px;">Loading students…</div>
+5346: <!-- ======================== PARENTS PAGE ======================== -->
+5347: <div id="parent-page" class="page">
+5356: <div class="p-brand-role">Parent Portal</div>
+5362: <button class="p-nav-item par-nav-btn active" data-panel="home" onclick="if(CK&&CK.parents&&CK.paren
+5364: <button class="p-nav-item par-nav-btn" data-panel="attendance" onclick="if(CK&&CK.parents&&CK.parent
+5366: <button class="p-nav-item par-nav-btn" data-panel="progress" onclick="if(CK&&CK.parents&&CK.parents.
+5368: <button class="p-nav-item par-nav-btn" data-panel="schedule" onclick="if(CK&&CK.parents&&CK.parents.
+5370: <button class="p-nav-item par-nav-btn" data-panel="reports" onclick="if(CK&&CK.parents&&CK.parents.n
+5372: <button class="p-nav-item par-nav-btn" data-panel="fees" onclick="if(CK&&CK.parents&&CK.parents.nav)
+5374: <button class="p-nav-item par-nav-btn" data-panel="aiweekly" onclick="if(CK&&CK.parents&&CK.parents.
+5377: <button class="p-nav-item par-nav-btn" data-panel="feedback" onclick="if(CK&&CK.parents&&CK.parents.
+5386: <div class="p-user-name" id="parSidebarName">Parent</div>
+5387: <div class="p-user-sub" id="parSidebarSub">Parent Account</div>
+5405: onclick="CK.notifs&&CK.notifs.toggleDrawer('parent')" style="position:relative;cursor:pointer;">🔔<sp
+5407: <div class="p-icon-btn" title="Help & Support" onclick="CK.showHelp&&CK.showHelp('parent')"
+5418: <h2>Welcome, <span id="parentWelcomeName">Parent</span>!</h2>
+5419: <p id="parentWelcomeSub">Track your child's chess journey — attendance, progress, upcoming classes, 
+5422: <button class="p-btn p-btn-teal p-btn-sm" onclick="if(CK&&CK.parents&&CK.parents.nav){CK.parents.nav
+5424: <button class="p-btn p-btn-ghost p-btn-sm" onclick="if(CK&&CK.parents&&CK.parents.nav){CK.parents.na
+5463: <div class="p-stat-card" style="cursor:pointer;" onclick="if(CK&&CK.parents&&CK.parents.nav){CK.pare
+5468: <div class="p-stat-card" style="cursor:pointer;" onclick="if(CK&&CK.parents&&CK.parents.nav){CK.pare
+5473: <div class="p-stat-card" style="cursor:pointer;" onclick="if(CK&&CK.parents&&CK.parents.nav){CK.pare
+5478: <div class="p-stat-card" style="cursor:pointer;" onclick="if(CK&&CK.parents&&CK.parents.nav){CK.pare
+5526: <div class="p-card-title">📋 Monthly Coach Reports</div>
+5534: <!-- FEEDBACK — parents.js renders form into parFeedbackContent -->
+5540: <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.parents.generateAIReport()">🔄 Generate New Rep
+5547: <button class="p-btn p-btn-teal" style="margin-top:16px;" onclick="CK.parents.generateAIReport()">Ge
+5580: <!-- /PARENTS PAGE -->
+5657: <div class="arena-coach-commentary-box">
+5658: <div class="arena-coach-commentary-title">
+5659: <span>🎙️</span> AI Coach Commentary
+5661: <div class="arena-coach-commentary-text" id="arena-coach-commentary-text">
+5662: Coach Tom AI is watching your game. Start playing to get advice!
+5714: .coach-toggle input:checked + .slider { background-color: #10b981; }
+5715: .coach-toggle input:checked + .slider:before { transform: translateX(14px); }
+5716: .coach-toggle .slider:before { position:absolute; content:""; height:14px; width:14px; left:3px; bot
+5745: <span style="color:#e2e8f0; font-size:0.75rem; font-weight:600;">Coach Mode</span>
+5747: <input type="checkbox" id="arena-coach-mode" onchange="CK.arena.toggleCoach(this.checked)" style="op
+5752: <span style="color:#e2e8f0; font-size:0.75rem; font-weight:600;">🔊 Audio Coach</span>
+5754: <input type="checkbox" id="arena-audio-coach" onchange="CK.arena.toggleAudioCoach(this.checked)" sty
+5776: <div id="arena-current-coach-info" style="display:flex; align-items:center; gap:8px; background:rgba
+5777: <span id="arena-current-coach-avatar" style="font-size:1.5rem;">👑</span>
+5779: <div id="arena-current-coach-name" style="font-size:0.8rem; font-weight:700; color:#fff;">Magnus Car
+5780: <div id="arena-current-coach-style" style="font-size:0.65rem; color:var(--arena-gold); font-weight:6
+5791: <button class="timer-btn" data-time="180" onclick="CK.arena.setTimerAndRestart(180)" style="backgrou
+5792: <button class="timer-btn" data-time="300" onclick="CK.arena.setTimerAndRestart(300)" style="backgrou
+5793: <button class="timer-btn active" data-time="600" onclick="CK.arena.setTimerAndRestart(600)" style="b
+5794: <button class="timer-btn" data-time="1800" onclick="CK.arena.setTimerAndRestart(1800)" style="backgr
+5795: <button class="timer-btn" data-time="untimed" onclick="CK.arena.setTimerAndRestart('untimed')" style
+5817: <!-- Coach Mode Overlay -->
+5818: <div id="coach-overlay" class="arena-overlay"></div>
+5850: <!-- Hide difficulty/coach when in Friend mode -->
+5863: <div style="color:var(--p-text-muted); font-size:0.85rem; font-weight:700; text-transform:uppercase;
+5864: <div class="coach-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+5865: <div class="coach-select-card active" data-coach="magnus" onclick="CK.arena.selectCoach('magnus')">
+5871: <div class="coach-select-card" data-coach="tal" onclick="CK.arena.selectCoach('tal')">
+5877: <div class="coach-select-card" data-coach="petrosian" onclick="CK.arena.selectCoach('petrosian')">
+5883: <div class="coach-select-card" data-coach="beth" onclick="CK.arena.selectCoach('beth')">
+5906: <button onclick="CK.arena.closeChallengeModal()" style="width:100%; padding:12px; border-radius:12px
+6147: <div class="p-modal-overlay" id="adminLiveFeedModal">
+6154: <button class="p-modal-close" onclick="CK.closeModal('adminLiveFeedModal')">✕</button>
+6172: <span id="liveFeedStudentName">Student</span>
+6206: onclick="CK.admin.broadcastLiveTip()"><span class="icon">💡</span>Send Live Coach Tip</button>
+6214: <div class="p-modal-overlay" id="adminCertModal">
+6218: <button class="p-modal-close" onclick="CK.closeModal('adminCertModal')">✕</button>
+6221: <div class="p-form-group"><label class="p-label">Select Student</label>
+6222: <select class="p-form-control" id="certStudentSelect">
+6223: <option value="">Loading students...</option>
+6231: <div class="p-form-group"><label class="p-label">Coach Name (Signing)</label>
+6232: <input class="p-form-control" id="certCoachName" placeholder="Coach name for signature"></div>
+6235: <button class="p-btn p-btn-ghost" onclick="CK.closeModal('adminCertModal')">Cancel</button>
+6236: <button class="p-btn p-btn-gold" onclick="CK.admin.issueCertificate()">🎓 Generate & Download</button
+6241: <!-- Student Modal -->
+6242: <div class="p-modal-overlay" id="adminStudentModal">
+6245: <div class="p-modal-title" id="adminStudentModalTitle">Enroll New Student</div>
+6246: <button class="p-modal-close" onclick="CK.closeModal('adminStudentModal')">✕</button>
+6249: <input type="hidden" id="admin_s_id" />
+6252: id="admin_s_name" placeholder="Emma Wilson" /></div>
+6253: <div class="p-form-group"><label class="p-form-label">Parent Phone (10 digits)</label><input
+6254: class="p-form-control" id="admin_s_phone" type="tel" placeholder="9025846663" /></div>
+6256: <div class="p-form-row" id="admin_s_auth_row">
+6257: <div class="p-form-group"><label class="p-form-label">Student Email</label><input class="p-form-cont
+6258: id="admin_s_email" type="email" placeholder="student@example.com" /></div>
+6260: id="admin_s_password" type="text" value="123456" placeholder="Default: 123456" autocomplete="off" />
+6263: <div class="p-form-group"><label class="p-form-label">Student Level</label>
+6264: <select class="p-form-control" id="admin_s_level">
+6272: id="admin_s_rating" type="number" placeholder="800" /></div>
+6275: <div class="p-form-group"><label class="p-form-label">Assigned Coach</label>
+6276: <select class="p-form-control" id="admin_s_coach">
+6277: <option>Select coach…</option>
+6282: <select class="p-form-control" id="admin_s_batch">
+6288: <button class="p-btn p-btn-gold p-btn-sm" onclick="CK.admin.addCustomBatch()">+ New</button>
+6294: id="admin_s_schedule" placeholder="17:00 / Mon-Wed" /></div>
+6296: id="admin_s_join" type="date" value="2026-04-20" /></div>
+6300: id="admin_s_fee" type="number" placeholder="5000" /></div>
+6302: id="admin_s_due" placeholder="14-May-2026" /></div>
+6306: <button class="p-btn p-btn-ghost" onclick="CK.closeModal('adminStudentModal')">Cancel</button>
+6307: <button class="p-btn p-btn-gold" onclick="CK.admin.saveStudent()">Confirm Enrollment</button>
+6312: <!-- Coach Modal -->
+6313: <div class="p-modal-overlay" id="adminCoachModal">
+6316: <div class="p-modal-title" id="adminCoachModalTitle">Add New Coach</div>
+6317: <button class="p-modal-close" onclick="CK.closeModal('adminCoachModal')">✕</button>
+6320: <input type="hidden" id="admin_c_id" />
+6322: <div class="p-form-group"><label class="p-form-label">Coach Name</label><input class="p-form-control
+6323: id="admin_c_name" placeholder="Grandmaster Sarah" /></div>
+6325: <select class="p-form-control" id="admin_c_spec">
+6336: id="admin_c_phone" type="tel" placeholder="9025846663" /></div>
+6338: id="admin_c_email" type="email" placeholder="coach@gmail.com" /></div>
+6340: <div class="p-form-row" id="admin_c_auth_row">
+6342: id="admin_c_password" type="password" placeholder="Min 8 characters" autocomplete="current-password"
+6344: <span style="font-size:0.8rem; color:var(--p-text-muted); padding-bottom:8px;">Coach will use this t
+6349: id="admin_c_addr" placeholder="Chennai Academy Centre" /></div>
+6351: id="admin_c_photo" placeholder="assets/images/coach.png" /></div>
+6355: <select class="p-form-control" id="admin_c_status">
+6362: <select class="p-form-control" id="admin_c_avail">
+6371: <textarea class="p-form-control" id="admin_c_bio" rows="3"
+6372: placeholder="FIDE Master with 10+ years coaching..."></textarea>
+6376: <button class="p-btn p-btn-ghost" onclick="CK.closeModal('adminCoachModal')">Cancel</button>
+6377: <button class="p-btn p-btn-gold" onclick="CK.admin.saveCoach()">Save Coach</button>
+6382: <!-- Coach Details Modal (Admin View) -->
+6383: <div class="p-modal-overlay" id="adminCoachDetailsModal">
+6386: <div class="p-modal-title" id="detailCoachTitle">Coach Profile Details</div>
+6387: <button class="p-modal-close" onclick="CK.closeModal('adminCoachDetailsModal')">✕</button>
+6394: <div id="detailCoachSpec" style="margin-bottom:8px; color:#fff;">Specialty: Tactics</div>
+6395: <div id="detailCoachBatches" style="margin-bottom:8px; color:#fff;">Assigned Batches: Evening, Weeke
+6396: <div id="detailCoachTimetable" style="margin-bottom:8px; color:var(--p-text-muted);">Timetable Sched
+6398: <div id="detailCoachRevenue"
+6401: <div id="detailCoachClasses" style="color:#fff;">Total Classes Attended: 20</div>
+6405: <button class="p-btn p-btn-ghost" onclick="CK.closeModal('adminCoachDetailsModal')">Close</button>
+6411: <div class="p-modal-overlay" id="adminExpenseModal">
+6415: <button class="p-modal-close" onclick="CK.closeModal('adminExpenseModal')">✕</button>
+6418: <input type="hidden" id="admin_exp_id" />
+6421: <select class="p-form-control" id="admin_exp_cat">
+6422: <option>Coach Salary</option>
+6431: <input class="p-form-control" id="admin_exp_desc" placeholder="e.g. Monthly salary / Claude subscrip
+6435: <input class="p-form-control" id="admin_exp_amount" type="number" placeholder="2600" />
+6439: <select class="p-form-control" id="admin_exp_mode">
+6448: <button class="p-btn p-btn-ghost" onclick="CK.closeModal('adminExpenseModal')">Cancel</button>
+6449: <button class="p-btn p-btn-gold" onclick="CK.admin.saveExpense()">Save Record</button>
+6455: <div class="p-modal-overlay" id="adminBroadcastModal">
+6458: <div class="p-modal-title">💡 Broadcast Live Coach Tip</div>
+6459: <button class="p-modal-close" onclick="CK.closeModal('adminBroadcastModal')">✕</button>
+6463: <label class="p-form-label">Strategic tip to send to all active students</label>
+6464: <textarea class="p-form-control" id="adminBroadcastTipInput" rows="3"
+6469: all active student screens in real-time.</div>
+6472: <button class="p-btn p-btn-ghost" onclick="CK.closeModal('adminBroadcastModal')">Cancel</button>
+6473: <button class="p-btn p-btn-gold" onclick="CK.admin.sendBroadcastTip()">🚀 Broadcast Now</button>
+6479: <div class="p-modal-overlay" id="adminTournamentModal">
+6483: <button class="p-modal-close" onclick="CK.closeModal('adminTournamentModal')">✕</button>
+6486: <input type="hidden" id="admin_t_id" />
+6488: <input class="p-form-control" id="admin_t_name" placeholder="e.g. Summer Open 2026" />
+6492: <input class="p-form-control" id="admin_t_date" type="date" />
+6495: <select class="p-form-control" id="admin_t_format">
+6505: <input class="p-form-control" id="admin_t_participants" type="number" placeholder="0" />
+6508: <select class="p-form-control" id="admin_t_status">
+6518: <button class="p-btn p-btn-ghost" onclick="CK.closeModal('adminTournamentModal')">Cancel</button>
+6519: <button class="p-btn p-btn-gold" onclick="CK.admin.saveTournament()">Save Tournament</button>
+6525: <div class="p-modal-overlay" id="adminClassModal">
+6529: <button class="p-modal-close" onclick="CK.closeModal('adminClassModal')">✕</button>
+6533: id="admin_cl_title" placeholder="e.g. Beginner Tactics" /></div>
+6536: <select class="p-form-control" id="admin_cl_level">
+6543: <div class="p-form-group"><label class="p-form-label">Coach</label>
+6544: <select class="p-form-control" id="admin_cl_coach">
+6551: <select class="p-form-control" id="admin_cl_day">
+6566: id="admin_cl_time" type="time" value="16:00" /></div>
+6570: id="admin_cl_batch" placeholder="e.g. Evening, Weekend" /></div>
+6572: id="admin_cl_duration" type="number" value="60" min="15" max="180" /></div>
+6575: id="admin_cl_link" type="url" placeholder="https://meet.google.com/…" /></div>
+6578: <button class="p-btn p-btn-ghost" onclick="CK.closeModal('adminClassModal')">Cancel</button>
+6579: <button class="p-btn p-btn-gold" id="adminClassSaveBtn" onclick="CK.admin.saveClass()">Save Class</b
+6584: <!-- Note Modal (Coach) -->
+6585: <div class="p-modal-overlay" id="coachNoteModal">
+6589: <button class="p-modal-close" onclick="CK.closeModal('coachNoteModal')">✕</button>
+6592: <div class="p-form-group"><label class="p-form-label">Student</label>
+6593: <select class="p-form-control" id="coach_note_student"></select>
+6596: <textarea class="p-form-control" id="coach_note_text" rows="4"
+6597: placeholder="Coach observation or game review…"></textarea>
+6601: <input class="p-form-control" id="coach_note_rating_delta" type="number" placeholder="e.g. +15 or -5
+6602: <span style="font-size:0.78rem; color:var(--p-text-muted);">Adds/subtracts ELO from student's rating
+6606: <button class="p-btn p-btn-ghost" onclick="CK.closeModal('coachNoteModal')">Cancel</button>
+6607: <button class="p-btn p-btn-teal" onclick="CK.coach.saveNote()">Save Note</button>
+6612: <!-- Student Info Modal (Admin) -->
+6613: <div class="p-modal-overlay" id="adminStudentInfoModal">
+6616: <div class="p-modal-title">📋 Student Profile Details</div>
+6617: <button class="p-modal-close" onclick="CK.closeModal('adminStudentInfoModal')">✕</button>
+6619: <div class="p-modal-body" id="adminStudentInfoBody"></div>
+6621: <button class="p-btn p-btn-ghost" onclick="CK.closeModal('adminStudentInfoModal')">Close</button>
+6626: <!-- More Options Modal (Admin) -->
+6627: <div class="p-modal-overlay" id="adminMoreOptionsModal">
+6630: <div class="p-modal-title">⋮ More Options — <span id="adminMoreOptionsName"></span></div>
+6631: <button class="p-modal-close" onclick="CK.closeModal('adminMoreOptionsModal')">✕</button>
+6635: onclick="CK.admin.moreOptionAction('receipt')">📥 Download Official Fee Receipt</button>
+6637: <input id="adminNewEloInput" type="number" class="p-form-control" placeholder="New ELO Rating"
+6639: <button class="p-btn p-btn-teal" style="white-space:nowrap;" onclick="CK.admin.moreOptionAction('rat
+6643: onclick="CK.admin.moreOptionAction('export')">📤 Export Profile as JSON</button>
+6646: <button class="p-btn p-btn-ghost" onclick="CK.closeModal('adminMoreOptionsModal')">Cancel</button>
+6651: <!-- Student Metrics Modal (Coach) -->
+6652: <div class="p-modal-overlay" id="coachMetricsModal">
+6655: <div class="p-modal-title">📊 Student Metrics</div>
+6656: <button class="p-modal-close" onclick="CK.closeModal('coachMetricsModal')">✕</button>
+6659: <div id="metricsStudentName"
+6666: <button class="p-btn p-btn-ghost" onclick="CK.closeModal('coachMetricsModal')">Close</button>
+6667: <button class="p-btn p-btn-teal" onclick="if(CK&&CK.coach&&CK.coach.nav){CK.coach.nav('notes');CK.cl
+6681: <p style="font-size: 0.88rem; color:rgba(255,255,255,0.85);">30-min FIDE-certified coaching session.
+6685: <label style="font-weight:600; font-size:0.85rem; margin-bottom:6px; display:block; color:#334155;">
+6721: <span style="font-size:0.82rem; color:#92400e; line-height:1.4;">You'll be redirected to WhatsApp fo
+6731: <!-- Resource Upload Modal (Admin) — theme-aware + supports File OR URL -->
+6736: <p class="ck-upload-subtitle">Share homework, notes, links, videos or PDFs with your students.</p>
+6738: <form class="modal-body ck-upload-form" onsubmit="CK.admin.handleResourceUpload(event)">
+6743: onclick="CK.admin.setUploadSource('file')" aria-selected="true">
+6747: onclick="CK.admin.setUploadSource('link')" aria-selected="false">
+6762: onchange="CK.admin.refreshUploadStudentList(this.closest('form'))">
+6771: oninput="CK.admin.refreshUploadStudentList(this.closest('form'))">
+6777: Assign to Students
+6778: <span class="ck-hint">(homework/resource is shared with selected students)</span>
+6780: <div id="uploadStudentList" class="ck-student-list">
+6781: <span class="ck-student-list-empty">Select level/batch above to load students</span>
+6890: <div id="vaultModalCoach" style="font-size: 0.9rem; color: var(--p-text-muted);">Coach: —</div>
+6931: onclick="CK.seekVaultMove('25:30', '3. d4 (Quiz Point)', '⚡ AI Coach Pause: Can you find White\'s ce
+6937: <!-- Right: Master Board & Student Scratchpad -->
+6954: 💡 <strong>Humanized GM Coach Note:</strong> White occupies center
+7012: <script defer type="module" src="assets/js/parents.js?v=20260608a"></script>
+7032: <script defer type="module" src="assets/js/admin.js?v=20260608a"></script>
+7033: <script defer type="module" src="assets/js/student.js?v=20260610a"></script>
+7034: <script defer type="module" src="assets/js/coach.js?v=20260608a"></script>
+7041: CK.pgnLibrary.renderCards('studentPgnLibStrip', 'studentLabBoard');
+7042: CK.pgnLibrary.renderCards('coachPgnLibStrip', 'coachLabBoard');
+7045: CK.pgnVault.render('studentPgnVault', 'studentLabBoard');
+7058: CK.openVaultSession = (title, coach, videoUrl = '') => {
+7060: const c = document.getElementById('vaultModalCoach');
+7062: if (c) c.textContent = 'Coach: ' + coach;
+7099: if (ha) ha.innerHTML = '💡 <strong>Humanized GM Coach Note:</strong> ' + (CK.esc ? CK.esc(analysis) :
+7116: // Coach vault board uses a richer renderer defined in main.js — trigger it
+7117: const coachContainer = document.getElementById('coachVaultBoard');
+7118: if (coachContainer && !coachContainer.dataset.init) {
+7133: coachContainer.innerHTML = bHtml;
+7134: coachContainer.dataset.init = '1';
+7464: <img src="assets/img/classes_banner.png" alt="Coaching Classes" />
+7466: <h3 class="curr-section-title">Coaching Classes</h3>
+7473: <p>Learn globally with interactive digital boards, live video coaching, and assignments.</p>

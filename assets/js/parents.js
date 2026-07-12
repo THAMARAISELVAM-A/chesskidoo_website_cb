@@ -86,7 +86,7 @@ CK.parents = (() => {
   async function init() {
     const currentUser = CK.currentUser || JSON.parse(localStorage.getItem('ck_user') || 'null');
     if (!currentUser || currentUser.role !== 'parent') {
-      CK.showPage('login-page');
+      window.location.href = '/lms';
       return;
     }
     _parentProfile = currentUser;

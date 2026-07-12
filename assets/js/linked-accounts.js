@@ -59,7 +59,14 @@ CK.linkedAccounts = (() => {
     if (lichessUser !== undefined) updates.lichess_username = lichessUser;
     if (chesscomUser !== undefined) updates.chesscom_username = chesscomUser;
     
-    await CK.db.updateProfile(CK.currentUser.id || CK.currentUser.userid, updates);
+    const userId = CK.currentUser.id || CK.currentUser.userid;
+    const profile = await CK.db.getProfile(userId);
+    if (!profile) {
+      CK.showToast('Profile not found. Please sign in again.', 'warning');
+      return;
+    }
+    Object.assign(profile, updates);
+    await CK.db.saveProfile(profile);
     
     // Update local currentUser reference
     CK.currentUser = { ...CK.currentUser, ...updates };
@@ -83,7 +90,14 @@ CK.linkedAccounts = (() => {
     const field = fieldMap[platform];
     if (!field) return;
     const updates = { [field]: null };
-    await CK.db.updateProfile(CK.currentUser.id || CK.currentUser.userid, updates);
+    const userId = CK.currentUser.id || CK.currentUser.userid;
+    const profile = await CK.db.getProfile(userId);
+    if (!profile) {
+      CK.showToast('Profile not found. Please sign in again.', 'warning');
+      return;
+    }
+    Object.assign(profile, updates);
+    await CK.db.saveProfile(profile);
     CK.currentUser = { ...CK.currentUser, ...updates };
     CK.showToast('Account unlinked. You can link a new one now.', 'success');
   }
