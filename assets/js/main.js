@@ -185,7 +185,7 @@
      if (portal && typeof portal[method] === 'function') {
        portal[method](...args);
      } else {
-       CK.showPage('login-page');
+       window.location.href = '/lms/index.html';
      }
    };
 

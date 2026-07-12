@@ -66,7 +66,7 @@ CK.student = {
     }
     if (!currentUser || currentUser.role !== 'student') {
       // Quietly send to login  no scary toast.
-      CK.showPage('login-page');
+      window.location.href = '/lms/index.html';
       return;
     }
 

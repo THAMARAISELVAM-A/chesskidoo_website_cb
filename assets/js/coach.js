@@ -33,7 +33,7 @@ CK.coach = {
       if (currentUser) CK.currentUser = currentUser;
     }
     if (!currentUser) {
-      CK.showPage('login-page');
+      window.location.href = '/lms/index.html';
       return;
     }
 

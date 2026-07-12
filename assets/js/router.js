@@ -6,7 +6,7 @@
   const CK = window.CK = window.CK || {};
 
   CK.showHome  = () => CK.showPage('landing-page');
-  CK.showLogin = () => CK.showPage('login-page');
+  CK.showLogin = () => window.location.href = '/lms/index.html';
 
   CK.checkAuth = () => {
     let u = CK.currentUser;
