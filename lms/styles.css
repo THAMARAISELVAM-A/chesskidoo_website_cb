@@ -38,22 +38,22 @@ h1, h2, h3, h4, h5, h6 {
   --surface2: #1e1e2d;
   --surface3: #28283a;
 
-  --amber: #3b82f6;
-  --amber-dim: #2563eb;
-  --amber-glow: rgba(59, 130, 246, 0.25);
-  --amber-mist: rgba(59, 130, 246, 0.1);
+  --amber: #e8a830;
+  --amber-dim: #c49028;
+  --amber-glow: rgba(232,168,48,0.18);
+  --amber-mist: rgba(232,168,48,0.07);
 
-  --gold: #3b82f6;
-  --gold2: #2563eb;
-  --gold-glow: rgba(59, 130, 246, 0.25);
-  --gold-mist: rgba(59, 130, 246, 0.1);
+  --gold: #dca33e;
+  --gold2: #f0c05a;
+  --gold-glow: rgba(220,163,62,0.25);
+  --gold-mist: rgba(220,163,62,0.08);
 
   --ivory: #ffffff;
   --ivory2: #e2e8f0;
   --ivory3: #94a3b8;
   --ivory-dim: #64748b;
 
-  --accent: #3b82f6;
+  --accent: #5a9fff;
   --info: #0ea5e9;
   --warning: #f59e0b;
   --success: #10b981;
@@ -65,17 +65,17 @@ h1, h2, h3, h4, h5, h6 {
   --radius-lg: 14px;
   --radius-sm: 8px;
 
---font-head: 'Comic Sans MS', 'Comic Sans', cursive, sans-serif;
-   --font-ui: 'Comic Sans MS', 'Comic Sans', cursive, sans-serif;
-   --font-mono: 'Comic Sans MS', 'Comic Sans', cursive, sans-serif;
+  --font-head: 'Cormorant Garamond', Georgia, serif;
+  --font-ui: 'Syne', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
   --shadow: 0 20px 40px rgba(0,0,0,0.45);
   --shadow-deep: 0 24px 60px rgba(0,0,0,0.6), 0 8px 20px rgba(0,0,0,0.4);
-  --shadow-amber: 0 0 40px rgba(59, 130, 246, 0.15);
+  --shadow-amber: 0 0 40px rgba(232,168,48,0.12);
 
   --slate: #94a3b8;
   --bg3: #11111a;
-  --gold-light: #60a5fa;
+  --gold-light: #f5cf82;
 }
 
 /* ── LIGHT THEME ── */
@@ -87,14 +87,14 @@ body[data-theme="light"] {
   --surface2: #f1f5f9;
   --surface3: #e2e8f0;
 
-  --gold: #2563eb;
-  --gold2: #1d4ed8;
-  --gold-glow: rgba(37, 99, 235, 0.15);
-  --gold-mist: rgba(37, 99, 235, 0.08);
+  --gold: #b3851b;
+  --gold2: #d4a017;
+  --gold-glow: rgba(179,133,27,0.15);
+  --gold-mist: rgba(179,133,27,0.06);
 
-  --amber: #2563eb;
-  --amber-dim: #1d4ed8;
-  --amber-mist: rgba(37, 99, 235, 0.05);
+  --amber: #e8a830;
+  --amber-dim: #c49028;
+  --amber-mist: rgba(179,133,27,0.04);
 
   --ivory: #0f172a;
   --ivory2: #334155;
@@ -105,10 +105,10 @@ body[data-theme="light"] {
   --border: rgba(15, 23, 42, 0.1);
   --shadow: 0 8px 30px rgba(0,0,0,0.05);
   --shadow-deep: 0 15px 45px rgba(0,0,0,0.1);
-  --shadow-amber: 0 0 20px rgba(37, 99, 235, 0.1);
+  --shadow-amber: 0 0 20px rgba(179,133,27,0.1);
 
   --bg3: #ffffff;
-  --gold-light: #3b82f6;
+  --gold-light: #d4a017;
   --slate: #64748b;
 
   background: var(--obsidian) !important;
