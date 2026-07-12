@@ -28,7 +28,7 @@ window.loadAccessControl = async function() {
         const response = await window.apiCall('/api/access_control', { // Re-using local dev proxy or Edge function
             headers: {
                 'Content-Type': 'application/json',
-                'x-portal-role': window.role
+                'x-user-role': window.role
             }
         });
 
@@ -390,7 +390,7 @@ window.saveAccessPwd = async function(userId) {
     try {
         const res = await window.apiCall('/api/access_control', {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'x-portal-role': window.role },
+            headers: { 'Content-Type': 'application/json', 'x-user-role': window.role },
             body: JSON.stringify({ id: userId, password: newPassword || null })
         });
         const data = await safeJson(res);
@@ -455,7 +455,7 @@ window.createAccessUser = async function(email, password, role) {
     try {
         const response = await window.apiCall('/api/access_control', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-portal-role': window.role },
+            headers: { 'Content-Type': 'application/json', 'x-user-role': window.role },
             body: JSON.stringify({ email, password, role })
         });
         
@@ -488,7 +488,7 @@ window.updateAccessUser = async function(id, role, password) {
     try {
         const response = await window.apiCall('/api/access_control', {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'x-portal-role': window.role },
+            headers: { 'Content-Type': 'application/json', 'x-user-role': window.role },
             body: JSON.stringify({ id, role, password })
         });
         
@@ -508,7 +508,7 @@ window.deleteUserAccess = async function(id, email) {
     try {
         const response = await window.apiCall('/api/access_control', {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json', 'x-portal-role': window.role },
+            headers: { 'Content-Type': 'application/json', 'x-user-role': window.role },
             body: JSON.stringify({ id })
         });
         

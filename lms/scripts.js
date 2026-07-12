@@ -233,7 +233,7 @@
     const headers = {
        "Content-Type": "application/json",
        apikey: SUPABASE_ANON_KEY,
-       Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+       Authorization: `Bearer ${customToken || SUPABASE_ANON_KEY}`,
        ...(customToken ? { "x-portal-token": customToken } : {}),
        ...(auth.role ? { "x-portal-role": auth.role } : {}),
        ...(auth.studentId ? { "x-portal-student-id": auth.studentId } : {}),
