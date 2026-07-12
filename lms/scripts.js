@@ -7564,9 +7564,12 @@ setTimeout(function () {
       theadRow.innerHTML = `
         <th style="width:40px"><input type="checkbox" id="stud-check-all" onclick="window.toggleAllStudents(this.checked)"></th>
         <th style="width:50px">#</th>
-            <th>Student</th>
-            <th>Coach</th>
-            <th>Schedule</th>
+        <th>Student</th>
+        <th>Level</th>
+        <th>Coach</th>
+        <th>Join Date</th>
+        <th>Session</th>
+        <th>Schedule</th>
         <th>Fee</th>
         <th>Status</th>
         <th>Due Date</th>
@@ -7814,9 +7817,9 @@ setTimeout(function () {
       }
 
       if (!studs || studs.length === 0) {
-        const cols = role === "coach" ? 7 : 9;
+        const cols = role === "coach" ? 7 : 12;
         tbody.innerHTML =
-          `<tr><td colspan="${role === "coach" ? 7 : 9}" class="text-center">No students found matching filters for this period</td></tr>`;
+          `<tr><td colspan="${role === "coach" ? 7 : 12}" class="text-center">No students found matching filters for this period</td></tr>`;
         return;
       }
 
@@ -8033,11 +8036,22 @@ setTimeout(function () {
             // re-render (which otherwise wiped the inline expansion).
             const isRowOpen = String(window.__openActionRow || "") === String(s.id);
 
+            const levelText = escapeHtml(getStudentLevel(s) || "-");
+            const joinDateRaw = getStudentDate(s);
+            const joinDateText = joinDateRaw ? new Date(joinDateRaw).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "-";
+            const sessionType = getStudentBatchType(s);
+            const sessionBadge = sessionType === "Single"
+              ? `<span class="badge badge-info" style="font-size:10px; padding:2px 6px; border-radius:4px; font-weight:600;">Individual</span>`
+              : `<span class="badge badge-success" style="font-size:10px; padding:2px 6px; border-radius:4px; font-weight:600;">Group</span>`;
+
             return `<tr>
               <td>${checkboxHtml}</td>
               <td style="color:var(--ivory-dim);font-weight:600">${i + 1}</td>
               <td>${studentNameHtml}</td>
+              <td style="font-size:12px;">${levelText}</td>
               <td>${coachName}</td>
+              <td style="font-size:12px; white-space:nowrap;">${joinDateText}</td>
+              <td>${sessionBadge}</td>
               <td>${time}</td>
               <td>${feeHtml}</td>
               <td><span class="${statusClass}" style="font-weight: 600;">${statusText}</span></td>
@@ -8054,7 +8068,7 @@ setTimeout(function () {
             </tr>`;
           } catch (rowErr) {
             console.error(`[UI] Error rendering student row ${i}:`, rowErr, s);
-            return `<tr><td colspan="9" style="color:var(--danger)">Error rendering student ${s.name || i}</td></tr>`;
+            return `<tr><td colspan="12" style="color:var(--danger)">Error rendering student ${s.name || i}</td></tr>`;
           }
         })
         .join("");
@@ -8062,7 +8076,7 @@ setTimeout(function () {
     } catch (err) {
       console.error("[UI] renderStudents critical error:", err);
       if (tbody)
-        tbody.innerHTML = `<tr><td colspan="${role === "coach" ? 7 : 9}" class="text-center text-danger">Failed to load students. Please refresh the page.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${role === "coach" ? 7 : 12}" class="text-center text-danger">Failed to load students. Please refresh the page.</td></tr>`;
     }
   }
 
