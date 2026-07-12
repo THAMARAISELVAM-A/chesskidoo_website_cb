@@ -922,7 +922,7 @@
       <div id="child-loading" class="loading-state"><span class="spinner"></span> Loading…</div>
       <div id="child-content" style="display:none">
         <!-- Admin Preview Banner -->
-        <div id="preview-mode-banner" class="preview-banner" style="display: none; background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(59, 130, 246, 0.04)); border: 1px solid var(--gold); padding: 14px 20px; border-radius: 12px; margin-bottom: 24px; justify-content: space-between; align-items: center; box-shadow: var(--shadow-amber); transition: all 0.3s ease; flex-wrap: wrap; gap: 12px;">
+        <div id="preview-mode-banner" class="preview-banner" style="display: none; background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(232, 168, 48, 0.04)); border: 1px solid var(--gold); padding: 14px 20px; border-radius: 12px; margin-bottom: 24px; justify-content: space-between; align-items: center; box-shadow: var(--shadow-amber); transition: all 0.3s ease; flex-wrap: wrap; gap: 12px;">
           <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
             <span style="font-size: 22px; filter: drop-shadow(0 2px 4px rgba(59, 130, 246,0.2));">👑</span>
             <div style="margin-right: 12px;">
@@ -1115,7 +1115,7 @@
               <div class="stat-desc" id="cb-due-date" style="font-size: 11px; color: var(--ivory-dim); opacity: 0.75;">Due date: Not set</div>
               <button class="btn btn-gold btn-sm" style="margin-top:10px; width:100%; box-shadow:var(--shadow-amber-sm)" onclick="if(window.currentStudent) openPay(window.currentStudent.id, window.currentStudent.name || 'Student', getStudentMonthlyFee(window.currentStudent))">Pay Fees Securely</button>
             </div>
-            <div class="card" style="border-left: 4px solid var(--gold); background: linear-gradient(145deg, var(--bg2), rgba(59, 130, 246, 0.04)); box-shadow: var(--shadow);">
+            <div class="card" style="border-left: 4px solid var(--gold); background: linear-gradient(145deg, var(--bg2), rgba(232, 168, 48, 0.04)); box-shadow: var(--shadow);">
               <div class="stat-label" style="text-transform: uppercase; font-size: 10px; letter-spacing: 1px; color: var(--ivory-dim);">Session ROI & Value</div>
               <div class="stat-value" id="cb-roi-value" style="font-size: 24px; font-weight: 800; color: var(--gold); margin: 6px 0 2px;">₹0 Unlocked</div>
               <div class="stat-desc" id="cb-roi-desc" style="font-size: 11px; color: var(--ivory-dim); opacity: 0.75;">0/8 sessions attended (ROI: 0%)</div>
@@ -1239,9 +1239,9 @@
 
         <div id="child-tab-attendance" class="child-tab-content">
           <div class="dash-grid" style="margin-bottom: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-            <div class="card" style="border-left: 4px solid var(--blue); background: linear-gradient(145deg, var(--bg2), rgba(59, 130, 246, 0.04));">
+            <div class="card" style="border-left: 4px solid var(--gold); background: linear-gradient(145deg, var(--bg2), rgba(232, 168, 48, 0.04));">
               <div class="stat-label">Total Classes</div>
-              <div class="stat-value" id="c-att-total" style="color:var(--blue)">0</div>
+              <div class="stat-value" id="c-att-total" style="color:var(--gold)">0</div>
             </div>
             <div class="card" style="border-left: 4px solid var(--emerald); background: linear-gradient(145deg, var(--bg2), rgba(16, 185, 129, 0.04));">
               <div class="stat-label">Present</div>
@@ -1251,7 +1251,7 @@
               <div class="stat-label">Absent</div>
               <div class="stat-value text-danger" id="c-att-absent">0</div>
             </div>
-            <div class="card" style="border-left: 4px solid var(--gold); background: linear-gradient(145deg, var(--bg2), rgba(59, 130, 246, 0.04));">
+            <div class="card" style="border-left: 4px solid var(--gold); background: linear-gradient(145deg, var(--bg2), rgba(232, 168, 48, 0.04));">
               <div class="stat-label">Attendance Rate</div>
               <div class="stat-value" id="c-att-rate" style="color:var(--gold)">0%</div>
             </div>
@@ -4005,7 +4005,7 @@
 <!-- Receipt Preview Modal -->
 <div class="modal" id="receipt-preview-modal">
   <div class="modal-box" style="max-width:500px;padding:0;overflow:hidden">
-    <div style="background:linear-gradient(135deg,var(--brand-blue),#b8922e);padding:30px;text-align:center;color:#000">
+    <div style="background:linear-gradient(135deg,var(--amber),#b8922e);padding:30px;text-align:center;color:#000">
       <div style="font-size:36px">♞</div>
       <div style="font-family:var(--font-head);font-size:24px;font-weight:700">CHESSKIDOO</div>
       <div style="font-size:13px;opacity:0.8">Payment Receipt</div>
