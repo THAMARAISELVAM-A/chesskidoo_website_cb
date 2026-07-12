@@ -8,28 +8,28 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/CormorantGaramond-wght400.woff2') format('woff2');
+  src: url('./CormorantGaramond-wght400.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Cormorant Garamond';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('/fonts/CormorantGaramond-wght500.woff2') format('woff2');
+  src: url('./CormorantGaramond-wght500.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Cormorant Garamond';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('/fonts/CormorantGaramond-wght600.woff2') format('woff2');
+  src: url('./CormorantGaramond-wght600.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Cormorant Garamond';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('/fonts/CormorantGaramond-wght700.woff2') format('woff2');
+  src: url('./CormorantGaramond-wght700.woff2') format('woff2');
 }
 
 @font-face {
@@ -37,35 +37,35 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/Syne-wght400.woff2') format('woff2');
+  src: url('./Syne-wght400.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Syne';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('/fonts/Syne-wght500.woff2') format('woff2');
+  src: url('./Syne-wght500.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Syne';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('/fonts/Syne-wght600.woff2') format('woff2');
+  src: url('./Syne-wght600.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Syne';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('/fonts/Syne-wght700.woff2') format('woff2');
+  src: url('./Syne-wght700.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Syne';
   font-style: normal;
   font-weight: 800;
   font-display: swap;
-  src: url('/fonts/Syne-wght800.woff2') format('woff2');
+  src: url('./Syne-wght800.woff2') format('woff2');
 }
 
 @font-face {
@@ -73,14 +73,14 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/JetBrainsMono-wght400.woff2') format('woff2');
+  src: url('./JetBrainsMono-wght400.woff2') format('woff2');
 }
 @font-face {
   font-family: 'JetBrains Mono';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('/fonts/JetBrainsMono-wght500.woff2') format('woff2');
+  src: url('./JetBrainsMono-wght500.woff2') format('woff2');
 }
 
 @font-face {
@@ -88,21 +88,21 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/Cinzel-wght400.woff2') format('woff2');
+  src: url('./Cinzel-wght400.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Cinzel';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('/fonts/Cinzel-wght700.woff2') format('woff2');
+  src: url('./Cinzel-wght700.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Cinzel';
   font-style: normal;
   font-weight: 900;
   font-display: swap;
-  src: url('/fonts/Cinzel-wght900.woff2') format('woff2');
+  src: url('./Cinzel-wght900.woff2') format('woff2');
 }
 
 @font-face {
@@ -110,12 +110,12 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/DM+Mono-wght400.woff2') format('woff2');
+  src: url('./DM+Mono-wght400.woff2') format('woff2');
 }
 @font-face {
   font-family: 'DM Mono';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('/fonts/DM+Mono-wght500.woff2') format('woff2');
+  src: url('./DM+Mono-wght500.woff2') format('woff2');
 }
