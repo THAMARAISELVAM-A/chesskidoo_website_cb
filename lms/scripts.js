@@ -3441,14 +3441,7 @@
       if (st === "pending") return "Pending";
     }
 
-    // 3. Current month: trust the stored status (maintained by the backend cron) only if no payment is in history
-    if (
-      isCurrentMonth &&
-      s.payment_status &&
-      ["Paid", "Pending", "Due", "Overdue"].includes(s.payment_status)
-    ) {
-      return s.payment_status;
-    }
+    // 3. (Removed) Stale backend stored status fallback removed to enforce dynamic calculation
 
     // 4. Due-date based transition (no arrears / debt-first carry-over)
     const now = new Date();
