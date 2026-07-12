@@ -67,7 +67,7 @@
 
   let SUPABASE_URL = "";
   let SUPABASE_ANON_KEY = "";
-  const API_BASE = "/api";
+  const API_BASE = window.SUPABASE_URL ? `${window.SUPABASE_URL}/functions/v1` : "/api";
   const $ = (id) => {
     const el = document.getElementById(id);
     if (el) return el;
@@ -217,10 +217,11 @@
       throw err;
     }
 
+    const cleanEndpoint = endpoint.replace(/^\/api/, '');
     const url =
-      endpoint.startsWith("http") || endpoint.startsWith(API_BASE)
-        ? endpoint
-        : `${API_BASE}${endpoint}`;
+      cleanEndpoint.startsWith("http") || cleanEndpoint.startsWith(API_BASE)
+        ? cleanEndpoint
+        : `${API_BASE}${cleanEndpoint}`;
     // Forward a real Supabase JWT when available. Supabase Auth and the secure
     // signed login tokens both start with "eyJ"; otherwise use the anon key.
     const storedTok = sessionStorage.getItem("sb-access-token");
