@@ -8193,11 +8193,6 @@ setTimeout(function () {
     if ($("e-parent-name")) $("e-parent-name").value = s.parent_name || "";
     if ($("e-session-type")) $("e-session-type").value = getStudentSessionType(s);
     if ($("e-dob")) $("e-dob").value = s.dob || "";
-    if ($("e-standard")) {
-      const stdMatch = /Standard:\s*(.+)/.exec(s.special_notes || "");
-      $("e-standard").value = stdMatch ? stdMatch[1].trim() : "";
-    }
-    if ($("e-school")) $("e-school").value = s.school_name || "";
     if ($("e-address")) $("e-address").value = s.address || "";
     // Render country dropdown for edit modal
     renderCountryDropdown("country-dropdown-edit", "selectCountryEdit");
@@ -8344,9 +8339,8 @@ setTimeout(function () {
       // field the user reported as never saving).
       parent_name: $("e-parent-name") ? $("e-parent-name").value.trim() : (s.parent_name || ""),
       dob: $("e-dob") && $("e-dob").value ? $("e-dob").value : (s.dob || null),
-      // `grade` column stores the LEVEL, so standard goes to special_notes.
-      special_notes: $("e-standard") && $("e-standard").value.trim() ? `Standard: ${$("e-standard").value.trim()}` : (s.special_notes || null),
-      school_name: $("e-school") ? ($("e-school").value.trim() || null) : (s.school_name || null),
+      special_notes: s.special_notes || null,
+      school_name: s.school_name || null,
       address: $("e-address") ? ($("e-address").value.trim() || null) : (s.address || null),
       session_mode: $("e-batch-type")?.value || s.session_mode || null,
       session_time: $("e-batch-time")?.value || s.session_time || null,
@@ -8532,8 +8526,6 @@ setTimeout(function () {
     if ($("m-parent-name")) $("m-parent-name").value = "";
     if ($("m-parent-email")) $("m-parent-email").value = "";
     if ($("m-dob")) $("m-dob").value = "";
-    if ($("m-standard")) $("m-standard").value = "";
-    if ($("m-school")) $("m-school").value = "";
     if ($("m-address")) $("m-address").value = "";
     if ($("m-session-type")) $("m-session-type").value = "Group";
     if ($("m-admission-fee")) $("m-admission-fee").value = "0";
@@ -8650,10 +8642,8 @@ due_date: (function () {
       // never sent, so they silently vanished. Now persisted.
       parent_name: $("m-parent-name") ? $("m-parent-name").value.trim() : "",
       dob: $("m-dob") && $("m-dob").value ? $("m-dob").value : null,
-      // NOTE: the `grade` column holds the student LEVEL (Beginner/…), so the
-      // academic "standard" field is stored in special_notes, not grade.
-      special_notes: $("m-standard") && $("m-standard").value.trim() ? `Standard: ${$("m-standard").value.trim()}` : null,
-      school_name: $("m-school") ? ($("m-school").value.trim() || null) : null,
+      special_notes: null,
+      school_name: null,
       address: $("m-address") ? ($("m-address").value.trim() || null) : null,
       session_mode: $("m-batch-type").value,
       session_time: $("m-batch-time").value,
