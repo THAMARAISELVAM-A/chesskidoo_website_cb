@@ -3418,20 +3418,49 @@
 
     // 2. Check Payment History for this specific month first
     const sIdKey = String(s.id || "").trim().toLowerCase();
+    // Helper: normalize any applied_month string to "YYYY-MM" format
+    function normalizeMonth(raw) {
+      if (!raw) return null;
+      const s = String(raw).trim();
+      // Already "YYYY-MM" (e.g. "2026-07")
+      if (/^\d{4}-\d{1,2}$/.test(s)) {
+        const [y, m] = s.split("-");
+        return y + "-" + m.padStart(2, "0");
+      }
+      // Try "Month YYYY" (e.g. "July 2026")
+      const d = new Date(s + " 1");
+      if (!isNaN(d.getTime())) {
+        return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+      }
+      // Try plain Date parse
+      const d2 = new Date(s);
+      if (!isNaN(d2.getTime())) {
+        return d2.getUTCFullYear() + "-" + String(d2.getUTCMonth() + 1).padStart(2, "0");
+      }
+      return null;
+    }
+
     const currentMonthPayment = (allPayments || []).find((p) => {
       if (String(p.student_id || "").trim().toLowerCase() !== sIdKey) return false;
       const st = (p.status || "").toLowerCase();
       if (st !== "paid" && st !== "completed" && st !== "pending") return false;
-      
-      if (p.applied_month === targetKey) return true;
-      if (!p.applied_month) {
-        const d = new Date(p.payment_date || p.created_at);
-        const pm =
-          d.getUTCFullYear() +
-          "-" +
-          String(d.getUTCMonth() + 1).padStart(2, "0");
-        return pm === targetKey;
+
+      // Check 1: applied_month (normalized to handle any format)
+      if (p.applied_month) {
+        const norm = normalizeMonth(p.applied_month);
+        if (norm === targetKey) return true;
       }
+
+      // Check 2: Always also check payment_date as fallback
+      const pd = new Date(p.payment_date || p.created_at);
+      if (!isNaN(pd.getTime())) {
+        const pm =
+          pd.getUTCFullYear() +
+          "-" +
+          String(pd.getUTCMonth() + 1).padStart(2, "0");
+        if (pm === targetKey) return true;
+      }
+
       return false;
     });
 
