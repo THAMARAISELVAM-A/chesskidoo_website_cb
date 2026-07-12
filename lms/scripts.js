@@ -3416,20 +3416,13 @@
     const enrollDate = enrollDateStr ? new Date(enrollDateStr) : null;
     if (!enrollDate || enrollDate > targetMonthEnd) return "Not Enrolled";
 
-    // 2. Current month: trust the stored status (maintained by the backend cron)
-    if (
-      isCurrentMonth &&
-      s.payment_status &&
-      ["Paid", "Pending", "Due", "Overdue"].includes(s.payment_status)
-    ) {
-      return s.payment_status;
-    }
-
-    // 3. Paid for this specific month? (payment dated or applied to this month)
+    // 2. Check Payment History for this specific month first
     const sIdKey = String(s.id || "").trim().toLowerCase();
-    const paidThisMonth = (allPayments || []).some((p) => {
+    const currentMonthPayment = (allPayments || []).find((p) => {
       if (String(p.student_id || "").trim().toLowerCase() !== sIdKey) return false;
-      if (p.status !== "paid") return false;
+      const st = (p.status || "").toLowerCase();
+      if (st !== "paid" && st !== "completed" && st !== "pending") return false;
+      
       if (p.applied_month === targetKey) return true;
       if (!p.applied_month) {
         const d = new Date(p.payment_date || p.created_at);
@@ -3441,7 +3434,21 @@
       }
       return false;
     });
-    if (paidThisMonth) return "Paid";
+
+    if (currentMonthPayment) {
+      const st = (currentMonthPayment.status || "").toLowerCase();
+      if (st === "paid" || st === "completed") return "Paid";
+      if (st === "pending") return "Pending";
+    }
+
+    // 3. Current month: trust the stored status (maintained by the backend cron) only if no payment is in history
+    if (
+      isCurrentMonth &&
+      s.payment_status &&
+      ["Paid", "Pending", "Due", "Overdue"].includes(s.payment_status)
+    ) {
+      return s.payment_status;
+    }
 
     // 4. Due-date based transition (no arrears / debt-first carry-over)
     const now = new Date();
