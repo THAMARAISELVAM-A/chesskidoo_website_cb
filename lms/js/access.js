@@ -322,7 +322,13 @@ window.cancelSetParentPwd = function(studentId) {
     let html = '';
     window.accessUsers.forEach(u => {
       const createdDate = new Date(u.created_at).toLocaleDateString();
-      const signInDate = u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : 'Never';
+      // The access_control function returns only id/email/role/created_at, so
+      // last_sign_in_at is always undefined here. Rendering that as "Never" was
+      // actively wrong — it claimed accounts had never signed in when they had.
+      // Show it as unavailable instead.
+      const signInDate = u.last_sign_in_at
+        ? new Date(u.last_sign_in_at).toLocaleDateString()
+        : '<span title="Not reported by the access-control service" style="opacity:.45">--</span>';
       
       const isMaster = u.role === 'master';
       
@@ -337,6 +343,10 @@ window.cancelSetParentPwd = function(studentId) {
       const escRole = String(u.role || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
       const escEmail = window.escapeHtml(u.email || '');
       
+      // Supabase stores password hashes and never returns them, so
+      // password_info is always absent and the reveal/edit branch below could
+      // never run. Passwords are write-only: the reset action (which does work,
+      // via PUT /access_control) is the only meaningful affordance here.
       const pwdInfo = u.password_info || {};
       const pwdValue = pwdInfo.value || pwdInfo.masked || '••••••••';
       const isVisible = !!pwdInfo.value;
@@ -492,7 +502,11 @@ window.createAccessUser = async function(email, password, role) {
         if (window.toast) window.toast('User created successfully', 'success');
         window.loadAccessControl();
     } catch (err) {
+        // Was silent: the modal stayed open with no message, so an admin could
+        // not tell a failed create from a slow one.
         console.error('Error creating user:', err);
+        setAccessUserError(err.message || 'Could not create the user.');
+        if (window.toast) window.toast(`Failed to create user: ${err.message}`, 'error');
     }
 };
 
@@ -525,7 +539,11 @@ window.updateAccessUser = async function(id, role, password) {
         if (window.toast) window.toast('User updated successfully', 'success');
         window.loadAccessControl();
     } catch (err) {
+        // Was silent — a failed role change or password reset looked identical
+        // to a successful one, which is dangerous for a credentials screen.
         console.error('Error updating user:', err);
+        setAccessUserError(err.message || 'Could not update the user.');
+        if (window.toast) window.toast(`Failed to update user: ${err.message}`, 'error');
     }
 };
 
@@ -545,7 +563,10 @@ window.deleteUserAccess = async function(id, email) {
         if (window.toast) window.toast('User access revoked', 'success');
         window.loadAccessControl();
     } catch (err) {
+        // Was silent: the row stayed on screen and the admin had no idea the
+        // revoke had not actually happened.
         console.error('Error deleting user:', err);
+        if (window.toast) window.toast(`Failed to revoke access: ${err.message}`, 'error');
     }
 };
 
