@@ -229,7 +229,26 @@
     try {
       auth = JSON.parse(sessionStorage.getItem("twoknights_auth") || "{}");
     } catch (e) {}
-    const customToken = (storedTok && storedTok.startsWith("eyJ")) ? storedTok : null;
+    // Prefer the standalone token, but fall back to the copy kept inside
+    // twoknights_auth. Session restore rehydrates twoknights_auth without
+    // rewriting sb-access-token, so after a reload the standalone key can be
+    // absent while the session is still perfectly valid. Previously that fell
+    // through to the anon key, which every admin-gated endpoint rejects with
+    // 403 — the portal looked signed-in as admin while sending no user token
+    // at all. Everything else kept working because endpoints like /students
+    // accept the anon key; only /access_control demands an admin JWT.
+    const isJwt = (t) => typeof t === "string" && t.startsWith("eyJ");
+    const customToken = isJwt(storedTok)
+      ? storedTok
+      : isJwt(auth.token)
+        ? auth.token
+        : null;
+    if (!customToken && auth.role) {
+      console.warn(
+        "[Auth] No user JWT in session — falling back to the anon key. " +
+          "Admin-only endpoints will return 403. Sign out and sign in again.",
+      );
+    }
     const headers = {
        "Content-Type": "application/json",
        apikey: SUPABASE_ANON_KEY,
@@ -14889,6 +14908,11 @@ window.addEventListener("DOMContentLoaded", () => {
         try {
           const data = JSON.parse(auth);
           role = data.role;
+          // Rehydrate the standalone token too. Only twoknights_auth was being
+          // restored, so a reload left apiCall with no JWT to send.
+          if (data.token && !sessionStorage.getItem("sb-access-token")) {
+            sessionStorage.setItem("sb-access-token", data.token);
+          }
           window.currentCoachId = data.coachId || null;
           window.userId = data.coachId || null;
           finishLogin(data.user || "User", data.role, data.studentId);
