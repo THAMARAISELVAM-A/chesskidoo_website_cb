@@ -1,10 +1,12 @@
 // Supabase configuration – read from environment (set on Vercel/Netlify)
 window.SUPABASE_URL = 'https://vseombfkrvpffnpgbsnk.supabase.co';
-// Note: Real Supabase anon keys start with "sb-publishable-" or "sb-secret-"
-// For development, we use a permissive validation that accepts any JWT starting with "eyJ"
-window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzZW9tYmZrcnZwZmZucGdic25rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Mzc0MjAsImV4cCI6MjA4OTUxMzQyMH0.wg0Azavs8Gfdbh6vbdjvM6juu45OwpCn4J5XN55tsc8';
+// Publishable key — public by design and safe in client code; access is bounded
+// by RLS. Replaced the legacy HS256 "anon" JWT, which stopped working when the
+// legacy API keys were disabled. Never put an sb_secret_ / service_role key here.
+window.SUPABASE_ANON_KEY = 'sb_publishable_DADHCm1eB-nASpQfSi5zvA_2rMZxCJT';
 
-// Check if key is expired and warn (but allow app to continue)
+// Legacy JWT keys carried an exp claim; publishable keys do not, so this check
+// is a no-op for them (split('.')[1] is undefined and the guard below skips).
 const keyExpired = (() => {
   try {
     const payload = window.SUPABASE_ANON_KEY.split('.')[1];

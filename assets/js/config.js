@@ -22,7 +22,7 @@ window.APP_CONFIG = {
   // users / credentials. Anything in db.js still querying the old table names
   // will read empty; see the portal-retirement note in the audit.
   SUPABASE_URL:     "https://vseombfkrvpffnpgbsnk.supabase.co",
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzZW9tYmZrcnZwZmZucGdic25rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Mzc0MjAsImV4cCI6MjA4OTUxMzQyMH0.wg0Azavs8Gfdbh6vbdjvM6juu45OwpCn4J5XN55tsc8",
+  SUPABASE_ANON_KEY: "sb_publishable_DADHCm1eB-nASpQfSi5zvA_2rMZxCJT",
 
   // Admin UUID — matches the seeded admin user in the users table
   ADMIN_UUID:       "a0000000-0000-4000-8000-000000000001",
