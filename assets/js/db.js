@@ -166,65 +166,18 @@
         } catch(e) {}
       }
     });
-    // Pre-populate offline credentials in localStorage so demo accounts are fully accessible out-of-the-box
-    const credsKey = 'ck_user_credentials';
-    const credsVersion = 'ck_creds_version';
-    if (!localStorage.getItem(credsKey) || localStorage.getItem(credsVersion) !== '4') {
-      localStorage.setItem(credsVersion, '4');
-      const defaultCreds = {
-        'admin@chesskidoo.com': '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', // admin123
-        'admin@gmail.com': '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', // admin123
-        'student@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', // 123456 (student default)
-        'arivuselvam@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
-        'gyanasurya@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
-        'vishnu@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
-        'haris@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
-        'yogesh@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
-        'sudhin@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
-        'ranjith@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
-        'rohith@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
-        'vasanth@gmail.com': '83a75bd68c35339c8ba42777a48e4c7e48065e584409d8d12bb84b8032b70248', // chess123
-        // Student credentials (all use 123456)
-        'sreelaxmi@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'samiksha@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'sakthi@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'sathya@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'riyas@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'susil@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'varun@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'ekash@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'nigunan@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'aara@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'anush@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'rakshitha@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'shervin@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'eduveer@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'yugan@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'aarunya@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'magathi@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'pranav@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'aatish@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'uttsan@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'mukilan@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'sachin@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'jeevan@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'sai@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'venkateshson@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'athvik@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'mohammadrayan@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'pranesh@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'aakif@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'pranish@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'venkateshdaughter@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'aaradhya@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'abinitha@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'yogeshstudent@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'akmal@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'anfal@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
-        'buvargan@gmail.com': '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92'
-      };
-      localStorage.setItem(credsKey, JSON.stringify(defaultCreds));
-    }
+    // SECURITY: this used to seed ~49 real account credentials into every
+    // visitor's localStorage — admin@gmail.com, every coach and every student —
+    // with the plaintext passwords written in the comments beside them. The
+    // whole map shipped inside this public JS file, so anyone could view-source
+    // it and sign in through the offline fallback in auth.js.
+    //
+    // The seeding is gone, and anything a previous build already planted is
+    // purged here so it does not linger at rest on machines that visited before.
+    try {
+      localStorage.removeItem('ck_user_credentials');
+      localStorage.removeItem('ck_creds_version');
+    } catch (e) { /* private mode / storage disabled */ }
   };
   initLocalStore();
 
@@ -1288,19 +1241,17 @@
       return p;
     },
 
-    // --- CREDENTIALS SYNC (Supabase credentials table) ---
+    // --- CREDENTIALS (local cache only) ---
     async getCredentials() {
-      if (canUseSupabase()) {
-        try {
-          const { data, error } = await window.supabaseClient.from('credentials').select('*');
-          if (!error && data) {
-            const map = {};
-            data.forEach(c => { map[c.email] = c.password; });
-            localStorage.setItem('ck_user_credentials', JSON.stringify(map));
-            return map;
-          }
-        } catch (e) { }
-      }
+      // Deliberately does NOT read the credentials table. This used to run
+      // `.from('credentials').select('*')` and mirror EVERY email/password-hash
+      // pair in the academy into localStorage — so any visitor's browser
+      // downloaded the whole credential list, and it persisted at rest.
+      //
+      // Authentication is server-side now (the /auth Edge Function verifies
+      // against Supabase Auth and returns a JWT), so nothing needs the table
+      // client-side. This returns only what this browser already cached, for
+      // the legacy offline fallback in auth.js.
       return JSON.parse(localStorage.getItem('ck_user_credentials') || '{}');
     },
     async saveCredential(email, hash) {
