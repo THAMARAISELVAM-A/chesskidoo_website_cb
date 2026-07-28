@@ -77,13 +77,22 @@
         const suffix = m[2] || '';
         if (isNaN(target)) return;
         const dec = m[1].indexOf('.') >= 0 ? 1 : 0;
-        const dur = 1500, t0 = performance.now();
+
+        // Pin the box to the width of the FINAL value before counting starts.
+        // The element still holds that value here, so this measurement is exact.
+        // Without it, "8+" -> "12+" -> "200+" each reflow the flex row and the
+        // whole stat strip visibly jitters sideways for the entire animation.
+        const w = el.getBoundingClientRect().width;
+        if (w) { el.style.minWidth = Math.ceil(w) + 'px'; el.style.display = 'inline-block'; }
+
+        const dur = 1600, t0 = performance.now();
+        const fmt = (n) => (dec ? n.toFixed(1) : Math.round(n).toLocaleString()) + suffix;
         const tick = (now) => {
           const t = Math.min(1, (now - t0) / dur);
           const v = target * (1 - Math.pow(1 - t, 3)); // easeOutCubic
-          el.textContent = (dec ? v.toFixed(1) : Math.round(v).toLocaleString()) + suffix;
+          el.textContent = fmt(v);
           if (t < 1) requestAnimationFrame(tick);
-          else el.textContent = (dec ? target.toFixed(1) : Math.round(target).toLocaleString()) + suffix;
+          else el.textContent = fmt(target);
         };
         requestAnimationFrame(tick);
       });
@@ -91,21 +100,53 @@
     els.forEach((el) => io.observe(el));
   }
 
-  // ── 3) Soft cursor spotlight in the hero ──
+  // ── 3) Soft spotlight in the hero ──
+  //    Desktop: follows the cursor.
+  //    Touch: no cursor exists, so the glow drifts on its own instead of being
+  //    absent entirely — phones were missing this ambience completely.
   function heroSpotlight() {
-    if (!canHover) return;
     const hero = document.querySelector('.hero');
     if (!hero) return;
     const glow = document.createElement('div');
     glow.className = 'ck-hero-glow';
     hero.insertBefore(glow, hero.firstChild);
-    hero.addEventListener('pointermove', (e) => {
+
+    if (canHover) {
+      hero.addEventListener('pointermove', (e) => {
+        const r = hero.getBoundingClientRect();
+        glow.style.setProperty('--x', (e.clientX - r.left) + 'px');
+        glow.style.setProperty('--y', (e.clientY - r.top) + 'px');
+        glow.style.opacity = '1';
+      });
+      hero.addEventListener('pointerleave', () => { glow.style.opacity = '0'; });
+      return;
+    }
+
+    if (reduce) return;
+    // Slow lissajous drift — ambient, never distracting, and it parks itself
+    // when the hero scrolls out of view so it costs nothing off-screen.
+    glow.style.opacity = '0.85';
+    let raf = 0;
+    let running = true;
+    const t0 = performance.now();
+    const tick = (now) => {
+      if (!running) return;
+      const t = (now - t0) / 1000;
       const r = hero.getBoundingClientRect();
-      glow.style.setProperty('--x', (e.clientX - r.left) + 'px');
-      glow.style.setProperty('--y', (e.clientY - r.top) + 'px');
-      glow.style.opacity = '1';
-    });
-    hero.addEventListener('pointerleave', () => { glow.style.opacity = '0'; });
+      glow.style.setProperty('--x', (50 + Math.sin(t * 0.34) * 26) + '%');
+      glow.style.setProperty('--y', (50 + Math.cos(t * 0.23) * 22) + '%');
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          running = e.isIntersecting;
+          if (running) raf = requestAnimationFrame(tick);
+          else cancelAnimationFrame(raf);
+        });
+      }, { threshold: 0.01 }).observe(hero);
+    }
   }
 
   // ── 4) 3D tilt + shine on landing cards ──
@@ -204,11 +245,29 @@
       document.addEventListener(ev, release, { passive: true }));
   }
 
+  // ── Student Journey: draw the gold rail once the path scrolls into view ──
+  // Adds .cj-inview, which is what starts the cjRailDraw keyframes in style.css.
+  // Safe to run under reduced motion: the CSS there shows the rail already full.
+  function journeyRail() {
+    const wrap = document.querySelector('.chess-journey-wrap');
+    if (!wrap) return;
+    if (!('IntersectionObserver' in window)) { wrap.classList.add('cj-inview'); return; }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        e.target.classList.add('cj-inview');
+        io.unobserve(e.target);
+      });
+    }, { threshold: 0.25 });
+    io.observe(wrap);
+  }
+
   function init() {
     // Only on the public landing page.
     if (!document.querySelector('.hero') && !document.getElementById('landing-page')) return;
     injectCSS();
     scrollProgress();        // useful regardless of motion preference
+    journeyRail();           // ditto — CSS handles the reduced-motion case
     if (reduce) return;      // skip the motion-heavy extras for reduced-motion users
     countUp();
     if (isTouch()) {

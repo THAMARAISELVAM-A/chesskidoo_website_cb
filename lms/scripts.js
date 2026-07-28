@@ -3338,9 +3338,10 @@
   window.getBillingAnchor = getBillingAnchor;
 
   function getStudentDueConfig(s, coachName, month = 4, year = 2026) {
-    if (!s) return { day: 5, feeOverride: null };
+    if (!s) return { day: 5, feeOverride: null, fullDate: null };
     let day = 5;
     let feeOverride = null;
+    let fullDate = null;
 
     // Default to the day of their enrollment/join date
     const enrollStr = s.enrollment_date || s.join_date || s.created_at;
@@ -3365,10 +3366,12 @@
         hasExplicitDue = true;
       } else {
         try {
-          const dd = new Date(s.due_date).getUTCDate();
+          const ddObj = new Date(s.due_date);
+          const dd = ddObj.getUTCDate();
           if (dd) {
             day = dd;
             hasExplicitDue = true;
+            fullDate = ddObj;
           }
         } catch (e) {
           // ignore
@@ -3393,7 +3396,7 @@
       }
     }
 
-    return { day, feeOverride };
+    return { day, feeOverride, fullDate };
   }
 
   function getStudentPaymentStatus(
@@ -3452,20 +3455,24 @@
       const st = (p.status || "").toLowerCase();
       if (st !== "paid" && st !== "completed" && st !== "pending") return false;
 
-      // Check 1: applied_month (normalized to handle any format)
+      // applied_month is the explicit billing month a payment is allocated to.
+      // When present it is AUTHORITATIVE — do not fall back to payment_date.
+      // Otherwise a payment collected in month X to clear month Y's dues (e.g.
+      // a late June fee paid in July) would also be counted against month X,
+      // wrongly showing "Paid" and — because Mark Unpaid matches on
+      // applied_month — leaving that status impossible to revert.
       if (p.applied_month) {
-        const norm = normalizeMonth(p.applied_month);
-        if (norm === targetKey) return true;
+        return normalizeMonth(p.applied_month) === targetKey;
       }
 
-      // Check 2: Always also check payment_date as fallback
+      // Only when applied_month is absent, fall back to the transaction date.
       const pd = new Date(p.payment_date || p.created_at);
       if (!isNaN(pd.getTime())) {
         const pm =
           pd.getUTCFullYear() +
           "-" +
           String(pd.getUTCMonth() + 1).padStart(2, "0");
-        if (pm === targetKey) return true;
+        return pm === targetKey;
       }
 
       return false;
@@ -3491,7 +3498,7 @@
       targetMonth,
       targetYear,
     );
-    const dueDateObj = new Date(
+    let dueDateObj = new Date(
       targetYear,
       targetMonth,
       dueCfg.day,
@@ -3500,9 +3507,22 @@
       59,
     );
 
+    if (dueCfg.fullDate && dueCfg.fullDate > dueDateObj) {
+      dueDateObj = dueCfg.fullDate;
+    }
+
     if (isFuture || now < dueDateObj) return "Pending";
-    const diffDays = Math.floor((now - dueDateObj) / (1000 * 60 * 60 * 24));
-    return diffDays > 3 ? "Overdue" : "Due";
+    // Unpaid stays "Due" for the remainder of the billing month and flips to
+    // "Overdue" on the 1st of the next month. There is deliberately no grace
+    // tier between the two. (The previous 3-day grace put 12 students in
+    // Overdue against 1 in Due, flagging students days late as delinquent.)
+    //
+    // targetMonthEnd is built with Date.UTC, and `now` is local — comparing the
+    // two would hold the flip back to 05:30 on the 1st in IST. Rebuild the
+    // boundary in local time, matching how dueDateObj above is constructed, so
+    // the turnover happens at local midnight.
+    const cycleEndLocal = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
+    return now > cycleEndLocal ? "Overdue" : "Due";
   }
 
   // ── COUNTRY PHONE VALIDATION ──
@@ -3983,7 +4003,7 @@
     try {
       // Find payments related to this event
       const eventDescString = `Event: ${e.title}`;
-      const res = await apiCall("/api/payments");
+      const res = await apiCall("/api/payments?order=payment_date.desc&limit=5000");
       const paymentsResponse = await res.json();
       const allPaymentsLocal = Array.isArray(paymentsResponse)
         ? paymentsResponse
@@ -4220,7 +4240,7 @@
       // Fetch event and payments
       const evRes = await apiCall(`/api/events?id=${eventId}`);
       const ev = await evRes.json();
-      const pRes = await apiCall("/api/payments");
+      const pRes = await apiCall("/api/payments?order=payment_date.desc&limit=5000");
       const paymentsData = await pRes.json();
       const payments = paymentsData.data || paymentsData;
 
@@ -6415,6 +6435,7 @@ setTimeout(function () {
     document.body.classList.remove(
       "login-mode",
       "admin-mode",
+      "coach-mode",
       "parent-mode",
       "master-mode",
     );
@@ -7318,6 +7339,11 @@ setTimeout(function () {
     // AI insights rendered on its own page
   }
 
+  /* Coaches paid a share of revenue are recorded with a token salary (RANJITH
+     is Rs 1) rather than a real wage. Anything at or below this is treated as
+     "share-based" so we never divide by it to produce a return multiple. */
+  const CK_NOMINAL_SALARY_MAX = 100;
+
   function renderCoachFinance() {
     const tbody = $("coach-finance-body");
     if (!tbody) return;
@@ -7395,6 +7421,14 @@ setTimeout(function () {
     });
 
     // 2. Add Deduplicated Revenue from 'paid' Transactions
+    //
+    // NOTE: the month here is taken from payment_date ON PURPOSE, not from
+    // applied_month. "Collected Revenue" is a CASH figure — money actually
+    // received during this month — whereas getStudentPaymentStatus() uses
+    // applied_month because it answers a different question: which month's fee
+    // a payment settles. A fee received in February to clear July therefore
+    // counts as February cash and July "Paid", and that is correct. Do not
+    // "reconcile" these two; they are different bases by design.
     const coachPaidStuds = new Set();
     (allPayments || []).forEach((p) => {
       const pDate = new Date(p.payment_date || p.created_at);
@@ -7440,14 +7474,21 @@ setTimeout(function () {
         const potentialNetProfit = d.projected - d.cost; // If every student pays
         // ROI shown as an intuitive multiplier: "for every ₹1 of salary, the coach
         // earns the academy ₹X". e.g. 3.5× now / 4.2× at full collection.
-        const roiX = d.cost > 0 ? (d.revenue / d.cost).toFixed(1) : null;
-        const potRoiX = d.cost > 0 ? (d.projected / d.cost).toFixed(1) : null;
+        //
+        // A token salary (₹1) marks a coach paid a SHARE of revenue rather than a
+        // fixed wage. Dividing by it yields nonsense — RANJITH showed 1,975,600%
+        // — so treat those coaches as unrated instead of inventing a multiple.
+        const isShareBased = d.cost > 0 && d.cost <= CK_NOMINAL_SALARY_MAX;
+        const rateable = d.cost > 0 && !isShareBased;
+        const roiX = rateable ? (d.revenue / d.cost).toFixed(1) : null;
+        const potRoiX = rateable ? (d.projected / d.cost).toFixed(1) : null;
         const roiClass =
           roiX !== null && parseFloat(roiX) >= 1
             ? "text-success"
             : "text-danger";
-        const roiCell =
-          roiX === null
+        const roiCell = isShareBased
+          ? '<span style="color:var(--ivory-dim)" title="Paid a share of revenue rather than a fixed salary, so a salary multiple is not meaningful">Share-based</span>'
+          : roiX === null
             ? '<span style="color:var(--ivory-dim)">—</span>'
             : `<span class="${roiClass}" style="font-weight:700">${roiX}×</span> <span style="color:var(--ivory3)">now</span> / <span class="text-gold" style="font-weight:700">${potRoiX}×</span> <span style="color:var(--ivory3)">max</span>`;
         const profitClass = netProfit >= 0 ? "text-success" : "text-danger";
@@ -7458,8 +7499,8 @@ setTimeout(function () {
         <td>${d.students}</td>
         <td>₹${d.revenue.toLocaleString()}</td>
         <td>₹${d.pending.toLocaleString()}</td>
-        <td>₹${d.cost.toLocaleString()}</td>
-        <td class="${profitClass}" title="Collected revenue minus salary">₹${netProfit.toLocaleString()}</td>
+        <td${isShareBased ? ' title="Nominal salary — this coach is paid a share of revenue"' : ''}>₹${d.cost.toLocaleString()}${isShareBased ? ' <span style="color:var(--ivory-dim);font-size:10px">(share)</span>' : ''}</td>
+        <td class="${profitClass}" title="${isShareBased ? 'Collected revenue less the nominal salary — excludes the revenue share' : 'Collected revenue minus salary'}">₹${netProfit.toLocaleString()}</td>
         <td class="${potentialProfitClass}" title="Profit if every assigned student pays (projected − salary)">₹${potentialNetProfit.toLocaleString()}</td>
         <td title="Times the coach earns back their salary — collected now, and projected at full collection. 1× = breaks even.">${roiCell}</td>
         <td><button class="btn btn-gold btn-sm" onclick="informCoachFees('${id}')">📢 Inform</button></td>
@@ -7900,11 +7941,10 @@ setTimeout(function () {
                 59,
               );
             }
-            const isOverdue =
-              status === "Overdue" ||
-              (status !== "Paid" &&
-                status !== "Pending" &&
-                dueDateObj < new Date());
+            // Mirror the status rule exactly. This used to red-flag any row
+            // past its due date, so students the status called "Due" were
+            // still rendered as overdue.
+            const isOverdue = status === "Overdue";
 
             const enrollStatus = getStudentStatus(s);
             const isNonActive = enrollStatus !== "active";
@@ -8089,12 +8129,82 @@ setTimeout(function () {
             return `<tr><td colspan="12" style="color:var(--danger)">Error rendering student ${s.name || i}</td></tr>`;
           }
         })
-        .join("");
+        .join("") + renderStudentTotalsRow(studs, targetMonth, targetYear);
       updateStudentBulkCount();
     } catch (err) {
       console.error("[UI] renderStudents critical error:", err);
       if (tbody)
         tbody.innerHTML = `<tr><td colspan="${role === "coach" ? 7 : 12}" class="text-center text-danger">Failed to load students. Please refresh the page.</td></tr>`;
+    }
+  }
+
+  /* Totals footer for the Student Registry.
+     Sums the amount that matches whatever the payment-status filter is showing:
+     for "Paid" that is what was actually collected for the billing month (from
+     the payments ledger, so part-payments and edited amounts stay honest);
+     for Pending / Due / Overdue there is no ledger row yet, so it is the fee
+     still outstanding. With no filter it breaks the list down by status. */
+  function studentPaidAmountForMonth(s, targetMonth, targetYear) {
+    const key = `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}`;
+    const sid = String(s.id || "").trim().toLowerCase();
+    const rows = (window.allPayments || allPayments || []).filter((p) => {
+      if (String(p.student_id || "").trim().toLowerCase() !== sid) return false;
+      const st = (p.status || "").toLowerCase();
+      if (st !== "paid" && st !== "completed") return false;
+      if (p.applied_month) return normalizeMonth(p.applied_month) === key;
+      const pd = new Date(p.payment_date || p.created_at);
+      if (isNaN(pd.getTime())) return false;
+      return pd.getUTCFullYear() + "-" + String(pd.getUTCMonth() + 1).padStart(2, "0") === key;
+    });
+    const sum = rows.reduce((t, p) => t + (Number(p.amount) || 0), 0);
+    // Fall back to the agreed fee when a payment row carries no amount.
+    return sum || (rows.length ? Number(getStudentMonthlyFee(s)) || 0 : 0);
+  }
+
+  function renderStudentTotalsRow(studs, targetMonth, targetYear) {
+    try {
+      if (!studs || !studs.length) return "";
+      const filter = ($("f-status") && $("f-status").value) || "";
+      const money = (n) =>
+        "\u20B9" + Math.round(n).toLocaleString("en-IN");
+
+      const buckets = { Paid: 0, Pending: 0, Due: 0, Overdue: 0 };
+      const counts  = { Paid: 0, Pending: 0, Due: 0, Overdue: 0 };
+      studs.forEach((s) => {
+        const st = getStudentPaymentStatus(s, targetMonth, targetYear);
+        if (!(st in buckets)) return;   // skips "Not Enrolled" etc.
+        counts[st] += 1;
+        buckets[st] += st === "Paid"
+          ? studentPaidAmountForMonth(s, targetMonth, targetYear)
+          : (Number(getStudentMonthlyFee(s)) || 0);
+      });
+
+      const tone = { Paid: "var(--success)", Pending: "var(--warning)", Due: "var(--warning)", Overdue: "var(--danger)" };
+      let label, amount, colour;
+      if (filter && filter in buckets) {
+        label  = `Total ${filter} (${counts[filter]} student${counts[filter] === 1 ? "" : "s"})`;
+        amount = money(buckets[filter]);
+        colour = tone[filter];
+      } else {
+        const parts = Object.keys(buckets)
+          .filter((k) => counts[k])
+          .map((k) => `<span style="color:${tone[k]}">${k} ${money(buckets[k])}</span>`)
+          .join('<span style="opacity:.35;margin:0 8px">|</span>');
+        const collected = buckets.Paid;
+        const outstanding = buckets.Pending + buckets.Due + buckets.Overdue;
+        label  = parts || "No billable students";
+        amount = `Collected ${money(collected)} \u00B7 Outstanding ${money(outstanding)}`;
+        colour = "var(--ivory)";
+      }
+
+      return `
+        <tr class="student-totals-row" style="background:rgba(255,255,255,0.04); border-top:2px solid var(--border);">
+          <td colspan="7" style="padding:12px 10px; font-size:12px; font-weight:600; color:var(--ivory-dim);">${label}</td>
+          <td colspan="5" style="padding:12px 10px; text-align:right; font-size:14px; font-weight:800; color:${colour}; white-space:nowrap;">${amount}</td>
+        </tr>`;
+    } catch (e) {
+      console.error("[UI] renderStudentTotalsRow failed:", e);
+      return "";
     }
   }
 
@@ -8386,10 +8496,16 @@ setTimeout(function () {
           const now = new Date();
           const targetMonth = now.getUTCMonth();
           const targetYear = now.getUTCFullYear();
+          const targetKey = `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}`;
 
           const monthPay = (allPayments || []).find((p) => {
             if (String(p.student_id) !== String(id)) return false;
             if (p.status !== "paid") return false;
+            // Match the same way getStudentPaymentStatus counts a month as Paid:
+            // applied_month is authoritative when present, else the payment_date.
+            if (p.applied_month) {
+              return normalizeMonth(p.applied_month) === targetKey;
+            }
             const pDate = new Date(p.payment_date || p.created_at);
             return (
               pDate.getUTCMonth() === targetMonth &&
@@ -10888,104 +11004,13 @@ Best regards,
     }
   };
 
-  // ============================================
-  // FEATURE 2: TOGGLE PAID/UNPAID STATUS
-  // ============================================
-  window.togglePaymentStatus = async function (id, name, fee) {
-    const s = allStudents.find((x) => String(x.id) === String(id));
-    if (!s) return;
-
-    const currentStatus = getStudentPaymentStatus(s);
-    const isCurrentlyPaid = currentStatus === "Paid";
-    const action = isCurrentlyPaid ? "unpaid" : "paid";
-    const confirmMsg = isCurrentlyPaid
-      ? `Mark ${name} as Unpaid? This will remove this month's payment record and revert status to Pending.`
-      : `Mark ${name} as Paid? This will create a payment record for this month.`;
-
-    if (!confirm(confirmMsg)) return;
-
-    try {
-      const targetMonth = window.reportMonth;
-      const targetYear = window.reportYear;
-
-      if (isCurrentlyPaid) {
-        // === MARK AS UNPAID ===
-        // Find current month payments
-        const monthPayments = (window.allPayments || []).filter(
-          (p) =>
-            String(p.student_id) === String(id) &&
-            p.status === "paid" &&
-            new Date(p.payment_date || p.created_at).getUTCMonth() ===
-              targetMonth &&
-            new Date(p.payment_date || p.created_at).getUTCFullYear() ===
-              targetYear,
-        );
-
-        // Delete each payment record
-        for (const p of monthPayments) {
-          await apiCall(`${API_BASE}/payments?id=${p.id}`, {
-            method: "DELETE",
-          });
-        }
-
-        // Update student to Pending (they paid previous months but not current)
-        await apiCall(`${API_BASE}/students?id=${id}`, {
-          method: "PUT",
-          body: JSON.stringify({ payment_status: "Pending" }),
-        });
-
-        toast(
-          `Marked Unpaid. ${monthPayments.length} payment record(s) removed.`,
-          "info",
-        );
-      } else {
-        // === MARK AS PAID ===
-        const paymentData = {
-          id:
-            "pay_toggle_" +
-            Date.now() +
-            "_" +
-            Math.random().toString(36).substr(2, 9),
-          student_id: id,
-          amount: parseFloat(fee),
-          status: "paid",
-          payment_method: "Manual Toggle",
-          description: "Monthly Tuition",
-          transaction_id: "TGL-" + Math.floor(Math.random() * 1000000),
-          payment_date:
-            window.reportMonth !== new Date().getUTCMonth() ||
-            window.reportYear !== new Date().getUTCFullYear()
-              ? new Date(
-                  Date.UTC(window.reportYear, window.reportMonth, 1, 12, 0, 0),
-                ).toISOString()
-              : new Date().toISOString(),
-        };
-
-        const res = await apiCall(`${API_BASE}/payments`, {
-          method: "POST",
-          body: JSON.stringify(paymentData),
-        });
-
-        if (res.ok) {
-          await apiCall(`${API_BASE}/students?id=${id}`, {
-            method: "PUT",
-            body: JSON.stringify({ payment_status: "Paid" }),
-          });
-          toast("Marked as Paid with transaction record", "success");
-          sendPaymentReceiptNotification(id, fee);
-        }
-      }
-
-      // Invalidate cache and refresh
-      window.totalPaymentsMap = null;
-      await loadAllData(true);
-      renderDash();
-      renderBills();
-    } catch (e) {
-      console.error("Toggle status failed:", e);
-      toast("Error updating status", "error");
-    }
-  };
+  // NOTE: The authoritative window.togglePaymentStatus is defined earlier in
+  // this file. A second, older copy used to live here and — because it was
+  // defined later — silently shadowed the fixed one at runtime. That stale
+  // copy matched payments to delete by payment_date only, ignoring
+  // applied_month, so "Mark Unpaid" failed to revert any student whose paid
+  // record was allocated via applied_month (the "payment not changing" bug).
+  // It has been removed; do not re-add a duplicate definition here.
 
   window.viewPaymentHistory = async function (studentId) {
     const s = allStudents.find((x) => String(x.id) === String(studentId));
@@ -14151,10 +14176,15 @@ Best regards,
         const coachesFinanceList = Object.entries(coachData).map(([id, d]) => {
           const netProfit = d.revenue - d.cost;
           const potentialNetProfit = d.projected - d.cost;
-          const roi =
-            d.cost > 0 ? ((d.revenue / d.cost) * 100).toFixed(1) + "%" : "0%";
-          const potentialRoi =
-            d.cost > 0 ? ((d.projected / d.cost) * 100).toFixed(1) + "%" : "0%";
+          // Same guard as renderCoachFinance: a token salary means revenue-share,
+          // so a percentage return on it is meaningless.
+          const shareBased = d.cost > 0 && d.cost <= CK_NOMINAL_SALARY_MAX;
+          const roi = shareBased
+            ? "Share-based"
+            : d.cost > 0 ? ((d.revenue / d.cost) * 100).toFixed(1) + "%" : "0%";
+          const potentialRoi = shareBased
+            ? "Share-based"
+            : d.cost > 0 ? ((d.projected / d.cost) * 100).toFixed(1) + "%" : "0%";
           return {
             name: d.name,
             specialty: d.specialization,

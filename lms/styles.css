@@ -210,6 +210,16 @@ body.login-mode .main,
 body.login-mode .top-bar,
 body.login-mode .sidebar-overlay { display: none !important; }
 
+/* The app-level floating widgets share z-index 4000 with #login-screen and sit
+   later in the DOM, so they paint on top of the login card: #ai-chat-btn landed
+   exactly on #login-chat-btn (swallowing its clicks) and #calc-toggle-btn
+   covered the Sign In button. They belong to the authenticated shell — hide
+   them, and their panels, until login completes. */
+body.login-mode #ai-chat-btn,
+body.login-mode #chat-panel,
+body.login-mode #calc-toggle-btn,
+body.login-mode #floating-calc { display: none !important; }
+
 /* ── SIDEBAR ── */
 .sidebar {
   width: 240px;
@@ -1193,12 +1203,15 @@ textarea:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--gold
 .coach-mini-table tbody tr:last-child td { border-bottom: none; }
 .coach-mini-table tbody tr:hover { background: var(--gold-mist); }
 .coach-loading-cell { text-align: center; color: var(--ivory-dim); padding: 22px; font-style: italic; font-size: 13px; }
-.coach-attendance-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+/* auto-fit, not a fixed 4 — the marking summary renders 5 tiles
+   (Present/Absent/Late/Excused/Unmarked) and must not overflow on narrow screens. */
+.coach-attendance-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .coach-attendance-item { text-align: center; padding: 14px 10px; border-radius: var(--radius-sm); background: var(--surface2); border: 1px solid var(--border); }
 .coach-attendance-item.present { border-left: 3px solid var(--success); }
 .coach-attendance-item.absent { border-left: 3px solid var(--danger); }
 .coach-attendance-item.late { border-left: 3px solid var(--gold); }
 .coach-attendance-item.excused { border-left: 3px solid #8c8c8c; }
+.coach-attendance-item.pending { border-left: 3px solid var(--border); opacity: 0.75; }
 .attendance-count { display: block; font-size: 28px; font-weight: 700; color: var(--ivory); font-family: var(--font-mono); line-height: 1; margin-bottom: 6px; }
 .attendance-label { font-size: 11px; color: var(--ivory-dim); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
 .coach-quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -1478,7 +1491,8 @@ textarea:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--gold
 /* Attendance */
 .coach-attendance-summary {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* auto-fit: the marking view renders 5 tiles including "Unmarked" */
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -1496,6 +1510,7 @@ textarea:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--gold
 .coach-attendance-item.absent { border-left-color: var(--danger); }
 .coach-attendance-item.late { border-left-color: var(--gold); }
 .coach-attendance-item.excused { border-left-color: #8c8c8c; }
+.coach-attendance-item.pending { border-left-color: var(--border); opacity: 0.75; }
 .coach-attendance-item:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 28px rgba(0,0,0,0.35);
@@ -2693,6 +2708,19 @@ textarea:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--gold
 .calc-window.minimized {
   width: 180px;
   bottom: 110px;
+}
+
+/* Mobile placement for the calculator widgets.
+   This has to live AFTER the base #calc-toggle-btn / .calc-window rules above:
+   the selectors have equal specificity, so an earlier media query (the
+   max-width:480px block up near .chat-fab) would lose the cascade and never
+   apply. The calculator button stacks directly above .chat-fab, which mobile
+   moves to right:16px/bottom:20px — it must follow that right edge or the two
+   sit 12px out of line. Bottom keeps the desktop 12px gap: 20+56+12 = 88px. */
+@media (max-width: 480px) {
+  #calc-toggle-btn { right: 16px; bottom: 88px; }
+  .calc-window { width: calc(100vw - 16px); right: 8px; bottom: 156px; }
+  .calc-window.minimized { width: 180px; bottom: 156px; }
 }
 
 

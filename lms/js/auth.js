@@ -158,7 +158,7 @@ window.doLogin = async function() {
       sessionStorage.removeItem('sb-access-token');
       window.role = null;
       
-      document.body.classList.remove('admin-mode', 'parent-mode', 'master-mode');
+      document.body.classList.remove('admin-mode', 'coach-mode', 'parent-mode', 'master-mode');
       document.body.classList.add('login-mode');
       
       const loginScreen = document.getElementById('login-screen');

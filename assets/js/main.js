@@ -147,13 +147,17 @@
       mobileBtn.classList.toggle('active');
       document.body.classList.toggle('nav-open', isOpen);
     });
+    // Must match the drawer breakpoint in style.css — the nav collapses into
+    // the hamburger at 1100px, so a smaller value here would leave the drawer
+    // stuck open after tapping a link between 769px and 1100px.
+    const DRAWER_MAX = 1100;
     navLinks.querySelectorAll('.nav-link').forEach(btn => {
       btn.addEventListener('click', () => {
-        if (window.innerWidth <= 768) closeNav();
+        if (window.innerWidth <= DRAWER_MAX) closeNav();
       });
     });
     window.addEventListener('resize', () => {
-      if (window.innerWidth > 768) closeNav();
+      if (window.innerWidth > DRAWER_MAX) closeNav();
     });
   }
 
@@ -185,7 +189,7 @@
      if (portal && typeof portal[method] === 'function') {
        portal[method](...args);
      } else {
-       window.location.href = '/lms';
+       window.location.href = '/lms/';
      }
    };
 
@@ -2248,6 +2252,8 @@ ta: {
     // Escape — Close modals/drawers
     if (e.key === 'Escape') {
       CK.closeModal();
+      if (CK.closeCurriculum) CK.closeCurriculum();
+      if (CK.closePolicies) CK.closePolicies();
       const drawer = document.getElementById('notifDrawer');
       if (drawer?.classList.contains('notif-open')) CK.notifs?.toggleDrawer();
     }
@@ -2330,6 +2336,33 @@ ta: {
 
   CK.closeCurriculum = () => {
     const modal = document.getElementById('curriculumModal');
+    if (modal) {
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  };
+
+  /* ─── Academy Policies Portal (same shell/behaviour as the curriculum) ─── */
+  CK.openPolicies = (targetId) => {
+    const modal = document.getElementById('policiesModal');
+    if (!modal) return;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    if (targetId) {
+      setTimeout(() => {
+        const el = document.getElementById(targetId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          el.style.transition = 'box-shadow 0.5s';
+          el.style.boxShadow = '0 0 30px rgba(232,160,32,0.45)';
+          setTimeout(() => { el.style.boxShadow = 'none'; }, 1200);
+        }
+      }, 100);
+    }
+  };
+
+  CK.closePolicies = () => {
+    const modal = document.getElementById('policiesModal');
     if (modal) {
       modal.classList.remove('active');
       document.body.style.overflow = '';

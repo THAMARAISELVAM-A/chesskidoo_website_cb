@@ -2,6 +2,26 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
 export default defineConfig({
+  plugins: [
+    {
+      // Vite's static layer does not redirect a directory request without its
+      // trailing slash, so "/lms" fell through to the SPA history fallback and
+      // served the landing page instead of the portal. Vercel handles this in
+      // production via a rewrite; this makes dev behave the same way.
+      name: 'ck-lms-dir-redirect',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          const [path, query] = (req.url || '').split('?');
+          if (path === '/lms') {
+            res.writeHead(301, { Location: '/lms/' + (query ? '?' + query : '') });
+            return res.end();
+          }
+          next();
+        });
+      },
+    },
+  ],
+
   // Multi-page: one entry per HTML shell
   build: {
     rollupOptions: {

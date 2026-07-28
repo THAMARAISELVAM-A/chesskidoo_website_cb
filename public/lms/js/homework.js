@@ -16,8 +16,12 @@
   }
 
   function getRole() {
+    // Auth lives in sessionStorage (see auth.js) — this used to read
+    // localStorage, which nothing writes, so isAdminUser() was always false
+    // and admins were blocked from their own bulk edit/delete actions.
+    if (window.role) return String(window.role).toLowerCase();
     try {
-      const auth = JSON.parse(localStorage.getItem('twoknights_auth') || '{}');
+      const auth = JSON.parse(sessionStorage.getItem('twoknights_auth') || '{}');
       return (auth.role || '').toLowerCase();
     } catch {
       return '';
@@ -123,9 +127,33 @@
   }
 
   function assigneeLabel(assignment) {
-    if (assignment.target_type === 'student') return assignment.student_name || assignment.recipient_label || 'Student';
-    if (assignment.target_type === 'batch') return assignment.batch_name || assignment.recipient_label || 'Batch';
+    // Fall back to resolving the name from the loaded rosters — the API only
+    // sends student_name/batch_name on some responses, and a bare "Student" /
+    // "Batch" label tells a parent or coach nothing about who it is for.
+    if (assignment.target_type === 'student') {
+      if (assignment.student_name || assignment.recipient_label) return assignment.student_name || assignment.recipient_label;
+      const s = (window.allStudents || []).find((item) => String(item.id) === String(assignment.student_id));
+      return s ? studentName(s) : 'Student';
+    }
+    if (assignment.target_type === 'batch') {
+      if (assignment.batch_name || assignment.recipient_label) return assignment.batch_name || assignment.recipient_label;
+      const b = (window.allBatches || []).find((item) => String(item.id) === String(assignment.batch_id));
+      return b ? batchName(b) : 'Batch';
+    }
     return 'All Students';
+  }
+
+  // recipient_count is computed server-side; when it is absent (cached rows,
+  // older responses) derive it locally instead of rendering a misleading 0.
+  function recipientCount(assignment) {
+    if (typeof assignment.recipient_count === 'number') return assignment.recipient_count;
+    const students = window.allStudents || [];
+    if (assignment.target_type === 'student') return 1;
+    if (assignment.target_type === 'batch') {
+      const b = (window.allBatches || []).find((item) => String(item.id) === String(assignment.batch_id));
+      return b ? getBatchStudentIds(b, students).length : 0;
+    }
+    return students.filter((s) => (s.status || 'active').toLowerCase() === 'active').length || students.length;
   }
 
    function getFilteredHomework() {
@@ -172,13 +200,30 @@ let homeworkSubmissionCache = [];
        const data = await res.json().catch(() => ({}));
        homeworkSubmissionCache = data.data || [];
        window.homeworkSubmissionCache = homeworkSubmissionCache;
-       const activePage = document.querySelector('.page.active')?.id;
-       if (activePage === 'page-homework') renderHomeworkSubmissionReview();
+       repaintSubmissionViews();
        return homeworkSubmissionCache;
      } catch (error) {
        if (window.toast) window.toast(`Failed to load homework submissions: ${error.message}`, 'error');
+       // Repaint anyway: the coach table ships a "Loading submissions…" row and
+       // would otherwise sit on that placeholder forever after a failed fetch.
+       repaintSubmissionViews();
        return [];
      }
+  }
+
+  // Both the admin review list and the coach submissions table read the same
+  // cache, so any refresh (success or failure) has to repaint whichever is open.
+  function repaintSubmissionViews() {
+    const activePage = document.querySelector('.page.active')?.id;
+    if (activePage === 'page-homework') renderHomeworkSubmissionReview();
+    if (window.renderCoachSubmissions) {
+      try {
+        window.renderCoachSubmissions(
+          document.getElementById('coach-hw-search')?.value || '',
+          window.coachSubPage || 1,
+        );
+      } catch (e) { /* coach view not mounted */ }
+    }
   }
 
   function populateHomeworkSelectors() {
@@ -616,7 +661,7 @@ async function uploadHomeworkFile(file) {
               ${statusBadge(assignment.status)}
             </div>
             <div style="font-size:12px; color:${dueClass}; line-height:1.6;">
-              <strong>Due:</strong> ${formatDate(assignment.due_date)} · <strong>Assignee:</strong> ${escapeValue(assigneeLabel(assignment))} · <strong>Recipients:</strong> ${assignment.recipient_count || 0}
+              <strong>Due:</strong> ${formatDate(assignment.due_date)} · <strong>Assignee:</strong> ${escapeValue(assigneeLabel(assignment))} · <strong>Recipients:</strong> ${recipientCount(assignment)}
             </div>
           </div>
         </div>

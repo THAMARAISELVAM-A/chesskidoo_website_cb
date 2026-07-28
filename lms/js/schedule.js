@@ -198,7 +198,11 @@
               regDays: myBatch.days || "TBD",
               regTime: myBatch.time_slot || "TBD",
               regCoachName: c ? c.name : "TBD",
-              meetLink: myBatch.notes || "",
+              // notes can hold free text alongside the class link — extract
+              // the URL instead of rendering the whole field as an href.
+              meetLink:
+                (myBatch.notes || "").match(/https?:\/\/[^\s"'<>]+/)?.[0] ||
+                "",
               isMatrixOverride: false,
             };
           }
@@ -847,6 +851,21 @@
         Array.isArray(b.student_ids) &&
         b.student_ids.map(String).includes(String(student.id)),
     );
+
+    // If the schedule itself carries no meet link, fall back to the link the
+    // coach set on the student's batch — so a coach-shared GMeet link shows a
+    // Join Class button here without the admin re-editing every schedule.
+    if (!schedData.meetLink && studentBatches.length) {
+      for (const b of studentBatches) {
+        const l =
+          (b.meet_link || "") ||
+          (String(b.notes || "").match(/https?:\/\/[^\s"'<>]+/)?.[0] || "");
+        if (l) {
+          schedData.meetLink = l;
+          break;
+        }
+      }
+    }
 
     wrapper.innerHTML = buildScheduleCardHtml(
       student.name,

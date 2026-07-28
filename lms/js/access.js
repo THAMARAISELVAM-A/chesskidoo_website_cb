@@ -27,20 +27,19 @@ window.loadAccessControl = async function() {
     try {
         const response = await window.apiCall('/api/access_control', { // Re-using local dev proxy or Edge function
             headers: {
-                'Content-Type': 'application/json',
-                'x-user-role': window.role
+                'Content-Type': 'application/json'
             }
         });
 
         if (!response.ok) {
-            let errorMsg = 'Failed to load users';
+            let serverMsg = '';
             try {
                 const errData = await response.json().catch(() => ({}));
-                errorMsg = errData.error || errorMsg;
+                serverMsg = errData.error || '';
             } catch {
                 // ignore JSON parse errors
             }
-            throw new Error(errorMsg);
+            throw new Error(explainAccessFailure(response.status, serverMsg));
         }
 
         const data = await safeJson(response);
@@ -48,10 +47,38 @@ window.loadAccessControl = async function() {
         window.renderAccessTable();
     } catch (err) {
         console.error('Error loading access control:', err);
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Error: ${err.message}</td></tr>`;
-        if (window.toast) window.toast('Failed to load users', 'error');
+        // A CORS/preflight rejection surfaces as an opaque "Failed to fetch"
+        // with no status, so name that case explicitly rather than showing the
+        // raw TypeError.
+        const msg = /failed to fetch/i.test(err.message)
+            ? 'Could not reach the access-control service. The request was blocked before it left the browser — check the browser console for a CORS error.'
+            : err.message;
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">${window.escapeHtml ? window.escapeHtml(msg) : msg}</td></tr>`;
+        if (window.toast) window.toast(msg, 'error');
     }
 };
+
+/* Access control fails in a handful of distinct ways that all used to read
+   "Failed to load users". Each one has a different fix, so name it:
+     401 - the portal token was rejected by supabase.auth.getUser()
+     403 - the token is valid but user_metadata.role is not admin/master
+   See supabase/functions/access_control/index.ts and its validateAuth(). */
+function explainAccessFailure(status, serverMsg) {
+    if (status === 401) {
+        return 'Your session was not accepted (401). Sign out and sign in again; if it persists the login token is not a valid Supabase Auth session.';
+    }
+    if (status === 403) {
+        // Supabase JWTs carry user_metadata in their claims, so a token minted
+        // before an account's role was set keeps reporting the old role until
+        // the user re-authenticates. Re-signing in is the fix far more often
+        // than the role actually being wrong, so lead with that.
+        return 'Access denied (403). Your sign-in token was issued before this account was granted admin, so it still carries the old role — sign out and sign in again. If it persists, the account needs user_metadata.role set to "admin" or "master" in Supabase Auth.';
+    }
+    if (status >= 500) {
+        return `The access-control service errored (${status}). ${serverMsg || 'Check the Edge Function logs.'}`;
+    }
+    return serverMsg || `Failed to load users (${status}).`;
+}
 
 // Parent/student portal accounts — derived from the Students registry, since
 // parents authenticate with the child's name + registered phone (custom auth),
@@ -390,7 +417,7 @@ window.saveAccessPwd = async function(userId) {
     try {
         const res = await window.apiCall('/api/access_control', {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'x-user-role': window.role },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: userId, password: newPassword || null })
         });
         const data = await safeJson(res);
@@ -455,7 +482,7 @@ window.createAccessUser = async function(email, password, role) {
     try {
         const response = await window.apiCall('/api/access_control', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-user-role': window.role },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password, role })
         });
         
@@ -488,7 +515,7 @@ window.updateAccessUser = async function(id, role, password) {
     try {
         const response = await window.apiCall('/api/access_control', {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'x-user-role': window.role },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id, role, password })
         });
         
@@ -508,7 +535,7 @@ window.deleteUserAccess = async function(id, email) {
     try {
         const response = await window.apiCall('/api/access_control', {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json', 'x-user-role': window.role },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id })
         });
         

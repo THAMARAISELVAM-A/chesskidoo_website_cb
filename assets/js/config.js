@@ -13,8 +13,16 @@
 window.CK = window.CK || {};
 
 window.APP_CONFIG = {
-  SUPABASE_URL:     "https://bqlnsununvsyksvhczrm.supabase.co",
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxbG5zdW51bnZzeWtzdmhjenJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2OTk3NzQsImV4cCI6MjA5NTI3NTc3NH0.bErfe3TrlHNGg1CT_7e9GkbPhuhFIp_y9fqp1kFL_8c",
+  // Single source of truth: the "vseo" project, which is also what the /lms
+  // portal (lms/js/config.js) and the Vite dev proxy target. This used to point
+  // at a second project ("bqln…"), so the marketing site and the portal were
+  // reading and writing two different databases and their data diverged.
+  //
+  // NOTE: vseo uses a different schema — students / coaches / payments, not
+  // users / credentials. Anything in db.js still querying the old table names
+  // will read empty; see the portal-retirement note in the audit.
+  SUPABASE_URL:     "https://vseombfkrvpffnpgbsnk.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzZW9tYmZrcnZwZmZucGdic25rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5Mzc0MjAsImV4cCI6MjA4OTUxMzQyMH0.wg0Azavs8Gfdbh6vbdjvM6juu45OwpCn4J5XN55tsc8",
 
   // Admin UUID — matches the seeded admin user in the users table
   ADMIN_UUID:       "a0000000-0000-4000-8000-000000000001",

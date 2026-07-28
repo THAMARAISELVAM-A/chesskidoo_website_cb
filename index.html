@@ -54,20 +54,21 @@
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=20260608a">
-  <link rel="stylesheet" href="assets/css/portals.css?v=20260608a">
-  <link rel="stylesheet" href="assets/css/arena.css?v=20260608a">
-  <link rel="stylesheet" href="assets/css/dashboard.css?v=20260608a">
-  <link rel="stylesheet" href="assets/css/mobile-landing.css?v=20260608a">
-  <link rel="stylesheet" href="assets/css/mobile-portals.css?v=20260608a">
-  <link rel="stylesheet" href="assets/css/mobile-arena.css?v=20260608a">
-  <link rel="stylesheet" href="assets/css/portal-modern.css?v=20260608a">
-  <link rel="stylesheet" href="assets/css/tomai.css?v=20260608a">
-  <link rel="stylesheet" href="assets/css/enterprise.css?v=20260608a">
-  <link rel="stylesheet" href="assets/css/animations.css?v=20260608a">
-  <link rel="stylesheet" href="assets/css/redesign-2026.css?v=20260608a">
-  <link rel="stylesheet" href="assets/css/theme-contrast-fix.css?v=20260608a">
-  <link rel="stylesheet" href="assets/css/mobile-optimize-2026.css?v=20260608a">
+  <link rel="stylesheet" href="assets/css/style.css?v=20260728d">
+  <link rel="stylesheet" href="assets/css/portals.css?v=20260728d">
+  <link rel="stylesheet" href="assets/css/arena.css?v=20260728d">
+  <link rel="stylesheet" href="assets/css/dashboard.css?v=20260728d">
+  <link rel="stylesheet" href="assets/css/mobile-landing.css?v=20260728d">
+  <link rel="stylesheet" href="assets/css/mobile-portals.css?v=20260728d">
+  <link rel="stylesheet" href="assets/css/mobile-arena.css?v=20260728d">
+  <link rel="stylesheet" href="assets/css/portal-modern.css?v=20260728d">
+  <link rel="stylesheet" href="assets/css/tomai.css?v=20260728d">
+  <link rel="stylesheet" href="assets/css/enterprise.css?v=20260728d">
+  <link rel="stylesheet" href="assets/css/animations.css?v=20260728d">
+  <link rel="stylesheet" href="assets/css/redesign-2026.css?v=20260728d">
+  <link rel="stylesheet" href="assets/css/theme-contrast-fix.css?v=20260728d">
+  <link rel="stylesheet" href="assets/css/mobile-optimize-2026.css?v=20260728d">
+  <link rel="stylesheet" href="assets/css/world-map.css?v=20260728d">
   <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
   <!-- Backend: Supabase JS SDK -->
@@ -77,7 +78,12 @@
   <script type="application/ld+json">
   {"@context":"https://schema.org","@graph": [
       {"@type":"LocalBusiness","@id":"https://chesskidoo.com/#business","name":"ChessKidoo Academy","description":"India's premier chess academy offering FIDE-certified coaching for students aged 6–18.","url":"https://chesskidoo.com","telephone":"+919025846663","email":"chesskidoo37@gmail.com","address": {"@type":"PostalAddress","streetAddress":"K K Nagar, Kalingarayanpalayam","addressLocality":"Bhavani, Erode","addressRegion":"Tamil Nadu","postalCode":"638316","addressCountry":"IN"
-        },"hasMap":"https://maps.app.goo.gl/DzQGp2NTkXnEJtBeA","sameAs": ["https://wa.me/919025846663"],"priceRange":"₹₹","openingHours":"Mo-Su 09:00-21:00"
+        },"hasMap":"https://maps.app.goo.gl/DzQGp2NTkXnEJtBeA","sameAs": ["https://wa.me/919025846663"],"priceRange":"₹₹","openingHours":"Mo-Su 09:00-21:00",
+        "department": [
+          {"@type":"LocalBusiness","name":"ChessKidoo Academy — Erode Central","address":{"@type":"PostalAddress","addressLocality":"Erode","addressRegion":"Tamil Nadu","addressCountry":"IN"}},
+          {"@type":"LocalBusiness","name":"ChessKidoo Academy — Perundurai","address":{"@type":"PostalAddress","addressLocality":"Perundurai","addressRegion":"Tamil Nadu","addressCountry":"IN"}}
+        ],
+        "areaServed": ["IN","US","CA","SG","MY","AU"]
       },
       {"@type":"Course","name":"Chess Beginner Programme","description":"Master chess fundamentals — piece movements, board control, and opening principles.","provider": {"@id":"https://chesskidoo.com/#business" },"educationalLevel":"Beginner","audience": {"@type":"EducationalAudience","educationalRole":"student" }
       },
@@ -160,13 +166,14 @@
 
         <button class="nav-link" data-section="achievements" data-translate="achievements"
           onclick="CK.navigate('achievements')">Achievements</button>
+        <button class="nav-link" data-section="ck-world" onclick="CK.navigate('ck-world')">Our Reach</button>
         <button class="nav-link" data-section="why-choose" onclick="CK.navigate('why-choose')">Why Us</button>
         
         <button class="nav-link" data-section="pricing" data-translate="pricing"
           onclick="CK.navigate('pricing')">Pricing</button>
         <button class="nav-link" data-section="faq" data-translate="faq" onclick="CK.navigate('faq')">Faq</button>
         <div class="nav-spacer"></div>
-        <a href="/lms" id="loginNavBtn" class="nav-link btn btn-ghost nav-login" data-translate="login"
+        <a href="/lms/" id="loginNavBtn" class="nav-link btn btn-ghost nav-login" data-translate="login"
           style="padding: 8px 16px; font-size: 0.9rem;">Log In</a>
       </nav>
       <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
@@ -443,83 +450,109 @@
               move to tournament glory — four milestones, one extraordinary journey.</p>
           </div>
 
-          <!-- Visual journey path -->
-          <div class="chess-journey" data-aos="fade-up" style="margin-bottom:72px;">
-            <!-- Step 1: Pawn (content top) -->
-            <div class="cj-step">
-              <div class="cj-content" style="margin-bottom:20px;">
-                <div class="cj-level-label">Beginner Level</div>
-                <div class="cj-piece-name">Pawn</div>
-                <div class="cj-desc">Learn to play the basics of chess — rules, board control, and first tactics.</div>
-                <button class="cj-explore-btn" style="background:var(--amber);color:#fff;margin-top:6px;"
-                  onclick="CK.openDemoModal()">Explore Course</button>
-              </div>
-              <div class="cj-piece-wrap">
-                <div class="cj-line" style="visibility:hidden;"></div>
-                <div class="cj-circle" style="background:linear-gradient(135deg,#b8860b,#e8a020);">♟</div>
-                <div class="cj-line">
-                  <div class="cj-line-dot right"></div>
+          <!-- Visual journey path — a gold rail with four milestone stations.
+               Cards alternate above/below the rail on desktop; the rail fill
+               animates in when the section scrolls into view (landing-fx.js
+               adds .cj-inview). Accent per step ramps light gold -> deep gold
+               so progression reads without leaving the brand palette. -->
+          <div class="chess-journey-wrap" data-aos="fade-up">
+            <!-- The path itself. viewBox is stretched to the row width
+                 (preserveAspectRatio="none"), so the four medallions land on
+                 x = 0 / 33.3 / 66.7 / 100 exactly; the S commands keep the
+                 curve smooth through each one. pathLength="100" lets the draw
+                 animation use round dash numbers at any width. -->
+            <svg class="cj-curve" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="cjCurveGrad" x1="0" y1="0" x2="100" y2="0" gradientUnits="userSpaceOnUse">
+                  <stop offset="0" stop-color="#F5C842" />
+                  <stop offset="0.5" stop-color="#E8A020" />
+                  <stop offset="1" stop-color="#B0700C" />
+                </linearGradient>
+              </defs>
+              <path class="cj-curve-track" vector-effect="non-scaling-stroke"
+                d="M 0,12 C 11.1,19 22.2,19 33.333,12 S 55.6,5 66.667,12 S 88.9,19 100,12" />
+              <path class="cj-curve-line" pathLength="100" vector-effect="non-scaling-stroke"
+                d="M 0,12 C 11.1,19 22.2,19 33.333,12 S 55.6,5 66.667,12 S 88.9,19 100,12" />
+              <!-- A short lit dash that travels the path once the line is drawn.
+                   Done with stroke-dashoffset rather than a moving <circle>,
+                   because preserveAspectRatio="none" would squash any shape —
+                   a stroke with non-scaling-stroke stays perfectly round. -->
+              <path class="cj-curve-spark" pathLength="100" vector-effect="non-scaling-stroke"
+                d="M 0,12 C 11.1,19 22.2,19 33.333,12 S 55.6,5 66.667,12 S 88.9,19 100,12" />
+            </svg>
+            <ol class="chess-journey">
+              <li class="cj-step" style="--cj-i:0; --cj-accent:#F5C842; --cj-accent-2:#E8A020;">
+                <div class="cj-node">
+                  <span class="cj-num">01</span>
+                  <span class="cj-piece" aria-hidden="true">♟</span>
                 </div>
-              </div>
-            </div>
-            <!-- Step 2: Knight (content bottom / alt) -->
-            <div class="cj-step alt">
-              <div class="cj-piece-wrap">
-                <div class="cj-line">
-                  <div class="cj-line-dot left"></div>
+                <div class="cj-card">
+                  <div class="cj-level-label">Beginner Level</div>
+                  <h3 class="cj-piece-name">Pawn</h3>
+                  <p class="cj-desc">Learn the basics of chess — rules, board control and your first tactics.</p>
+                  <ul class="cj-skills">
+                    <li>Piece movement</li>
+                    <li>Board control</li>
+                    <li>First tactics</li>
+                  </ul>
+                  <button class="cj-explore-btn" onclick="CK.openDemoModal()">Explore Course</button>
                 </div>
-                <div class="cj-circle" style="background:linear-gradient(135deg,#d4a017,#f5c842);">♞</div>
-                <div class="cj-line">
-                  <div class="cj-line-dot right"></div>
+              </li>
+
+              <li class="cj-step" style="--cj-i:1; --cj-accent:#E8A020; --cj-accent-2:#D08A12;">
+                <div class="cj-node">
+                  <span class="cj-num">02</span>
+                  <span class="cj-piece" aria-hidden="true">♞</span>
                 </div>
-              </div>
-              <div class="cj-content" style="margin-top:20px;">
-                <div class="cj-level-label">Intermediate Level</div>
-                <div class="cj-piece-name">Knight</div>
-                <div class="cj-desc">Understand the tricks and strategies to be used in the real game.</div>
-                <button class="cj-explore-btn"
-                  style="background:linear-gradient(135deg,#d4a017,#f5c842);color:#fff;margin-top:6px;"
-                  onclick="CK.openDemoModal()">Explore Course</button>
-              </div>
-            </div>
-            <!-- Step 3: Rook (content top) -->
-            <div class="cj-step">
-              <div class="cj-content" style="margin-bottom:20px;">
-                <div class="cj-level-label">Advanced Player</div>
-                <div class="cj-piece-name">Rook</div>
-                <div class="cj-desc">Learn advanced strategies and deep understanding of positional chess.</div>
-                <button class="cj-explore-btn"
-                  style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;margin-top:6px;"
-                  onclick="CK.openDemoModal()">Explore Course</button>
-              </div>
-              <div class="cj-piece-wrap">
-                <div class="cj-line">
-                  <div class="cj-line-dot left"></div>
+                <div class="cj-card">
+                  <div class="cj-level-label">Intermediate Level</div>
+                  <h3 class="cj-piece-name">Knight</h3>
+                  <p class="cj-desc">Understand the tricks and strategies used in real competitive games.</p>
+                  <ul class="cj-skills">
+                    <li>Tactical patterns</li>
+                    <li>Positional play</li>
+                    <li>Game analysis</li>
+                  </ul>
+                  <button class="cj-explore-btn" onclick="CK.openDemoModal()">Explore Course</button>
                 </div>
-                <div class="cj-circle" style="background:linear-gradient(135deg,#f97316,#ea580c);">♜</div>
-                <div class="cj-line">
-                  <div class="cj-line-dot right"></div>
+              </li>
+
+              <li class="cj-step" style="--cj-i:2; --cj-accent:#D08A12; --cj-accent-2:#B0700C;">
+                <div class="cj-node">
+                  <span class="cj-num">03</span>
+                  <span class="cj-piece" aria-hidden="true">♜</span>
                 </div>
-              </div>
-            </div>
-            <!-- Step 4: King (content bottom / alt) -->
-            <div class="cj-step alt">
-              <div class="cj-piece-wrap">
-                <div class="cj-line">
-                  <div class="cj-line-dot left"></div>
+                <div class="cj-card">
+                  <div class="cj-level-label">Advanced Player</div>
+                  <h3 class="cj-piece-name">Rook</h3>
+                  <p class="cj-desc">Advanced strategy and a deep understanding of positional chess.</p>
+                  <ul class="cj-skills">
+                    <li>Endgame technique</li>
+                    <li>Opening repertoire</li>
+                    <li>Tournament prep</li>
+                  </ul>
+                  <button class="cj-explore-btn" onclick="CK.openDemoModal()">Explore Course</button>
                 </div>
-                <div class="cj-circle" style="background:linear-gradient(135deg,#c2410c,#dc2626);">♚</div>
-                <div class="cj-line" style="visibility:hidden;"></div>
-              </div>
-              <div class="cj-content" style="margin-top:20px;">
-                <div class="cj-level-label">Master Level</div>
-                <div class="cj-piece-name">King</div>
-                <div class="cj-desc">Show your skills in tournaments and earn International Recognition.</div>
-                <button class="cj-explore-btn"
-                  style="background:linear-gradient(135deg,#c2410c,#dc2626);color:#fff;margin-top:6px;"
-                  onclick="CK.openDemoModal()">Explore Course</button>
-              </div>
-            </div>
+              </li>
+
+              <li class="cj-step cj-step-final" style="--cj-i:3; --cj-accent:#B0700C; --cj-accent-2:#8C5A08;">
+                <div class="cj-node">
+                  <span class="cj-num">04</span>
+                  <span class="cj-piece" aria-hidden="true">♚</span>
+                </div>
+                <div class="cj-card">
+                  <div class="cj-level-label">Master Level</div>
+                  <h3 class="cj-piece-name">King</h3>
+                  <p class="cj-desc">Show your skills in tournaments and earn international recognition.</p>
+                  <ul class="cj-skills">
+                    <li>FIDE rating</li>
+                    <li>Match psychology</li>
+                    <li>Titled play</li>
+                  </ul>
+                  <button class="cj-explore-btn" onclick="CK.openDemoModal()">Explore Course</button>
+                </div>
+              </li>
+            </ol>
           </div>
 
           <!-- Detailed level cards below the path -->
@@ -897,12 +930,49 @@
               <img loading="lazy" class="cert-img" src="assets/img/fide.jpeg" alt="FIDE Certificate"
                 style="width: 100%; border: 12px solid #fff; box-shadow: 0 20px 40px rgba(0,0,0,0.1); border-radius: 4px;">
             </div>
-            <div class="" data-aos="fade-up" style="max-width: 450px; width: 100%; transition-delay: 0.2s;">
-              <img loading="lazy" class="cert-img" src="assets/img/iso.jpeg" alt="Rishi Chess Academy Certificate"
-                style="width: 100%; border: 12px solid #fff; box-shadow: 0 20px 40px rgba(0,0,0,0.1); border-radius: 4px;">
-            </div>
           </div>
 
+        </div>
+      </section>
+
+      <!-- ── The World of ChessKidoo — animated reach map ──
+           Two views over one projection: global arcs from Erode to the nine
+           countries we teach into, and a zoom down to the three Tamil Nadu
+           offline centres. Driven by assets/js/world-map.js. -->
+      <section id="ck-world" class="section-padding ck-world">
+        <div class="container">
+          <div class="section-head" data-aos="fade-up" style="text-align:center;">
+            <div class="eyebrow">Our Reach</div>
+            <h2>The World of ChessKidoo</h2>
+            <p class="lead" style="max-width:620px;margin-left:auto;margin-right:auto;">
+              Three offline centres in Tamil Nadu, and live online classes reaching students
+              across six countries. Explore where we teach.
+            </p>
+          </div>
+
+          <div class="ckw-tabs" role="tablist" aria-label="Map view">
+            <button class="ckw-tab is-active" type="button" role="tab" aria-selected="true"
+              data-view="global">🌐 Global Reach</button>
+            <button class="ckw-tab" type="button" role="tab" aria-selected="false"
+              data-view="centres">🏫 Offline Centres</button>
+          </div>
+
+          <div class="ckw-layout">
+            <div class="ckw-stage">
+              <canvas class="ckw-canvas"></canvas>
+              <svg class="ckw-arcs" aria-hidden="true"></svg>
+              <div class="ckw-pins"></div>
+              <div class="ckw-badge">6 countries · live online classes</div>
+            </div>
+            <aside class="ckw-panel" aria-live="polite"></aside>
+          </div>
+
+          <div class="ckw-stats">
+            <div class="ckw-stat"><span class="ckw-stat-num">3</span><span class="ckw-stat-label">Offline Centres</span></div>
+            <div class="ckw-stat"><span class="ckw-stat-num">6</span><span class="ckw-stat-label">Countries Served</span></div>
+            <div class="ckw-stat"><span class="ckw-stat-num">200+</span><span class="ckw-stat-label">Active Students</span></div>
+            <div class="ckw-stat"><span class="ckw-stat-num">13,500</span><span class="ckw-stat-label">km Furthest Student</span></div>
+          </div>
         </div>
       </section>
 
@@ -1218,31 +1288,43 @@
         }
       </style>
       <section id="pricing" class="section-padding">
+        <!-- Pricing is deliberately INR-only: no data-ck-lang / data-ck-currency
+             selectors and no data-inr hooks, so i18n-enroll.js leaves these
+             figures exactly as published in the official fee structure. -->
         <div class="section-head" data-aos="fade-up">
           <div class="eyebrow">Transparent Pricing</div>
-          <h2 data-translate="pricing_title">Simple, Affordable Plans</h2>
-          <p class="lead" data-translate="pricing_lead">No hidden fees. Every plan includes a free demo class to start.
-          </p>
-          <div style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;">
-            <span style="display:inline-flex;align-items:center;gap:8px;font-size:0.85rem;opacity:0.7;">🌐 Language
-              <select data-ck-lang aria-label="Language"
-                style="height:38px;border-radius:10px;border:1.5px solid rgba(148,163,184,0.4);background:rgba(255,255,255,0.04);color:inherit;padding:0 12px;font-size:0.9rem;font-weight:600;cursor:pointer;"></select>
-            </span>
-            <span style="display:inline-flex;align-items:center;gap:8px;font-size:0.85rem;opacity:0.7;">💱 Currency
-              <select data-ck-currency aria-label="Currency"
-                style="height:38px;border-radius:10px;border:1.5px solid rgba(148,163,184,0.4);background:rgba(255,255,255,0.04);color:inherit;padding:0 12px;font-size:0.9rem;font-weight:600;cursor:pointer;"></select>
-            </span>
-          </div>
+          <h2>Course &amp; Fee Structure</h2>
+          <p class="lead">Choose the perfect path for your child's chess journey. No hidden fees — every level starts
+            with a free demo class.</p>
         </div>
         <div class="pricing-grid">
-          <!-- Pawn Plan -->
+          <!-- Beginner Level -->
           <div class="price-card dark-card" data-aos="fade-up">
-            <div class="price-rank">Starter</div>
-            <h3 class="price-title">Pawn Plan</h3>
-            <p class="price-desc">Build a Rock-Solid Chess Foundation (Ages 6-10)</p>
-            <div class="price-amount"><span data-inr="999">₹999</span><span>/mo</span></div>
+            <div class="price-piece" aria-hidden="true">♙</div>
+            <div class="price-rank">Perfect for New Learners</div>
+            <h3 class="price-title">Beginner Level</h3>
+            <p class="price-desc">Master the fundamentals — piece movement, board control and opening principles.</p>
+
+            <div class="price-meta">
+              <span>📅 8 classes / month</span>
+              <span>⏱ 1 hour / class</span>
+              <span>🏆 Weekly tournaments</span>
+            </div>
+
+            <div class="price-tiers">
+              <div class="price-tier">
+                <div class="price-tier-label"><span>👥</span> Group Class</div>
+                <div class="price-tier-amount">₹1,600</div>
+                <div class="price-tier-unit">per month</div>
+              </div>
+              <div class="price-tier">
+                <div class="price-tier-label"><span>👤</span> Individual Class</div>
+                <div class="price-tier-amount">₹3,000 – ₹3,200</div>
+                <div class="price-tier-unit">approx. per month</div>
+              </div>
+            </div>
+
             <ul class="price-features">
-              <li><span class="check">✓</span> 8 live sessions/month (1 hr each)</li>
               <li><span class="check">✓</span> Beginner curriculum (Level 1)</li>
               <li><span class="check">✓</span> Parent progress dashboard</li>
               <li><span class="check">✓</span> In-class practice games</li>
@@ -1252,34 +1334,71 @@
             <p class="price-note">First demo class is always free</p>
           </div>
 
-          <!-- Bishop Plan -->
+          <!-- Intermediate Level -->
           <div class="price-card gold-card" data-aos="fade-up">
-            <div class="price-rank">Most Popular &middot; Best Value</div>
-            <h3 class="price-title">Bishop Plan</h3>
-            <p class="price-desc">Accelerate Tactical & Strategic Mastery (Ages 10-14)</p>
-            <div class="price-amount"><span data-inr="1799">₹1,799</span><span>/mo</span></div>
+            <div class="price-piece" aria-hidden="true">♘</div>
+            <div class="price-rank">Most Popular &middot; Level Up Your Game</div>
+            <h3 class="price-title">Intermediate Level</h3>
+            <p class="price-desc">Tactical patterns, positional play and structured tournament preparation.</p>
+
+            <div class="price-meta">
+              <span>📅 8 classes / month</span>
+              <span>⏱ 1 hour / class</span>
+              <span>🏆 Weekly tournaments</span>
+            </div>
+
+            <div class="price-tiers">
+              <div class="price-tier">
+                <div class="price-tier-label"><span>👥</span> Group Class</div>
+                <div class="price-tier-amount">₹2,500 – ₹2,800</div>
+                <div class="price-tier-unit">approx. per month</div>
+              </div>
+              <div class="price-tier">
+                <div class="price-tier-label"><span>👤</span> Individual Class</div>
+                <div class="price-tier-amount">₹3,000 – ₹3,500</div>
+                <div class="price-tier-unit">approx. per month</div>
+              </div>
+            </div>
+
             <ul class="price-features">
-              <li><span class="check">✓</span> 12 live sessions/month (1 hr each)</li>
-              <li><span class="check">✓</span> Levels 1 & 2 curriculum access</li>
-              <li><span class="check">✓</span> Full parent & student portal</li>
+              <li><span class="check">✓</span> Levels 1 &amp; 2 curriculum access</li>
+              <li><span class="check">✓</span> Full parent &amp; student portal</li>
               <li><span class="check">✓</span> Game analysis reports</li>
               <li><span class="check">✓</span> Tournament preparation sessions</li>
               <li><span class="check">✓</span> Priority WhatsApp support</li>
             </ul>
             <button class="btn price-btn gold-btn" onclick="CK.openDemoModal()">Start Free Demo</button>
-            <p class="price-note">Save 15% with annual billing</p>
+            <p class="price-note">Weekly practice sessions included</p>
           </div>
 
-          <!-- Queen Plan -->
+          <!-- Advanced Level -->
           <div class="price-card dark-card" data-aos="fade-up">
-            <div class="price-rank">Elite</div>
-            <h3 class="price-title">Queen Plan</h3>
-            <p class="price-desc">The Ultimate Tournament Mastery Path (Ages 14-18)</p>
-            <div class="price-amount"><span data-inr="2999">₹2,999</span><span>/mo</span></div>
+            <div class="price-piece" aria-hidden="true">♖</div>
+            <div class="price-rank">For Future Champions</div>
+            <h3 class="price-title">Advanced Level</h3>
+            <p class="price-desc">Deep preparation for rated play — openings, endgames and match psychology.</p>
+
+            <div class="price-meta">
+              <span>📅 8 classes / month</span>
+              <span>⏱ 1 hour / class</span>
+              <span>🏆 Weekly tournaments</span>
+            </div>
+
+            <div class="price-tiers">
+              <div class="price-tier">
+                <div class="price-tier-label"><span>👥</span> Group Class</div>
+                <div class="price-tier-amount">₹3,800 – ₹4,500</div>
+                <div class="price-tier-unit">approx. per month</div>
+              </div>
+              <div class="price-tier">
+                <div class="price-tier-label"><span>👤</span> Individual Class</div>
+                <div class="price-tier-amount">₹4,500 – ₹5,500</div>
+                <div class="price-tier-unit">approx. per month</div>
+              </div>
+            </div>
+
             <ul class="price-features">
-              <li><span class="check">✓</span> 16 live sessions/month (1 hr each)</li>
               <li><span class="check">✓</span> All 3 levels + advanced content</li>
-              <li><span class="check">✓</span> 1-on-1 coaching sessions</li>
               <li><span class="check">✓</span> FIDE rating preparation</li>
               <li><span class="check">✓</span> Chess psychology sessions</li>
               <li><span class="check">✓</span> Priority tournament entry support</li>
@@ -1288,6 +1407,10 @@
             <p class="price-note">First demo class is always free</p>
           </div>
         </div>
+
+        <p class="price-footnote" data-aos="fade-up">
+          <span aria-hidden="true">★</span> Fees may vary slightly based on batch timing and specific requirements.
+        </p>
       </section>
 
       <!-- FAQ Section -->
@@ -1473,9 +1596,12 @@
       </section>
 
       <!-- Global Footer -->
-      <footer
-        style="background:#0D0905; color:#fff; padding:80px 0 40px; border-top: 1px solid rgba(255,255,255,0.04);">
+      <footer class="ck-footer">
         <div class="container">
+          <!-- The conversion strip that used to sit here was a duplicate of the
+               #cta section directly above (same headline intent, same two
+               buttons) and its translateY(-42px) made the two overlap.
+               #cta is the richer version, so this one was removed. -->
           <div class="footer-grid" style="display:grid; grid-template-columns: 1.2fr 2.4fr 1.8fr; gap:40px;">
             <div>
               <div class="logo" style="margin-bottom:20px; display:flex; align-items:center; gap:12px;">
@@ -1488,6 +1614,12 @@
                 data-translate="footer_about">
                 India's #1 FIDE-certified chess academy for students aged 6-18. Building champions, one move at a time.
               </p>
+              <div class="ck-trust-row">
+                <div class="ck-trust-badge"><span>♛</span><span>FIDE Certified</span></div>
+                <div class="ck-trust-badge"><span>✔</span><span>ISO 9001:2015</span></div>
+                <div class="ck-trust-badge"><span>★</span><span>AICF Affiliate</span></div>
+              </div>
+              <div style="margin:24px 0;"></div>
               <div class="footer-socials" style="display:flex; gap:12px;">
                 <a href="https://www.instagram.com/chesskidoo/" target="_blank" class="social-icon-btn"
                   aria-label="Instagram">
@@ -1609,11 +1741,51 @@
             </div>
           </div>
 
-          <div
-            style="margin-top: 60px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 24px; font-size: 0.85rem; opacity: 0.5; display:flex; justify-content:space-between; flex-wrap:wrap; gap:20px;">
-            <div data-translate="footer_copyright">© 2026 ChessKidoo, Inc. All rights reserved. - FIDE Certified - ISO
-              9001:2015 - AICF Affiliate</div>
-            <div>Made with ♟️ in India</div>
+          <!-- ── Our Centres & Global Reach ── -->
+          <div class="footer-branches">
+            <h4>📍 Our Centres &amp; Global Reach</h4>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:28px; text-align:left; max-width:1000px; margin:0 auto;">
+              <div class="ck-glass">
+                <div class="ck-glass-label"><span>🏫</span> Offline Centres — Tamil Nadu</div>
+                <div class="footer-centres-list" style="display:flex; flex-direction:column; gap:10px; font-size:0.95rem; color:#e5e7eb;">
+                  <div>♞ <strong>Bhavani (Head Office)</strong> — K K Nagar, Kalingarayanpalayam, Erode 638316</div>
+                  <div>♞ <strong>Erode Central</strong> — In-person coaching &amp; weekend batches</div>
+                  <div>♞ <strong>Perundurai</strong> — In-person coaching &amp; school programs</div>
+                </div>
+              </div>
+              <div class="ck-glass">
+                <div class="ck-glass-label"><span>🌐</span> Live Online Classes — Worldwide</div>
+                <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                  <span class="footer-country-chip">🇮🇳 India</span>
+                  <span class="footer-country-chip">🇺🇸 United States</span>
+                  <span class="footer-country-chip">🇨🇦 Canada</span>
+                  <span class="footer-country-chip">🇸🇬 Singapore</span>
+                  <span class="footer-country-chip">🇲🇾 Malaysia</span>
+                  <span class="footer-country-chip">🇦🇺 Australia</span>
+                  </div>
+                <div style="margin-top:14px; font-size:0.85rem; color:#9ca3af;">Google Meet classes with flexible time-zone friendly slots for NRI &amp; international students.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Academy Policies quick links ── -->
+          <div style="margin-top:40px; display:flex; flex-wrap:wrap; justify-content:center; gap:10px;">
+            <button class="ck-policy-pill" onclick="CK.openPolicies('policy-financial')">Financial &amp; Accounts</button>
+            <button class="ck-policy-pill" onclick="CK.openPolicies('policy-privacy')">Privacy Policy</button>
+            <button class="ck-policy-pill" onclick="CK.openPolicies('policy-refund')">Refund &amp; Cancellation</button>
+            <button class="ck-policy-pill" onclick="CK.openPolicies('policy-attendance')">Attendance &amp; Classes</button>
+            <button class="ck-policy-pill" onclick="CK.openPolicies('policy-conduct')">Code of Conduct</button>
+            <button class="ck-policy-pill" onclick="CK.openPolicies('policy-online-safety')">Child Safety</button>
+          </div>
+
+          <div class="ck-footer-bottom">
+            <div data-translate="footer_copyright">© 2026 ChessKidoo, Inc. All rights reserved. · FIDE Certified · ISO
+              9001:2015 · AICF Affiliate</div>
+            <div style="display:flex; align-items:center; gap:18px; flex-wrap:wrap;">
+              <a href="tel:+919025846663">+91 90258 46663</a>
+              <a href="mailto:chesskidoo37@gmail.com">chesskidoo37@gmail.com</a>
+              <span>Made with ♟️ in India</span>
+            </div>
           </div>
         </div>
       </footer>
@@ -3057,52 +3229,55 @@
 
    <!-- Core Framework & DB (Load First) -->
    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-   <script defer type="module" src="assets/js/config.js?v=20260608a"></script>
-   <script defer type="module" src="assets/js/db.js?v=20260608a"></script>
-   <script defer type="module" src="assets/js/auth.js?v=20260608a"></script>
-   <script defer type="module" src="assets/js/router.js?v=20260608a"></script>
+   <script defer type="module" src="assets/js/config.js?v=20260728d"></script>
+   <script defer type="module" src="assets/js/db.js?v=20260728d"></script>
+   <script defer type="module" src="assets/js/auth.js?v=20260728d"></script>
+   <script defer type="module" src="assets/js/router.js?v=20260728d"></script>
 
   <!-- Feature Modules -->
-  <script defer src="assets/js/board-fx.js?v=20260608a"></script>
-  <script defer src="assets/js/i18n-enroll.js?v=20260608a"></script>
-  <script defer src="assets/js/gmeet-scheduler.js?v=20260610a"></script>
-  <script defer type="module" src="assets/js/engine.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/engine-play.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/multiplayer.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/classroom.js?v=20260610a"></script>
-  <script defer type="module" src="assets/js/webrtc-stream.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/classes-system.js?v=20260610a"></script>
-  <script defer type="module" src="assets/js/schedule-pro.js?v=20260610a"></script>
-  <script defer src="assets/js/schedule-matrix.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/puzzles-pro.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/certs.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/reports-system.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/parents.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/notifications.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/game-tracker.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/opening-trainer.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/gamification.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/tournament-engine.js?v=20260608a"></script>
-  <script defer src="assets/js/swiss-pairing.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/ai-analysis.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/anti-cheat.js?v=20260608a"></script>
+  <script defer src="assets/js/board-fx.js?v=20260728d"></script>
+  <script defer src="assets/js/i18n-enroll.js?v=20260728d"></script>
+  <script defer src="assets/js/gmeet-scheduler.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/engine.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/engine-play.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/multiplayer.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/classroom.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/webrtc-stream.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/classes-system.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/schedule-pro.js?v=20260728d"></script>
+  <script defer src="assets/js/schedule-matrix.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/puzzles-pro.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/certs.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/reports-system.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/parents.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/notifications.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/game-tracker.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/opening-trainer.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/gamification.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/tournament-engine.js?v=20260728d"></script>
+  <script defer src="assets/js/swiss-pairing.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/ai-analysis.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/anti-cheat.js?v=20260728d"></script>
   <!-- TOM AI: classic script (not a module) so it always runs even if a sibling module errors -->
-  <script defer src="assets/js/tomai.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/main.js?v=20260608a"></script>
-  <script defer src="assets/js/enterprise.js?v=20260608a"></script>
-  <script defer src="assets/js/calculator.js?v=20260608a"></script>
-  <script defer src="assets/js/animations.js?v=20260608a"></script>
+  <script defer src="assets/js/tomai.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/main.js?v=20260728d"></script>
+  <script defer src="assets/js/enterprise.js?v=20260728d"></script>
+  <script defer src="assets/js/calculator.js?v=20260728d"></script>
+  <script defer src="assets/js/animations.js?v=20260728d"></script>
   <!-- GSAP — premium scroll + interaction animations -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <script defer src="assets/js/gsap-effects.js?v=20260608a"></script>
-  <script defer src="assets/js/landing-fx.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/admin.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/student.js?v=20260610a"></script>
-  <script defer type="module" src="assets/js/coach.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/pgn-library.js?v=20260608a"></script>
-  <script defer src="assets/js/pgn-vault.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/chessboard.js?v=20260608a"></script>
+  <script defer src="assets/js/gsap-effects.js?v=20260728d"></script>
+  <script defer src="assets/js/landing-fx.js?v=20260728d"></script>
+  <!-- Reach map: coastline data must load before the renderer that reads it. -->
+  <script defer src="assets/js/world-geo.js?v=20260728d"></script>
+  <script defer src="assets/js/world-map.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/admin.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/student.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/coach.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/pgn-library.js?v=20260728d"></script>
+  <script defer src="assets/js/pgn-vault.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/chessboard.js?v=20260728d"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       if (window.CK && CK.pgnLibrary) {
@@ -3116,10 +3291,10 @@
   </script>
 
 
-  <script defer type="module" src="assets/js/arena.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/arcade.js?v=20260608a"></script>
-  <script defer type="module" src="assets/js/arcade-extra.js?v=20260608a"></script>
-  <script defer src="assets/js/pwa-install.js?v=20260609a"></script>
+  <script defer type="module" src="assets/js/arena.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/arcade.js?v=20260728d"></script>
+  <script defer type="module" src="assets/js/arcade-extra.js?v=20260728d"></script>
+  <script defer src="assets/js/pwa-install.js?v=20260728d"></script>
 
   <script>
     const CK = window.CK = window.CK || {};
@@ -3592,8 +3767,90 @@
       </div>
     </div>
 
+    <!-- ── Academy Policies Modal (reuses curriculum modal shell/styles) ── -->
+    <div id="policiesModal" class="curriculum-modal">
+      <div class="curriculum-container">
+        <button class="curriculum-close" onclick="CK.closePolicies()">&times;</button>
 
-  
+        <div class="curriculum-header">
+          <h2>ChessKidoo Academy — Policies</h2>
+          <p>Clear, transparent rules that keep our academy fair, safe, and professional for every student, parent, and coach.</p>
+        </div>
+
+        <div id="policy-financial" class="policy-section">
+          <h3>💰 Financial &amp; Accounts Policy</h3>
+          <ul>
+            <li>All academy fees must be paid on or before the due date.</li>
+            <li>Official receipts will be issued for all payments.</li>
+            <li>Tournament entry fees are generally non-refundable after registration closes unless cancelled by the organizer.</li>
+            <li>ChessKidoo maintains transparent financial records for academy and event operations.</li>
+            <li>Prize money, medals, trophies, and certificates will be distributed according to the published event regulations.</li>
+            <li>Fee structures are communicated in advance; any revision is announced at least 30 days before it takes effect.</li>
+            <li>Payments are accepted through the academy's official channels only (UPI / bank transfer / academy payment portal). Please do not pay any individual privately.</li>
+          </ul>
+        </div>
+
+        <div id="policy-privacy" class="policy-section">
+          <h3>🔒 Privacy &amp; Data Protection Policy</h3>
+          <ul>
+            <li>Student and parent information (names, contact details, progress records) is collected only for academy operations and is never sold or shared with third parties for marketing.</li>
+            <li>Since most of our students are minors, all accounts and communications are managed with parent/guardian consent.</li>
+            <li>Photos or videos of students from classes, events, or tournaments are published on academy pages only with prior parent/guardian consent.</li>
+            <li>Academy portal access is protected by individual credentials; please do not share login details.</li>
+            <li>Parents may request a copy, correction, or deletion of their child's personal data by writing to chesskidoo37@gmail.com.</li>
+            <li>Payment records are retained as required for accounting and statutory compliance.</li>
+          </ul>
+        </div>
+
+        <div id="policy-refund" class="policy-section">
+          <h3>↩️ Refund &amp; Cancellation Policy</h3>
+          <ul>
+            <li>Monthly coaching fees, once the month has commenced, are non-refundable; unused classes may be adjusted as make-up sessions.</li>
+            <li>If the academy cancels a class, a make-up class or fee adjustment will always be provided.</li>
+            <li>Tournament entry fees are refunded in full if the event is cancelled by the organizer.</li>
+            <li>Long-term program fees (quarterly/annual) may be refunded on a pro-rata basis for medical or relocation reasons, at the academy's discretion with supporting documents.</li>
+            <li>Refunds, where approved, are processed to the original payment method within 7–10 working days.</li>
+          </ul>
+        </div>
+
+        <div id="policy-attendance" class="policy-section">
+          <h3>📋 Attendance &amp; Class Policy</h3>
+          <ul>
+            <li>Students are expected to join classes on time — 5 minutes early for online sessions.</li>
+            <li>Please inform the coach or academy office in advance for planned absences.</li>
+            <li>Make-up classes are offered for absences informed at least 4 hours ahead, subject to coach availability.</li>
+            <li>Repeated unexcused absences may affect batch placement and tournament nominations.</li>
+            <li>Class schedules, batch changes, and holiday calendars are announced through official academy channels (portal / WhatsApp).</li>
+          </ul>
+        </div>
+
+        <div id="policy-conduct" class="policy-section">
+          <h3>🤝 Code of Conduct &amp; Fair Play Policy</h3>
+          <ul>
+            <li>Respect for coaches, teammates, and opponents is mandatory — in the classroom, online, and at tournaments.</li>
+            <li>Any form of chess engine or outside assistance during games, assessments, or online tournaments is strictly prohibited.</li>
+            <li>Students should maintain sportsmanship: shake hands (or greet online), accept results gracefully, and analyse losses as learning.</li>
+            <li>Bullying, abusive language, or disruptive behaviour may lead to suspension from classes or events.</li>
+            <li>Parents are requested to support fair-play values and route concerns through the academy office rather than approaching students or coaches mid-session.</li>
+          </ul>
+        </div>
+
+        <div id="policy-online-safety" class="policy-section">
+          <h3>🛡️ Online Class &amp; Child Safety Policy</h3>
+          <ul>
+            <li>Online classes are conducted on official Google Meet links shared through the academy portal or verified coach numbers only.</li>
+            <li>Students should attend from a shared/visible family space where possible; a parent/guardian may sit in at any time.</li>
+            <li>Coaches never contact students privately outside official academy channels.</li>
+            <li>Class recordings, when made for review purposes, are stored securely and shared only with the enrolled batch.</li>
+            <li>Report any concern immediately to the academy office — every report is treated seriously and confidentially.</li>
+          </ul>
+        </div>
+
+        <div style="text-align:center; color:#9ca3af; font-size:0.85rem; padding:12px 0 8px;">
+          Questions about any policy? Write to <a href="mailto:chesskidoo37@gmail.com" style="color:var(--amber);">chesskidoo37@gmail.com</a> or WhatsApp <a href="https://wa.me/919025846663" style="color:var(--amber);">+91 90258 46663</a>.
+        </div>
+      </div>
+    </div>
 
 </body>
 

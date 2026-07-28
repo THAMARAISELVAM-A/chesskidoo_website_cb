@@ -1,6 +1,19 @@
 // Coach dashboard logic
 // Load coach-specific data and populate dashboard
 
+/* Roster coach ids come in three shapes — dashed UUID, the same UUID with
+   dashes stripped, and legacy "c_name" slugs. Compare them leniently so a
+   formatting difference alone never hides a student from their own coach.
+   Genuinely different identities (a slug vs a UUID) still will not match;
+   those need the roster normalising, and are surfaced to the coach instead
+   of the student silently vanishing from the attendance sheet. */
+window.ckSameCoach = function (a, b) {
+  const norm = (v) => String(v == null ? '' : v).trim().toLowerCase().replace(/-/g, '');
+  const na = norm(a), nb = norm(b);
+  if (!na || !nb) return false;
+  return na === nb;
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   // Navigation to coach dashboard is handled via setPage('coach-dash') in scripts.js
 });
@@ -144,24 +157,175 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!tbody) return;
 
     const myBatches = (window.allBatches || []).filter(b => String(b.coach_id) === String(coachId));
-    
+
     if (myBatches.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" class="coach-loading-cell">No batches assigned yet.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="coach-loading-cell">No batches assigned yet.</td></tr>';
       return;
     }
 
     tbody.innerHTML = myBatches.map(b => {
       const days = b.days || b.schedule_days || 'TBD';
       const studentCount = Array.isArray(b.student_ids) ? b.student_ids.length : 0;
+      const link = window.getBatchMeetLink ? window.getBatchMeetLink(b) : '';
+      const linkCell = link
+        ? `<div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+             <a href="${window.escapeHtml ? window.escapeHtml(link) : link}" target="_blank" rel="noopener" class="btn btn-gold btn-sm">🎥 Join</a>
+             <button class="btn btn-outline btn-sm" onclick="window.coachShareBatchLink('${b.id}')" title="Share class link with students via WhatsApp">📲 Share</button>
+             <button class="btn btn-outline btn-sm" onclick="window.coachSetBatchLink('${b.id}')" title="Change the Google Meet link">✏️</button>
+           </div>`
+        : `<button class="btn btn-outline btn-sm" onclick="window.coachSetBatchLink('${b.id}')">🔗 Set GMeet Link</button>`;
       return `
         <tr>
           <td style="font-weight:500; color:var(--ivory)">${window.escapeHtml ? window.escapeHtml(b.name) : b.name}</td>
           <td><span class="badge badge-info">${b.level || 'Beginner'}</span></td>
           <td>${studentCount}</td>
           <td style="font-size:12px; color:var(--ivory-dim)">${days}</td>
+          <td>${linkCell}</td>
         </tr>
       `;
     }).join('');
+  };
+
+  // ── Batch class-link helpers (Google Meet sharing) ────────────────────────
+  // The batch `notes` column is the de-facto home of the class meet link
+  // (schedule.js already reads it as the parent-side meetLink fallback), so we
+  // extract the first URL rather than trusting the whole field.
+  window.getBatchMeetLink = function (batch) {
+    if (!batch) return '';
+    if (batch.meet_link) return String(batch.meet_link);
+    const m = String(batch.notes || '').match(/https?:\/\/[^\s"'<>]+/);
+    return m ? m[0] : '';
+  };
+
+  window.coachSetBatchLink = async function (batchId) {
+    const batch = (window.allBatches || []).find(b => String(b.id) === String(batchId));
+    if (!batch) return;
+    const current = window.getBatchMeetLink(batch);
+    const input = prompt(
+      'Paste the Google Meet link for "' + (batch.name || 'this batch') + '":\n(e.g. https://meet.google.com/abc-defg-hij)',
+      current || 'https://meet.google.com/'
+    );
+    if (input === null) return; // cancelled
+    const link = input.trim();
+    if (link && !/^https:\/\/[^\s]+$/i.test(link)) {
+      if (window.toast) window.toast('That does not look like a valid https:// link.', 'error');
+      return;
+    }
+    // Preserve any non-URL note text; replace/append only the URL portion.
+    const otherNotes = String(batch.notes || '').replace(/https?:\/\/[^\s"'<>]+/g, '').replace(/\s{2,}/g, ' ').trim();
+    const newNotes = link ? (otherNotes ? otherNotes + ' ' + link : link) : otherNotes;
+    try {
+      const res = await window.apiCall(`/api/batches?id=${batchId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ notes: newNotes }),
+      });
+      if (res.ok) {
+        batch.notes = newNotes; // keep local cache in sync without a full reload
+        if (window.toast) window.toast(link ? 'Class link saved. Students will see a Join Class button.' : 'Class link removed.', 'success');
+        window.renderCoachBatches();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        if (window.toast) window.toast('Failed to save link: ' + (err.error || 'unknown error'), 'error');
+      }
+    } catch (e) {
+      if (window.toast) window.toast('Network error: ' + e.message, 'error');
+    }
+  };
+
+  /* Resolve a student's WhatsApp number. Prefers the shared international
+     formatter when scripts.js has loaded it, else falls back to digits with a
+     91 default for local 10-digit numbers. */
+  function waNumber(student) {
+    const raw = String(student.parent_phone || student.phone || '').trim();
+    if (!raw) return '';
+    if (window.getFullInternationalPhoneDigits) {
+      try {
+        const d = window.getFullInternationalPhoneDigits(raw, student.country_code || 'IN');
+        if (d) return String(d).replace(/\D/g, '');
+      } catch (e) { /* fall through to the local heuristic */ }
+    }
+    const digits = raw.replace(/\D/g, '');
+    return digits.length === 10 ? '91' + digits : digits;
+  }
+
+  function batchShareMessage(batch, link) {
+    const days = batch.days || batch.schedule_days || 'as scheduled';
+    const time = batch.time_slot || batch.time || '';
+    return (
+      `\u265F\uFE0F *ChessKidoo Academy \u2014 Online Class*\n\n` +
+      `Batch: ${batch.name || ''}\n` +
+      `Schedule: ${days}${time ? ' \u2022 ' + time : ''}\n\n` +
+      `\u{1F3A5} Join your class here:\n${link}\n\n` +
+      `Please join 5 minutes early. See you on the board!`
+    );
+  }
+
+  /* Previously this opened a bare wa.me/?text= share with NO recipient, so the
+     coach had to hand-pick every parent and the batch's own students were never
+     actually targeted. Resolve them from batch.student_ids instead and offer a
+     direct send per student, keeping the recipient-less share as a fallback. */
+  window.coachShareBatchLink = function (batchId) {
+    const batch = (window.allBatches || []).find(b => String(b.id) === String(batchId));
+    if (!batch) return;
+    const link = window.getBatchMeetLink(batch);
+    if (!link) {
+      if (window.toast) window.toast('Set a class link first.', 'info');
+      return;
+    }
+    const msg = batchShareMessage(batch, link);
+    if (navigator.clipboard) navigator.clipboard.writeText(msg).catch(() => {});
+
+    const ids = Array.isArray(batch.student_ids) ? batch.student_ids.map(String) : [];
+    const recipients = (window.allStudents || [])
+      .filter(s => ids.includes(String(s.id)))
+      .map(s => ({
+        name: window.getStudentName ? window.getStudentName(s) : (s.full_name || s.name || 'Student'),
+        wa: waNumber(s)
+      }));
+    const reachable = recipients.filter(r => r.wa);
+
+    if (!reachable.length) {
+      window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+      if (window.toast) {
+        window.toast(recipients.length
+          ? 'No phone numbers on this batch\u2019s students \u2014 opened a blank WhatsApp share instead.'
+          : 'No students assigned to this batch \u2014 opened a blank WhatsApp share instead.', 'warning');
+      }
+      return;
+    }
+
+    const esc = (v) => (window.escapeHtml ? window.escapeHtml(v) : String(v));
+    const rows = reachable.map(r => `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-bottom:1px solid var(--border)">
+        <span style="color:var(--ivory);font-size:13px">${esc(r.name)}</span>
+        <a class="btn btn-gold btn-sm" style="text-decoration:none;white-space:nowrap"
+           href="https://wa.me/${esc(r.wa)}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">Send</a>
+      </div>`).join('');
+    const missing = recipients.length - reachable.length;
+
+    const ov = document.createElement('div');
+    ov.className = 'ck-share-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.innerHTML = `
+      <div style="background:var(--bg2,#151d2b);border:1px solid var(--border);border-radius:14px;max-width:440px;width:100%;max-height:80vh;overflow:auto;padding:18px">
+        <div style="font-weight:700;color:var(--ivory);margin-bottom:4px">Share class link</div>
+        <div style="font-size:12px;color:var(--ivory-dim);margin-bottom:12px">
+          ${esc(batch.name || 'Batch')} \u2022 ${reachable.length} student(s)${missing ? ` \u2022 ${missing} without a phone number` : ''}
+        </div>
+        ${rows}
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button class="btn btn-outline btn-sm" style="flex:1" data-ck-copy>Copy message</button>
+          <button class="btn btn-outline btn-sm" style="flex:1" data-ck-close>Close</button>
+        </div>
+      </div>`;
+    ov.addEventListener('click', (e) => {
+      if (e.target === ov || e.target.hasAttribute('data-ck-close')) { ov.remove(); return; }
+      if (e.target.hasAttribute('data-ck-copy')) {
+        if (navigator.clipboard) navigator.clipboard.writeText(msg);
+        if (window.toast) window.toast('Message copied.', 'success');
+      }
+    });
+    document.body.appendChild(ov);
   };
 
   window.renderCoachSchedule = function () {
@@ -292,9 +456,13 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // Default to today when the picker is empty. The old order read
+    // dateEl.value first, so on first load `date` was "" — no existing
+    // attendance ever matched, and saving demanded "Please select a date".
+    const today = new Date().toISOString().split('T')[0];
     const dateEl = document.getElementById('coach-att-date');
-    const date = dateEl ? dateEl.value : new Date().toISOString().split('T')[0];
-    if (dateEl && !dateEl.value) dateEl.value = date;
+    if (dateEl && !dateEl.value) dateEl.value = today;
+    const date = dateEl ? (dateEl.value || today) : today;
 
     const myStudents = (window.allStudents || [])
       .filter(s => String(s.coach_id) === String(coachId))
@@ -305,13 +473,11 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const dayRecords = (window.allAttendance || []).filter(a => a.date === date);
-    const presentCount = dayRecords.filter(a => (a.status || '').toLowerCase() === 'present').length;
-    const absentCount = dayRecords.filter(a => (a.status || '').toLowerCase() === 'absent').length;
-
-    if (summary) {
-      summary.innerHTML = '<div class="coach-attendance-summary"><div class="coach-attendance-item present"><span class="attendance-count">' + presentCount + '</span><span class="attendance-label">Present</span></div><div class="coach-attendance-item absent"><span class="attendance-count">' + absentCount + '</span><span class="attendance-label">Absent</span></div></div>';
-    }
+    // Scope the day's records to THIS coach's students — filtering by date
+    // alone counted the whole academy in the coach's Present/Absent summary.
+    const myIds = new Set(myStudents.map(s => String(s.id)));
+    const dayRecords = (window.allAttendance || [])
+      .filter(a => a.date === date && myIds.has(String(a.student_id)));
 
     container.innerHTML = myStudents.map(s => {
       const existing = dayRecords.find(a => String(a.student_id) === String(s.id));
@@ -326,6 +492,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }).join('');
 
     updateCoachAttStats();
+  };
+
+  // Live Present/Absent/Late/Excused tally for the marking table.
+  // This was called from renderCoachAttendanceMarking(), the per-row
+  // onchange, and after save/reset — but never defined, so every attendance
+  // render and every status change threw a ReferenceError and the summary
+  // counters never moved while marking.
+  window.updateCoachAttStats = function () {
+    const summary = document.getElementById('coach-attendance-summary');
+    if (!summary) return;
+    const selects = document.querySelectorAll('#coach-att-marking-body .att-status');
+    const tally = { present: 0, absent: 0, late: 0, excused: 0 };
+    selects.forEach((sel) => {
+      const v = (sel.value || '').toLowerCase();
+      if (v && Object.prototype.hasOwnProperty.call(tally, v)) tally[v] += 1;
+    });
+    const unmarked = selects.length - (tally.present + tally.absent + tally.late + tally.excused);
+    const item = (cls, count, label) =>
+      '<div class="coach-attendance-item ' + cls + '">' +
+        '<span class="attendance-count">' + count + '</span>' +
+        '<span class="attendance-label">' + label + '</span>' +
+      '</div>';
+    summary.innerHTML =
+      '<div class="coach-attendance-summary">' +
+        item('present', tally.present, 'Present') +
+        item('absent', tally.absent, 'Absent') +
+        item('late', tally.late, 'Late') +
+        item('excused', tally.excused, 'Excused') +
+        item('pending', unmarked < 0 ? 0 : unmarked, 'Unmarked') +
+      '</div>';
   };
 
   window.parseAttendanceNotes = function(raw) {
@@ -386,6 +582,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const rows = document.querySelectorAll('#coach-att-marking-body tr');
+    const skipped = [];
     const records = Array.from(rows)
       .map((row) => {
         const select = row.querySelector('.att-status');
@@ -395,7 +592,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!select || !select.value) return null;
         const studentId = select.dataset.sid;
         const student = (window.allStudents || []).find((s) => String(s.id) === String(studentId));
-        if (!student || String(student.coach_id) !== String(coachId)) return null;
+        // coach_id is stored in mixed formats across the roster: dashed UUIDs,
+        // the same UUIDs with dashes stripped, and legacy "c_name" slugs.
+        // A raw !== comparison silently dropped every student whose format did
+        // not match the signed-in coach's id, so marking appeared to do nothing.
+        if (!student) return null;
+        if (!window.ckSameCoach(student.coach_id, coachId)) { skipped.push(student.full_name || student.name || studentId); return null; }
         const cw = cwInput ? cwInput.value : '';
         const hw = hwInput ? hwInput.value : '';
         const general = notesInput ? notesInput.value : '';
@@ -409,8 +611,18 @@ document.addEventListener('DOMContentLoaded', () => {
       .filter((r) => r !== null);
 
     if (records.length === 0) {
-      toast('No attendance marked', 'error');
+      toast(
+        skipped.length
+          ? `No attendance saved — ${skipped.length} student(s) are not linked to your coach ID. Ask an admin to fix the roster.`
+          : 'No attendance marked',
+        'error'
+      );
+      if (skipped.length) console.warn('[Attendance] coach_id mismatch for:', skipped);
       return;
+    }
+    if (skipped.length) {
+      toast(`${skipped.length} student(s) skipped — not linked to your coach ID`, 'warning');
+      console.warn('[Attendance] coach_id mismatch for:', skipped);
     }
 
     try {

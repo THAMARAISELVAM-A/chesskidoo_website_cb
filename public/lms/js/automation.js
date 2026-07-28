@@ -345,7 +345,7 @@
     const cleanLevel = cleanText(s.grade || s.level || 'Beginner');
     const cleanCoach = cleanText(coachName);
 
-    const receiptUrl = `${window.location.origin}/receipt.html?id=${id}&name=${encodeURIComponent(cleanName)}&amount=${fee}&date=${new Date().toISOString()}&level=${encodeURIComponent(cleanLevel)}&coach=${encodeURIComponent(cleanCoach)}`;
+    const receiptUrl = `${window.location.origin}/lms/receipt.html?id=${id}&name=${encodeURIComponent(cleanName)}&amount=${fee}&date=${new Date().toISOString()}&level=${encodeURIComponent(cleanLevel)}&coach=${encodeURIComponent(cleanCoach)}`;
 
     const waMsg = `${EMOJI.check} *ChessKidoo ACADEMY - PAYMENT CONFIRMATION*\n\nStudent: ${cleanName}\nAmount Paid: INR ${Number(fee).toLocaleString()}\nDate: ${cleanText(today)}\n\nDownload Official Receipt:\n${receiptUrl}\n\nThank you for choosing ChessKidoo Academy.`;
 

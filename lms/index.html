@@ -11,7 +11,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
   <link rel="icon" type="image/svg+xml" href="/icon.svg"/>
   <link href="/lms/fonts/fonts.css" rel="stylesheet"/>
-  <link rel="stylesheet" href="/lms/styles.css?v=20260602_v10"/>
+  <link rel="stylesheet" href="/lms/styles.css?v=20260728g_v12"/>
 
    <!-- Local Libraries (self-hosted) -->
    <script src="/lms/lib/chart.umd.min.js"></script>
@@ -32,15 +32,24 @@
 
   <script src="/lms/js/avatar-utils.js"></script>
 </head>
-<body>
+<!-- Starts in login-mode so the authenticated shell (sidebar, top bar, floating
+     widgets) never flashes before DOMContentLoaded decides the real state.
+     finishLogin() removes this class and applies the role class. -->
+<body class="login-mode">
 <!-- Sidebar Overlay -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
 <!-- Login Screen -->
 <div id="login-screen">
   <!-- Chat Widget on Login Page -->
-  <button class="chat-fab" id="login-chat-btn" style="bottom:28px;right:28px;" onclick="toggleLoginChat()" title="AI Chat">♟</button>
-  <div class="chat-panel" id="login-chat-panel" style="display:none;bottom:96px;left:28px;">
+  <!-- No inline offsets: .chat-fab already supplies them and shifts to
+       right:16px/bottom:20px under 480px. Hard-coding 28px here pinned the
+       login FAB to the desktop position on mobile. -->
+  <button class="chat-fab" id="login-chat-btn" onclick="toggleLoginChat()" title="AI Chat">♟</button>
+  <!-- Positioning comes from .chat-panel (bottom:96px; right:28px) so the panel
+       stays anchored under its FAB. An inline left:28px used to override that
+       and open the panel on the opposite side from the button. -->
+  <div class="chat-panel" id="login-chat-panel" style="display:none">
     <div class="chat-head">
       <div class="chat-head-av">⚡</div>
       <div class="chat-head-info">
@@ -142,6 +151,24 @@
          <div class="nav-item admin-only" id="nav-homework" onclick="setPage('homework');" style="font-size: 13px; padding: 10px 14px;"><span class="ico">📚</span> Homework Manager</div>
       </div>
 
+    <!-- ── External academy tools ──
+         Separate Vercel apps, so these are real anchors rather than setPage()
+         routes. Invoice Generator is finance-side and stays admin-only;
+         Report Card carries .coach-accessible so it also survives the
+         `body.coach-mode .admin-only:not(.coach-accessible)` hide rule and
+         appears for coaches too. -->
+    <div class="nav-section-label admin-only coach-accessible" style="padding:14px 14px 6px; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ivory-dim); opacity:.65;">Tools</div>
+    <a class="nav-item admin-only" id="nav-invoice-generator"
+       href="https://invoice-generator-chesskidoo.vercel.app/" target="_blank" rel="noopener noreferrer"
+       style="text-decoration:none; color:inherit;">
+      <span class="ico">🧾</span> Invoice Generator <span style="margin-left:auto; font-size:10px; opacity:.5;">↗</span>
+    </a>
+    <a class="nav-item admin-only coach-accessible" id="nav-report-card"
+       href="https://report-card-for-chesskidoo.vercel.app/" target="_blank" rel="noopener noreferrer"
+       style="text-decoration:none; color:inherit;">
+      <span class="ico">📋</span> Report Card <span style="margin-left:auto; font-size:10px; opacity:.5;">↗</span>
+    </a>
+
     <!-- Parent Portal Links -->
     <div class="nav-item parent-only" id="nav-child" onclick="goChildTab('overview')"><span class="ico">📈</span> My Child Profile</div>
     <div class="nav-item parent-only" id="nav-parent-schedule" onclick="goChildTab('schedule')"><span class="ico">🗓️</span> Class Schedule</div>
@@ -152,13 +179,11 @@
     <div class="nav-item parent-only" id="nav-parent-homework" onclick="goChildTab('homework')"><span class="ico">📝</span> Homework</div>
     <div class="nav-item parent-only" id="nav-parent-billing" onclick="goChildTab('billing')"><span class="ico">💰</span> Tuition & Invoices</div>
     <div class="nav-item parent-only" id="nav-parent-reports" onclick="goChildTab('reports')"><span class="ico">📄</span> Academy Reports</div>
-    <div class="nav-item parent-only" id="nav-parent-productivity" onclick="goChildTab('productivity')"><span class="ico">📝</span> Daily Tasks</div>
     <div class="nav-item parent-only" id="nav-parent-ai" onclick="setPage('parent-ai')"><span class="ico">🤖</span> Ask TOM AI</div>
     <div class="nav-item" id="nav-fame" onclick="setPage('fame')"><span class="ico">🏆</span> Wall of Fame</div>
     <div class="nav-item admin-only" id="nav-bills" onclick="setPage('bills')"><span class="ico">💳</span> Payments</div>
     <div class="nav-item admin-only" id="nav-exp" onclick="setPage('exp')"><span class="ico">💸</span> Expenditures</div>
     <div class="nav-item admin-only" id="nav-access" onclick="setPage('access')"><span class="ico">🔐</span> Access Control</div>
-    <div class="nav-item admin-only" id="nav-productivity" onclick="setPage('productivity')"><span class="ico">📝</span> Productivity</div>
     <div class="nav-item admin-only" id="nav-msgs" onclick="setPage('msgs')"><span class="ico">💬</span> Messages <span id="msg-badge" class="badge badge-level" style="display:none;margin-left:8px">0</span></div>
     <div class="nav-item admin-only" id="nav-ai" onclick="setPage('ai')"><span class="ico">🤖</span> TOM AI</div>
   </div>
@@ -327,10 +352,11 @@
                         <th>Level</th>
                         <th>Students</th>
                         <th>Schedule</th>
+                        <th>Class Link</th>
                       </tr>
                     </thead>
                     <tbody id="coach-batches-tbody">
-                      <tr><td colspan="4" class="coach-loading-cell">Loading your batches...</td></tr>
+                      <tr><td colspan="5" class="coach-loading-cell">Loading your batches...</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -1028,18 +1054,6 @@
                 <div style="margin-top:20px; font-size:12px; font-weight:600; color:#7FA650; display:flex; align-items:center; gap:4px;position:relative;z-index:2;">View Profile <span>→</span></div>
               </div>
 
-              <!-- Chessable -->
-              <div class="card card-clickable" onclick="openChildChessable()" style="border-top:4px solid var(--emerald); background:var(--bg3); display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden;">
-                <div style="position:absolute; top:-20px; right:-20px; opacity:0.05; font-size:120px; pointer-events:none;">🧠</div>
-                <div>
-                  <h3 style="margin-bottom:16px;color:var(--emerald);display:flex;align-items:center;gap:8px;position:relative;z-index:2;">
-                    <img src="https://www.chessable.com/favicon.ico" style="width:20px;height:20px;border-radius:4px" onerror="this.style.display='none'"> Chessable Training
-                  </h3>
-                  <div style="font-size:14px;color:var(--ivory);position:relative;z-index:2;">Interactive opening lines and tactical training</div>
-                  <div id="chessable-parent-stats" style="margin-top:12px; font-size:14px; color:var(--ivory-dim);position:relative;z-index:2;"></div>
-                </div>
-                <div style="margin-top:20px; font-size:12px; font-weight:600; color:var(--emerald); display:flex; align-items:center; gap:4px;position:relative;z-index:2;">Practice Now <span>→</span></div>
-              </div>
             </div>
 
            <div class="card" style="margin-top:22px;">
@@ -4126,27 +4140,27 @@
       <script src="/lms/js/telemetry.js?v=1.0" charset="utf-8"></script>
       <script src="/lms/js/productivity.js?v=1.2&t=20260601c" charset="utf-8"></script>
       <script src="/lms/js/tournaments.js?v=1.3&t=20260611a" charset="utf-8"></script>
-      <script src="/lms/js/access.js?v=1.4&t=20260601i"></script>
+      <script src="/lms/js/access.js?v=1.6&t=20260728b"></script>
       <script src="/lms/js/tom-brain.js?v=1.0&t=20260601" charset="utf-8"></script>
-      <script src="/lms/scripts.js?v=10.5&t=20260713_portal_headers" charset="utf-8"></script>
+      <script src="/lms/scripts.js?v=20260728g.6&t=20260722_gmeet" charset="utf-8"></script>
       <script src="/lms/js/chess-api.js?v=2.2&t=20260711_chesscom_edge"></script>
-      <script src="/lms/js/homework.js?v=1.0&t=20260614" charset="utf-8"></script>
+      <script src="/lms/js/homework.js?v=1.2&t=20260722b" charset="utf-8"></script>
       <script src="/lms/js/expenditures.js?v=1.1&t=20260601d" charset="utf-8"></script>
       <script src="/lms/js/calculator.js?v=1.0" charset="utf-8"></script>
       <script src="/lms/js/reporting.js?v=v13&t=20260602c" charset="utf-8"></script>
       <script src="/lms/js/ai-assistant.js?v=v4&t=20260601" charset="utf-8"></script>
-      <script src="/lms/js/auth.js?v=v3&t=20260529" charset="utf-8"></script>
+      <script src="/lms/js/auth.js?v=v4&t=20260722" charset="utf-8"></script>
       <script src="/lms/js/router.js?v=20260529" charset="utf-8"></script>
       <script src="/lms/js/main.js?v=20260529" charset="utf-8"></script>
       <script src="/lms/js/chessboard.js?v=20260529" charset="utf-8"></script>
       <script src="/lms/js/admin.js?v=20260529" charset="utf-8"></script>
       <script src="/lms/js/student.js?v=20260529" charset="utf-8"></script>
-      <script src="/lms/js/coach.js?v=20260529" charset="utf-8"></script>
+      <script src="/lms/js/coach.js?v=20260722c" charset="utf-8"></script>
       <script src="/lms/js/batch-passwords.js" charset="utf-8"></script>
       <script src="/lms/js/encryption.js?v=20260529" charset="utf-8"></script>
       <script src="/lms/js/scripts_patch.js?v=2.3&t=20260529" charset="utf-8"></script>
       <script src="/lms/js/automation.js?v=3.9&t=20260529" charset="utf-8"></script>
-      <script src="/lms/js/schedule.js?v=2.0&t=20260611a" charset="utf-8"></script>
+      <script src="/lms/js/schedule.js?v=2.1&t=20260722" charset="utf-8"></script>
  
       <script src="/lms/js/attendance_extension.js?v=2.0&t=20260611a" charset="utf-8"></script>
 

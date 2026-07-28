@@ -190,14 +190,15 @@ html { scroll-behavior: smooth; }
 .tvid-card .tvid-player { transition: filter .3s ease; }
 .tvid-card:hover .tvid-player { filter: brightness(1.04); }
 
-/* Nav links: animated underline */
+/* Nav links: animated underline.
+   The underline itself lives in style.css, which centres it with
+   `left:50%` + `translateX(-50%)` and reveals it by scaling X. A second
+   width-based definition used to sit here; because this file loads later it
+   won `left`/`width`, while the higher-specificity `.nav-link.active::after`
+   in style.css still applied `translateX(-50%)`. The two combined put the bar
+   at left:0 and then shifted it half its own width to the left of the label.
+   Only the positioning context belongs here. */
 .nav-link { position: relative; }
-.nav-link::after {
-  content: ''; position: absolute; left: 0; bottom: -2px; height: 2px; width: 0;
-  background: linear-gradient(90deg, #E8A020, #F5C842);
-  transition: width .28s cubic-bezier(.16,1,.3,1);
-}
-.nav-link:hover::after { width: 100%; }
 
 /* Section heads rise a touch on reveal (works with existing .reveal too) */
 .section-head h2 { transition: letter-spacing .6s ease; }

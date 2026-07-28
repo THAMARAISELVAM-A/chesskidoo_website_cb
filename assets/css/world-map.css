@@ -1,0 +1,291 @@
+/* assets/css/world-map.css ---------------------------------------------------
+   "The World of ChessKidoo" reach map. Dark section so the gold arcs and the
+   dot grid read well; sits between the light #about and #reviews sections as a
+   deliberate contrast break.
+   --------------------------------------------------------------------------- */
+
+.ck-world {
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(900px 420px at 15% 0%, rgba(232, 160, 32, 0.10), transparent 62%),
+    radial-gradient(760px 380px at 85% 20%, rgba(232, 160, 32, 0.06), transparent 60%),
+    linear-gradient(180deg, #0D1B2A 0%, #0a1420 100%);
+}
+.ck-world .section-head h2 { color: #fff; }
+.ck-world .section-head .lead { color: rgba(255, 255, 255, 0.66); }
+.ck-world .eyebrow { color: var(--amber-light); }
+
+/* ── View switch ── */
+.ckw-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 26px 0 30px;
+}
+.ckw-tab {
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-pill);
+  padding: 11px 24px;
+  cursor: pointer;
+  transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease,
+              box-shadow 0.25s ease;
+}
+.ckw-tab:hover { color: #fff; border-color: rgba(232, 160, 32, 0.5); }
+.ckw-tab.is-active {
+  color: #1a1206;
+  background: linear-gradient(135deg, var(--amber), var(--amber-light));
+  border-color: transparent;
+  box-shadow: 0 8px 22px rgba(232, 160, 32, 0.34);
+}
+
+/* ── Layout: map beside the detail panel ── */
+.ckw-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 310px;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.ckw-stage {
+  position: relative;
+  /* Kept close to the data's own 350x132 aspect so the world fills the frame
+     without a band of dead space above and below it. */
+  aspect-ratio: 2.5 / 1;
+  min-height: 300px;
+  border-radius: 22px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(232, 160, 32, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.ckw-canvas { position: absolute; inset: 0; display: block; }
+.ckw-arcs {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+/* Region caption in the corner of the map. */
+.ckw-badge {
+  position: absolute;
+  right: 16px; bottom: 14px;   /* right side stays clear of the pin clusters */
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(13, 27, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+
+/* ── SVG marks ── */
+.ckw-arc {
+  fill: none;
+  stroke: url(#ckwArcGrad);
+  stroke: rgba(245, 200, 66, 0.62);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.ckw-spark { fill: #fff7e0; opacity: 0; filter: drop-shadow(0 0 5px rgba(245, 200, 66, 0.9)); }
+.ckw-ring { fill: none; stroke: rgba(232, 160, 32, 0.3); stroke-width: 1; stroke-dasharray: 4 6; }
+.ckw-ring-label,
+.ckw-link-label {
+  fill: rgba(255, 255, 255, 0.5);
+  font-size: 10px;
+  font-weight: 700;
+  text-anchor: middle;
+  font-family: var(--font-body);
+}
+.ckw-link { stroke: rgba(232, 160, 32, 0.45); stroke-width: 1.5; stroke-dasharray: 3 5; }
+
+/* ── Pins ── */
+.ckw-pins { position: absolute; inset: 0; }
+.ckw-pin {
+  position: absolute;
+  top: 0; left: 0;
+  margin: -7px 0 0 -7px;          /* centre the 14px dot on the coordinate */
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.ckw-pin-dot {
+  width: 14px; height: 14px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffe9ab, var(--amber));
+  box-shadow: 0 0 0 3px rgba(232, 160, 32, 0.22), 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.ckw-pin-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.78);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  transition: color 0.25s ease;
+}
+.ckw-pin:hover .ckw-pin-dot,
+.ckw-pin:focus-visible .ckw-pin-dot,
+.ckw-pin.is-active .ckw-pin-dot {
+  transform: scale(1.35);
+  box-shadow: 0 0 0 5px rgba(232, 160, 32, 0.3), 0 3px 12px rgba(0, 0, 0, 0.5);
+}
+.ckw-pin:hover .ckw-pin-label,
+.ckw-pin:focus-visible .ckw-pin-label,
+.ckw-pin.is-active .ckw-pin-label { color: #fff; }
+.ckw-pin:focus-visible { outline: 2px solid var(--amber-light); outline-offset: 4px; border-radius: 4px; }
+
+/* The home / head-office pin gets a slow radar pulse. */
+.ckw-pin.is-home .ckw-pin-dot {
+  background: radial-gradient(circle at 35% 30%, #fff, var(--amber-light));
+  box-shadow: 0 0 0 4px rgba(232, 160, 32, 0.28), 0 0 18px rgba(245, 200, 66, 0.7);
+}
+.ckw-pin.is-home::before {
+  content: "";
+  position: absolute;
+  left: 7px; top: 7px;
+  width: 14px; height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  border: 2px solid rgba(245, 200, 66, 0.55);
+  animation: ckwPulse 2.6s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes ckwPulse {
+  0%   { transform: scale(1);   opacity: 0.85; }
+  100% { transform: scale(3.6); opacity: 0; }
+}
+
+/* ── Detail panel ── */
+.ckw-panel {
+  display: flex;
+  flex-direction: column;
+  border-radius: 22px;
+  padding: 26px 24px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(232, 160, 32, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.ckw-panel-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--amber-light);
+  margin-bottom: 10px;
+}
+.ckw-panel-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 900;
+  margin: 0 0 6px;
+  color: #fff;
+}
+.ckw-panel-meta {
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 14px;
+}
+.ckw-panel-note {
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0 0 16px;
+}
+.ckw-panel-dist {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--amber-light);
+  background: rgba(232, 160, 32, 0.1);
+  border: 1px solid rgba(232, 160, 32, 0.22);
+  border-radius: var(--radius-pill);
+  padding: 7px 14px;
+  align-self: flex-start;
+  margin-bottom: 18px;
+}
+.ckw-panel-cta {
+  margin-top: auto;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #1a1206;
+  background: linear-gradient(135deg, var(--amber), var(--amber-light));
+  border: none;
+  border-radius: 12px;
+  padding: 13px 18px;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.ckw-panel-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(232, 160, 32, 0.4); }
+
+/* ── Stats strip ── */
+.ckw-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 26px;
+}
+.ckw-stat {
+  text-align: center;
+  padding: 20px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.ckw-stat-num {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 900;
+  color: var(--amber-light);
+  line-height: 1.1;
+}
+.ckw-stat-label {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ── Responsive ── */
+@media (max-width: 980px) {
+  .ckw-layout { grid-template-columns: 1fr; }
+  .ckw-stage { aspect-ratio: 2.3 / 1; }
+  .ckw-panel { padding: 22px 20px; }
+  .ckw-stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .ckw-stage { aspect-ratio: 2 / 1; min-height: 200px; }
+  /* Nine country labels collide at this width, so show dots only — but the
+     three centres in the zoomed view have room and need their names. */
+  .ck-world:not(.is-centres) .ckw-pin-label { display: none; }
+  .ckw-tab { flex: 1 1 auto; text-align: center; padding: 10px 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ckw-pin.is-home::before { animation: none; opacity: 0; }
+  .ckw-panel-cta:hover { transform: none; }
+}

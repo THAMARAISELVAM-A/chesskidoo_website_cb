@@ -235,9 +235,8 @@
        apikey: SUPABASE_ANON_KEY,
        Authorization: `Bearer ${customToken || SUPABASE_ANON_KEY}`,
        ...(customToken ? { "x-portal-token": customToken } : {}),
-       ...(auth.role ? { "x-user-role": auth.role } : {}),
-       ...(auth.studentId ? { "x-student-id": auth.studentId } : {}),
-       ...(auth.coachId ? { "x-coach-id": auth.coachId } : {}),
+       ...(auth.role ? { "x-portal-role": auth.role } : {}),
+       ...(auth.studentId ? { "x-portal-student-id": auth.studentId } : {}),
        ...options.headers,
      };
 
@@ -1545,9 +1544,17 @@
     const s = currentStudent;
     const status = getStudentPaymentStatus(s);
     const fee = getStudentMonthlyFee(s) || 0;
-    const dueDate = s.due_date
-      ? new Date(s.due_date).toLocaleDateString()
-      : "Not set";
+    const dueDate = (() => {
+      if (!s.due_date) return "Not set";
+      const match = String(s.due_date).match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (match) {
+        const _dd = parseInt(match[3], 10);
+        const y = window.reportYear !== undefined ? window.reportYear : new Date().getFullYear();
+        const m = window.reportMonth !== undefined ? window.reportMonth : new Date().getMonth();
+        return new Date(y, m, _dd).toLocaleDateString();
+      }
+      return new Date(s.due_date).toLocaleDateString();
+    })();
     const myPayments = allPayments.filter(
       (p) => String(p.student_id) === String(s.id),
     );
@@ -2560,7 +2567,7 @@
     const enrollDate = enrollDateStr
       ? new Date(enrollDateStr)
       : new Date(Date.UTC(2026, 2, 1)); // Fallback to March 1, 2026
-    const baselineDate = new Date(Date.UTC(2026, 6, 1)); // Global System Baseline (July 1st, 2026)
+    const baselineDate = new Date(Date.UTC(2026, 0, 1)); // Global System Baseline (July 1st, 2026)
     const effectiveEnroll = (function () {
       var _a =
         window.getBillingAnchor && window.getBillingAnchor(s, baselineDate);
@@ -2889,7 +2896,7 @@
 
       // Audit-based debt calculation
       const enrollDateStr = getStudentDate(s);
-      const baseline = new Date(Date.UTC(2026, 6, 1));
+      const baseline = new Date(Date.UTC(2026, 0, 1));
       const enrollDate = enrollDateStr ? new Date(enrollDateStr) : baseline;
       const effectiveEnroll = (function () {
         var _a =
@@ -3173,6 +3180,28 @@
   function getStudentRating(s) {
     return s.rating || s.current_rating || 800;
   }
+  // Helper: normalize any applied_month string to "YYYY-MM" format
+  function normalizeMonth(raw) {
+    if (!raw) return null;
+    const s = String(raw).trim();
+    // Already "YYYY-MM" (e.g. "2026-07")
+    if (/^\d{4}-\d{1,2}$/.test(s)) {
+      const [y, m] = s.split("-");
+      return y + "-" + m.padStart(2, "0");
+    }
+    // Try "Month YYYY" (e.g. "July 2026")
+    const d = new Date(s + " 1");
+    if (!isNaN(d.getTime())) {
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+    }
+    // Try plain Date parse
+    const d2 = new Date(s);
+    if (!isNaN(d2.getTime())) {
+      return d2.getUTCFullYear() + "-" + String(d2.getUTCMonth() + 1).padStart(2, "0");
+    }
+    return null;
+  }
+
   function getStudentDate(s) {
     const d = s.enrollment_date || s.join_date || s.created_at;
     if (!d) return "";
@@ -3290,7 +3319,7 @@
   // Returns the first BILLED month {year, month} for a student (0-indexed month),
   // applying the late-join grace rule and the academy baseline.
   function getBillingAnchor(s, baselineDate) {
-    const baseline = baselineDate || new Date(Date.UTC(2026, 6, 1));
+    const baseline = baselineDate || new Date(Date.UTC(2026, 0, 1));
     const enrollStr = getStudentDate(s);
     let e = enrollStr ? new Date(enrollStr) : baseline;
     if (isNaN(e.getTime())) e = baseline;
@@ -3309,9 +3338,10 @@
   window.getBillingAnchor = getBillingAnchor;
 
   function getStudentDueConfig(s, coachName, month = 4, year = 2026) {
-    if (!s) return { day: 5, feeOverride: null };
+    if (!s) return { day: 5, feeOverride: null, fullDate: null };
     let day = 5;
     let feeOverride = null;
+    let fullDate = null;
 
     // Default to the day of their enrollment/join date
     const enrollStr = s.enrollment_date || s.join_date || s.created_at;
@@ -3336,10 +3366,12 @@
         hasExplicitDue = true;
       } else {
         try {
-          const dd = new Date(s.due_date).getUTCDate();
+          const ddObj = new Date(s.due_date);
+          const dd = ddObj.getUTCDate();
           if (dd) {
             day = dd;
             hasExplicitDue = true;
+            fullDate = ddObj;
           }
         } catch (e) {
           // ignore
@@ -3364,7 +3396,7 @@
       }
     }
 
-    return { day, feeOverride };
+    return { day, feeOverride, fullDate };
   }
 
   function getStudentPaymentStatus(
@@ -3379,11 +3411,16 @@
       monthOverride !== null ? monthOverride : window.reportMonth;
     const targetYear = yearOverride !== null ? yearOverride : window.reportYear;
 
-    // Academy billing floor: the academy started collecting fees in July
-    // 2026, so no month before 2026-07 is ever billable — no pre-July dues
-    // or overdue arrears anywhere.
-    if (targetYear < 2026 || (targetYear === 2026 && targetMonth < 6)) {
-      return "Not Enrolled";
+    // Academy billing floor: configurable date before which all enrolled students are considered Paid
+    const BILLING_START_YEAR = 2026;
+    const BILLING_START_MONTH = 6; // July (0-indexed)
+    
+    if (targetYear < BILLING_START_YEAR || (targetYear === BILLING_START_YEAR && targetMonth < BILLING_START_MONTH)) {
+      const enrollStr = getStudentDate(s);
+      const enrollDt = enrollStr ? new Date(enrollStr) : null;
+      const tEnd = new Date(Date.UTC(targetYear, targetMonth + 1, 0, 23, 59, 59));
+      if (!enrollDt || enrollDt > tEnd) return "Not Enrolled";
+      return "Paid";
     }
 
     const isCurrentMonth =
@@ -3409,32 +3446,45 @@
     const enrollDate = enrollDateStr ? new Date(enrollDateStr) : null;
     if (!enrollDate || enrollDate > targetMonthEnd) return "Not Enrolled";
 
-    // 2. Current month: trust the stored status (maintained by the backend cron)
-    if (
-      isCurrentMonth &&
-      s.payment_status &&
-      ["Paid", "Pending", "Due", "Overdue"].includes(s.payment_status)
-    ) {
-      return s.payment_status;
-    }
-
-    // 3. Paid for this specific month? (payment dated or applied to this month)
+    // 2. Check Payment History for this specific month first
     const sIdKey = String(s.id || "").trim().toLowerCase();
-    const paidThisMonth = (allPayments || []).some((p) => {
+
+
+    const currentMonthPayment = (allPayments || []).find((p) => {
       if (String(p.student_id || "").trim().toLowerCase() !== sIdKey) return false;
-      if (p.status !== "paid") return false;
-      if (p.applied_month === targetKey) return true;
-      if (!p.applied_month) {
-        const d = new Date(p.payment_date || p.created_at);
+      const st = (p.status || "").toLowerCase();
+      if (st !== "paid" && st !== "completed" && st !== "pending") return false;
+
+      // applied_month is the explicit billing month a payment is allocated to.
+      // When present it is AUTHORITATIVE — do not fall back to payment_date.
+      // Otherwise a payment collected in month X to clear month Y's dues (e.g.
+      // a late June fee paid in July) would also be counted against month X,
+      // wrongly showing "Paid" and — because Mark Unpaid matches on
+      // applied_month — leaving that status impossible to revert.
+      if (p.applied_month) {
+        return normalizeMonth(p.applied_month) === targetKey;
+      }
+
+      // Only when applied_month is absent, fall back to the transaction date.
+      const pd = new Date(p.payment_date || p.created_at);
+      if (!isNaN(pd.getTime())) {
         const pm =
-          d.getUTCFullYear() +
+          pd.getUTCFullYear() +
           "-" +
-          String(d.getUTCMonth() + 1).padStart(2, "0");
+          String(pd.getUTCMonth() + 1).padStart(2, "0");
         return pm === targetKey;
       }
+
       return false;
     });
-    if (paidThisMonth) return "Paid";
+
+    if (currentMonthPayment) {
+      const st = (currentMonthPayment.status || "").toLowerCase();
+      if (st === "paid" || st === "completed") return "Paid";
+      if (st === "pending") return "Pending";
+    }
+
+    // 3. (Removed) Stale backend stored status fallback removed to enforce dynamic calculation
 
     // 4. Due-date based transition (no arrears / debt-first carry-over)
     const now = new Date();
@@ -3448,7 +3498,7 @@
       targetMonth,
       targetYear,
     );
-    const dueDateObj = new Date(
+    let dueDateObj = new Date(
       targetYear,
       targetMonth,
       dueCfg.day,
@@ -3457,9 +3507,22 @@
       59,
     );
 
+    if (dueCfg.fullDate && dueCfg.fullDate > dueDateObj) {
+      dueDateObj = dueCfg.fullDate;
+    }
+
     if (isFuture || now < dueDateObj) return "Pending";
-    const diffDays = Math.floor((now - dueDateObj) / (1000 * 60 * 60 * 24));
-    return diffDays > 3 ? "Overdue" : "Due";
+    // Unpaid stays "Due" for the remainder of the billing month and flips to
+    // "Overdue" on the 1st of the next month. There is deliberately no grace
+    // tier between the two. (The previous 3-day grace put 12 students in
+    // Overdue against 1 in Due, flagging students days late as delinquent.)
+    //
+    // targetMonthEnd is built with Date.UTC, and `now` is local — comparing the
+    // two would hold the flip back to 05:30 on the 1st in IST. Rebuild the
+    // boundary in local time, matching how dueDateObj above is constructed, so
+    // the turnover happens at local midnight.
+    const cycleEndLocal = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
+    return now > cycleEndLocal ? "Overdue" : "Due";
   }
 
   // ── COUNTRY PHONE VALIDATION ──
@@ -3940,7 +4003,7 @@
     try {
       // Find payments related to this event
       const eventDescString = `Event: ${e.title}`;
-      const res = await apiCall("/api/payments");
+      const res = await apiCall("/api/payments?order=payment_date.desc&limit=5000");
       const paymentsResponse = await res.json();
       const allPaymentsLocal = Array.isArray(paymentsResponse)
         ? paymentsResponse
@@ -4177,7 +4240,7 @@
       // Fetch event and payments
       const evRes = await apiCall(`/api/events?id=${eventId}`);
       const ev = await evRes.json();
-      const pRes = await apiCall("/api/payments");
+      const pRes = await apiCall("/api/payments?order=payment_date.desc&limit=5000");
       const paymentsData = await pRes.json();
       const payments = paymentsData.data || paymentsData;
 
@@ -6211,8 +6274,7 @@ if (p === "stud")
         `;
         if (p === "events")
           btnArea.innerHTML = `<button class="btn btn-gold" onclick="openEventModal()">+ Create Event</button>`;
-        if (p === "insights")
-          btnArea.innerHTML = `<button class="btn btn-gold" onclick="window.generateAcademyInsights()">🔄 Recalculate Insights</button>`;
+
         if (p === "chessable")
           btnArea.innerHTML = `
           <button class="btn btn-outline-amber" onclick="exportChessableCSV()">📤 Export CSV</button>
@@ -6262,8 +6324,7 @@ setTimeout(function () {
       if (p === "bills") renderBills();
       if (p === "child") renderChild();
       if (p === "parent-ai" && window.setAIModule) window.setAIModule("parent");
-      if (p === "insights" && window.generateAcademyInsights)
-        window.generateAcademyInsights();
+
       if (p === "msgs") renderMsgs();
       if (p === "exp" && window.initExpPage) window.initExpPage();
       if (p === "schedules" && window.initSchedulePage)
@@ -6374,6 +6435,7 @@ setTimeout(function () {
     document.body.classList.remove(
       "login-mode",
       "admin-mode",
+      "coach-mode",
       "parent-mode",
       "master-mode",
     );
@@ -6940,7 +7002,7 @@ setTimeout(function () {
             return;
 
           const enrollDateStr = getStudentDate(s);
-          const baseline = new Date(Date.UTC(2026, 6, 1, 0, 0, 0));
+          const baseline = new Date(Date.UTC(2026, 0, 1, 0, 0, 0));
           const enrollDate = enrollDateStr ? new Date(enrollDateStr) : baseline;
           const targetMonthEnd = new Date(Date.UTC(y, m + 1, 0, 23, 59, 59));
           if (enrollDate > targetMonthEnd) return;
@@ -7016,16 +7078,29 @@ setTimeout(function () {
     // Academy billing floor: no collections are counted before July 2026,
     // so "collected last month" for the first billing month reads 0
     // (ignores any stray pre-July payment rows).
-    if (year < 2026 || (year === 2026 && month < 6)) return 0;
+    if (year < 2026 || (year === 2026 && month < 0)) return 0;
     const seenStuds = new Set();
     return allPayments.reduce((sum, p) => {
-      const pDate = new Date(p.payment_date || p.created_at);
-      const pMonthKey = p.applied_month || `${pDate.getUTCFullYear()}-${String(pDate.getUTCMonth() + 1).padStart(2, '0')}`;
       const targetMonthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
-      if (
-        pMonthKey === targetMonthKey &&
-        p.status === "paid"
-      ) {
+      const st = (p.status || "").toLowerCase();
+      if (st !== "paid" && st !== "completed") return sum;
+
+      let isMatch = false;
+      // Check 1: applied_month
+      if (p.applied_month) {
+        const norm = normalizeMonth(p.applied_month);
+        if (norm === targetMonthKey) isMatch = true;
+      }
+      // Check 2: always fallback to payment_date
+      if (!isMatch) {
+        const pd = new Date(p.payment_date || p.created_at);
+        if (!isNaN(pd.getTime())) {
+          const pm = pd.getUTCFullYear() + "-" + String(pd.getUTCMonth() + 1).padStart(2, "0");
+          if (pm === targetMonthKey) isMatch = true;
+        }
+      }
+
+      if (isMatch) {
         const sid = String(p.student_id).toLowerCase();
         if (seenStuds.has(sid)) return sum;
         seenStuds.add(sid);
@@ -7110,7 +7185,7 @@ setTimeout(function () {
         return false;
 
       const enrollDateStr = getStudentDate(s);
-      const baseline = new Date(Date.UTC(2026, 6, 1, 0, 0, 0)); // July 1st Baseline (UTC)
+      const baseline = new Date(Date.UTC(2026, 0, 1, 0, 0, 0)); // July 1st Baseline (UTC)
       const enrollDate = enrollDateStr ? new Date(enrollDateStr) : baseline;
       return enrollDate <= targetMonthEnd;
     });
@@ -7137,7 +7212,7 @@ setTimeout(function () {
       const prevMonthStatus = getStudentPaymentStatus(s, prevMonthDate.getUTCMonth(), prevMonthDate.getUTCFullYear());
 
       const enrollDateStr = getStudentDate(s);
-      const baseline = new Date(Date.UTC(2026, 6, 1));
+      const baseline = new Date(Date.UTC(2026, 0, 1));
       const enrollDate = enrollDateStr ? new Date(enrollDateStr) : baseline;
       const effectiveEnroll = (function () {
         var _a =
@@ -7264,6 +7339,11 @@ setTimeout(function () {
     // AI insights rendered on its own page
   }
 
+  /* Coaches paid a share of revenue are recorded with a token salary (RANJITH
+     is Rs 1) rather than a real wage. Anything at or below this is treated as
+     "share-based" so we never divide by it to produce a return multiple. */
+  const CK_NOMINAL_SALARY_MAX = 100;
+
   function renderCoachFinance() {
     const tbody = $("coach-finance-body");
     if (!tbody) return;
@@ -7341,6 +7421,14 @@ setTimeout(function () {
     });
 
     // 2. Add Deduplicated Revenue from 'paid' Transactions
+    //
+    // NOTE: the month here is taken from payment_date ON PURPOSE, not from
+    // applied_month. "Collected Revenue" is a CASH figure — money actually
+    // received during this month — whereas getStudentPaymentStatus() uses
+    // applied_month because it answers a different question: which month's fee
+    // a payment settles. A fee received in February to clear July therefore
+    // counts as February cash and July "Paid", and that is correct. Do not
+    // "reconcile" these two; they are different bases by design.
     const coachPaidStuds = new Set();
     (allPayments || []).forEach((p) => {
       const pDate = new Date(p.payment_date || p.created_at);
@@ -7386,14 +7474,21 @@ setTimeout(function () {
         const potentialNetProfit = d.projected - d.cost; // If every student pays
         // ROI shown as an intuitive multiplier: "for every ₹1 of salary, the coach
         // earns the academy ₹X". e.g. 3.5× now / 4.2× at full collection.
-        const roiX = d.cost > 0 ? (d.revenue / d.cost).toFixed(1) : null;
-        const potRoiX = d.cost > 0 ? (d.projected / d.cost).toFixed(1) : null;
+        //
+        // A token salary (₹1) marks a coach paid a SHARE of revenue rather than a
+        // fixed wage. Dividing by it yields nonsense — RANJITH showed 1,975,600%
+        // — so treat those coaches as unrated instead of inventing a multiple.
+        const isShareBased = d.cost > 0 && d.cost <= CK_NOMINAL_SALARY_MAX;
+        const rateable = d.cost > 0 && !isShareBased;
+        const roiX = rateable ? (d.revenue / d.cost).toFixed(1) : null;
+        const potRoiX = rateable ? (d.projected / d.cost).toFixed(1) : null;
         const roiClass =
           roiX !== null && parseFloat(roiX) >= 1
             ? "text-success"
             : "text-danger";
-        const roiCell =
-          roiX === null
+        const roiCell = isShareBased
+          ? '<span style="color:var(--ivory-dim)" title="Paid a share of revenue rather than a fixed salary, so a salary multiple is not meaningful">Share-based</span>'
+          : roiX === null
             ? '<span style="color:var(--ivory-dim)">—</span>'
             : `<span class="${roiClass}" style="font-weight:700">${roiX}×</span> <span style="color:var(--ivory3)">now</span> / <span class="text-gold" style="font-weight:700">${potRoiX}×</span> <span style="color:var(--ivory3)">max</span>`;
         const profitClass = netProfit >= 0 ? "text-success" : "text-danger";
@@ -7404,8 +7499,8 @@ setTimeout(function () {
         <td>${d.students}</td>
         <td>₹${d.revenue.toLocaleString()}</td>
         <td>₹${d.pending.toLocaleString()}</td>
-        <td>₹${d.cost.toLocaleString()}</td>
-        <td class="${profitClass}" title="Collected revenue minus salary">₹${netProfit.toLocaleString()}</td>
+        <td${isShareBased ? ' title="Nominal salary — this coach is paid a share of revenue"' : ''}>₹${d.cost.toLocaleString()}${isShareBased ? ' <span style="color:var(--ivory-dim);font-size:10px">(share)</span>' : ''}</td>
+        <td class="${profitClass}" title="${isShareBased ? 'Collected revenue less the nominal salary — excludes the revenue share' : 'Collected revenue minus salary'}">₹${netProfit.toLocaleString()}</td>
         <td class="${potentialProfitClass}" title="Profit if every assigned student pays (projected − salary)">₹${potentialNetProfit.toLocaleString()}</td>
         <td title="Times the coach earns back their salary — collected now, and projected at full collection. 1× = breaks even.">${roiCell}</td>
         <td><button class="btn btn-gold btn-sm" onclick="informCoachFees('${id}')">📢 Inform</button></td>
@@ -7528,9 +7623,12 @@ setTimeout(function () {
       theadRow.innerHTML = `
         <th style="width:40px"><input type="checkbox" id="stud-check-all" onclick="window.toggleAllStudents(this.checked)"></th>
         <th style="width:50px">#</th>
-            <th>Student</th>
-            <th>Coach</th>
-            <th>Schedule</th>
+        <th>Student</th>
+        <th>Level</th>
+        <th>Coach</th>
+        <th>Join Date</th>
+        <th>Session</th>
+        <th>Schedule</th>
         <th>Fee</th>
         <th>Status</th>
         <th>Due Date</th>
@@ -7654,7 +7752,7 @@ setTimeout(function () {
         const enrollDateStr = getStudentDate(s);
         const enrollDate = enrollDateStr
           ? new Date(enrollDateStr)
-          : new Date(Date.UTC(2026, 6, 1));
+          : new Date(Date.UTC(2026, 0, 1));
 
         // Always show upcoming, pending, or waitlisted students regardless of the dashboard month selected
         if (["upcoming", "pending", "waitlist"].includes(sStatus)) return true;
@@ -7778,9 +7876,9 @@ setTimeout(function () {
       }
 
       if (!studs || studs.length === 0) {
-        const cols = role === "coach" ? 7 : 9;
+        const cols = role === "coach" ? 7 : 12;
         tbody.innerHTML =
-          `<tr><td colspan="${role === "coach" ? 7 : 9}" class="text-center">No students found matching filters for this period</td></tr>`;
+          `<tr><td colspan="${role === "coach" ? 7 : 12}" class="text-center">No students found matching filters for this period</td></tr>`;
         return;
       }
 
@@ -7814,19 +7912,17 @@ setTimeout(function () {
               "Nov",
               "Dec",
             ];
-            // Due Date: show the EXACT date the admin entered/updated (s.due_date),
-            // with no month-selector shifting or auto-rollover. Fall back to the
+            // Due Date: Auto rollover according to the selected month,
+            // using the explicit day from s.due_date if available. Fall back to the
             // day-of-month billing computation only when no explicit date is stored.
             let dueDateString, dueDateObj;
             const _ddMatch = String(s.due_date || "").match(
               /(\d{4})-(\d{2})-(\d{2})/,
             );
             if (_ddMatch) {
-              const _yy = +_ddMatch[1],
-                _mm = +_ddMatch[2] - 1,
-                _dd = +_ddMatch[3];
-              dueDateObj = new Date(_yy, _mm, _dd, 23, 59, 59);
-              dueDateString = `${String(_dd).padStart(2, "0")}-${months[_mm]}-${_yy}`;
+              const _dd = +_ddMatch[3];
+              dueDateObj = new Date(targetYear, targetMonth, _dd, 23, 59, 59);
+              dueDateString = `${String(_dd).padStart(2, "0")}-${months[targetMonth]}-${targetYear}`;
             } else {
               const dueCfg = getStudentDueConfig(
                 s,
@@ -7845,11 +7941,10 @@ setTimeout(function () {
                 59,
               );
             }
-            const isOverdue =
-              status === "Overdue" ||
-              (status !== "Paid" &&
-                status !== "Pending" &&
-                dueDateObj < new Date());
+            // Mirror the status rule exactly. This used to red-flag any row
+            // past its due date, so students the status called "Due" were
+            // still rendered as overdue.
+            const isOverdue = status === "Overdue";
 
             const enrollStatus = getStudentStatus(s);
             const isNonActive = enrollStatus !== "active";
@@ -7999,11 +8094,22 @@ setTimeout(function () {
             // re-render (which otherwise wiped the inline expansion).
             const isRowOpen = String(window.__openActionRow || "") === String(s.id);
 
+            const levelText = escapeHtml(getStudentLevel(s) || "-");
+            const joinDateRaw = getStudentDate(s);
+            const joinDateText = joinDateRaw ? new Date(joinDateRaw).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "-";
+            const sessionType = getStudentBatchType(s);
+            const sessionBadge = sessionType === "Single"
+              ? `<span class="badge badge-info" style="font-size:10px; padding:2px 6px; border-radius:4px; font-weight:600;">Individual</span>`
+              : `<span class="badge badge-success" style="font-size:10px; padding:2px 6px; border-radius:4px; font-weight:600;">Group</span>`;
+
             return `<tr>
               <td>${checkboxHtml}</td>
               <td style="color:var(--ivory-dim);font-weight:600">${i + 1}</td>
               <td>${studentNameHtml}</td>
+              <td style="font-size:12px;">${levelText}</td>
               <td>${coachName}</td>
+              <td style="font-size:12px; white-space:nowrap;">${joinDateText}</td>
+              <td>${sessionBadge}</td>
               <td>${time}</td>
               <td>${feeHtml}</td>
               <td><span class="${statusClass}" style="font-weight: 600;">${statusText}</span></td>
@@ -8020,15 +8126,85 @@ setTimeout(function () {
             </tr>`;
           } catch (rowErr) {
             console.error(`[UI] Error rendering student row ${i}:`, rowErr, s);
-            return `<tr><td colspan="9" style="color:var(--danger)">Error rendering student ${s.name || i}</td></tr>`;
+            return `<tr><td colspan="12" style="color:var(--danger)">Error rendering student ${s.name || i}</td></tr>`;
           }
         })
-        .join("");
+        .join("") + renderStudentTotalsRow(studs, targetMonth, targetYear);
       updateStudentBulkCount();
     } catch (err) {
       console.error("[UI] renderStudents critical error:", err);
       if (tbody)
-        tbody.innerHTML = `<tr><td colspan="${role === "coach" ? 7 : 9}" class="text-center text-danger">Failed to load students. Please refresh the page.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${role === "coach" ? 7 : 12}" class="text-center text-danger">Failed to load students. Please refresh the page.</td></tr>`;
+    }
+  }
+
+  /* Totals footer for the Student Registry.
+     Sums the amount that matches whatever the payment-status filter is showing:
+     for "Paid" that is what was actually collected for the billing month (from
+     the payments ledger, so part-payments and edited amounts stay honest);
+     for Pending / Due / Overdue there is no ledger row yet, so it is the fee
+     still outstanding. With no filter it breaks the list down by status. */
+  function studentPaidAmountForMonth(s, targetMonth, targetYear) {
+    const key = `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}`;
+    const sid = String(s.id || "").trim().toLowerCase();
+    const rows = (window.allPayments || allPayments || []).filter((p) => {
+      if (String(p.student_id || "").trim().toLowerCase() !== sid) return false;
+      const st = (p.status || "").toLowerCase();
+      if (st !== "paid" && st !== "completed") return false;
+      if (p.applied_month) return normalizeMonth(p.applied_month) === key;
+      const pd = new Date(p.payment_date || p.created_at);
+      if (isNaN(pd.getTime())) return false;
+      return pd.getUTCFullYear() + "-" + String(pd.getUTCMonth() + 1).padStart(2, "0") === key;
+    });
+    const sum = rows.reduce((t, p) => t + (Number(p.amount) || 0), 0);
+    // Fall back to the agreed fee when a payment row carries no amount.
+    return sum || (rows.length ? Number(getStudentMonthlyFee(s)) || 0 : 0);
+  }
+
+  function renderStudentTotalsRow(studs, targetMonth, targetYear) {
+    try {
+      if (!studs || !studs.length) return "";
+      const filter = ($("f-status") && $("f-status").value) || "";
+      const money = (n) =>
+        "\u20B9" + Math.round(n).toLocaleString("en-IN");
+
+      const buckets = { Paid: 0, Pending: 0, Due: 0, Overdue: 0 };
+      const counts  = { Paid: 0, Pending: 0, Due: 0, Overdue: 0 };
+      studs.forEach((s) => {
+        const st = getStudentPaymentStatus(s, targetMonth, targetYear);
+        if (!(st in buckets)) return;   // skips "Not Enrolled" etc.
+        counts[st] += 1;
+        buckets[st] += st === "Paid"
+          ? studentPaidAmountForMonth(s, targetMonth, targetYear)
+          : (Number(getStudentMonthlyFee(s)) || 0);
+      });
+
+      const tone = { Paid: "var(--success)", Pending: "var(--warning)", Due: "var(--warning)", Overdue: "var(--danger)" };
+      let label, amount, colour;
+      if (filter && filter in buckets) {
+        label  = `Total ${filter} (${counts[filter]} student${counts[filter] === 1 ? "" : "s"})`;
+        amount = money(buckets[filter]);
+        colour = tone[filter];
+      } else {
+        const parts = Object.keys(buckets)
+          .filter((k) => counts[k])
+          .map((k) => `<span style="color:${tone[k]}">${k} ${money(buckets[k])}</span>`)
+          .join('<span style="opacity:.35;margin:0 8px">|</span>');
+        const collected = buckets.Paid;
+        const outstanding = buckets.Pending + buckets.Due + buckets.Overdue;
+        label  = parts || "No billable students";
+        amount = `Collected ${money(collected)} \u00B7 Outstanding ${money(outstanding)}`;
+        colour = "var(--ivory)";
+      }
+
+      return `
+        <tr class="student-totals-row" style="background:rgba(255,255,255,0.04); border-top:2px solid var(--border);">
+          <td colspan="7" style="padding:12px 10px; font-size:12px; font-weight:600; color:var(--ivory-dim);">${label}</td>
+          <td colspan="5" style="padding:12px 10px; text-align:right; font-size:14px; font-weight:800; color:${colour}; white-space:nowrap;">${amount}</td>
+        </tr>`;
+    } catch (e) {
+      console.error("[UI] renderStudentTotalsRow failed:", e);
+      return "";
     }
   }
 
@@ -8145,11 +8321,6 @@ setTimeout(function () {
     if ($("e-parent-name")) $("e-parent-name").value = s.parent_name || "";
     if ($("e-session-type")) $("e-session-type").value = getStudentSessionType(s);
     if ($("e-dob")) $("e-dob").value = s.dob || "";
-    if ($("e-standard")) {
-      const stdMatch = /Standard:\s*(.+)/.exec(s.special_notes || "");
-      $("e-standard").value = stdMatch ? stdMatch[1].trim() : "";
-    }
-    if ($("e-school")) $("e-school").value = s.school_name || "";
     if ($("e-address")) $("e-address").value = s.address || "";
     // Render country dropdown for edit modal
     renderCountryDropdown("country-dropdown-edit", "selectCountryEdit");
@@ -8296,9 +8467,8 @@ setTimeout(function () {
       // field the user reported as never saving).
       parent_name: $("e-parent-name") ? $("e-parent-name").value.trim() : (s.parent_name || ""),
       dob: $("e-dob") && $("e-dob").value ? $("e-dob").value : (s.dob || null),
-      // `grade` column stores the LEVEL, so standard goes to special_notes.
-      special_notes: $("e-standard") && $("e-standard").value.trim() ? `Standard: ${$("e-standard").value.trim()}` : (s.special_notes || null),
-      school_name: $("e-school") ? ($("e-school").value.trim() || null) : (s.school_name || null),
+      special_notes: s.special_notes || null,
+      school_name: s.school_name || null,
       address: $("e-address") ? ($("e-address").value.trim() || null) : (s.address || null),
       session_mode: $("e-batch-type")?.value || s.session_mode || null,
       session_time: $("e-batch-time")?.value || s.session_time || null,
@@ -8326,10 +8496,16 @@ setTimeout(function () {
           const now = new Date();
           const targetMonth = now.getUTCMonth();
           const targetYear = now.getUTCFullYear();
+          const targetKey = `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}`;
 
           const monthPay = (allPayments || []).find((p) => {
             if (String(p.student_id) !== String(id)) return false;
             if (p.status !== "paid") return false;
+            // Match the same way getStudentPaymentStatus counts a month as Paid:
+            // applied_month is authoritative when present, else the payment_date.
+            if (p.applied_month) {
+              return normalizeMonth(p.applied_month) === targetKey;
+            }
             const pDate = new Date(p.payment_date || p.created_at);
             return (
               pDate.getUTCMonth() === targetMonth &&
@@ -8484,8 +8660,6 @@ setTimeout(function () {
     if ($("m-parent-name")) $("m-parent-name").value = "";
     if ($("m-parent-email")) $("m-parent-email").value = "";
     if ($("m-dob")) $("m-dob").value = "";
-    if ($("m-standard")) $("m-standard").value = "";
-    if ($("m-school")) $("m-school").value = "";
     if ($("m-address")) $("m-address").value = "";
     if ($("m-session-type")) $("m-session-type").value = "Group";
     if ($("m-admission-fee")) $("m-admission-fee").value = "0";
@@ -8602,10 +8776,8 @@ due_date: (function () {
       // never sent, so they silently vanished. Now persisted.
       parent_name: $("m-parent-name") ? $("m-parent-name").value.trim() : "",
       dob: $("m-dob") && $("m-dob").value ? $("m-dob").value : null,
-      // NOTE: the `grade` column holds the student LEVEL (Beginner/…), so the
-      // academic "standard" field is stored in special_notes, not grade.
-      special_notes: $("m-standard") && $("m-standard").value.trim() ? `Standard: ${$("m-standard").value.trim()}` : null,
-      school_name: $("m-school") ? ($("m-school").value.trim() || null) : null,
+      special_notes: null,
+      school_name: null,
       address: $("m-address") ? ($("m-address").value.trim() || null) : null,
       session_mode: $("m-batch-type").value,
       session_time: $("m-batch-time").value,
@@ -10259,7 +10431,7 @@ due_date: (function () {
       : null;
     const receiptDate = det?.dateIso || new Date().toISOString();
     const receiptMethod = det?.method || "Cash";
-    const receiptUrl = `${window.location.origin}/receipt.html?id=${studentId}&name=${encodeURIComponent(getStudentName(s))}&amount=${amount}&date=${receiptDate}&method=${encodeURIComponent(receiptMethod)}&level=${encodeURIComponent(getStudentLevel(s))}&coach=${encodeURIComponent(coachName)}`;
+    const receiptUrl = `${window.location.origin}/lms/receipt.html?id=${studentId}&name=${encodeURIComponent(getStudentName(s))}&amount=${amount}&date=${receiptDate}&method=${encodeURIComponent(receiptMethod)}&level=${encodeURIComponent(getStudentLevel(s))}&coach=${encodeURIComponent(coachName)}`;
 
     const ordinalText = (n) => {
       const s = ["th", "st", "nd", "rd"];
@@ -10328,15 +10500,21 @@ Best regards,
     let mockPayment = null;
     let removedPayments = [];
     if (isCurrentlyPaid) {
-      removedPayments = window.allPayments.filter(
-        (p) =>
-          String(p.student_id) === String(id) &&
-          p.status === "paid" &&
-          new Date(p.payment_date || p.created_at).getUTCMonth() ===
-            targetMonth &&
-          new Date(p.payment_date || p.created_at).getUTCFullYear() ===
-            targetYear,
-      );
+      const targetKey = `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}`;
+      removedPayments = window.allPayments.filter((p) => {
+        if (String(p.student_id) !== String(id) || p.status !== "paid") return false;
+        
+        if (p.applied_month) {
+          return normalizeMonth(p.applied_month) === targetKey;
+        }
+        
+        const pd = new Date(p.payment_date || p.created_at);
+        if (!isNaN(pd.getTime())) {
+          const pm = pd.getUTCFullYear() + "-" + String(pd.getUTCMonth() + 1).padStart(2, "0");
+          return pm === targetKey;
+        }
+        return false;
+      });
       window.allPayments = window.allPayments.filter(
         (p) => !removedPayments.includes(p),
       );
@@ -10616,7 +10794,7 @@ Best regards,
     const targetMonth = window.reportMonth;
     const targetYear = window.reportYear;
     const enrollDateStr = getStudentDate(s);
-    const baseline = new Date(Date.UTC(2026, 6, 1));
+    const baseline = new Date(Date.UTC(2026, 0, 1));
     const enrollDate = enrollDateStr ? new Date(enrollDateStr) : baseline;
     const effectiveEnroll = (function () {
       var _a = window.getBillingAnchor && window.getBillingAnchor(s, baseline);
@@ -10697,7 +10875,7 @@ Best regards,
     const targetMonth = window.reportMonth;
     const targetYear = window.reportYear;
     const enrollDateStr = getStudentDate(s);
-    const baseline = new Date(Date.UTC(2026, 6, 1));
+    const baseline = new Date(Date.UTC(2026, 0, 1));
     const enrollDate = enrollDateStr ? new Date(enrollDateStr) : baseline;
     const effectiveEnroll = (function () {
       var _a = window.getBillingAnchor && window.getBillingAnchor(s, baseline);
@@ -10826,104 +11004,13 @@ Best regards,
     }
   };
 
-  // ============================================
-  // FEATURE 2: TOGGLE PAID/UNPAID STATUS
-  // ============================================
-  window.togglePaymentStatus = async function (id, name, fee) {
-    const s = allStudents.find((x) => String(x.id) === String(id));
-    if (!s) return;
-
-    const currentStatus = getStudentPaymentStatus(s);
-    const isCurrentlyPaid = currentStatus === "Paid";
-    const action = isCurrentlyPaid ? "unpaid" : "paid";
-    const confirmMsg = isCurrentlyPaid
-      ? `Mark ${name} as Unpaid? This will remove this month's payment record and revert status to Pending.`
-      : `Mark ${name} as Paid? This will create a payment record for this month.`;
-
-    if (!confirm(confirmMsg)) return;
-
-    try {
-      const targetMonth = window.reportMonth;
-      const targetYear = window.reportYear;
-
-      if (isCurrentlyPaid) {
-        // === MARK AS UNPAID ===
-        // Find current month payments
-        const monthPayments = (window.allPayments || []).filter(
-          (p) =>
-            String(p.student_id) === String(id) &&
-            p.status === "paid" &&
-            new Date(p.payment_date || p.created_at).getUTCMonth() ===
-              targetMonth &&
-            new Date(p.payment_date || p.created_at).getUTCFullYear() ===
-              targetYear,
-        );
-
-        // Delete each payment record
-        for (const p of monthPayments) {
-          await apiCall(`${API_BASE}/payments?id=${p.id}`, {
-            method: "DELETE",
-          });
-        }
-
-        // Update student to Pending (they paid previous months but not current)
-        await apiCall(`${API_BASE}/students?id=${id}`, {
-          method: "PUT",
-          body: JSON.stringify({ payment_status: "Pending" }),
-        });
-
-        toast(
-          `Marked Unpaid. ${monthPayments.length} payment record(s) removed.`,
-          "info",
-        );
-      } else {
-        // === MARK AS PAID ===
-        const paymentData = {
-          id:
-            "pay_toggle_" +
-            Date.now() +
-            "_" +
-            Math.random().toString(36).substr(2, 9),
-          student_id: id,
-          amount: parseFloat(fee),
-          status: "paid",
-          payment_method: "Manual Toggle",
-          description: "Monthly Tuition",
-          transaction_id: "TGL-" + Math.floor(Math.random() * 1000000),
-          payment_date:
-            window.reportMonth !== new Date().getUTCMonth() ||
-            window.reportYear !== new Date().getUTCFullYear()
-              ? new Date(
-                  Date.UTC(window.reportYear, window.reportMonth, 1, 12, 0, 0),
-                ).toISOString()
-              : new Date().toISOString(),
-        };
-
-        const res = await apiCall(`${API_BASE}/payments`, {
-          method: "POST",
-          body: JSON.stringify(paymentData),
-        });
-
-        if (res.ok) {
-          await apiCall(`${API_BASE}/students?id=${id}`, {
-            method: "PUT",
-            body: JSON.stringify({ payment_status: "Paid" }),
-          });
-          toast("Marked as Paid with transaction record", "success");
-          sendPaymentReceiptNotification(id, fee);
-        }
-      }
-
-      // Invalidate cache and refresh
-      window.totalPaymentsMap = null;
-      await loadAllData(true);
-      renderDash();
-      renderBills();
-    } catch (e) {
-      console.error("Toggle status failed:", e);
-      toast("Error updating status", "error");
-    }
-  };
+  // NOTE: The authoritative window.togglePaymentStatus is defined earlier in
+  // this file. A second, older copy used to live here and — because it was
+  // defined later — silently shadowed the fixed one at runtime. That stale
+  // copy matched payments to delete by payment_date only, ignoring
+  // applied_month, so "Mark Unpaid" failed to revert any student whose paid
+  // record was allocated via applied_month (the "payment not changing" bug).
+  // It has been removed; do not re-add a duplicate definition here.
 
   window.viewPaymentHistory = async function (studentId) {
     const s = allStudents.find((x) => String(x.id) === String(studentId));
@@ -11053,7 +11140,7 @@ Best regards,
     const dialCode = country ? country.dial.replace(/\D/g, "") : "91";
     const name = getCoachName(c);
     const salary = getCoachSalary(c) || 0;
-    const receiptUrl = `${window.location.origin}/salary_receipt.html?id=${c.id}&name=${encodeURIComponent(name)}&amount=${salary}&role=${encodeURIComponent(c.specialty || "Chess Coach")}&specialty=${encodeURIComponent(c.specialty || "Chess Academy Mentor")}&method=Online%20Transfer`;
+    const receiptUrl = `${window.location.origin}/lms/salary_receipt.html?id=${c.id}&name=${encodeURIComponent(name)}&amount=${salary}&role=${encodeURIComponent(c.specialty || "Chess Coach")}&specialty=${encodeURIComponent(c.specialty || "Chess Academy Mentor")}&method=Online%20Transfer`;
 
     const msg =
       `🌟 SALARY CREDITED SUCCESSFULLY 🌟\n` +
@@ -14089,10 +14176,15 @@ Best regards,
         const coachesFinanceList = Object.entries(coachData).map(([id, d]) => {
           const netProfit = d.revenue - d.cost;
           const potentialNetProfit = d.projected - d.cost;
-          const roi =
-            d.cost > 0 ? ((d.revenue / d.cost) * 100).toFixed(1) + "%" : "0%";
-          const potentialRoi =
-            d.cost > 0 ? ((d.projected / d.cost) * 100).toFixed(1) + "%" : "0%";
+          // Same guard as renderCoachFinance: a token salary means revenue-share,
+          // so a percentage return on it is meaningless.
+          const shareBased = d.cost > 0 && d.cost <= CK_NOMINAL_SALARY_MAX;
+          const roi = shareBased
+            ? "Share-based"
+            : d.cost > 0 ? ((d.revenue / d.cost) * 100).toFixed(1) + "%" : "0%";
+          const potentialRoi = shareBased
+            ? "Share-based"
+            : d.cost > 0 ? ((d.projected / d.cost) * 100).toFixed(1) + "%" : "0%";
           return {
             name: d.name,
             specialty: d.specialization,
@@ -14349,7 +14441,7 @@ Best regards,
           const enrollStr = getStudentDate(s);
           const enrollDate = enrollStr
             ? new Date(enrollStr)
-            : new Date(Date.UTC(2026, 6, 1));
+            : new Date(Date.UTC(2026, 0, 1));
           const sStatus = getStudentStatus(s);
           const payStatus = getStudentPaymentStatus(s, targetMonth, targetYear);
           // Only drop students who weren't enrolled yet, or who are completely pending and inactive
@@ -14377,7 +14469,15 @@ Best regards,
             Level: getStudentLevel(s),
             "Elo Rating": getStudentRating(s),
             "Join Date": getStudentDate(s),
-            "Fee Due Date": s.due_date || "N/A",
+            "Fee Due Date": (() => {
+              if (!s.due_date) return "N/A";
+              const match = String(s.due_date).match(/(\d{4})-(\d{2})-(\d{2})/);
+              if (match) {
+                const _dd = parseInt(match[3], 10);
+                return `${String(_dd).padStart(2, "0")}/${String(targetMonth + 1).padStart(2, "0")}/${targetYear}`;
+              }
+              return s.due_date;
+            })(),
             "Monthly Fee": getStudentMonthlyFee(s),
             "Payment Status": getStudentPaymentStatus(
               s,
@@ -14590,7 +14690,7 @@ Best regards,
         const enrollStr = getStudentDate(s);
         const enrollDate = enrollStr
           ? new Date(enrollStr)
-          : new Date(Date.UTC(2026, 6, 1));
+          : new Date(Date.UTC(2026, 0, 1));
         const sStatus = getStudentStatus(s);
         const payStatus = getStudentPaymentStatus(s, targetMonth, targetYear);
         if (enrollDate > targetMonthEnd) return false;
@@ -15689,420 +15789,7 @@ window.deleteStudent = deleteStudent;
   }
   window.quickSwitchPreviewStudent = quickSwitchPreviewStudent;
 
-  // --- AI Insights Engine ---
-  let currentInsightsFilter = "all";
-  let generatedInsights = [];
 
-  function generateAcademyInsights() {
-    generatedInsights = [];
-
-    // --- 0. General Overview Baseline Insight ---
-    const activeStudentCount = allStudents.filter((s) => {
-      const st = getStudentStatus(s);
-      return st !== "archived" && st !== "inactive";
-    }).length;
-    const activeCoachCount = allCoaches.filter(
-      (c) => c.status !== "inactive",
-    ).length;
-
-    generatedInsights.push({
-      type: "baseline",
-      severity: "success",
-      icon: "📊",
-      text: `<strong>ChessKidoo Academy Overview:</strong> You currently have <strong>${activeStudentCount} active students</strong> and <strong>${activeCoachCount} active coaches</strong>. Your academy is operating smoothly.`,
-    });
-
-    // --- 1. Promotion Suggestions ---
-    const beginnerThreshold = 1000;
-    const intermediateThreshold = 1350;
-    const advancedThreshold = 1700;
-
-    allStudents.forEach((s) => {
-      const sStatus = getStudentStatus(s);
-      if (
-        sStatus === "archived" ||
-        sStatus === "inactive" ||
-        sStatus === "pending" ||
-        sStatus === "waitlist" ||
-        sStatus === "upcoming"
-      )
-        return;
-
-      const lvl = getStudentLevel(s);
-      const rating = getStudentRating(s) || 800;
-      const name = getStudentName(s);
-
-      if (lvl === "Beginner" && rating >= beginnerThreshold) {
-        generatedInsights.push({
-          type: "promotion",
-          severity: "amber",
-          icon: "🏆",
-          text: `<strong>Promotion Alert:</strong> Beginner student <strong>${name}</strong> has a high rating of <strong>${rating} ELO</strong>. Suggest promoting to <strong>Intermediate</strong>.`,
-        });
-      } else if (lvl === "Intermediate" && rating >= intermediateThreshold) {
-        generatedInsights.push({
-          type: "promotion",
-          icon: "🏆",
-          severity: "amber",
-          text: `<strong>Promotion Alert:</strong> Intermediate student <strong>${name}</strong> has reached <strong>${rating} ELO</strong>. Suggest promoting to <strong>Advanced</strong>.`,
-        });
-      } else if (lvl === "Advanced" && rating >= advancedThreshold) {
-        generatedInsights.push({
-          type: "promotion",
-          icon: "🏆",
-          severity: "amber",
-          text: `<strong>Promotion Alert:</strong> Advanced student <strong>${name}</strong> has reached <strong>${rating} ELO</strong>. Suggest promoting to <strong>Elite</strong>.`,
-        });
-      }
-    });
-
-    // --- 2. Attendance Alerts (2 consecutive absences) ---
-    const attByStudent = {};
-    (allAttendance || []).forEach((a) => {
-      const sid = String(a.student_id);
-      if (!attByStudent[sid]) attByStudent[sid] = [];
-      attByStudent[sid].push(a);
-    });
-
-    Object.keys(attByStudent).forEach((sid) => {
-      const s = allStudents.find((x) => String(x.id) === sid);
-      if (!s) return;
-      const sStatus = getStudentStatus(s);
-      if (
-        sStatus === "archived" ||
-        sStatus === "inactive" ||
-        sStatus === "pending" ||
-        sStatus === "waitlist" ||
-        sStatus === "upcoming"
-      )
-        return;
-
-      const records = attByStudent[sid].sort(
-        (a, b) => new Date(b.date) - new Date(a.date),
-      );
-      if (records.length >= 2) {
-        if (records[0].status === "absent" && records[1].status === "absent") {
-          generatedInsights.push({
-            type: "attendance",
-            icon: "⚠️",
-            severity: "danger",
-            text: `<strong>Attendance Warning:</strong> Student <strong>${getStudentName(s)}</strong> has missed <strong>2 consecutive classes</strong> (last absent on ${records[0].date}). Suggest coach follow-up.`,
-          });
-        }
-      }
-    });
-
-    // --- 3. Arrears Alerts (> 2 months outstanding) ---
-    const arrearsDetails = [];
-    const targetMonth = window.reportMonth;
-    const targetYear = window.reportYear;
-    const baseline = new Date(Date.UTC(2026, 6, 1));
-
-    const creditsMap = {};
-    const seenMonths = new Set();
-    (allPayments || []).forEach((p) => {
-      if (p.status === "paid") {
-        const sid = String(p.student_id || "")
-          .trim()
-          .toLowerCase();
-        const pDate = new Date(p.payment_date || p.created_at);
-        const mKey = `${sid}_${pDate.getUTCFullYear()}-${pDate.getUTCMonth()}`;
-        if (seenMonths.has(mKey)) return;
-        seenMonths.add(mKey);
-
-        creditsMap[sid] = (creditsMap[sid] || 0) + 1;
-      }
-    });
-
-    allStudents.forEach((s) => {
-      const sStatus = getStudentStatus(s);
-      if (
-        sStatus === "archived" ||
-        sStatus === "inactive" ||
-        sStatus === "pending" ||
-        sStatus === "waitlist" ||
-        sStatus === "upcoming"
-      )
-        return;
-
-      const enrollDateStr = getStudentDate(s);
-      const enrollDate = enrollDateStr ? new Date(enrollDateStr) : baseline;
-      const effectiveEnroll = (function () {
-        var _a =
-          window.getBillingAnchor && window.getBillingAnchor(s, baseline);
-        return _a
-          ? new Date(Date.UTC(_a.year, _a.month, 1))
-          : enrollDate < baseline
-            ? baseline
-            : enrollDate;
-      })();
-      const monthsRequired =
-        (targetYear - effectiveEnroll.getUTCFullYear()) * 12 +
-        (targetMonth - effectiveEnroll.getUTCMonth()) +
-        1;
-
-      const sid = String(s.id).toLowerCase();
-      const credits = creditsMap[sid] || 0;
-      const outstandingMonths = Math.max(0, monthsRequired - credits);
-
-      if (outstandingMonths >= 2) {
-        const fee = getStudentMonthlyFee(s) || 0;
-        const totalOwed = fee * outstandingMonths;
-        arrearsDetails.push({ name: getStudentName(s), owed: totalOwed });
-        generatedInsights.push({
-          type: "arrears",
-          icon: "💸",
-          severity: "danger",
-          text: `<strong>Arrears Warning:</strong> Student <strong>${getStudentName(s)}</strong> has <strong>${outstandingMonths} unpaid months</strong> (Owes: ₹${totalOwed.toLocaleString()}). Suggest sending notification.`,
-        });
-      }
-    });
-
-    // --- 4. General Overview Insight (Baseline) ---
-    generatedInsights.push({
-      type: "all",
-      icon: "📊",
-      severity: "info",
-      text: `<strong>ChessKidoo Academy Overview:</strong> You currently have <strong>${allStudents.length}</strong> registered students and <strong>${allCoaches.length}</strong> active coaches. The system is operating normally.`,
-    });
-
-    // Update Quick Metric Counts
-    const promoCount = generatedInsights.filter(
-      (x) => x.type === "promotion",
-    ).length;
-    const attCount = generatedInsights.filter(
-      (x) => x.type === "attendance",
-    ).length;
-    const arrearsCount = generatedInsights.filter(
-      (x) => x.type === "arrears",
-    ).length;
-
-    const card = document.getElementById("ai-insights-card");
-    const body = document.getElementById("ai-insights-body");
-    if (card && body) {
-      if (document.getElementById("ins-promo-count"))
-        document.getElementById("ins-promo-count").textContent = promoCount;
-      if (document.getElementById("ins-att-count"))
-        document.getElementById("ins-att-count").textContent = attCount;
-      if (document.getElementById("ins-arrears-count"))
-        document.getElementById("ins-arrears-count").textContent = arrearsCount;
-      renderInsightsList();
-      renderInsightsCharts(
-        promoCount,
-        attCount,
-        arrearsCount,
-        arrearsDetails,
-        generatedInsights,
-      );
-    }
-  }
-
-  function renderInsightsCharts(
-    promoCount,
-    attCount,
-    arrearsCount,
-    arrearsDetails,
-    insights,
-  ) {
-    if (!window.Chart) return;
-    if (!window.insightsCharts) window.insightsCharts = {};
-
-    const destroyChart = (id) => {
-      if (window.insightsCharts[id]) window.insightsCharts[id].destroy();
-    };
-
-    // 1. Distribution Chart
-    const ctxDist = document.getElementById("chartInsightsDistribution");
-    if (ctxDist) {
-      destroyChart("dist");
-      window.insightsCharts["dist"] = new Chart(ctxDist, {
-        type: "doughnut",
-        data: {
-          labels: ["Promotions", "Attendance", "Arrears", "General"],
-          datasets: [
-            {
-              data: [
-                promoCount,
-                attCount,
-                arrearsCount,
-                insights.filter(
-                  (x) => x.type === "all" && x.severity === "info",
-                ).length,
-              ],
-              backgroundColor: ["#daa33e", "#ff4d4f", "#cf1322", "#52c41a"],
-              borderWidth: 0,
-              hoverOffset: 4,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: "bottom", labels: { color: chartThemeColors().tick } },
-          },
-          cutout: "70%",
-        },
-      });
-    }
-
-    // 2. Promotions Chart
-    const ctxPromo = document.getElementById("chartInsightsPromotions");
-    if (ctxPromo) {
-      const promoLevels = {
-        Elite: 0,
-        Advanced: 0,
-        Intermediate: 0,
-        Beginner: 0,
-      };
-      insights
-        .filter((x) => x.type === "promotion")
-        .forEach((ins) => {
-          if (ins.text.includes("Elite")) promoLevels.Elite++;
-          else if (ins.text.includes("Advanced")) promoLevels.Advanced++;
-          else if (ins.text.includes("Intermediate"))
-            promoLevels.Intermediate++;
-          else promoLevels.Beginner++;
-        });
-
-      destroyChart("promo");
-      window.insightsCharts["promo"] = new Chart(ctxPromo, {
-        type: "bar",
-        data: {
-          labels: ["Elite", "Advanced", "Intermediate", "Beginner"],
-          datasets: [
-            {
-              label: "Candidates",
-              data: [
-                promoLevels.Elite,
-                promoLevels.Advanced,
-                promoLevels.Intermediate,
-                promoLevels.Beginner,
-              ],
-              backgroundColor: "#daa33e",
-              borderRadius: 4,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: {
-              ticks: { color: chartThemeColors().tick, stepSize: 1 },
-              grid: { color: chartThemeColors().grid },
-            },
-            x: { ticks: { color: chartThemeColors().tick }, grid: { display: false } },
-          },
-        },
-      });
-    }
-
-    // 3. Arrears Chart
-    const ctxArrears = document.getElementById("chartInsightsArrears");
-    if (ctxArrears) {
-      const topArrears = arrearsDetails
-        .sort((a, b) => b.owed - a.owed)
-        .slice(0, 5);
-      destroyChart("arrears");
-      window.insightsCharts["arrears"] = new Chart(ctxArrears, {
-        type: "bar",
-        data: {
-          labels: topArrears.length ? topArrears.map((a) => a.name) : ["None"],
-          datasets: [
-            {
-              label: "Owed (₹)",
-              data: topArrears.length ? topArrears.map((a) => a.owed) : [0],
-              backgroundColor: "#ff4d4f",
-              borderRadius: 4,
-            },
-          ],
-        },
-        options: {
-          indexAxis: "y",
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: {
-              ticks: { color: chartThemeColors().tick },
-              grid: { color: chartThemeColors().grid },
-            },
-            y: { ticks: { color: chartThemeColors().tick }, grid: { display: false } },
-          },
-        },
-      });
-    }
-  }
-
-  function renderInsightsList() {
-    const body = document.getElementById("ai-insights-body");
-    if (!body) return;
-
-    const filtered =
-      currentInsightsFilter === "all"
-        ? generatedInsights
-        : generatedInsights.filter((x) => x.type === currentInsightsFilter);
-
-    if (filtered.length === 0) {
-      body.innerHTML = `
-        <div style="color:var(--ivory-dim); font-size:14px; font-style:italic; text-align:center; padding:24px 0;">
-          ✨ No insights of this category at this time. All systems optimal!
-        </div>`;
-      return;
-    }
-
-    body.innerHTML = filtered
-      .map((ins) => {
-        let borderClr = "rgba(201, 150, 12, 0.2)";
-        let bgClr = "rgba(255,255,255,0.01)";
-        let textClr = "var(--ivory)";
-
-        if (ins.severity === "danger") {
-          borderClr = "rgba(255, 77, 79, 0.3)";
-          bgClr = "rgba(255, 77, 79, 0.03)";
-        } else if (ins.severity === "amber") {
-          borderClr = "rgba(201, 150, 12, 0.3)";
-          bgClr = "rgba(201, 150, 12, 0.03)";
-        }
-
-        return `
-        <div style="display:flex; align-items:center; gap:12px; padding:12px 16px; border:1px solid ${borderClr}; background:${bgClr}; border-radius:8px; margin-bottom:10px; font-size:14px; color:${textClr};" class="stat-card">
-          <span style="font-size:18px;">${ins.icon}</span>
-          <div style="flex:1;">${ins.text}</div>
-        </div>`;
-      })
-      .join("");
-  }
-
-  function filterInsights(type) {
-    currentInsightsFilter = type;
-
-    // Manage active pill classes
-    const pills = ["all", "promotion", "attendance", "arrears"];
-    pills.forEach((p) => {
-      const el = document.getElementById("btn-ins-" + p);
-      if (el) {
-        if (p === type) {
-          el.classList.add("active-filter");
-          el.style.background = "var(--gold-semi)";
-          el.style.color = "var(--gold)";
-          el.style.fontWeight = "700";
-        } else {
-          el.classList.remove("active-filter");
-          el.style.background = "transparent";
-          el.style.color = "var(--ivory-dim)";
-          el.style.fontWeight = "600";
-        }
-      }
-    });
-
-    renderInsightsList();
-  }
-
-  window.generateAcademyInsights = generateAcademyInsights;
-  window.filterInsights = filterInsights;
 
   // --- CSV Export Engine ---
   function exportStudentsToCSV() {
