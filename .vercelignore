@@ -1,0 +1,41 @@
+# Controls what gets uploaded to Vercel.
+#
+# vercel.json sets "outputDirectory": "." and its rewrite deliberately excludes
+# any path ending in a file extension, so EVERY file in the repo root was being
+# served as a static asset. That made the SQL seed scripts (including credential
+# hashes), the student import data, the maintenance scripts and the internal
+# audit documents publicly downloadable from the live site.
+#
+# Anything listed here is never uploaded, so it cannot be fetched.
+
+# ── Database scripts: schema, seed data and credential material ──
+*.sql
+
+# ── Maintenance / migration scripts — not part of the site ──
+*.py
+*.cjs
+seed_students.js
+generate-assets.js
+
+# ── Internal documents ──
+*.md
+AUDIT_REPORT.html
+ChessKidoo_User_Manual.html
+
+# ── Scratch, fixtures and stray dumps ──
+scratch/
+search_res*.txt
+audit-inline.json
+schema.json
+test_games.pgn
+
+# ── Backend sources: Edge Functions run on Supabase, not Vercel ──
+supabase/
+
+# ── Tooling / local config ──
+.claude/
+node_modules/
+package-lock.json
+
+# NOTE: vercel.json itself must stay uploaded — Vercel reads it for the
+# rewrites and headers. It contains no secrets.
