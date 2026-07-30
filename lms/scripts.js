@@ -1872,12 +1872,17 @@
     const activeFilter = window.currentLedgerFilter || "all";
     let rows = "";
 
+    // Does a row with this status belong under the active filter?
+    // "all" shows everything, "Unpaid" is the catch-all for anything not settled,
+    // and Paid/Pending/Due/Overdue match their status exactly.
+    const matchesLedgerFilter = (rowStatus) => {
+      if (activeFilter === "all") return true;
+      if (activeFilter === "Unpaid") return rowStatus !== "Paid";
+      return rowStatus === activeFilter;
+    };
+
     // A. Current active billing period row (conditional on filter)
-    const showCurrentRow =
-      (activeFilter === "all" ||
-        (activeFilter === "Paid" && isPaid) ||
-        (activeFilter === "Unpaid" && !isPaid)) &&
-      !isPendingStudent;
+    const showCurrentRow = matchesLedgerFilter(status) && !isPendingStudent;
 
     if (showCurrentRow) {
       rows += `
@@ -1899,16 +1904,16 @@
     }
 
     // B. Past invoice records (conditional on filter)
-    let filteredRecentPayments = recentPayments;
-    if (activeFilter === "Paid") {
-      filteredRecentPayments = recentPayments.filter(
-        (p) => p.status === "completed" || p.status === "paid",
-      );
-    } else if (activeFilter === "Unpaid") {
-      filteredRecentPayments = recentPayments.filter(
-        (p) => p.status !== "completed" && p.status !== "paid",
-      );
-    }
+    // A row's displayed status drives the filter, so the pills mean the same
+    // thing here as they do for the current period above.
+    const pastRowStatus = (p) =>
+      p.status === "completed" || p.status === "paid"
+        ? "Paid"
+        : capitalizeFirst(p.status || "Pending");
+
+    const filteredRecentPayments = recentPayments.filter((p) =>
+      matchesLedgerFilter(pastRowStatus(p)),
+    );
 
     if (filteredRecentPayments.length > 0) {
       filteredRecentPayments.forEach((p) => {
@@ -1916,10 +1921,7 @@
           ? new Date(p.payment_date).toLocaleDateString("en-GB")
           : "-";
         const pAmount = p.amount || fee;
-        const pStatus =
-          p.status === "completed" || p.status === "paid"
-            ? "Paid"
-            : p.status || "Pending";
+        const pStatus = pastRowStatus(p);
         const pMethod = p.payment_method || "Online";
 
         rows += `
@@ -1943,10 +1945,16 @@
 
     // C. Empty state fallback
     if (rows === "") {
+      const filterLabel =
+        activeFilter === "all"
+          ? "any"
+          : activeFilter === "Unpaid"
+            ? "an outstanding"
+            : `a "${activeFilter}"`;
       rows = `
         <tr>
           <td colspan="6" style="text-align:center;padding:24px;color:var(--ivory-dim);font-size:13px">
-            No invoices found matching the "${activeFilter}" filter criteria.
+            No invoices with ${filterLabel} status.
           </td>
         </tr>
       `;
@@ -1961,25 +1969,22 @@
   window.filterLedger = function (filter) {
     window.currentLedgerFilter = filter;
 
-    // Manage filter button visual state
-    document.querySelectorAll(".btn-filter-ledger").forEach((btn) => {
-      btn.style.background = "transparent";
-      btn.style.color = "var(--ivory-dim)";
-      btn.style.fontWeight = "600";
-    });
+    // Active pill is styled by .active-filter in the stylesheet.
+    document
+      .querySelectorAll(".btn-filter-ledger")
+      .forEach((btn) => btn.classList.remove("active-filter"));
 
     const filterBtnMap = {
       all: "btn-ledger-all",
       Paid: "btn-ledger-paid",
+      Pending: "btn-ledger-pending",
+      Due: "btn-ledger-due",
+      Overdue: "btn-ledger-overdue",
       Unpaid: "btn-ledger-unpaid",
     };
 
     const activeBtn = document.getElementById(filterBtnMap[filter]);
-    if (activeBtn) {
-      activeBtn.style.background = "var(--gold-semi)";
-      activeBtn.style.color = "var(--gold)";
-      activeBtn.style.fontWeight = "700";
-    }
+    if (activeBtn) activeBtn.classList.add("active-filter");
 
     renderChildBilling();
   };
@@ -7542,6 +7547,9 @@ setTimeout(function () {
       "f-bill-month-stud",
       "f-due-date-stud",
       "f-enroll-date-stud",
+      // These two were missing, so "Clear" left the registry still filtered.
+      "f-enroll-status",
+      "f-learning-mode",
     ].forEach((id) => {
       const el = $(id);
       if (el) el.value = "";
@@ -7631,6 +7639,10 @@ setTimeout(function () {
     const tbody = $("stud-body");
     const theadRow = $("stud-thead-row");
     if (!tbody) return;
+
+    // Every filter control re-renders through here, so this is the one place
+    // that keeps the mobile toggle's applied-filter count honest.
+    if (window.refreshMobileFilterToggle) window.refreshMobileFilterToggle();
 
     if (role === "coach" && theadRow) {
       theadRow.innerHTML = `
@@ -15768,19 +15780,57 @@ window.deleteStudent = deleteStudent;
     openModal("notification-modal");
   }
 
+  // Every input inside the students filter bar, so the collapsed button can say
+  // how many filters are currently narrowing the registry.
+  const STUD_FILTER_IDS = [
+    "f-search",
+    "f-coach",
+    "f-session",
+    "f-enroll-status",
+    "f-status",
+    "f-learning-mode",
+    "f-min-fee",
+    "f-max-fee",
+    "f-due-date-stud",
+    "f-enroll-date-stud",
+  ];
+
+  function countActiveStudFilters() {
+    return STUD_FILTER_IDS.reduce((n, id) => {
+      const el = $(id);
+      return n + (el && String(el.value || "").trim() !== "" ? 1 : 0);
+    }, 0);
+  }
+
+  // Keeps the toggle's label in sync. Safe to call when the button is absent
+  // (other roles' pages) or on desktop, where the bar is never collapsed.
+  function refreshMobileFilterToggle() {
+    const btn = $("filter-toggle-btn");
+    if (!btn) return;
+    const label = $("filter-toggle-label");
+    const open = btn.getAttribute("aria-expanded") === "true";
+    const active = countActiveStudFilters();
+    if (label)
+      label.innerHTML =
+        (open ? "Hide Filters" : "Filters") +
+        (active
+          ? ` <span class="filter-toggle-count">${active}</span>`
+          : "");
+    btn.title = active
+      ? `${active} filter${active === 1 ? "" : "s"} applied`
+      : "Filter the student registry";
+  }
+  window.refreshMobileFilterToggle = refreshMobileFilterToggle;
+
   function toggleMobileFilters() {
     const bar = document.getElementById("student-filter-bar");
-    if (bar) {
-      bar.classList.toggle("active");
-      const btn = document.getElementById("filter-toggle-btn");
-      if (bar.classList.contains("active")) {
-        btn.style.background = "rgba(232,168,48,0.15)";
-        btn.style.borderColor = "var(--gold)";
-      } else {
-        btn.style.background = "transparent";
-        btn.style.borderColor = "var(--border)";
-      }
-    }
+    if (!bar) return;
+    const open = bar.classList.toggle("active");
+    const btn = $("filter-toggle-btn");
+    // aria-expanded carries the state; the stylesheet keys the active look off
+    // it, so there are no inline styles to keep in sync.
+    if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
+    refreshMobileFilterToggle();
   }
   window.toggleMobileFilters = toggleMobileFilters;
 
