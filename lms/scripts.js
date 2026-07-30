@@ -8210,28 +8210,50 @@ setTimeout(function () {
           : (Number(getStudentMonthlyFee(s)) || 0);
       });
 
-      const tone = { Paid: "var(--success)", Pending: "var(--warning)", Due: "var(--warning)", Overdue: "var(--danger)" };
-      let label, amount, colour;
-      if (filter && filter in buckets) {
-        label  = `Total ${filter} (${counts[filter]} student${counts[filter] === 1 ? "" : "s"})`;
-        amount = money(buckets[filter]);
-        colour = tone[filter];
-      } else {
-        const parts = Object.keys(buckets)
-          .filter((k) => counts[k])
-          .map((k) => `<span style="color:${tone[k]}">${k} ${money(buckets[k])}</span>`)
-          .join('<span style="opacity:.35;margin:0 8px">|</span>');
-        const collected = buckets.Paid;
-        const outstanding = buckets.Pending + buckets.Due + buckets.Overdue;
-        label  = parts || "No billable students";
-        amount = `Collected ${money(collected)} \u00B7 Outstanding ${money(outstanding)}`;
-        colour = "var(--ivory)";
-      }
+      // With a status filter the list holds one status, so the breakdown would
+      // just repeat the total — show the total alone. Unfiltered, Paid/Pending/Due
+      // always appear so the billing cycle reads consistently even at zero, and
+      // Overdue joins them only when somebody actually is overdue.
+      const isFiltered = Boolean(filter && filter in buckets);
+      const ORDER = ["Paid", "Pending", "Due", "Overdue"];
+      const shown = isFiltered
+        ? [filter]
+        : ORDER.filter((k) => k !== "Overdue" || counts.Overdue > 0);
+
+      if (!shown.length) return "";
+
+      const chips = isFiltered
+        ? ""
+        : shown
+            .map(
+              (k) =>
+                `<span class="totals-chip tone-${k.toLowerCase()}">` +
+                  `<span class="totals-dot"></span>` +
+                  `<span class="totals-key">${k} =</span>` +
+                  `<b>${money(buckets[k])}</b>` +
+                  `<span class="totals-count" title="${counts[k]} student${counts[k] === 1 ? "" : "s"}">(${counts[k]})</span>` +
+                `</span>`,
+            )
+            .join('<span class="totals-sep" aria-hidden="true">|</span>');
+
+      // Every status added up: the whole month's billing, so the row reconciles
+      // against Projected Revenue on the dashboard.
+      const grand = shown.reduce((t, k) => t + buckets[k], 0);
+      const grandCount = shown.reduce((t, k) => t + counts[k], 0);
+      const grandLabel = isFiltered ? `Total ${filter} =` : "Total of all =";
 
       return `
-        <tr class="student-totals-row" style="background:rgba(255,255,255,0.04); border-top:2px solid var(--border);">
-          <td colspan="7" style="padding:12px 10px; font-size:12px; font-weight:600; color:var(--ivory-dim);">${label}</td>
-          <td colspan="5" style="padding:12px 10px; text-align:right; font-size:14px; font-weight:800; color:${colour}; white-space:nowrap;">${amount}</td>
+        <tr class="student-totals-row">
+          <td colspan="12">
+            <div class="totals-wrap${isFiltered ? " totals-solo" : ""}">
+              ${chips}
+              <span class="totals-grand">
+                <span class="totals-key">${grandLabel}</span>
+                <b>${money(grand)}</b>
+                <span class="totals-count" title="${grandCount} student${grandCount === 1 ? "" : "s"}">(${grandCount})</span>
+              </span>
+            </div>
+          </td>
         </tr>`;
     } catch (e) {
       console.error("[UI] renderStudentTotalsRow failed:", e);

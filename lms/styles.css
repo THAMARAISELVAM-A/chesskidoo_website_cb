@@ -47,6 +47,10 @@ h1, h2, h3, h4, h5, h6 {
   --gold2: #f0c05a;
   --gold-glow: rgba(220,163,62,0.25);
   --gold-mist: rgba(220,163,62,0.08);
+  /* Tinted gold fill for "selected" pills. Referenced since the ledger filters
+     were written but never actually defined, so every var(--gold-semi) was an
+     invalid value and the active pill silently lost its background. */
+  --gold-semi: rgba(220,163,62,0.16);
 
   --ivory: #f0ede4;
   --ivory2: #c8c4b8;
@@ -91,6 +95,7 @@ body[data-theme="light"] {
   --gold2: #d4a017;
   --gold-glow: rgba(179,133,27,0.15);
   --gold-mist: rgba(179,133,27,0.06);
+  --gold-semi: rgba(179,133,27,0.14);
 
   --amber: #e8a830;
   --amber-dim: #c49028;
@@ -768,6 +773,96 @@ body[data-theme="light"] #login-screen .label { color: var(--gold); }
   font-weight: 800;
   line-height: 20px;
   text-align: center;
+}
+
+/* ── STUDENT REGISTRY TOTALS FOOTER ── */
+.student-totals-row td {
+  padding: 12px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-top: 2px solid var(--border);
+}
+.totals-wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+.totals-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+/* Label stays neutral so the eye lands on the amount, which carries the
+   status colour inherited from the tone- class on the chip. */
+.totals-chip .totals-key,
+.totals-grand .totals-key {
+  color: var(--ivory-dim);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+.totals-chip b,
+.totals-grand b {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 800;
+}
+.totals-chip .totals-count,
+.totals-grand .totals-count {
+  color: var(--ivory-dim);
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.75;
+}
+.totals-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  align-self: center;
+  flex: none;
+}
+.totals-sep {
+  color: var(--ivory-dim);
+  opacity: 0.25;
+  font-weight: 400;
+}
+
+.student-totals-row .tone-paid { color: var(--success); }
+.student-totals-row .tone-pending { color: var(--warning); }
+.student-totals-row .tone-due { color: var(--warning); }
+.student-totals-row .tone-overdue { color: var(--danger); }
+
+/* Grand total sits at the far end of the row, or drops to its own line once
+   the chips no longer fit. */
+.totals-grand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-left: auto;
+  padding: 5px 14px;
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  background: var(--gold-semi);
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.totals-grand b { font-size: 14px; }
+/* Filtered view has no breakdown chips, so the pill leads the row instead of
+   being pushed to the far end of an otherwise empty line. */
+.totals-solo .totals-grand { margin-left: 0; }
+
+@media (max-width: 768px) {
+  .totals-chip, .totals-grand { font-size: 11px; }
+  .totals-chip b { font-size: 12px; }
+  .totals-grand b { font-size: 13px; }
+  /* The registry scrolls sideways on phones, so pushing the total to the far
+     end of the row would park it off-screen. Keep it beside the breakdown. */
+  .totals-grand { padding: 4px 11px; margin-left: 4px; }
 }
 
 /* ── LEDGER STATUS FILTER PILLS ── */
