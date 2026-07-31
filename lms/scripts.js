@@ -10134,10 +10134,17 @@ due_date: (function () {
 
     const currentCoachId = window.currentCoachId || window.userId;
     const isCoach = role === "coach" && currentCoachId;
+    const currentCoachObj = isCoach ? (allCoaches.find(c => String(c.id).toLowerCase() === String(currentCoachId).toLowerCase() || (c.email && c.email.toLowerCase() === String(currentCoachId).toLowerCase()) || (c.name && c.name.toLowerCase() === String(currentCoachId).toLowerCase()))) : null;
+    const currentCoachName = currentCoachObj ? (currentCoachObj.name || currentCoachObj.full_name || '').toLowerCase() : '';
 
     const filteredBatches = allBatches
       .filter((b) => {
-        if (isCoach && String(b.coach_id) !== String(currentCoachId)) return false;
+        if (isCoach) {
+          const bCoach = String(b.coach_id || '').toLowerCase();
+          const matchesId = bCoach === String(currentCoachId).toLowerCase();
+          const matchesName = currentCoachName && (bCoach.includes(currentCoachName) || b.name.toLowerCase().includes(currentCoachName));
+          if (!matchesId && !matchesName) return false;
+        }
         const matchName = b.name.toLowerCase().includes(searchTerm);
         const matchStatus = statusFilter === "all" || b.status === statusFilter;
         return matchName && matchStatus;
@@ -10151,13 +10158,13 @@ due_date: (function () {
 
     grid.innerHTML = filteredBatches
       .map((b) => {
-        const coach = allCoaches.find((c) => String(c.id) === String(b.coach_id));
-        const coachName = coach ? getCoachName(coach) : '<span class="text-danger">Unassigned</span>';
+        const coach = allCoaches.find((c) => String(c.id).toLowerCase() === String(b.coach_id).toLowerCase() || (c.name && String(c.name).toLowerCase() === String(b.coach_id).toLowerCase()));
+        const coachName = coach ? getCoachName(coach) : (b.coach_id ? escapeHtml(b.coach_id) : '<span class="text-danger">Unassigned</span>');
         const stCount = Array.isArray(b.student_ids) ? b.student_ids.length : 0;
         
         const badgeClass = b.status === "active" ? "badge-success" : b.status === "inactive" ? "badge-danger" : "badge-outline";
 
-        const canEdit = !isCoach || String(b.coach_id) === String(currentCoachId);
+        const canEdit = !isCoach || String(b.coach_id).toLowerCase() === String(currentCoachId).toLowerCase() || (currentCoachName && String(b.coach_id).toLowerCase().includes(currentCoachName));
 
         return `
         <div class="card" style="padding: 24px; position: relative; display: flex; flex-direction: column; gap: 16px;">
