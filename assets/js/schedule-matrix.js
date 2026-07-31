@@ -43,6 +43,83 @@ CK.scheduleMatrix = (() => {
     return (c.days || []).some(d => String(d).slice(0, 3).toLowerCase() === want);
   }
 
+  function deriveClassesFromStudents(coach, students) {
+    if (!coach) return [];
+    const cId = String(coach.id || '').toLowerCase();
+    const cName = String(coach.name || coach.full_name || '').toLowerCase();
+
+    // Find assigned students
+    const myStudents = (students || []).filter(s => {
+      const sCoach = String(s.coach || s.assigned_coach || s.coach_id || '').toLowerCase();
+      return (cId && sCoach.includes(cId)) || (cName && sCoach.includes(cName)) || sCoach === cName;
+    });
+
+    if (!myStudents.length) return [];
+
+    const parseDays = (schedStr) => {
+      const s = String(schedStr || '').trim();
+      if (!s) return ['Mon', 'Wed'];
+      if (/weekend/i.test(s)) return ['Sat', 'Sun'];
+      if (/fri.*sat/i.test(s)) return ['Fri', 'Sat'];
+      if (/mon.*wed/i.test(s)) return ['Mon', 'Wed'];
+      if (/tue.*thu/i.test(s)) return ['Tue', 'Thu'];
+      if (/wed.*thu/i.test(s)) return ['Wed', 'Thu'];
+      if (/sat.*sun/i.test(s)) return ['Sat', 'Sun'];
+      const found = [];
+      const map = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' };
+      Object.keys(map).forEach(k => {
+        if (new RegExp(k, 'i').test(s)) found.push(map[k]);
+      });
+      return found.length > 0 ? found : ['Mon', 'Wed'];
+    };
+
+    const parseTime = (sTime, schedStr) => {
+      const s = String(sTime || schedStr || '').trim();
+      if (!s) return '5:00 PM';
+      const match12 = s.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?)/i);
+      if (match12) return match12[1].trim();
+      const match24 = s.match(/(\d{1,2}):(\d{2})/);
+      if (match24) {
+        let h = parseInt(match24[1]);
+        const m = match24[2];
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        return `${h}:${m} ${ampm}`;
+      }
+      return '5:00 PM';
+    };
+
+    const batchMap = new Map();
+    myStudents.forEach(s => {
+      const sched = s.schedule || s.timetable || s.session_time || 'Group 17:00';
+      const days = parseDays(sched);
+      const time = parseTime(s.session_time, sched);
+      const level = s.level || s.grade || 'Beginner';
+      const key = `${days.join('/')}_${time}_${level}`;
+
+      if (!batchMap.has(key)) {
+        batchMap.set(key, {
+          id: 'auto-cls-' + Math.random().toString(36).substring(2, 9),
+          coachId: coach.id,
+          coachName: coach.name || coach.full_name,
+          title: `${level} Batch`,
+          batch: `${level} Batch`,
+          level: level,
+          days: days,
+          time: time,
+          duration: 60,
+          studentIds: [],
+          students: []
+        });
+      }
+      const b = batchMap.get(key);
+      b.studentIds.push(s.id);
+      b.students.push(s.full_name || s.name || 'Student');
+    });
+
+    return Array.from(batchMap.values());
+  }
+
   let _last = null;
 
   async function render(containerId, opts = {}) {
@@ -88,9 +165,13 @@ CK.scheduleMatrix = (() => {
       r.level = (p && p.level) || (r.classes[0] && r.classes[0].level) || '';
       r.name = (p && (p.full_name || p.name)) || r.name || 'Coach';
       r.colorKey = r.id || r.name;
+      // Auto-derive schedule from student database if classes array is empty
+      if (!r.classes || r.classes.length === 0) {
+        r.classes = deriveClassesFromStudents(p || r, students);
+      }
     });
     if (!rows.length && !opts.coachId && !opts.coachIds) {
-      rows = (coaches || []).map(c => ({ id: c.id, name: c.full_name || c.name, level: c.level, colorKey: c.id, classes: [] }));
+      rows = (coaches || []).map(c => ({ id: c.id, name: c.full_name || c.name, level: c.level, colorKey: c.id, classes: deriveClassesFromStudents(c, students) }));
     }
     const editable = !!opts.editable;
 
@@ -164,5 +245,5 @@ CK.scheduleMatrix = (() => {
     return ids;
   }
 
-  return { render, _refresh, _edit, _add, colorFor, coachesForStudent, DAYS };
+  return { render, _refresh, _edit, _add, colorFor, coachesForStudent, deriveClassesFromStudents, DAYS };
 })();

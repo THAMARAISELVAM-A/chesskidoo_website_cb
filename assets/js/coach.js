@@ -332,15 +332,54 @@ CK.coach = {
   },
 
   async renderSchedule() {
+    const cp = this.coachProfile || {};
     const links = window.CK && CK.batchManager ? await CK.batchManager.getLinks() : {};
     const tbody = document.querySelector('#coach-panel-schedule tbody');
-    if (tbody) {
-      const _e = CK.esc || (s => s);
-      tbody.innerHTML = `
-        <tr><td>Monday</td><td>4:00 PM - 5:00 PM</td><td>Intermediate Strategy</td><td><span class="p-badge p-badge-blue">Intermediate</span></td><td><div style="font-family:monospace; margin-bottom:4px; color:var(--p-teal);">${_e(links['Intermediate'] || 'https://meet.google.com/int-strategy-abc')}</div><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.coach.editBatchLink('Intermediate')">✏️ Edit Room Link</button></td></tr>
-        <tr><td>Tuesday</td><td>5:00 PM - 6:00 PM</td><td>Advanced Endgames</td><td><span class="p-badge p-badge-gold">Advanced</span></td><td><div style="font-family:monospace; margin-bottom:4px; color:var(--p-gold);">${_e(links['Advanced'] || 'https://meet.google.com/adv-endgames-xyz')}</div><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.coach.editBatchLink('Advanced')">✏️ Edit Room Link</button></td></tr>
-        <tr><td>Friday</td><td>6:30 PM - 8:00 PM</td><td>Beginner Fundamentals</td><td><span class="p-badge p-badge-green">Beginner</span></td><td><div style="font-family:monospace; margin-bottom:4px; color:var(--p-online);">${_e(links['Beginner'] || 'https://meet.google.com/beg-inner-room')}</div><button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.coach.editBatchLink('Beginner')">✏️ Edit Room Link</button></td></tr>
-      `;
+    if (!tbody) return;
+
+    const _e = CK.esc || (s => s);
+    const students = (await CK.db.getProfiles('student')) || [];
+
+    const cId = String(cp.id || '').toLowerCase();
+    const cName = String(cp.full_name || cp.name || '').toLowerCase();
+
+    // Filter students assigned to this coach
+    const myStudents = students.filter(s => {
+      const sCoach = String(s.coach || s.assigned_coach || s.coach_id || '').toLowerCase();
+      return (cId && sCoach.includes(cId)) || (cName && sCoach.includes(cName)) || sCoach === cName;
+    });
+
+    if (myStudents.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; opacity:.6; padding:20px;">No students assigned yet.</td></tr>';
+      return;
+    }
+
+    // Auto-derive schedule batches
+    const derivedClasses = CK.scheduleMatrix ? CK.scheduleMatrix.deriveClassesFromStudents(cp, students) : [];
+
+    if (derivedClasses.length > 0) {
+      tbody.innerHTML = derivedClasses.map(cls => {
+        const daysStr = (cls.days || []).join(', ');
+        const timeStr = cls.time || '5:00 PM';
+        const levelStr = cls.level || 'Beginner';
+        const studList = (cls.students || []).join(', ');
+        const roomLink = links[levelStr] || `https://meet.google.com/ck-${levelStr.toLowerCase()}-room`;
+        const badgeColor = levelStr === 'Advanced' ? 'p-badge-gold' : levelStr === 'Intermediate' ? 'p-badge-blue' : 'p-badge-green';
+
+        return `<tr>
+          <td><strong>${_e(daysStr)}</strong></td>
+          <td>${_e(timeStr)}</td>
+          <td>${_e(cls.title)} <div style="font-size:11px; opacity:0.75; margin-top:2px;">👥 ${_e(studList)}</div></td>
+          <td><span class="p-badge ${badgeColor}">${_e(levelStr)}</span></td>
+          <td>
+            <div style="font-family:monospace; margin-bottom:4px; color:var(--p-teal); font-size:12px;">${_e(roomLink)}</div>
+            <a href="${_e(roomLink)}" target="_blank" class="p-btn p-btn-primary p-btn-sm" style="margin-right:4px;">🚀 Join Room</a>
+            <button class="p-btn p-btn-ghost p-btn-sm" onclick="CK.coach.editBatchLink('${_e(levelStr)}')">✏️ Edit Link</button>
+          </td>
+        </tr>`;
+      }).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; opacity:.6; padding:20px;">No active class schedule found.</td></tr>';
     }
   },
 
