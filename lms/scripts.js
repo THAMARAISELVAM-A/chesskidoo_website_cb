@@ -9578,7 +9578,7 @@ due_date: (function () {
     }
 
     const coachEmailInput = $("cm-email").value.trim();
-    const coachEmail = coachEmailInput || `${name.toLowerCase().replace(/[^a-z0-9]/g, "")}@chesskidoo.com`;
+    const coachEmail = coachEmailInput || `${name.toLowerCase().replace(/[^a-z0-9]/g, "")}@gmail.com`;
 
     const data = {
       name: name,

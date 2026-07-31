@@ -60,7 +60,7 @@ window.doLogin = async function() {
                 let sbJwt = data.token || null;
                 if (window.supabaseClient) {
                     try {
-                        const email = user.includes('@') ? user : `${user.toLowerCase().replace(/[^a-z0-9]/g, '')}@chesskidoo.com`;
+                        const email = user.includes('@') ? user : `${user.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`;
                         const { data: sbData } = await window.supabaseClient.auth.signInWithPassword({
                             email,
                             password: pass
@@ -114,7 +114,7 @@ window.doLogin = async function() {
         // 2. Direct Supabase Auth fallback if Edge function /auth is unavailable or refused
         if (window.supabaseClient) {
             const { data: sbData, error: sbErr } = await window.supabaseClient.auth.signInWithPassword({
-                email: user.includes('@') ? user : `${user.toLowerCase().replace(/[^a-z0-9]/g, '')}@chesskidoo.com`,
+                email: user.includes('@') ? user : `${user.toLowerCase().replace(/[^a-z0-9]/g, '')}@gmail.com`,
                 password: pass
             }).catch(() => ({ data: null, error: null }));
 
