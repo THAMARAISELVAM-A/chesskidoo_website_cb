@@ -24,7 +24,7 @@
    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
    <!-- Security Hardening - Fully offline-first, only Supabase external -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://*.supabase.co https://i.ibb.co https://*.ibb.co https://api.imgbb.com https://flagcdn.com https://*.flagcdn.com https://*.chessable.com https://chessable.com https://*.lichess.org https://lichess.org https://*.chess.com https://chess.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.imgbb.com https://ipapi.co https://ip-api.com https://ipinfo.io https://html2canvas.hertzen.com https://lichess.org https://*.lichess.org https://api.chess.com https://*.chess.com https://chessable.com https://*.chessable.com; frame-src https://lichess.org https://*.lichess.org;"/>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://*.supabase.co https://i.ibb.co https://*.ibb.co https://api.imgbb.com https://flagcdn.com https://*.flagcdn.com https://*.chessable.com https://chessable.com https://*.lichess.org https://lichess.org https://*.chess.com https://chess.com; connect-src 'self' https://open.er-api.com https://*.er-api.com https://er-api.com https://*.supabase.co wss://*.supabase.co https://api.imgbb.com https://ipapi.co https://ip-api.com https://ipinfo.io https://html2canvas.hertzen.com https://lichess.org https://*.lichess.org https://api.chess.com https://*.chess.com https://chessable.com https://*.chessable.com; frame-src https://lichess.org https://*.lichess.org;"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <!-- X-Frame-Options must be an HTTP header, not a meta tag — set in vercel.json -->
 
@@ -3352,7 +3352,7 @@
     
     <div class="form-group" style="margin-bottom:14px;">
       <label style="display:block; font-size:11px; text-transform:uppercase; color:var(--ivory-dim); margin-bottom:4px; letter-spacing:0.5px;">Email Address</label>
-      <input type="email" id="cm-email" placeholder="coach@example.com">
+      <input type="email" id="cm-email" placeholder="coach@example.com" autocomplete="email">
     </div>
 
     <div class="form-group" style="margin-bottom:14px;">

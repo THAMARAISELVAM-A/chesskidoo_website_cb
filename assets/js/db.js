@@ -205,13 +205,16 @@
 
   // Tables that returned "does not exist" (404 / PGRST205). Once a table is known
   // missing we stop hammering Supabase with it and use localStorage directly —
-  // avoids repeated 404 noise (e.g. opening_mastery was queried 12+ times/render).
-  const _deadTables = new Set();
+  // avoids repeated 404 noise (e.g. student_games, opening_mastery).
+  let _savedDead = [];
+  try { _savedDead = JSON.parse(localStorage.getItem('ck_dead_tables') || '[]'); } catch (e) {}
+  const _deadTables = new Set(_savedDead);
   const tableLive = (name) => !_deadTables.has(name);
   const flagIfMissing = (name, error) => {
-    if (error && (error.code === 'PGRST205' || error.code === '42P01' ||
-        /could not find the table|does not exist/i.test(error.message || ''))) {
+    if (error && (error.code === 'PGRST205' || error.code === '42P01' || error.code === 'PGRST204' || error.code === 'PGRST202' || error.status === 404 || error.code === '404' ||
+        /could not find the table|does not exist|not found/i.test(error.message || '' || error.details || ''))) {
       _deadTables.add(name);
+      try { localStorage.setItem('ck_dead_tables', JSON.stringify(Array.from(_deadTables))); } catch (e) {}
     }
   };
 
