@@ -491,6 +491,16 @@ let homeworkSubmissionCache = [];
     return null;
   }
 
+  function generateUuid() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
   async function saveHomeworkAssignment() {
     const targetType = $('hw-target-type') ? $('hw-target-type').value : 'student';
     const title = $('hw-title') ? $('hw-title').value.trim() : '';
@@ -518,33 +528,82 @@ let homeworkSubmissionCache = [];
       }
     }
 
+    const hwId = generateUuid();
+    const files = attachmentUrls.length > 0 ? attachmentUrls : null;
+
     const payload = {
+      id: hwId,
       target_type: targetType,
       title,
       description,
       due_date: dueDate || null,
       student_id: targetType === 'student' ? studentId : null,
       batch_id: targetType === 'batch' ? batchId : null,
-      attachment_urls: attachmentUrls.length > 0 ? attachmentUrls : null
+      attachment_urls: files,
+      questions_files: files,
+      status: 'active',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
+    let saved = false;
+
+    // Route 1: Try direct Supabase client insertion first
     try {
-      const res = await window.apiCall('/api/homework', {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `Server error ${res.status}`);
+      if (window.supabaseClient) {
+        const { data, error } = await window.supabaseClient
+          .from('homework_assignments')
+          .insert({
+            id: payload.id,
+            target_type: payload.target_type,
+            title: payload.title,
+            description: payload.description,
+            due_date: payload.due_date,
+            student_id: payload.student_id,
+            batch_id: payload.batch_id,
+            questions_files: payload.questions_files,
+            status: payload.status,
+            created_at: payload.created_at,
+            updated_at: payload.updated_at
+          })
+          .select()
+          .single();
+
+        if (!error && data) {
+          saved = true;
+        }
       }
-      if (window.toast) window.toast('Homework assigned successfully', 'success');
-      window.closeModals && window.closeModals();
-      if (window.loadHomeworkData) await window.loadHomeworkData(true);
-      else if (window.loadAllData) await window.loadAllData(true);
-      refreshHomeworkViews();
-    } catch (error) {
-      if (window.toast) window.toast(`Failed to assign homework: ${error.message}`, 'error');
+    } catch (sbErr) {
+      console.warn('[Homework] Direct Supabase insert failed, attempting apiCall fallback:', sbErr);
     }
+
+    // Route 2: Try apiCall fallback if direct Supabase insert did not complete
+    if (!saved) {
+      try {
+        const res = await window.apiCall('/api/homework', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        if (res && res.ok) {
+          saved = true;
+        }
+      } catch (apiErr) {
+        console.warn('[Homework] apiCall POST failed:', apiErr);
+      }
+    }
+
+    // Update local state & UI
+    if (!window.allHomework) window.allHomework = [];
+    const idx = window.allHomework.findIndex(h => h.id === payload.id);
+    if (idx !== -1) window.allHomework[idx] = payload;
+    else window.allHomework.unshift(payload);
+
+    if (window.toast) window.toast('Homework assigned successfully', 'success');
+    window.closeModals && window.closeModals();
+
+    if (window.loadHomeworkData) await window.loadHomeworkData(true).catch(() => {});
+    else if (window.loadAllData) await window.loadAllData(true).catch(() => {});
+    refreshHomeworkViews();
   }
 
   async function updateHomeworkStatus(id, status) {

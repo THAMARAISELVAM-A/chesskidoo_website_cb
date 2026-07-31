@@ -39,11 +39,14 @@ async function getAllAssignments() {
    const supabase = getSupabaseClient();
    const { data, error } = await supabase.from('homework_assignments').select('*').order('created_at', { ascending: false }).limit(200);
    if (error) {
-     // Return empty array if table doesn't exist (PGRST205)
      console.warn('[Homework] getAllAssignments error:', error.message);
      return [];
    }
-   return data || [];
+   return (data || []).map((a: any) => ({
+     ...a,
+     attachment_urls: a.attachment_urls || a.questions_files || [],
+     questions_files: a.questions_files || a.attachment_urls || []
+   }));
  }
 
 async function getAssignmentById(id: string) {
@@ -219,6 +222,7 @@ Deno.serve(async (req) => {
         if (!batchExists) return jsonResponse({ error: 'Invalid batch selected' }, 400);
       }
 
+      const fileList = body.questions_files || body.attachment_urls || null;
       const { data, error } = await supabase.from('homework_assignments').insert({
         id: crypto.randomUUID(),
         title,
@@ -228,7 +232,7 @@ Deno.serve(async (req) => {
         target_type: body.target_type || 'all',
         student_id: body.student_id || null,
         batch_id: body.batch_id || null,
-        attachment_urls: body.attachment_urls || null,
+        questions_files: fileList,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }).select().single();
