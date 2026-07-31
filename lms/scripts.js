@@ -232,8 +232,14 @@
     let sbSessionTok = null;
     try {
       if (window.supabaseClient && window.supabaseClient.auth) {
-        const s = window.supabaseClient.auth.session ? window.supabaseClient.auth.session() : null;
-        if (s && s.access_token) sbSessionTok = s.access_token;
+        // Supabase v1: .session() is synchronous
+        const s1 = window.supabaseClient.auth.session ? window.supabaseClient.auth.session() : null;
+        if (s1 && s1.access_token) sbSessionTok = s1.access_token;
+        // Supabase v2: .getSession() is async but we try it as a fallback
+        if (!sbSessionTok && window.supabaseClient.auth.getSession) {
+          const { data: sessData } = await window.supabaseClient.auth.getSession().catch(() => ({ data: null }));
+          if (sessData?.session?.access_token) sbSessionTok = sessData.session.access_token;
+        }
       }
     } catch (e) {}
 

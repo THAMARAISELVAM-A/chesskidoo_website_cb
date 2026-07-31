@@ -52,20 +52,41 @@ window.doLogin = async function() {
                     displayRole = 'admin';
                 }
                 window.role = displayRole;
+
+                // The /auth Edge Function returns a custom token that other Edge
+                // Functions (access_control, etc.) cannot validate via
+                // supabase.auth.getUser(). Establish a real Supabase Auth session
+                // so a proper JWT is available for all subsequent API calls.
+                let sbJwt = data.token || null;
+                if (window.supabaseClient) {
+                    try {
+                        const email = user.includes('@') ? user : `${user.toLowerCase().replace(/[^a-z0-9]/g, '')}@chesskidoo.com`;
+                        const { data: sbData } = await window.supabaseClient.auth.signInWithPassword({
+                            email,
+                            password: pass
+                        }).catch(() => ({ data: null }));
+                        if (sbData?.session?.access_token) {
+                            sbJwt = sbData.session.access_token;
+                        }
+                    } catch (e) {
+                        console.warn('[Auth] Supabase session fallback failed:', e.message);
+                    }
+                }
+
                 const authDataStr = JSON.stringify({
                     role: displayRole,
                     actualRole: data.role, // store actual role for audit logs
                     user: data.user || user,
                     studentId: data.student_id,
                     coachId: data.coach_id,
-                    token: data.token,
+                    token: sbJwt,
                     userId: data.coach_id // Set userId for coach role compatibility
                 });
                 sessionStorage.setItem('twoknights_auth', authDataStr);
                 localStorage.setItem('twoknights_auth', authDataStr);
-                if (data.token) {
-                    sessionStorage.setItem('sb-access-token', data.token);
-                    localStorage.setItem('sb-access-token', data.token);
+                if (sbJwt) {
+                    sessionStorage.setItem('sb-access-token', sbJwt);
+                    localStorage.setItem('sb-access-token', sbJwt);
                 }
                 // Also set window.currentCoachId for coach dashboard
                 window.currentCoachId = data.coach_id || null;
