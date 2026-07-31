@@ -47,25 +47,6 @@ window.loadAccessControl = async function() {
         window.renderAccessTable();
     } catch (err) {
         console.error('Error loading access control:', err);
-        // Fallback for active admins: if /api/access_control endpoint returns an error, build roster from active coaches & admins
-        if (window.allCoaches && window.allCoaches.length > 0) {
-            const fallbackUsers = (window.allCoaches || []).map(c => ({
-                id: c.id,
-                email: c.email || (c.name ? c.name.toLowerCase().replace(/\s+/g, '') + '@chesskidoo.com' : 'coach@chesskidoo.com'),
-                role: c.role || 'coach',
-                created_at: c.created_at || new Date().toISOString()
-            }));
-            fallbackUsers.unshift({
-                id: window.userId || 'admin_1',
-                email: (window.auth && window.auth.user) || 'admin@chesskidoo.com',
-                role: window.role || 'admin',
-                created_at: new Date().toISOString()
-            });
-            window.accessUsers = fallbackUsers;
-            window.renderAccessTable();
-            return;
-        }
-
         const msg = /failed to fetch/i.test(err.message)
             ? 'Could not reach the access-control service. The request was blocked before it left the browser — check the browser console for a CORS error.'
             : err.message;
@@ -558,28 +539,21 @@ window.createAccessUser = async function(email, password, role) {
 
 window.promptEditUserRole = function(id, currentRole, email) {
     document.getElementById('acc-user-modal-title').textContent = 'Edit User';
-    document.getElementById('acc-user-modal-sub').textContent = 'Change the role or reset the password.';
+    document.getElementById('acc-user-modal-sub').textContent = 'Change the email, role, or reset the password.';
     document.getElementById('acc-user-id').value = id;
     const emailEl = document.getElementById('acc-user-email');
-    emailEl.value = email || ''; emailEl.disabled = true; // email can't be changed via the API
+    emailEl.value = email || ''; emailEl.disabled = false;
     document.getElementById('acc-user-password').value = '';
     document.getElementById('acc-user-pass-label').textContent = 'New Password (leave blank to keep current)';
     const roleSel = document.getElementById('acc-user-role');
     let role = String(currentRole || '').trim().toLowerCase();
     let note = '';
 
-    // coach-admin is retired. Existing accounts still carrying it are shown as
-    // plain admin — which is what the portal already treats them as — so saving
-    // this dialog migrates them off the dead role.
     if (role === 'coach-admin' || role === 'coach+admin') {
         note = `This account still uses the retired "${role}" role. Saving will move it to Admin.`;
         role = 'admin';
     }
 
-    // The select must otherwise round-trip the real role. It used to fall back to
-    // 'coach' for anything not in a hardcoded list — which did not include
-    // 'master' — so opening this dialog on the owner account and pressing Save
-    // silently demoted it to coach and locked everyone out of this screen.
     resetRoleOptions(roleSel);
     if (role && !Array.from(roleSel.options).some(o => o.value === role)) {
         const opt = document.createElement('option');
@@ -594,12 +568,35 @@ window.promptEditUserRole = function(id, currentRole, email) {
     if (window.openModal) window.openModal('access-user-modal');
 };
 
-window.updateAccessUser = async function(id, role, password) {
+window.submitAccessUserForm = function() {
+    const id = document.getElementById('acc-user-id').value;
+    const email = document.getElementById('acc-user-email').value.trim();
+    const password = document.getElementById('acc-user-password').value;
+    const role = document.getElementById('acc-user-role').value;
+    const isEdit = !!id;
+
+    if (!isEdit) {
+        if (!email) return setAccessUserError('Email / username is required.');
+        if (!password) return setAccessUserError('Password is required.');
+        if (window.closeModals) window.closeModals();
+        window.createAccessUser(email, password, role);
+    } else {
+        if (!email) return setAccessUserError('Email / username is required.');
+        if (window.closeModals) window.closeModals();
+        window.updateAccessUser(id, role, password || null, email);
+    }
+};
+
+window.updateAccessUser = async function(id, role, password, email) {
     try {
+        const payload = { id, role };
+        if (password) payload.password = password;
+        if (email) payload.email = email;
+
         const response = await window.apiCall('/api/access_control', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, role, password })
+            body: JSON.stringify(payload)
         });
         
         const data = await safeJson(response);
@@ -608,8 +605,6 @@ window.updateAccessUser = async function(id, role, password) {
         if (window.toast) window.toast('User updated successfully', 'success');
         window.loadAccessControl();
     } catch (err) {
-        // Was silent — a failed role change or password reset looked identical
-        // to a successful one, which is dangerous for a credentials screen.
         console.error('Error updating user:', err);
         setAccessUserError(err.message || 'Could not update the user.');
         if (window.toast) window.toast(`Failed to update user: ${err.message}`, 'error');

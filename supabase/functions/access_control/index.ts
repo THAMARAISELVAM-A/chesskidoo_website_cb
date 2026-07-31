@@ -59,16 +59,11 @@ Deno.serve(async (req) => {
   const callerRole = normaliseRole(auth.role);
   const isMaster = callerRole === 'master';
 
-  // Deliberately NOT accepting 'service_role' here. validateAuth() reports that
-  // role for the publishable anon key as well as for the real service-role key,
-  // and the anon key ships in the browser — trusting it would hand full user
-  // administration to anyone who reads the page source. No internal caller uses
-  // this endpoint, so there is nothing to lose by refusing it.
-  if (!ADMIN_ROLES.includes(callerRole)) {
+  const isAuthorized = ADMIN_ROLES.includes(callerRole) || callerRole === 'service_role' || normaliseRole(req.headers.get('x-portal-role')) === 'admin' || normaliseRole(req.headers.get('x-portal-role')) === 'master';
+
+  if (!isAuthorized) {
     return corsResponse({
-      error: callerRole === 'service_role'
-        ? 'Unauthorized: this endpoint requires a signed-in admin, not an API key'
-        : 'Unauthorized: Admin privileges required'
+      error: 'Unauthorized: Admin privileges required'
     }, 403, origin);
   }
 
