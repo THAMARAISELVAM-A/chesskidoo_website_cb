@@ -9577,11 +9577,14 @@ due_date: (function () {
       fullPhone = getFullInternationalPhoneDigits(rawPhone, countryCode);
     }
 
+    const coachEmailInput = $("cm-email").value.trim();
+    const coachEmail = coachEmailInput || `${name.toLowerCase().replace(/[^a-z0-9]/g, "")}@chesskidoo.com`;
+
     const data = {
       name: name,
       specialization: $("cm-spec").value.trim(),
       phone: fullPhone,
-      email: $("cm-email").value.trim(),
+      email: coachEmail,
       address: $("cm-address").value.trim(),
       // BUG FIX: send both field names so getCoachSalary (reads salary||hourly_rate) always picks it up
       salary: salaryVal,
@@ -9603,8 +9606,21 @@ due_date: (function () {
         });
         if (res.ok) {
           toast("Coach updated successfully!", "success");
+          if (coachEmail) {
+            const defaultPassword = "Coach@123";
+            try {
+              await apiCall("/api/access_control", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: coachEmail, password: defaultPassword, role: "coach" }),
+              });
+            } catch (accessErr) {
+              console.warn("[Coach Sync] Note on access sync:", accessErr.message);
+            }
+          }
           closeModals();
           loadAllData(true);
+          if (window.loadAccessControl) window.loadAccessControl();
         } else {
           const err = await res.json().catch(() => ({}));
           toast("Update failed: " + (err.error || "Server error"), "error");
@@ -9616,16 +9632,20 @@ due_date: (function () {
         });
         if (res.ok) {
           toast("Coach added successfully!", "success");
-          const coachEmail = data.email;
           if (coachEmail) {
             const defaultPassword = "Coach@123";
             try {
-              await apiCall("/api/access_control", {
+              const accessRes = await apiCall("/api/access_control", {
                 method: "POST",
-                headers: { "Content-Type": "application/json", role: window.role },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: coachEmail, password: defaultPassword, role: "coach" }),
               });
-              toast(`Coach access created. Default password: ${defaultPassword}`, "success");
+              const accessData = await accessRes.json().catch(() => ({}));
+              if (accessData.error && accessData.error.includes("already registered")) {
+                toast(`Coach linked to existing account (${coachEmail}) with coach role`, "info");
+              } else {
+                toast(`Coach access auto-created in Access Control! Email: ${coachEmail} | Password: ${defaultPassword}`, "success");
+              }
             } catch (accessErr) {
               console.error("Failed to create coach access:", accessErr);
               toast("Coach saved, but access creation failed. You can manually create the coach login.", "error");
@@ -9633,6 +9653,7 @@ due_date: (function () {
           }
           closeModals();
           loadAllData(true);
+          if (window.loadAccessControl) window.loadAccessControl();
         } else {
           const err = await res.json().catch(() => ({}));
           toast(
