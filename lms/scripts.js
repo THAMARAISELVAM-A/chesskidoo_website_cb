@@ -164,8 +164,9 @@
 
   window.allResources = allResources;
 
-  window.reportMonth = new Date().getUTCMonth(); // 0-11 (UTC)
-  window.reportYear = new Date().getUTCFullYear();
+  const _initNow = new Date();
+  window.reportMonth = _initNow.getMonth(); // 0-11 (Local time zone month)
+  window.reportYear = _initNow.getFullYear();
   window.isEditing = false;
 
   let currentStudent = null;
@@ -5897,6 +5898,7 @@
         } catch (e) {}
          syncCoachDropdowns();
           if (role === "admin" || role === "master") {
+            if (window.autoDetectBillingMonth) window.autoDetectBillingMonth();
             console.log("[Sync] Rendering active page for role:", role);
             const active = document.querySelector(".page.active")?.id;
             if (active === "page-dash") renderDash();
@@ -6534,6 +6536,38 @@ setTimeout(function () {
 
     renderDash();
     renderBills();
+  };
+
+  window.autoDetectBillingMonth = function (force = false) {
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth(); // 0-11
+    const monthStr = `${curYear}-${String(curMonth + 1).padStart(2, "0")}`;
+
+    if (force || window.reportYear === undefined || window.reportMonth === undefined) {
+      window.reportYear = curYear;
+      window.reportMonth = curMonth;
+    }
+
+    const monthInputs = [
+      "f-bill-month",
+      "f-bill-month-stud",
+      "report-period",
+      "exp-month-picker",
+      "homework-month-filter",
+      "parent-report-month",
+      "mat-month",
+      "mp-month"
+    ];
+
+    monthInputs.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el && (!el.value || force)) {
+        el.value = monthStr;
+      }
+    });
+
+    return monthStr;
   };
 
   window.updateReportContext = function (valOverride = null) {
