@@ -226,6 +226,32 @@ let homeworkSubmissionCache = [];
     }
   }
 
+  function getCoachFilterPredicate() {
+    const role = window.role || (window.currentUser && window.currentUser.role);
+    const isCoach = role === 'coach';
+    if (!isCoach) return null;
+
+    const currentCoachId = window.currentCoachId || window.userId || (window.currentUser && window.currentUser.id);
+    const coaches = window.allCoaches || [];
+    const currentCoachObj = coaches.find(c =>
+      String(c.id).toLowerCase() === String(currentCoachId).toLowerCase() ||
+      (c.email && c.email.toLowerCase() === String(currentCoachId).toLowerCase()) ||
+      (c.name && c.name.toLowerCase() === String(currentCoachId).toLowerCase())
+    );
+    const cId = currentCoachId ? String(currentCoachId).toLowerCase() : '';
+    const cProfId = currentCoachObj ? String(currentCoachObj.id).toLowerCase() : '';
+    const cName = currentCoachObj ? (currentCoachObj.name || currentCoachObj.full_name || '').toLowerCase() : '';
+
+    return function(entity) {
+      if (!entity) return false;
+      const eCoach = String(entity.coach_id || entity.coach || entity.assigned_coach || '').toLowerCase();
+      const eName = String(entity.name || entity.full_name || '').toLowerCase();
+      const matchesId = (cId && eCoach.includes(cId)) || (cProfId && eCoach.includes(cProfId));
+      const matchesName = cName && (eCoach.includes(cName) || eName.includes(cName));
+      return matchesId || matchesName;
+    };
+  }
+
   function populateHomeworkSelectors() {
     const targetSelect = $('hw-target-type');
     const studentSelect = $('hw-student-select');
@@ -240,9 +266,11 @@ let homeworkSubmissionCache = [];
       `;
     }
 
+    const coachFilter = getCoachFilterPredicate();
+
     if (studentSelect) {
-      const studs = window.role === 'coach' 
-        ? (window.allStudents || []).filter(s => String(s.coach_id) === String(window.userId))
+      const studs = coachFilter
+        ? (window.allStudents || []).filter(s => coachFilter(s))
         : (window.allStudents || []);
       const options = '<option value="">Select Student</option>' + studs
         .filter((student) => (student.status || 'active') !== 'archived')
@@ -257,8 +285,8 @@ let homeworkSubmissionCache = [];
     }
 
     if (batchSelect) {
-      const batches = window.role === 'coach' 
-        ? (window.allBatches || []).filter(b => String(b.coach_id) === String(window.userId))
+      const batches = coachFilter
+        ? (window.allBatches || []).filter(b => coachFilter(b))
         : (window.allBatches || []);
       batchSelect.innerHTML = '<option value="">Select Batch</option>' + batches
         .filter((batch) => (batch.status || 'active') !== 'archived')
@@ -273,9 +301,8 @@ let homeworkSubmissionCache = [];
         ['', 'All Assignees'],
         ['all:all', 'All Students']
       ]);
-      const coachId = window.role === 'coach' ? (window.currentCoachId || window.userId) : null;
-      const students = coachId ? (window.allStudents || []).filter(s => String(s.coach_id) === String(coachId)) : (window.allStudents || []);
-      const batches = coachId ? (window.allBatches || []).filter(b => String(b.coach_id) === String(coachId)) : (window.allBatches || []);
+      const students = coachFilter ? (window.allStudents || []).filter(s => coachFilter(s)) : (window.allStudents || []);
+      const batches = coachFilter ? (window.allBatches || []).filter(b => coachFilter(b)) : (window.allBatches || []);
       batches.filter((batch) => (batch.status || 'active') !== 'archived').forEach((batch) => options.set(`batch:${batch.id}`, batchName(batch)));
       students.filter((student) => (student.status || 'active') !== 'archived').forEach((student) => options.set(`student:${student.id}`, studentName(student)));
       (window.allHomework || []).forEach((assignment) => {
