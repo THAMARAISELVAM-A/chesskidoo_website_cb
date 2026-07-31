@@ -79,12 +79,14 @@ async function fetchOrCreateProfile(user) {
 
   // First-time login: auto-create profile row
   const isAdmin = user.id === ADMIN_UUID || user.email === 'admin@gmail.com';
+  const metaRole = user.user_metadata?.role;
+  const userRole = metaRole ? String(metaRole).trim().toLowerCase() : (isAdmin ? 'admin' : 'student');
   const newProfile = {
     id:        user.id,
     email:     user.email,
-    full_name: isAdmin ? 'Academy Admin' : user.email.split('@')[0],
-    role:      isAdmin ? 'admin' : 'student',
-    userid:    isAdmin ? 'admin' : String(100 + Math.floor(Math.random() * 900)),
+    full_name: user.user_metadata?.full_name || user.user_metadata?.name || (isAdmin ? 'Academy Admin' : user.email.split('@')[0]),
+    role:      userRole,
+    userid:    isAdmin ? 'admin' : (user.user_metadata?.userid || String(100 + Math.floor(Math.random() * 900))),
   };
 
   const { data: created, error: createErr } = await supabase

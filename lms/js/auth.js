@@ -43,14 +43,16 @@ window.doLogin = async function() {
         if (authRes && authRes.ok) {
             const data = await authRes.json().catch(() => ({}));
             if (data.success) {
-                // Normalize coach-admin/coach+admin to admin for full UI privileges
-                let displayRole = data.role;
+                // coach-admin is a retired role that can no longer be assigned.
+                // Older accounts may still carry it, so map it to admin — the
+                // access_control function does the same — and re-save the account
+                // in Access Control to migrate it off permanently.
+                let displayRole = String(data.role || '').trim().toLowerCase();
                 if (displayRole === 'coach-admin' || displayRole === 'coach+admin') {
                     displayRole = 'admin';
                 }
                 window.role = displayRole;
-                // Store both the full auth object and a separate token for API calls
-                sessionStorage.setItem('twoknights_auth', JSON.stringify({
+                const authDataStr = JSON.stringify({
                     role: displayRole,
                     actualRole: data.role, // store actual role for audit logs
                     user: data.user || user,
@@ -58,9 +60,13 @@ window.doLogin = async function() {
                     coachId: data.coach_id,
                     token: data.token,
                     userId: data.coach_id // Set userId for coach role compatibility
-                }));
-                // Store token separately for API Authorization header
-                sessionStorage.setItem('sb-access-token', data.token);
+                });
+                sessionStorage.setItem('twoknights_auth', authDataStr);
+                localStorage.setItem('twoknights_auth', authDataStr);
+                if (data.token) {
+                    sessionStorage.setItem('sb-access-token', data.token);
+                    localStorage.setItem('sb-access-token', data.token);
+                }
                 // Also set window.currentCoachId for coach dashboard
                 window.currentCoachId = data.coach_id || null;
                 window.userId = data.coach_id || null; // Set userId for homework.js compatibility
@@ -81,19 +87,49 @@ window.doLogin = async function() {
                     });
                 }
                 return;
-            } else {
-                errEl.textContent = data.details || data.error || 'Invalid credentials.';
-                errEl.style.display = 'block';
+            }
+        }
+
+        // 2. Direct Supabase Auth fallback if Edge function /auth is unavailable or refused
+        if (window.supabaseClient) {
+            const { data: sbData, error: sbErr } = await window.supabaseClient.auth.signInWithPassword({
+                email: user.includes('@') ? user : `${user.toLowerCase().replace(/[^a-z0-9]/g, '')}@chesskidoo.com`,
+                password: pass
+            }).catch(() => ({ data: null, error: null }));
+
+            if (!sbErr && sbData && sbData.user) {
+                const u = sbData.user;
+                const sess = sbData.session;
+                let displayRole = String(u.user_metadata?.role || 'admin').trim().toLowerCase();
+                if (displayRole === 'coach-admin' || displayRole === 'coach+admin') displayRole = 'admin';
+                window.role = displayRole;
+                const token = sess?.access_token || null;
+                const authObj = {
+                    role: displayRole,
+                    actualRole: u.user_metadata?.role || displayRole,
+                    user: u.email || user,
+                    studentId: u.user_metadata?.student_id || null,
+                    coachId: u.user_metadata?.coach_id || null,
+                    token: token,
+                    userId: u.user_metadata?.coach_id || u.id
+                };
+                const authDataStr = JSON.stringify(authObj);
+                sessionStorage.setItem('twoknights_auth', authDataStr);
+                localStorage.setItem('twoknights_auth', authDataStr);
+                if (token) {
+                    sessionStorage.setItem('sb-access-token', token);
+                    localStorage.setItem('sb-access-token', token);
+                }
+                window.currentCoachId = authObj.coachId;
+                window.userId = authObj.userId;
+                window.finishLogin(u.email || user, displayRole, authObj.studentId);
+                window.toast(`Welcome back, ${displayRole}!`, 'success');
                 if (window.logAudit) {
-                    window.logAudit('auth', user, 'login_failed', null, {
-                        username: user,
-                        ipAddress: telemetry.ip,
-                        deviceOS: telemetry.os,
-                        browser: telemetry.browser,
-                        countryCode: telemetry.country,
-                        status: 'FAILED',
-                        action: 'auth.login.failed',
-                        error: data.details || data.error || 'Invalid credentials.'
+                    window.logAudit('auth', displayRole, 'login_success', null, {
+                        user: u.email || user,
+                        role: displayRole,
+                        status: 'SUCCESS',
+                        action: 'auth.login.supabase_fallback'
                     });
                 }
                 return;

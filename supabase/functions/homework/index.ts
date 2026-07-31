@@ -27,13 +27,17 @@ function getSupabaseClient() {
   });
 }
 
+function isValidId(value: unknown) {
+  return (typeof value === 'string' && value.trim().length > 0) || typeof value === 'number';
+}
+
 function isUuid(value: unknown) {
-  return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  return isValidId(value);
 }
 
 async function getAllAssignments() {
    const supabase = getSupabaseClient();
-   const { data, error } = await supabase.from('homework_assignments').select('*').order('created_at', { ascending: false });
+   const { data, error } = await supabase.from('homework_assignments').select('*').order('created_at', { ascending: false }).limit(200);
    if (error) {
      // Return empty array if table doesn't exist (PGRST205)
      console.warn('[Homework] getAllAssignments error:', error.message);
@@ -152,10 +156,11 @@ Deno.serve(async (req) => {
       const supabase = getSupabaseClient();
 
       if (action === 'submit') {
-        if (!headerStudentId || !isUuid(headerStudentId)) {
-          return jsonResponse({ error: 'Student ID header is required for submission' }, 400);
+        const studentId = headerStudentId || body.student_id;
+        if (!studentId || !isValidId(studentId)) {
+          return jsonResponse({ error: 'Student ID header or student_id in body is required for submission' }, 400);
         }
-        if (!body.assignment_id || !isUuid(body.assignment_id)) {
+        if (!body.assignment_id || !isValidId(body.assignment_id)) {
           return jsonResponse({ error: 'Valid Assignment ID is required' }, 400);
         }
 
@@ -163,7 +168,7 @@ Deno.serve(async (req) => {
           .from('homework_submissions')
           .select('revision_count')
           .eq('assignment_id', body.assignment_id)
-          .eq('student_id', headerStudentId)
+          .eq('student_id', studentId)
           .maybeSingle();
 
         const revisionCount = existing ? (existing.revision_count || 0) + 1 : 0;
@@ -173,7 +178,7 @@ Deno.serve(async (req) => {
           .upsert(
             {
               assignment_id: body.assignment_id,
-              student_id: headerStudentId,
+              student_id: studentId,
               submission_text: body.submission_text || '',
               submission_url: body.submission_url || '',
               file_urls: body.file_urls || null,

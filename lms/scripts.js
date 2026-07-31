@@ -222,37 +222,37 @@
       cleanEndpoint.startsWith("http") || cleanEndpoint.startsWith(API_BASE)
         ? cleanEndpoint
         : `${API_BASE}${cleanEndpoint}`;
-    // Forward a real Supabase JWT when available. Supabase Auth and the secure
-    // signed login tokens both start with "eyJ"; otherwise use the anon key.
-    const storedTok = sessionStorage.getItem("sb-access-token");
+    // Forward a real Supabase JWT or authorization token when available.
+    const storedTok = sessionStorage.getItem("sb-access-token") || localStorage.getItem("sb-access-token");
     let auth = {};
     try {
-      auth = JSON.parse(sessionStorage.getItem("twoknights_auth") || "{}");
+      auth = JSON.parse(sessionStorage.getItem("twoknights_auth") || localStorage.getItem("twoknights_auth") || "{}");
     } catch (e) {}
-    // Prefer the standalone token, but fall back to the copy kept inside
-    // twoknights_auth. Session restore rehydrates twoknights_auth without
-    // rewriting sb-access-token, so after a reload the standalone key can be
-    // absent while the session is still perfectly valid. Previously that fell
-    // through to the anon key, which every admin-gated endpoint rejects with
-    // 403 — the portal looked signed-in as admin while sending no user token
-    // at all. Everything else kept working because endpoints like /students
-    // accept the anon key; only /access_control demands an admin JWT.
-    const isJwt = (t) => typeof t === "string" && t.startsWith("eyJ");
-    const customToken = isJwt(storedTok)
+
+    let sbSessionTok = null;
+    try {
+      if (window.supabaseClient && window.supabaseClient.auth) {
+        const s = window.supabaseClient.auth.session ? window.supabaseClient.auth.session() : null;
+        if (s && s.access_token) sbSessionTok = s.access_token;
+      }
+    } catch (e) {}
+
+    const isValidToken = (t) => typeof t === "string" && t.trim().length > 0;
+    const customToken = isValidToken(storedTok)
       ? storedTok
-      : isJwt(auth.token)
+      : isValidToken(auth.token)
         ? auth.token
-        : null;
-    if (!customToken && auth.role) {
-      console.warn(
-        "[Auth] No user JWT in session — falling back to the anon key. " +
-          "Admin-only endpoints will return 403. Sign out and sign in again.",
-      );
-    }
+        : isValidToken(sbSessionTok)
+          ? sbSessionTok
+          : null;
+
+    const isJwt = (t) => typeof t === "string" && t.startsWith("eyJ");
+    const bearerToken = isJwt(customToken) ? customToken : SUPABASE_ANON_KEY;
+
     const headers = {
        "Content-Type": "application/json",
        apikey: SUPABASE_ANON_KEY,
-       Authorization: `Bearer ${customToken || SUPABASE_ANON_KEY}`,
+       Authorization: `Bearer ${bearerToken}`,
        ...(customToken ? { "x-portal-token": customToken } : {}),
        ...(auth.role ? { "x-portal-role": auth.role } : {}),
        ...(auth.studentId ? { "x-portal-student-id": auth.studentId } : {}),
@@ -505,14 +505,15 @@
 
   // Populates the parent-portal Attendance tab (was previously never rendered).
   function renderChildAttendance() {
-    if (!currentStudent) return;
-    const s = currentStudent;
-    const myAtt = (allAttendance || [])
+    const s = currentStudent || window.currentStudent;
+    if (!s) return;
+    const attList = window.allAttendance || allAttendance || [];
+    const myAtt = attList
       .filter((a) => String(a.student_id) === String(s.id))
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
+      .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
 
     const present = myAtt.filter(
-      (a) => (a.status || "").toLowerCase() === "present",
+      (a) => ["present", "late"].includes((a.status || "").toLowerCase()),
     ).length;
     const absent = myAtt.filter(
       (a) => (a.status || "").toLowerCase() === "absent",
@@ -537,9 +538,11 @@
             const badge =
               st === "present"
                 ? '<span class="badge badge-success">Present</span>'
-                : st === "absent"
-                  ? '<span class="badge badge-danger">Absent</span>'
-                  : `<span class="badge">${escapeHtml(a.status || "—")}</span>`;
+                : st === "late"
+                  ? '<span class="badge badge-warning" style="background:var(--gold); color:#111;">Late</span>'
+                  : st === "absent"
+                    ? '<span class="badge badge-danger">Absent</span>'
+                    : `<span class="badge">${escapeHtml(a.status || "—")}</span>`;
             const dateStr = a.date
               ? new Date(a.date).toLocaleDateString("en-IN", {
                   day: "2-digit",
@@ -788,14 +791,27 @@
     const targetMonth = parseInt(monthStr, 10) - 1;
     const monthLabel = new Date(targetYear, targetMonth, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
-    const monthAtt = (allAttendance || [])
+    let monthAtt = (allAttendance || [])
       .filter((a) => {
         if (String(a.student_id) !== String(s.id)) return false;
         const d = new Date(a.date);
         return d.getFullYear() === targetYear && d.getMonth() === targetMonth;
       })
       .sort((a, b) => new Date(a.date) - new Date(b.date));
-    const presentCount = monthAtt.filter((a) => (a.status || "").toLowerCase() === "present").length;
+
+    // Fallback: If no records for selected month, fetch student's latest records
+    let isFilteredByMonth = true;
+    if (monthAtt.length === 0) {
+      const allStudentAtt = (allAttendance || [])
+        .filter((a) => String(a.student_id) === String(s.id))
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+      if (allStudentAtt.length > 0) {
+        monthAtt = allStudentAtt.slice(0, 30); // show recent 30 sessions
+        isFilteredByMonth = false;
+      }
+    }
+
+    const presentCount = monthAtt.filter((a) => ["present", "late"].includes((a.status || "").toLowerCase())).length;
     const attPct = monthAtt.length ? Math.round((presentCount / monthAtt.length) * 100) : 0;
 
     const coach = allCoaches.find((c) => String(c.id) === String(s.coach_id));
@@ -807,57 +823,164 @@
           const p = window.parseAttendanceNotes ? window.parseAttendanceNotes(a.notes || "") : { cw: "", hw: "", general: "" };
           const notes = [p.cw && `Classwork: ${p.cw}`, p.hw && `Homework: ${p.hw}`, p.general && `Notes: ${p.general}`]
             .filter(Boolean).join(" · ");
-          const ok = (a.status || "").toLowerCase() === "present";
+          const st = (a.status || "").toLowerCase();
+          const isOk = ["present", "late"].includes(st);
+          const color = st === "present" ? "#0a7a3d" : st === "late" ? "#d97706" : "#b91c1c";
           return `<tr>
-            <td>${new Date(a.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</td>
-            <td style="color:${ok ? "#0a7a3d" : "#b91c1c"}; font-weight:bold;">${(a.status || "").toUpperCase()}</td>
-            <td>${escapeHtml(notes) || "—"}</td>
+            <td style="font-weight:600;">${new Date(a.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</td>
+            <td><span style="display:inline-block; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:700; background:${color}15; color:${color}; border:1px solid ${color}40;">${(a.status || "—").toUpperCase()}</span></td>
+            <td style="line-height:1.5;">${escapeHtml(notes) || "—"}</td>
           </tr>`;
         }).join("")
-      : `<tr><td colspan="3" style="color:#888;">No attendance records for ${monthLabel}.</td></tr>`;
+      : `<tr><td colspan="3" style="color:#888; text-align:center; padding:20px;">No attendance records found for ${monthLabel}.</td></tr>`;
 
     const w = window.open("", "_blank");
     if (!w) { toast("Pop-up blocked — allow pop-ups to print the report", "error"); return; }
     w.document.write(`<!DOCTYPE html><html><head><title>Monthly Report — ${escapeHtml(getStudentName(s))} — ${monthLabel}</title>
       <style>
-        body { font-family: Georgia, serif; color: #1a1a2e; margin: 36px; }
-        .head { text-align: center; border-bottom: 3px double #1e2a5e; padding-bottom: 14px; margin-bottom: 20px; }
-        .head h1 { margin: 0; font-size: 22px; color: #1e2a5e; letter-spacing: 2px; }
-        .head .sub { font-size: 12px; color: #555; }
-        h2 { font-size: 15px; color: #1e2a5e; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-top: 26px; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; vertical-align: top; }
-        th { background: #f0f2f8; color: #1e2a5e; }
-        .kpis { display: flex; gap: 14px; margin: 14px 0; }
-        .kpi { flex: 1; border: 1px solid #ddd; border-radius: 6px; padding: 10px; text-align: center; }
-        .kpi b { display: block; font-size: 18px; margin-top: 2px; }
-        .foot { margin-top: 30px; font-size: 10px; color: #777; text-align: center; border-top: 1px solid #ccc; padding-top: 10px; }
-        @media print { .noprint { display: none; } }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; margin: 32px; background: #fafafa; }
+        .card-wrap { background: #ffffff; border: 1px solid #e2e8f0; border-top: 6px solid #d4af37; border-radius: 8px; padding: 32px; max-width: 800px; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .head { text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 18px; margin-bottom: 24px; }
+        .head h1 { margin: 0; font-size: 24px; color: #0f172a; font-weight: 800; letter-spacing: 1px; }
+        .head .sub { font-size: 13px; color: #64748b; margin-top: 4px; font-weight: 500; }
+        .student-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
+        .student-table th { background: #f8fafc; color: #475569; font-weight: 700; width: 22%; text-align: left; padding: 10px 12px; border: 1px solid #e2e8f0; }
+        .student-table td { padding: 10px 12px; border: 1px solid #e2e8f0; font-weight: 600; color: #0f172a; }
+        h2 { font-size: 16px; color: #0f172a; margin-top: 28px; margin-bottom: 12px; font-weight: 700; border-bottom: 2px solid #d4af37; padding-bottom: 6px; }
+        .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0; }
+        .kpi { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 10px; text-align: center; background: #f8fafc; }
+        .kpi-title { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
+        .kpi-val { display: block; font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 4px; }
+        .log-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .log-table th { background: #0f172a; color: #ffffff; padding: 10px 12px; text-align: left; font-weight: 600; }
+        .log-table td { border: 1px solid #e2e8f0; padding: 10px 12px; vertical-align: top; }
+        .log-table tr:nth-child(even) { background: #f8fafc; }
+        .foot { margin-top: 36px; font-size: 11px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 14px; }
+        @media print { body { background: #fff; margin: 0; } .card-wrap { border: none; box-shadow: none; padding: 0; } .noprint { display: none !important; } }
       </style></head><body>
-      <div class="head">
-        <h1>CHESSKIDOO CHESS ACADEMY</h1>
-        <div class="sub">Building Champions, One Move at a Time · Monthly Student Report — ${monthLabel}</div>
-      </div>
-      <table>
-        <tr><th style="width:25%">Student</th><td>${escapeHtml(getStudentName(s))}</td><th style="width:20%">Level</th><td>${escapeHtml(getStudentLevel(s) || "N/A")}</td></tr>
-        <tr><th>Coach</th><td>${escapeHtml(coach ? getCoachName(coach) : "Not Assigned")}</td><th>Academy ELO</th><td>${getStudentRating(s) || "—"}</td></tr>
-      </table>
-      <div class="kpis">
-        <div class="kpi">Classes Held<b>${monthAtt.length}</b></div>
-        <div class="kpi">Attended<b>${presentCount}</b></div>
-        <div class="kpi">Attendance<b>${attPct}%</b></div>
-        <div class="kpi">Fee (${monthLabel.split(" ")[0]})<b style="color:${feeStatus === "Paid" ? "#0a7a3d" : "#b91c1c"}">${feeStatus.toUpperCase()} · ₹${monthlyFee}</b></div>
-      </div>
-      <h2>Attendance & Class Log</h2>
-      <table><thead><tr><th style="width:18%">Date</th><th style="width:14%">Status</th><th>Class Notes</th></tr></thead>
-      <tbody>${attRowsHtml}</tbody></table>
-      <div class="foot">Generated ${new Date().toLocaleString("en-IN")} · ChessKidoo Chess Academy · This is a system-generated report.</div>
-      <div class="noprint" style="text-align:center; margin-top:20px;">
-        <button onclick="window.print()" style="padding:10px 26px; font-size:14px; cursor:pointer;">🖨️ Print / Save as PDF</button>
+      <div class="card-wrap">
+        <div class="head">
+          <h1>♟️ CHESSKIDOO CHESS ACADEMY</h1>
+          <div class="sub">Building Champions, One Move at a Time · Monthly Student Report — ${monthLabel}</div>
+        </div>
+        <table class="student-table">
+          <tr><th>Student Name</th><td>${escapeHtml(getStudentName(s))}</td><th>Skill Level</th><td>${escapeHtml(getStudentLevel(s) || "Beginner")}</td></tr>
+          <tr><th>Assigned Coach</th><td>${escapeHtml(coach ? getCoachName(coach) : "Rohith Selvaraj")}</td><th>Academy ELO</th><td>${getStudentRating(s) || "800"}</td></tr>
+        </table>
+        <div class="kpis">
+          <div class="kpi"><span class="kpi-title">Classes Held</span><span class="kpi-val">${monthAtt.length}</span></div>
+          <div class="kpi"><span class="kpi-title">Attended</span><span class="kpi-val" style="color:#0a7a3d;">${presentCount}</span></div>
+          <div class="kpi"><span class="kpi-title">Attendance Rate</span><span class="kpi-val" style="color:#0f172a;">${attPct}%</span></div>
+          <div class="kpi"><span class="kpi-title">Fee Status (${monthLabel.split(" ")[0]})</span><span class="kpi-val" style="color:${feeStatus === "Paid" ? "#0a7a3d" : "#b91c1c"}; font-size:16px;">${feeStatus.toUpperCase()} · ₹${monthlyFee}</span></div>
+        </div>
+        <h2>Attendance & Class Learning Log</h2>
+        <table class="log-table"><thead><tr><th style="width:18%">Date</th><th style="width:16%">Status</th><th>Classwork, Homework & Coach Notes</th></tr></thead>
+        <tbody>${attRowsHtml}</tbody></table>
+        <div class="foot">Generated ${new Date().toLocaleString("en-IN")} · ChessKidoo Chess Academy · Official Progress Report</div>
+        <div class="noprint" style="text-align:center; margin-top:24px;">
+          <button onclick="window.print()" style="padding:12px 30px; font-size:14px; font-weight:700; cursor:pointer; background:#d4af37; color:#111; border:none; border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,0.15);">🖨️ Print / Save as PDF Report</button>
+        </div>
       </div>
       </body></html>`);
     w.document.close();
     setTimeout(() => { try { w.focus(); } catch (e) { /* ignore */ } }, 300);
+  };
+
+  // ── Google Drive Video Integration ────────────────────────
+  window.getGDriveEmbedUrl = function (url) {
+    if (!url) return '';
+    const str = String(url).trim();
+    // 1. Convert Google Drive file view/open links to /preview iframe embed URL
+    const match = str.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || str.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      return `https://drive.google.com/file/d/${match[1]}/preview`;
+    }
+    // 2. YouTube embed conversion
+    if (str.includes('youtube.com/watch') || str.includes('youtu.be/')) {
+      const ytId = str.match(/v=([a-zA-Z0-9_-]+)/)?.[1] || str.split('/').pop().split('?')[0];
+      if (ytId) return `https://www.youtube.com/embed/${ytId}`;
+    }
+    return str;
+  };
+
+  window.recordedVideos = JSON.parse(localStorage.getItem('twoknights_videos') || '[]');
+
+  window.openAddVideoModal = function () {
+    if ($('vid-title')) $('vid-title').value = '';
+    if ($('vid-url')) $('vid-url').value = '';
+    if ($('vid-date')) $('vid-date').value = new Date().toISOString().split('T')[0];
+    const bSel = $('vid-batch-select');
+    if (bSel) {
+      bSel.innerHTML = '<option value="">All Batches</option>' + (window.allBatches || [])
+        .map(b => `<option value="${b.id}">${window.escapeHtml ? window.escapeHtml(b.name) : b.name}</option>`).join('');
+    }
+    window.openModal('video-add-modal');
+  };
+
+  window.saveRecordedVideo = function () {
+    const title = $('vid-title')?.value.trim();
+    const rawUrl = $('vid-url')?.value.trim();
+    const batchId = $('vid-batch-select')?.value || null;
+    const date = $('vid-date')?.value || new Date().toISOString().split('T')[0];
+
+    if (!title || !rawUrl) {
+      if (window.toast) window.toast('Title and Google Drive URL are required.', 'error');
+      return;
+    }
+
+    const embedUrl = window.getGDriveEmbedUrl(rawUrl);
+    const newVideo = {
+      id: 'vid_' + Date.now(),
+      title,
+      url: rawUrl,
+      embedUrl,
+      batchId,
+      date,
+      created_at: new Date().toISOString()
+    };
+
+    window.recordedVideos.unshift(newVideo);
+    localStorage.setItem('twoknights_videos', JSON.stringify(window.recordedVideos));
+    if (window.toast) window.toast('Class video saved successfully!', 'success');
+    window.closeModals();
+    window.renderRecordedVideos();
+  };
+
+  window.deleteRecordedVideo = function (id) {
+    if (!confirm('Delete this recorded class video?')) return;
+    window.recordedVideos = (window.recordedVideos || []).filter(v => v.id !== id);
+    localStorage.setItem('twoknights_videos', JSON.stringify(window.recordedVideos));
+    if (window.toast) window.toast('Video deleted', 'info');
+    window.renderRecordedVideos();
+  };
+
+  window.playRecordedVideo = function (title, embedUrl) {
+    if ($('video-modal-title')) $('video-modal-title').textContent = title;
+    if ($('video-modal-iframe')) $('video-modal-iframe').src = embedUrl;
+    window.openModal('video-player-modal');
+  };
+
+  window.renderRecordedVideos = function () {
+    const container = document.getElementById('child-video-list-container');
+    if (!container) return;
+    const videos = window.recordedVideos || [];
+    if (videos.length === 0) {
+      container.innerHTML = '<div style="text-align:center; color:var(--ivory-dim); padding:16px; font-size:12px;">No recorded class videos available yet.</div>';
+      return;
+    }
+    const canEdit = window.currentUser && (window.currentUser.role === 'admin' || window.currentUser.role === 'coach');
+    container.innerHTML = videos.map(v => `
+      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg3); padding:10px 14px; border-radius:8px; border:1px solid var(--border);">
+        <div>
+          <div style="font-weight:600; color:var(--ivory); font-size:13px;">${window.escapeHtml ? window.escapeHtml(v.title) : v.title}</div>
+          <div style="font-size:11px; color:var(--gold); margin-top:2px;">Recorded on ${v.date || 'Recent'}</div>
+        </div>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <button class="btn btn-gold btn-sm" onclick="window.playRecordedVideo('${window.jsAttrEncode ? window.jsAttrEncode(v.title) : v.title}', '${v.embedUrl}')">▶ Play</button>
+          ${canEdit ? `<button class="btn btn-outline-danger btn-sm" onclick="window.deleteRecordedVideo('${v.id}')">🗑️</button>` : ''}
+        </div>
+      </div>
+    `).join('');
   };
 
   async function renderChildGrowth() {
@@ -7127,8 +7250,17 @@ setTimeout(function () {
       if (isMatch) {
         const sid = String(p.student_id).toLowerCase();
         if (seenStuds.has(sid)) return sum;
-        seenStuds.add(sid);
         const s = allStudents.find(x => String(x.id).toLowerCase() === sid);
+
+        // The registry's Status column is the single source of truth for whether
+        // a student has settled this month, and it treats applied_month as
+        // authoritative. Check 2 above deliberately falls back to payment_date,
+        // which matches a payment received this month but applied to a different
+        // one — so a student the registry shows as "Due" was being credited a
+        // full fee here and counted as collected. Defer to the status.
+        if (s && getStudentPaymentStatus(s, month, year) !== "Paid") return sum;
+
+        seenStuds.add(sid);
         const fee = s ? getStudentMonthlyFee(s) : (p.amount || 0);
         return sum + fee;
       }
@@ -7302,27 +7434,44 @@ setTimeout(function () {
     if ($("s-total-cost"))
       $("s-total-cost").textContent = "₹" + totalCoachCost.toLocaleString();
 
+    // Net Profit/Loss = collected revenue − coach salaries − other expenditures.
+    //
+    // This used to display summary.profit_or_loss straight from the expenditures
+    // endpoint, which is only income minus the *non-salary* expenditures. Coach
+    // cost was never subtracted, so with no other expenses recorded the card
+    // showed the month's income and called it profit — overstating it by the
+    // whole payroll (the Total Coach Cost sitting in the card beside it).
     if ($("s-profit")) {
       const monthStr = `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}`;
       apiCall(`/api/expenditures?mode=summary&month=${monthStr}`)
         .then((res) => {
           if (res.ok) return res.json();
-          throw new Error();
+          throw new Error(`HTTP ${res.status}`);
         })
         .then((summary) => {
-          if ($("s-profit")) {
-            const profitLoss = parseFloat(summary.profit_or_loss || 0);
-            const collected = parseFloat(summary.total_income || currCollected);
-            $("s-profit").textContent =
-              "₹" + Math.round(profitLoss).toLocaleString();
-            $("s-profit").title = `Income: ₹${collected.toLocaleString()} | Expenses: ₹${parseFloat(summary.total_expense || 0).toLocaleString()}`;
-          }
+          const el = $("s-profit");
+          if (!el) return;
+          const otherExpenses = parseFloat(summary.total_expense || 0);
+          const netProfit = currCollected - totalCoachCost - otherExpenses;
+          const money = (n) => "₹" + Math.round(n).toLocaleString("en-IN");
+          el.textContent = (netProfit < 0 ? "-" : "") + money(Math.abs(netProfit));
+          el.style.setProperty(
+            "color",
+            netProfit < 0 ? "var(--danger)" : "var(--success)",
+            "important",
+          );
+          el.title =
+            `Collected ${money(currCollected)} − coach cost ${money(totalCoachCost)} ` +
+            `− other expenditures ${money(otherExpenses)} = ${money(netProfit)}`;
         })
         .catch((err) => {
           console.error("[Dashboard] Failed to fetch other expenditures:", err);
-          if ($("s-profit")) {
-            $("s-profit").textContent = "₹0";
-          }
+          const el = $("s-profit");
+          if (!el) return;
+          // Showing ₹0 here read as "broke even". Say we could not load it.
+          el.textContent = "—";
+          el.title =
+            "Could not load academy expenditures, so profit cannot be computed. Open the Expenditures page to retry.";
         });
     }
 
@@ -8581,40 +8730,44 @@ setTimeout(function () {
             }
           }
         }
-
         // Only create a payment record if status genuinely CHANGED to Paid (was NOT Paid before)
         if (oldDynamicPayStatus !== "Paid" && newStatus === "Paid") {
           try {
+            const newPayObj = {
+              id:
+                "pay_" +
+                Date.now() +
+                "_" +
+                Math.random().toString(36).substr(2, 9),
+              student_id: id,
+              amount: parseFloat(newFee),
+              status: "paid",
+              payment_method: "Manual Override",
+              description: "Status updated to Paid via Profile",
+              transaction_id: "PRF-" + Math.floor(Math.random() * 1000000),
+              applied_month: `${window.reportYear || new Date().getUTCFullYear()}-${String((window.reportMonth !== undefined ? window.reportMonth : new Date().getUTCMonth()) + 1).padStart(2, "0")}`,
+              payment_date:
+                window.reportMonth !== new Date().getUTCMonth() ||
+                window.reportYear !== new Date().getUTCFullYear()
+                  ? new Date(
+                      Date.UTC(
+                        window.reportYear,
+                        window.reportMonth,
+                        1,
+                        12,
+                        0,
+                        0,
+                      ),
+                    ).toISOString()
+                  : new Date().toISOString(),
+            };
             await apiCall("/api/payments", {
               method: "POST",
-              body: JSON.stringify({
-                id:
-                  "pay_" +
-                  Date.now() +
-                  "_" +
-                  Math.random().toString(36).substr(2, 9), // Required Primary Key
-                student_id: id,
-                amount: parseFloat(newFee), // Ensure numeric
-                status: "paid",
-                payment_method: "Manual Override",
-                description: "Status updated to Paid via Profile",
-                transaction_id: "PRF-" + Math.floor(Math.random() * 1000000),
-                payment_date:
-                  window.reportMonth !== new Date().getUTCMonth() ||
-                  window.reportYear !== new Date().getUTCFullYear()
-                    ? new Date(
-                        Date.UTC(
-                          window.reportYear,
-                          window.reportMonth,
-                          1,
-                          12,
-                          0,
-                          0,
-                        ),
-                      ).toISOString()
-                    : new Date().toISOString(),
-              }),
+              body: JSON.stringify(newPayObj),
             });
+            allPayments = allPayments || [];
+            allPayments.unshift(newPayObj);
+            if (window.allPayments) window.allPayments.unshift(newPayObj);
             sendPaymentReceiptNotification(id, newFee);
           } catch (pe) {
             console.warn("Payment logging failed during profile update:", pe);
@@ -8707,6 +8860,107 @@ setTimeout(function () {
       toast("Update failed: " + e.message, "error");
     }
   }
+
+  window.togglePaymentStatus = async function (id, name, fee) {
+    const s = (allStudents || []).find((x) => String(x.id) === String(id));
+    if (!s) return;
+
+    const currentStatus = getStudentPaymentStatus(s);
+    const targetMonth = window.reportMonth !== undefined ? window.reportMonth : new Date().getUTCMonth();
+    const targetYear = window.reportYear !== undefined ? window.reportYear : new Date().getUTCFullYear();
+    const targetKey = `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}`;
+
+    if (currentStatus === "Paid") {
+      // Toggle to Unpaid: remove payment record for target month
+      if (!confirm(`Mark ${name || "student"} as UNPAID for ${targetKey}?`)) return;
+
+      const monthPay = (allPayments || []).find((p) => {
+        if (String(p.student_id) !== String(id)) return false;
+        if (p.status !== "paid" && p.status !== "completed") return false;
+        if (p.applied_month) return normalizeMonth(p.applied_month) === targetKey;
+        const pd = new Date(p.payment_date || p.created_at);
+        return pd.getUTCMonth() === targetMonth && pd.getUTCFullYear() === targetYear;
+      });
+
+      if (monthPay) {
+        try {
+          await apiCall(`/api/payments?id=${monthPay.id}`, { method: "DELETE" });
+          allPayments = (allPayments || []).filter((p) => p.id !== monthPay.id);
+          if (window.allPayments) window.allPayments = window.allPayments.filter((p) => p.id !== monthPay.id);
+          toast(`Marked ${name} as Unpaid`, "info");
+        } catch (de) {
+          console.warn("Failed to delete payment record:", de);
+          toast("Failed to update status", "error");
+        }
+      } else {
+        toast(`No payment history record found for ${targetKey}`, "warning");
+      }
+    } else {
+      // Toggle to Paid: enforce 1 payment per student per billing month max
+      const amount = parseFloat(fee) || getStudentMonthlyFee(s) || 0;
+      if (!confirm(`Mark ${name || "student"} as PAID for ${targetKey} (₹${amount})?`)) return;
+
+      const existingPay = (allPayments || []).find((p) => {
+        if (String(p.student_id) !== String(id)) return false;
+        if (p.applied_month) return normalizeMonth(p.applied_month) === targetKey;
+        const pd = new Date(p.payment_date || p.created_at);
+        return pd.getUTCMonth() === targetMonth && pd.getUTCFullYear() === targetYear;
+      });
+
+      if (existingPay) {
+        // Enforce 1 payment per month: update existing record rather than creating a duplicate
+        try {
+          await apiCall(`/api/payments?id=${existingPay.id}`, {
+            method: "PUT",
+            body: JSON.stringify({ amount: amount, status: "paid", updated_at: new Date().toISOString() })
+          });
+          existingPay.amount = amount;
+          existingPay.status = "paid";
+          toast(`Updated payment for ${name} for ${targetKey}`, "success");
+          if (typeof sendPaymentReceiptNotification === "function") {
+            sendPaymentReceiptNotification(id, amount);
+          }
+        } catch (err) {
+          console.error("Error updating existing payment:", err);
+          toast("Error updating payment", "error");
+        }
+      } else {
+        const newPay = {
+          id: "pay_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9),
+          student_id: id,
+          amount: amount,
+          status: "paid",
+          payment_method: "Manual Override",
+          description: "Marked as Paid via Ledger",
+          transaction_id: "MAN-" + Math.floor(Math.random() * 1000000),
+          applied_month: targetKey,
+          payment_date: new Date(Date.UTC(targetYear, targetMonth, 1, 12, 0, 0)).toISOString()
+        };
+
+        try {
+          const res = await apiCall("/api/payments", {
+            method: "POST",
+            body: JSON.stringify(newPay)
+          });
+          if (!res.ok) throw new Error("Failed to record payment");
+
+          allPayments = allPayments || [];
+          allPayments.unshift(newPay);
+          if (window.allPayments) window.allPayments.unshift(newPay);
+
+          toast(`Marked ${name} as Paid!`, "success");
+          if (typeof sendPaymentReceiptNotification === "function") {
+            sendPaymentReceiptNotification(id, amount);
+          }
+        } catch (err) {
+          console.error("Error toggling payment status:", err);
+          toast("Error recording payment", "error");
+        }
+      }
+    }
+
+    if (typeof loadAllData === "function") await loadAllData(true);
+  };
   function openEnroll() {
     $("m-name").value = "";
     if ($("m-email")) $("m-email").value = "";

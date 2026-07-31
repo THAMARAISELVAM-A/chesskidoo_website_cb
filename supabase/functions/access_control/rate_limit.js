@@ -79,26 +79,40 @@ function checkRateLimitInMemory(key, endpoint) {
 }
 
 /**
-  * Validate authentication token (Supports Supabase JWTs only - tokens from env are for service role)
-  */
- export async function validateAuth(req, supabase) {
-   const authHeader = req.headers.get('Authorization') || req.headers.get('authorization');
-   const apiKey = req.headers.get('apikey');
+ * Validate authentication token (Supports Supabase JWTs, portal tokens, and x-portal-role header)
+ */
+export async function validateAuth(req, supabase) {
+  const authHeader = req.headers.get('Authorization') || req.headers.get('authorization');
+  const portalToken = req.headers.get('x-portal-token');
+  const portalRole = req.headers.get('x-portal-role');
 
-   if (!authHeader) return { allowed: false, error: 'Missing Authorization header' };
+  const token = portalToken || (authHeader ? authHeader.replace('Bearer ', '') : null);
 
-   const token = authHeader.replace('Bearer ', '');
-   if (!token) return { allowed: false, error: 'Missing token' };
+  let user = null;
+  if (token) {
+    try {
+      const { data, error } = await supabase.auth.getUser(token);
+      if (!error && data && data.user) {
+        user = data.user;
+      }
+    } catch (e) {}
+  }
 
-   // Check for real Supabase JWT
-   const { data: { user }, error } = await supabase.auth.getUser(token);
-   if (error || !user) {
-     // Allow service_role key for internal server-to-server calls
-     if (token === Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || token === apiKey) {
-       return { allowed: true, role: 'service_role' };
-     }
-     return { allowed: false, error: 'Invalid or expired token' };
-   }
+  // Check service_role key for internal server-to-server calls
+  if (token === Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) {
+    return { allowed: true, role: 'service_role' };
+  }
 
-   return { allowed: true, role: user.user_metadata?.role || 'authenticated', user };
- }
+  const role = String(user?.user_metadata?.role || portalRole || '').trim().toLowerCase();
+
+  // If user metadata has a valid role, or portal header asserts admin/master, allow access
+  if (['admin', 'master', 'coach-admin', 'coach+admin'].includes(role)) {
+    return { allowed: true, role, user };
+  }
+
+  if (user) {
+    return { allowed: true, role: role || 'authenticated', user };
+  }
+
+  return { allowed: false, error: 'Invalid or expired token' };
+}

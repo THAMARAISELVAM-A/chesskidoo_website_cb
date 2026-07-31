@@ -10,8 +10,10 @@ body { -webkit-overflow-scrolling: touch; overflow-x: hidden; }
 *, *::before, *::after { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
 img, video, svg, canvas { max-width: 100%; height: auto; }
 
-/* Prevent horizontal scroll from any element */
-section, .container, .hero-content-wrap, .hero-grid,
+/* Prevent horizontal scroll from any element.
+   .container is deliberately excluded — it has its own 1400px cap in style.css
+   and listing it here would override that, un-centering every section. */
+section, .hero-content-wrap, .hero-grid,
 .footer-grid, .feat-grid, .coach-grid, .pricing-grid,
 .level-grid, .trust-inner, .hero-btns, .reviews-grid { max-width: 100%; }
 
@@ -34,7 +36,10 @@ button, a, select, .btn, .nav-link, .faq-trigger,
   /* ── Hero ── */
   .hero { min-height: auto; padding-top: 88px; padding-bottom: 40px; }
   .hero-content-wrap { padding: 0 20px 40px; }
-  .hero-grid { grid-template-columns: 1fr; gap: 32px; text-align: center; }
+  /* minmax(0,1fr) lets the single column shrink under a wide child's
+     min-content (the board panel) instead of overflowing + being clipped. */
+  .hero-grid { grid-template-columns: minmax(0, 1fr); gap: 32px; text-align: center; }
+  .hero-content, .hero-visual { min-width: 0; }
   .hero-badge { margin: 0 auto 22px; font-size: 0.72rem; padding: 7px 16px; display: inline-flex; }
   .hero-title { font-size: clamp(2.1rem, 8.5vw, 3rem); margin-bottom: 18px; letter-spacing: -0.02em; line-height: 1.1; }
   .hero-sub { font-size: 1rem; margin: 0 auto 32px; max-width: 100%; }
@@ -274,7 +279,6 @@ button, a, select, .btn, .nav-link, .faq-trigger,
   .skills-grid { gap: 10px; }
   .skill-card { padding: 20px 10px; }
   .why-grid { grid-template-columns: 1fr !important; }
-  .cj-step { flex: 0 0 100% !important; }
 
   .showcase-gallery-grid { grid-template-columns: 1fr; gap: 12px; }
 

@@ -386,30 +386,82 @@ let homeworkSubmissionCache = [];
     }).join('');
   }
 
-async function uploadHomeworkFile(file) {
-    return new Promise((resolve, reject) => {
+  function isImageFile(file) {
+    if (!file) return false;
+    const mime = (file.type || '').toLowerCase();
+    if (mime.startsWith('image/')) return true;
+    const ext = (file.name || '').split('.').pop().toLowerCase();
+    return ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'bmp', 'ico'].includes(ext);
+  }
+
+  async function uploadHomeworkFile(file) {
+    if (!file) return null;
+
+    const isImg = isImageFile(file);
+
+    // ROUTE 1: IMAGES ONLY -> Route to ImgBB (saves Supabase Storage quota)
+    if (isImg) {
+      try {
+        if (typeof window.uploadToImgbb === 'function') {
+          const imgbbUrl = await window.uploadToImgbb(file);
+          if (imgbbUrl) return imgbbUrl;
+        }
+      } catch (err) {
+        console.warn('[Homework] ImgBB upload failed for image, trying fallback:', err);
+      }
+    }
+
+    // ROUTE 2: DOCUMENTS & FILES -> Route to Supabase Storage bucket 'homework_attachments'
+    try {
+      if (window.supabaseClient && window.supabaseClient.storage) {
+        const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
+        const filePath = `hw_${Date.now()}_${Math.random().toString(36).substr(2, 6)}.${ext}`;
+        const { data, error } = await window.supabaseClient.storage
+          .from('homework_attachments')
+          .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+        if (!error && data) {
+          const { data: pubUrlData } = window.supabaseClient.storage
+            .from('homework_attachments')
+            .getPublicUrl(data.path || filePath);
+          if (pubUrlData?.publicUrl) return pubUrlData.publicUrl;
+        }
+      }
+    } catch (sbErr) {
+      console.warn('[Homework] Supabase storage upload failed:', sbErr);
+    }
+
+    // ROUTE 3: Fallback via /api/upload or Data URL
+    try {
       const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const base64 = reader.result.split(',')[1];
-          const res = await window.apiCall('/api/upload', {
-            method: 'POST',
-            body: JSON.stringify({ 
-              image: base64,
-              filename: file?.name || `file.${file?.type?.split('/')[1] || 'bin'}`
-            })
-          });
-          if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.error || `Upload failed (${res.status})`);
-          }
-          const data = await res.json();
-          resolve(data?.data?.url || data?.url || null);
-        } catch (e) { reject(e); }
-      };
-      reader.onerror = () => reject(new Error('File read error'));
-      reader.readAsDataURL(file);
-    });
+      const dataUrl = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('File read error'));
+        reader.readAsDataURL(file);
+      });
+
+      const base64 = dataUrl.split(',')[1];
+      const res = await window.apiCall('/api/upload', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          image: base64,
+          filename: file?.name || `file.${file?.type?.split('/')[1] || 'bin'}`
+        })
+      }).catch(() => null);
+
+      if (res && res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const url = data?.data?.url || data?.url;
+        if (url) return url;
+      }
+
+      if (file.size < 5 * 1024 * 1024) {
+        return dataUrl;
+      }
+    } catch (e) {
+      console.error('[Homework] File upload fallback error:', e);
+    }
+    return null;
   }
 
   async function saveHomeworkAssignment() {
@@ -517,8 +569,13 @@ async function uploadHomeworkFile(file) {
     }
   }
 
+  function canEditOrDeleteHomework() {
+    const role = (window.role || window.userRole || 'student').toLowerCase();
+    return role === 'admin' || role === 'master' || role === 'coach' || typeof isAdminUser === 'function' && isAdminUser();
+  }
+
   async function deleteHomeworkAssignment(id) {
-    if (!isAdminUser()) return window.toast ? window.toast('Only administrators can delete homework.', 'error') : null;
+    if (!canEditOrDeleteHomework()) return window.toast ? window.toast('Only coaches and administrators can delete homework.', 'error') : null;
     if (!window.confirm('Delete this homework assignment? This cannot be undone.')) return;
     try {
       const res = await window.apiCall(`/api/homework?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
@@ -536,6 +593,35 @@ async function uploadHomeworkFile(file) {
     }
   }
 
+  window.editHomeworkAssignment = async function (id) {
+    if (!canEditOrDeleteHomework()) return window.toast ? window.toast('Only coaches and administrators can edit homework.', 'error') : null;
+    const hw = (window.allHomework || []).find(h => String(h.id) === String(id));
+    if (!hw) return;
+    const newTitle = prompt('Edit Homework Title:', hw.title || '');
+    if (newTitle === null) return;
+    const newDesc = prompt('Edit Instructions / Description:', hw.description || '');
+    if (newDesc === null) return;
+
+    try {
+      const res = await window.apiCall(`/api/homework?id=${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          title: newTitle.trim() || hw.title,
+          description: newDesc.trim(),
+          updated_at: new Date().toISOString()
+        })
+      });
+      if (res.ok) {
+        if (window.toast) window.toast('Homework updated successfully', 'success');
+        if (window.loadHomeworkData) await window.loadHomeworkData(true);
+        else if (window.loadAllData) await window.loadAllData(true);
+        refreshHomeworkViews();
+      }
+    } catch (e) {
+      if (window.toast) window.toast('Failed to edit homework: ' + e.message, 'error');
+    }
+  };
+
   async function submitHomeworkForChild(assignmentId) {
     const assignment = (window.allHomework || []).find((item) => String(item.id) === String(assignmentId));
     if (!assignment) return window.toast ? window.toast('Homework assignment not found.', 'error') : null;
@@ -552,8 +638,8 @@ async function uploadHomeworkFile(file) {
       try {
         const uploadPromises = Array.from(fileInput.files).map(f => uploadHomeworkFile(f));
         const uploaded = await Promise.all(uploadPromises);
-        uploadedUrls = uploaded.filter(url => url !== null);
-        if (uploadedUrls.length === 0) {
+        uploadedUrls = uploaded.filter(u => u !== null);
+        if (uploadedUrls.length === 0 && fileInput.files.length > 0) {
           return window.toast ? window.toast('File upload failed - please try again', 'error') : null;
         }
       } catch (e) {
@@ -561,11 +647,22 @@ async function uploadHomeworkFile(file) {
       }
     }
 
+    // Determine target student ID from active student context or session
+    let studentId = window.currentStudent?.id || window.currentStudentId || window.studentId;
+    if (!studentId) {
+      try {
+        const authObj = JSON.parse(sessionStorage.getItem('twoknights_auth') || '{}');
+        studentId = authObj.studentId || authObj.user;
+      } catch (e) {}
+    }
+
     try {
       const res = await window.apiCall('/api/homework?action=submit', {
         method: 'POST',
+        headers: studentId ? { 'x-portal-student-id': String(studentId) } : {},
         body: JSON.stringify({
           assignment_id: assignment.id,
+          student_id: studentId || null,
           submission_text: text,
           submission_url: url,
           file_urls: uploadedUrls.length > 0 ? uploadedUrls : null
@@ -575,10 +672,13 @@ async function uploadHomeworkFile(file) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || `Server error ${res.status}`);
       }
-      if (window.toast) window.toast('Homework submitted', 'success');
+      if (window.toast) window.toast('Homework submitted successfully', 'success');
       if ($(`homework-submission-files-${assignment.id}`)) $(`homework-submission-files-${assignment.id}`).value = '';
+      if ($(`homework-submission-text-${assignment.id}`)) $(`homework-submission-text-${assignment.id}`).value = '';
+      if ($(`homework-submission-url-${assignment.id}`)) $(`homework-submission-url-${assignment.id}`).value = '';
       if (window.loadHomeworkData) await window.loadHomeworkData(true);
       else if (window.loadAllData) await window.loadAllData(true);
+      await loadHomeworkSubmissions(true);
       refreshHomeworkViews();
     } catch (error) {
       if (window.toast) window.toast(`Failed to submit homework: ${error.message}`, 'error');
@@ -666,9 +766,10 @@ async function uploadHomeworkFile(file) {
           </div>
         </div>
         ${showActions ? `<div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="btn btn-outline-grey btn-sm" onclick="editHomeworkAssignment('${assignment.id}')">✏️ Edit</button>
           ${assignment.status !== 'completed' ? `<button class="btn btn-outline-grey btn-sm" onclick="updateHomeworkStatus('${assignment.id}', 'completed')">Mark Done</button>` : ''}
           ${assignment.status !== 'archived' ? `<button class="btn btn-outline-grey btn-sm" onclick="updateHomeworkStatus('${assignment.id}', 'archived')">Archive</button>` : ''}
-          <button class="btn btn-outline-danger btn-sm" onclick="deleteHomeworkAssignment('${assignment.id}')">Delete</button>
+          <button class="btn btn-outline-danger btn-sm" onclick="deleteHomeworkAssignment('${assignment.id}')">🗑️ Delete</button>
         </div>` : ''}
       </div>
       ${assignment.description ? `<div style="margin-top:12px; color:var(--ivory-dim); font-size:13px; line-height:1.65; white-space:pre-wrap;">${escapeValue(assignment.description)}</div>` : '<div style="margin-top:12px;color:var(--ivory-dim);font-size:13px;">No detailed instructions provided.</div>'}

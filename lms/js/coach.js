@@ -171,7 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
         ? `<div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
              <a href="${window.escapeHtml ? window.escapeHtml(link) : link}" target="_blank" rel="noopener" class="btn btn-gold btn-sm">🎥 Join</a>
              <button class="btn btn-outline btn-sm" onclick="window.coachShareBatchLink('${b.id}')" title="Share class link with students via WhatsApp">📲 Share</button>
-             <button class="btn btn-outline btn-sm" onclick="window.coachSetBatchLink('${b.id}')" title="Change the Google Meet link">✏️</button>
+             <button class="btn btn-outline btn-sm" onclick="window.coachSetBatchLink('${b.id}')" title="Edit Google Meet link">✏️ Edit</button>
+             <button class="btn btn-outline-danger btn-sm" onclick="window.coachDeleteBatchLink('${b.id}')" title="Delete Google Meet link">🗑️</button>
            </div>`
         : `<button class="btn btn-outline btn-sm" onclick="window.coachSetBatchLink('${b.id}')">🔗 Set GMeet Link</button>`;
       return `
@@ -187,9 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ── Batch class-link helpers (Google Meet sharing) ────────────────────────
-  // The batch `notes` column is the de-facto home of the class meet link
-  // (schedule.js already reads it as the parent-side meetLink fallback), so we
-  // extract the first URL rather than trusting the whole field.
   window.getBatchMeetLink = function (batch) {
     if (!batch) return '';
     if (batch.meet_link) return String(batch.meet_link);
@@ -197,12 +195,37 @@ document.addEventListener('DOMContentLoaded', () => {
     return m ? m[0] : '';
   };
 
+  window.coachDeleteBatchLink = async function (batchId) {
+    const batch = (window.allBatches || []).find(b => String(b.id) === String(batchId));
+    if (!batch) return;
+    if (!confirm(`Delete meeting link for batch "${batch.name || 'this batch'}"?`)) return;
+
+    const otherNotes = String(batch.notes || '').replace(/https?:\/\/[^\s"'<>]+/g, '').replace(/\s{2,}/g, ' ').trim();
+    try {
+      const res = await window.apiCall(`/api/batches?id=${batchId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ notes: otherNotes, meet_link: '' }),
+      });
+      if (res.ok) {
+        batch.notes = otherNotes;
+        batch.meet_link = '';
+        if (window.toast) window.toast('Meeting link deleted', 'info');
+        if (typeof window.renderCoachBatches === 'function') window.renderCoachBatches();
+        if (window.currentStudent && typeof window.renderChildSchedule === 'function') {
+          window.renderChildSchedule(window.currentStudent);
+        }
+      }
+    } catch (e) {
+      if (window.toast) window.toast('Error deleting meeting link: ' + e.message, 'error');
+    }
+  };
+
   window.coachSetBatchLink = async function (batchId) {
     const batch = (window.allBatches || []).find(b => String(b.id) === String(batchId));
     if (!batch) return;
     const current = window.getBatchMeetLink(batch);
     const input = prompt(
-      'Paste the Google Meet link for "' + (batch.name || 'this batch') + '":\n(e.g. https://meet.google.com/abc-defg-hij)',
+      'Paste the Google Meet / Zoom link for "' + (batch.name || 'this batch') + '":\n(e.g. https://meet.google.com/abc-defg-hij)',
       current || 'https://meet.google.com/'
     );
     if (input === null) return; // cancelled
@@ -217,12 +240,16 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await window.apiCall(`/api/batches?id=${batchId}`, {
         method: 'PUT',
-        body: JSON.stringify({ notes: newNotes }),
+        body: JSON.stringify({ notes: newNotes, meet_link: link }),
       });
       if (res.ok) {
-        batch.notes = newNotes; // keep local cache in sync without a full reload
-        if (window.toast) window.toast(link ? 'Class link saved. Students will see a Join Class button.' : 'Class link removed.', 'success');
-        window.renderCoachBatches();
+        batch.notes = newNotes;
+        batch.meet_link = link;
+        if (window.toast) window.toast(link ? 'Class link saved! Students can now see the Join Class button.' : 'Class link removed.', 'success');
+        if (typeof window.renderCoachBatches === 'function') window.renderCoachBatches();
+        if (window.currentStudent && typeof window.renderChildSchedule === 'function') {
+          window.renderChildSchedule(window.currentStudent);
+        }
       } else {
         const err = await res.json().catch(() => ({}));
         if (window.toast) window.toast('Failed to save link: ' + (err.error || 'unknown error'), 'error');
@@ -632,6 +659,25 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       if (res.ok) {
         toast('Attendance saved for ' + records.length + ' students', 'success');
+
+        // Optimistically update in-memory allAttendance array
+        if (!window.allAttendance) window.allAttendance = [];
+        records.forEach((rec) => {
+          const idx = window.allAttendance.findIndex(
+            (a) => String(a.student_id) === String(rec.student_id) && a.date === rec.date
+          );
+          if (idx !== -1) {
+            window.allAttendance[idx] = { ...window.allAttendance[idx], ...rec };
+          } else {
+            window.allAttendance.unshift(rec);
+          }
+        });
+
+        // Trigger child attendance re-render if current student view is active
+        if ((window.currentStudent || window.studentId) && typeof window.renderChildAttendance === 'function') {
+          window.renderChildAttendance();
+        }
+
         renderCoachAttendanceMarking();
         setTimeout(renderCoachDashboard, 100);
       } else {

@@ -876,6 +876,26 @@
       studentBatches,
     );
 
+    // Update top live class meeting card in Schedule tab
+    const bNameEl = document.getElementById("child-live-batch-name");
+    const bDaysEl = document.getElementById("child-live-days");
+    const bTimeEl = document.getElementById("child-live-time");
+    const bCoachEl = document.getElementById("child-live-coach");
+    const bBtnWrap = document.getElementById("child-live-meet-btn-wrapper");
+
+    const firstBatch = studentBatches[0];
+    if (bNameEl) bNameEl.textContent = firstBatch?.name ? `${firstBatch.name} (Batch)` : `${student.name}'s Online Class`;
+    if (bDaysEl) bDaysEl.textContent = schedData.regDays || firstBatch?.days || "TBD";
+    if (bTimeEl) bTimeEl.textContent = schedData.regTime || firstBatch?.time_slot || "TBD";
+    if (bCoachEl) bCoachEl.textContent = resolvedCoachName;
+    if (bBtnWrap) {
+      if (schedData.meetLink) {
+        bBtnWrap.innerHTML = `<a href="${schedData.meetLink}" target="_blank" rel="noopener" class="btn btn-gold btn-sm" style="font-weight:700; font-size:13px; padding:10px 18px; box-shadow:0 4px 15px rgba(212,175,55,0.4);">Join Live Class 🎥</a>`;
+      } else {
+        bBtnWrap.innerHTML = `<span style="font-size:12px; color:var(--ivory-dim); background:rgba(255,255,255,0.05); padding:6px 12px; border-radius:6px;">No live link set yet</span>`;
+      }
+    }
+
     // Trigger AI Insight update for Parent Portal Schedule
     if (window.generateContextualInsight) {
       window.generateContextualInsight("child_schedule", student.id);

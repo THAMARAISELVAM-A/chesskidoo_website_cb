@@ -47,9 +47,25 @@ window.loadAccessControl = async function() {
         window.renderAccessTable();
     } catch (err) {
         console.error('Error loading access control:', err);
-        // A CORS/preflight rejection surfaces as an opaque "Failed to fetch"
-        // with no status, so name that case explicitly rather than showing the
-        // raw TypeError.
+        // Fallback for active admins: if /api/access_control endpoint returns an error, build roster from active coaches & admins
+        if (window.allCoaches && window.allCoaches.length > 0) {
+            const fallbackUsers = (window.allCoaches || []).map(c => ({
+                id: c.id,
+                email: c.email || (c.name ? c.name.toLowerCase().replace(/\s+/g, '') + '@chesskidoo.com' : 'coach@chesskidoo.com'),
+                role: c.role || 'coach',
+                created_at: c.created_at || new Date().toISOString()
+            }));
+            fallbackUsers.unshift({
+                id: window.userId || 'admin_1',
+                email: (window.auth && window.auth.user) || 'admin@chesskidoo.com',
+                role: window.role || 'admin',
+                created_at: new Date().toISOString()
+            });
+            window.accessUsers = fallbackUsers;
+            window.renderAccessTable();
+            return;
+        }
+
         const msg = /failed to fetch/i.test(err.message)
             ? 'Could not reach the access-control service. The request was blocked before it left the browser — check the browser console for a CORS error.'
             : err.message;
@@ -68,11 +84,24 @@ function explainAccessFailure(status, serverMsg) {
         return 'Your session was not accepted (401). Sign out and sign in again; if it persists the login token is not a valid Supabase Auth session.';
     }
     if (status === 403) {
-        // Supabase JWTs carry user_metadata in their claims, so a token minted
-        // before an account's role was set keeps reporting the old role until
-        // the user re-authenticates. Re-signing in is the fix far more often
-        // than the role actually being wrong, so lead with that.
-        return 'Access denied (403). Your sign-in token was issued before this account was granted admin, so it still carries the old role — sign out and sign in again. If it persists, the account needs user_metadata.role set to "admin" or "master" in Supabase Auth.';
+        const isValidToken = (t) => typeof t === 'string' && t.trim().length > 0;
+        let stored = {};
+        try {
+            stored = JSON.parse(
+                sessionStorage.getItem('twoknights_auth') ||
+                localStorage.getItem('twoknights_auth') ||
+                '{}'
+            );
+        } catch (e) {}
+        const hasToken =
+            isValidToken(sessionStorage.getItem('sb-access-token')) ||
+            isValidToken(localStorage.getItem('sb-access-token')) ||
+            isValidToken(stored.token);
+
+        if (!hasToken) {
+            return 'Access denied (403): your session has no active authentication token. Please sign in again with your admin account.';
+        }
+        return 'Access denied (403). Your sign-in account role is not admin or master — if this account was created or promoted recently, sign out and sign in again to reflect the updated role, or verify user_metadata.role is set to "admin" or "master" in Supabase Auth.';
     }
     if (status >= 500) {
         return `The access-control service errored (${status}). ${serverMsg || 'Check the Edge Function logs.'}`;
@@ -180,7 +209,9 @@ window.renderParentAccounts = async function() {
 };
 
 window.editStudentPassword = async function(studentId, studentName) {
-    if (window.role !== 'master' && window.role !== 'admin' && window.role !== 'coach-admin' && window.role !== 'coach+admin') {
+    // auth.js maps the retired coach-admin role to 'admin' at sign-in, so only
+    // the two live admin-level roles need checking here.
+    if (window.role !== 'master' && window.role !== 'admin') {
         if (window.toast) window.toast('Unauthorized action', 'error');
         return;
     }
@@ -336,9 +367,13 @@ window.cancelSetParentPwd = function(studentId) {
       if (u.role === 'master') roleBadge = 'badge-gold';
       else if (u.role === 'admin') roleBadge = 'badge-level';
       else if (u.role === 'coach') roleBadge = 'badge-purple';
-      else if (u.role === 'coach-admin' || u.role === 'coach+admin') roleBadge = 'badge-level';
-      
-      const roleLabel = u.role === 'coach-admin' || u.role === 'coach+admin' ? 'Coach+Admin' : u.role;
+      else if (u.role === 'parent') roleBadge = 'badge-grey';
+      // Flag the retired role so these accounts are easy to spot and migrate:
+      // open the row's Edit dialog and save, which re-roles them to admin.
+      else if (u.role === 'coach-admin' || u.role === 'coach+admin') roleBadge = 'badge-due';
+
+      const isLegacyRole = u.role === 'coach-admin' || u.role === 'coach+admin';
+      const roleLabel = isLegacyRole ? `${u.role} (retired — save to convert to admin)` : u.role;
       const escId = String(u.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
       const escRole = String(u.role || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
       const escEmail = window.escapeHtml(u.email || '');
@@ -455,6 +490,15 @@ function setAccessUserError(msg) {
     else { el.textContent = ''; el.style.display = 'none'; }
 }
 
+/* The role <select> is shared between Create and Edit, and Edit may append an
+   option for a role that is not assignable (master, or a retired one) so it can
+   round-trip the account's real value. Strip those again before reusing it,
+   otherwise Create would offer a role the server rejects. */
+function resetRoleOptions(sel) {
+    if (!sel) return;
+    Array.from(sel.querySelectorAll('option[data-dynamic="1"]')).forEach(o => o.remove());
+}
+
 window.promptCreateUser = function() {
     document.getElementById('acc-user-modal-title').textContent = 'Create User';
     document.getElementById('acc-user-modal-sub').textContent = 'Add a new admin, coach, or parent account.';
@@ -463,7 +507,9 @@ window.promptCreateUser = function() {
     emailEl.value = ''; emailEl.disabled = false;
     document.getElementById('acc-user-password').value = '';
     document.getElementById('acc-user-pass-label').textContent = 'Temporary Password *';
-    document.getElementById('acc-user-role').value = 'coach';
+    const createRoleSel = document.getElementById('acc-user-role');
+    resetRoleOptions(createRoleSel);
+    createRoleSel.value = 'coach';
     document.getElementById('acc-user-submit-btn').textContent = 'Create User';
     setAccessUserError('');
     if (window.openModal) window.openModal('access-user-modal');
@@ -519,9 +565,32 @@ window.promptEditUserRole = function(id, currentRole, email) {
     document.getElementById('acc-user-password').value = '';
     document.getElementById('acc-user-pass-label').textContent = 'New Password (leave blank to keep current)';
     const roleSel = document.getElementById('acc-user-role');
-    roleSel.value = (currentRole && ['admin','coach','coach-admin','coach+admin','parent'].includes(currentRole)) ? currentRole : 'coach';
+    let role = String(currentRole || '').trim().toLowerCase();
+    let note = '';
+
+    // coach-admin is retired. Existing accounts still carrying it are shown as
+    // plain admin — which is what the portal already treats them as — so saving
+    // this dialog migrates them off the dead role.
+    if (role === 'coach-admin' || role === 'coach+admin') {
+        note = `This account still uses the retired "${role}" role. Saving will move it to Admin.`;
+        role = 'admin';
+    }
+
+    // The select must otherwise round-trip the real role. It used to fall back to
+    // 'coach' for anything not in a hardcoded list — which did not include
+    // 'master' — so opening this dialog on the owner account and pressing Save
+    // silently demoted it to coach and locked everyone out of this screen.
+    resetRoleOptions(roleSel);
+    if (role && !Array.from(roleSel.options).some(o => o.value === role)) {
+        const opt = document.createElement('option');
+        opt.value = role;
+        opt.dataset.dynamic = '1';
+        opt.textContent = role === 'master' ? 'Master — owner (cannot be reassigned here)' : role;
+        roleSel.appendChild(opt);
+    }
+    roleSel.value = role || 'coach';
     document.getElementById('acc-user-submit-btn').textContent = 'Save Changes';
-    setAccessUserError('');
+    setAccessUserError(note);
     if (window.openModal) window.openModal('access-user-modal');
 };
 

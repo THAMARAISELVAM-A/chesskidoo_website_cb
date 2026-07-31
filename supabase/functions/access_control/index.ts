@@ -41,10 +41,43 @@ Deno.serve(async (req) => {
   if (!auth.allowed) {
     return corsResponse({ error: auth.error }, 401, origin);
   }
-  // Only master or admin roles can access this endpoint
-  if (auth.role !== 'master' && auth.role !== 'admin') {
-    return corsResponse({ error: 'Unauthorized: Admin privileges required' }, 403, origin);
+
+  // The three roles this endpoint hands out. coach-admin has been retired.
+  const ASSIGNABLE_ROLES = ['admin', 'coach', 'parent'];
+
+  // Retired role that may still sit on older accounts. It is accepted as a plain
+  // admin so those users keep working instead of being locked out on deploy, but
+  // it can no longer be assigned — editing such an account in the portal saves it
+  // back as "admin", which migrates it. lms/js/auth.js does the same mapping.
+  const LEGACY_ADMIN_ALIASES = ['coach-admin', 'coach+admin'];
+
+  // Who may call this endpoint. "master" is the owner: admin-level here, but
+  // deliberately absent from ASSIGNABLE_ROLES so it cannot be handed out.
+  const ADMIN_ROLES = ['master', 'admin', ...LEGACY_ADMIN_ALIASES];
+  const normaliseRole = (r) => String(r || '').trim().toLowerCase();
+
+  const callerRole = normaliseRole(auth.role);
+  const isMaster = callerRole === 'master';
+
+  // Deliberately NOT accepting 'service_role' here. validateAuth() reports that
+  // role for the publishable anon key as well as for the real service-role key,
+  // and the anon key ships in the browser — trusting it would hand full user
+  // administration to anyone who reads the page source. No internal caller uses
+  // this endpoint, so there is nothing to lose by refusing it.
+  if (!ADMIN_ROLES.includes(callerRole)) {
+    return corsResponse({
+      error: callerRole === 'service_role'
+        ? 'Unauthorized: this endpoint requires a signed-in admin, not an API key'
+        : 'Unauthorized: Admin privileges required'
+    }, 403, origin);
   }
+
+  // Reading a user's stored role, used by the guards below.
+  const storedRoleOf = async (userId) => {
+    const { data, error } = await supabase.auth.admin.getUserById(userId);
+    if (error || !data?.user) return null;
+    return { user: data.user, role: normaliseRole(data.user.user_metadata?.role) };
+  };
 
   try {
     const method = req.method;
@@ -68,10 +101,24 @@ Deno.serve(async (req) => {
     if (method === 'POST') {
       // Create user
       const body = await req.json();
-      const { email, password, role } = body;
+      const { email, password } = body;
+      const role = normaliseRole(body.role);
 
       if (!email || !password || !role) {
         return corsResponse({ error: 'Email, password, and role are required' }, 400, origin);
+      }
+
+      // Reject anything the portal cannot act on. Without this a typo ("Admin",
+      // "student") created an account that authenticated fine but matched none
+      // of the portal's role gates, so it had no access to anything.
+      if (!ASSIGNABLE_ROLES.includes(role)) {
+        return corsResponse({
+          error: `Invalid role "${body.role}". Must be one of: ${ASSIGNABLE_ROLES.join(', ')}`
+        }, 400, origin);
+      }
+
+      if (String(password).length < 8) {
+        return corsResponse({ error: 'Password must be at least 8 characters' }, 400, origin);
       }
 
       const { data, error } = await supabase.auth.admin.createUser({
@@ -89,14 +136,50 @@ Deno.serve(async (req) => {
     if (method === 'PUT') {
       // Update user role or password
       const body = await req.json();
-      const { id, role: newRole, password } = body;
+      const { id, password } = body;
+      const newRole = body.role ? normaliseRole(body.role) : null;
 
       if (!id) {
         return corsResponse({ error: 'User ID is required' }, 400, origin);
       }
+      if (!newRole && !password) {
+        return corsResponse({ error: 'Nothing to update: provide a role or a password' }, 400, origin);
+      }
+      if (newRole && !ASSIGNABLE_ROLES.includes(newRole)) {
+        return corsResponse({
+          error: `Invalid role "${body.role}". Must be one of: ${ASSIGNABLE_ROLES.join(', ')}`
+        }, 400, origin);
+      }
+      if (password && String(password).length < 8) {
+        return corsResponse({ error: 'Password must be at least 8 characters' }, 400, origin);
+      }
+
+      const target = await storedRoleOf(id);
+      if (!target) {
+        return corsResponse({ error: 'User not found' }, 404, origin);
+      }
+
+      if (newRole) {
+        // Don't let an admin lock themselves out of this very screen.
+        if (auth.user && auth.user.id === id && !ADMIN_ROLES.includes(newRole)) {
+          return corsResponse({
+            error: 'You cannot remove your own admin access. Ask another admin to do it.'
+          }, 403, origin);
+        }
+        // master is the owner account and is not assignable, so the only way to
+        // touch one is to demote it. Reserve that for another master.
+        if (target.role === 'master' && !isMaster) {
+          return corsResponse({ error: 'Only a master account can change the master account' }, 403, origin);
+        }
+      }
 
       const updates = {};
-      if (newRole) updates.user_metadata = { role: newRole };
+      if (newRole) {
+        // Merge, never replace. Sending { role } alone dropped every other key —
+        // student_id, coach_id, name — so changing somebody's role silently
+        // unlinked their portal account from its student or coach record.
+        updates.user_metadata = { ...(target.user.user_metadata || {}), role: newRole };
+      }
       if (password) updates.password = password;
 
       const { data, error } = await supabase.auth.admin.updateUserById(id, updates);
@@ -113,6 +196,17 @@ Deno.serve(async (req) => {
 
       if (!id) {
         return corsResponse({ error: 'User ID is required' }, 400, origin);
+      }
+      if (auth.user && auth.user.id === id) {
+        return corsResponse({ error: 'You cannot revoke your own access' }, 403, origin);
+      }
+
+      const target = await storedRoleOf(id);
+      if (!target) {
+        return corsResponse({ error: 'User not found' }, 404, origin);
+      }
+      if (target.role === 'master' && !isMaster) {
+        return corsResponse({ error: 'Only a master account can revoke another master' }, 403, origin);
       }
 
       const { error } = await supabase.auth.admin.deleteUser(id);
