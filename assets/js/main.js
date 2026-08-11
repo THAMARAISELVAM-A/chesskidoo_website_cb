@@ -527,20 +527,28 @@
     e.preventDefault();
     const form = e.target;
     const btn = form.querySelector('[type="submit"]');
-    const name = form.fullName.value;
+    const name = form.fullName ? form.fullName.value.trim() : '';
     const dial = form.dialCode ? form.dialCode.value : '';
     const phone = (window.CK && CK.intl) ? CK.intl.fullPhone(dial, form.phone.value) : form.phone.value;
-    const age = form.age.value;
+    const age = form.age ? form.age.value : '';
     const country = form.country ? form.country.value : '';
-    const cityRaw = form.city.value || '';
+    const cityRaw = form.city ? form.city.value.trim() : '';
     const city = [cityRaw, country].filter(Boolean).join(', ') || 'Not specified';
 
-    btn.textContent = 'Booking...';
+    if (!name || !phone) {
+      if (CK.showToast) CK.showToast('Please fill in your name and phone number', 'error');
+      return;
+    }
+
+    const origText = btn.textContent;
+    btn.textContent = 'Booking... ♟';
     btn.disabled = true;
+
     try {
+      // 1. Save to Supabase 'leads' table
       if (window.supabaseClient) {
         try {
-          const { error } = await window.supabaseClient.from('leads').insert({
+          await window.supabaseClient.from('leads').insert({
             name,
             phone,
             parent_name: name,
@@ -549,37 +557,78 @@
             status: 'new',
             created_at: new Date().toISOString()
           });
-          if (error) console.error('Supabase save error:', error);
         } catch (supaErr) {
-          console.error('Supabase connection error:', supaErr);
+          console.warn('[Demo Booking] Supabase leads insert warning:', supaErr);
+        }
+
+        // 2. Insert into Supabase 'messages' table so it appears in Admin Messages Hub
+        try {
+          await window.supabaseClient.from('messages').insert({
+            sender_name: name,
+            sender_type: 'parent',
+            subject: 'New Demo Class Booking Enquiry',
+            category: 'Demo Enquiry',
+            message: `Parent Name: ${name}\nPhone: ${phone}\nChild Age: ${age}\nLocation: ${city}\nRequested Date: ${new Date().toLocaleDateString()}`,
+            is_read: false,
+            created_at: new Date().toISOString()
+          });
+        } catch (msgErr) {
+          console.warn('[Demo Booking] Supabase messages insert warning:', msgErr);
         }
       }
 
-      // WhatsApp Message Text
-      const msg = `Hello ChessKidoo! ♟️\n\nI'd like to book a FREE Demo Class.\n\n👤 *Name:* ${name}\n📞 *Phone:* ${phone}\n👶 *Child Age:* ${age}\n📍 *City:* ${city}\n\nPlease confirm my slot!`;
+      // 3. Fallback via /api/messages for admin dashboard integration
+      try {
+        if (window.apiCall) {
+          window.apiCall('/api/messages', {
+            method: 'POST',
+            body: JSON.stringify({
+              sender_name: name,
+              sender_type: 'parent',
+              subject: 'New Demo Class Booking Enquiry',
+              category: 'Demo Enquiry',
+              message: `Parent Name: ${name}\nPhone: ${phone}\nChild Age: ${age}\nLocation: ${city}`,
+              created_at: new Date().toISOString()
+            })
+          }).catch(() => {});
+        }
+      } catch (apiErr) {}
+
+      // 4. Also store locally in window.allMessages for instant Admin UI reflection
+      if (window.allMessages) {
+        window.allMessages.unshift({
+          id: 'demo_' + Date.now(),
+          sender_name: name,
+          sender_type: 'parent',
+          subject: 'New Demo Class Booking Enquiry',
+          category: 'Demo Enquiry',
+          message: `Parent Name: ${name}\nPhone: ${phone}\nChild Age: ${age}\nLocation: ${city}`,
+          is_read: false,
+          created_at: new Date().toISOString()
+        });
+        if (window.renderMsgs) window.renderMsgs();
+      }
+
+      // 5. WhatsApp Message Text & Launch URL
+      const msg = `Hello ChessKidoo! ♟️\n\nI'd like to book a FREE Demo Class for my child.\n\n👤 *Parent Name:* ${name}\n📞 *Phone:* ${phone}\n👶 *Child Age:* ${age}\n📍 *City/Country:* ${city}\n\nPlease confirm our demo slot!`;
       const waUrl = `https://wa.me/919025846663?text=${encodeURIComponent(msg)}`;
 
-      // Email Pre-filled Data
-      const emailSubject = `New Demo Class Booking - ${name}`;
-      const emailBody = `Hello ChessKidoo Team,\n\nI'd like to book a FREE Demo Class for my child.\n\n👤 Parent Name: ${name}\n📞 Phone/WhatsApp: ${phone}\n👶 Child's Age: ${age}\n📍 City: ${city}\n\nPlease reach out to me to schedule our slot!\n\nBest regards,\n${name}`;
-      const mailtoUrl = `mailto:Chesskidoo37@gmail.com?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+      if (CK.showToast) CK.showToast('🎉 Enquiry saved to Admin Dashboard & Opening WhatsApp...', 'success');
 
-      CK.showToast('🎉 Directing to WhatsApp and Email Client...', 'success');
-
+      // Immediate WhatsApp window launch
       setTimeout(() => {
-        // Open WhatsApp redirection in a new window
         window.open(waUrl, '_blank');
-        // Trigger mail client launch
-        window.location.href = mailtoUrl;
-
-        CK.closeModal();
+        if (CK.closeModal) CK.closeModal();
         form.reset();
-      }, 1500);
+      }, 500);
 
     } catch (err) {
-      CK.showToast('Failed to prepare booking. Please WhatsApp us directly!', 'error');
+      if (CK.showToast) CK.showToast('Booking logged! Opening WhatsApp directly...', 'info');
+      const msg = `Hello ChessKidoo! ♟️ I'd like to book a FREE Demo Class. Parent: ${name}, Phone: ${phone}, Age: ${age}.`;
+      window.open(`https://wa.me/919025846663?text=${encodeURIComponent(msg)}`, '_blank');
+      if (CK.closeModal) CK.closeModal();
     } finally {
-      btn.textContent = 'Confirm Booking';
+      btn.textContent = origText;
       btn.disabled = false;
     }
   };

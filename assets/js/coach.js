@@ -24,6 +24,20 @@ CK.coach = {
   coachProfile: null,
   classesDb: [],
 
+  isMyStudent(s) {
+    if (!s) return false;
+    const cp = this.coachProfile || {};
+    const cId = String(cp.id || '').toLowerCase().replace(/-/g, '');
+    const cName = String(cp.full_name || cp.name || '').toLowerCase();
+    const cEmail = String(cp.email || '').toLowerCase();
+    const sc = String(s.coach || s.assigned_coach || s.coach_id || '').toLowerCase().replace(/-/g, '');
+    if (!sc) return false;
+    if (cId && sc === cId) return true;
+    if (cName && sc.includes(cName)) return true;
+    if (cEmail && sc === cEmail) return true;
+    return false;
+  },
+
   async init() {
 
     // 1. Fetch current coach profile dynamically (trust cached ck_user; no scary toast)
@@ -140,8 +154,7 @@ CK.coach = {
     const grid = document.getElementById('coachStudentsGrid');
     if (!grid) return;
     const students = (await CK.db.getProfiles('student')) || [];
-    const coachName = (this.coachProfile?.full_name || '').toLowerCase();
-    const myStudents = students.filter(s => s.coach && s.coach.toLowerCase() === coachName);
+    const myStudents = students.filter(s => this.isMyStudent(s));
     if (!myStudents.length) {
       grid.innerHTML = '<div class="cls-empty" style="grid-column:1/-1;">No students assigned yet. Ask admin to assign students to your profile.</div>';
       this._lastStudentSig = '';
@@ -412,7 +425,7 @@ CK.coach = {
 
     // Stats counters
     const students = (await CK.db.getProfiles('student')) || [];
-    const myStudents = students.filter(s => s.coach && s.coach.toLowerCase() === (cp.full_name || '').toLowerCase());
+    const myStudents = students.filter(s => this.isMyStudent(s));
 
     const stStud = document.getElementById('coachStatStudents');
     const stAtt = document.getElementById('coachStatAttend');
@@ -438,7 +451,7 @@ CK.coach = {
   async markAllPresentToday() {
     const cp = this.coachProfile || {};
     const students = (await CK.db.getProfiles('student')) || [];
-    const myStudents = students.filter(s => s.coach && s.coach.toLowerCase() === (cp.full_name || '').toLowerCase());
+    const myStudents = students.filter(s => this.isMyStudent(s));
     const todayStr = new Date().toISOString().split('T')[0];
     for (const s of myStudents) {
       await CK.db.saveAttendance({ userid: s.id, date: todayStr, status: 'present', coachId: cp.id, coachName: cp.full_name });
@@ -549,7 +562,7 @@ CK.coach = {
     const grid = document.getElementById('coachStudentsGrid');
     if (grid) {
       const students = (await CK.db.getProfiles('student')) || [];
-      const myStudents = students.filter(s => s.coach && s.coach.toLowerCase() === (this.coachProfile ? this.coachProfile.full_name.toLowerCase() : ''));
+      const myStudents = students.filter(s => this.isMyStudent(s));
 
       if (myStudents.length === 0) {
         grid.innerHTML = '<div class="cls-empty">No students currently assigned to you.</div>';
@@ -585,7 +598,7 @@ CK.coach = {
 
     const coachName = (this.coachProfile?.full_name || '').toLowerCase();
     const students = (await CK.db.getProfiles('student')) || [];
-    const myStudents = students.filter(s => s.coach && s.coach.toLowerCase() === coachName);
+    const myStudents = students.filter(s => this.isMyStudent(s));
     const attendanceLogs = (await CK.db.getAttendance(null, selectedDate)) || [];
 
     const attendanceMap = {};
@@ -877,8 +890,7 @@ CK.coach = {
     const select = document.getElementById('coach_note_student');
     if (select) {
       const students = (await CK.db.getProfiles('student')) || [];
-      const coachName = (this.coachProfile?.full_name || '').toLowerCase();
-      const myStudents = students.filter(s => s.coach && s.coach.toLowerCase() === coachName);
+      const myStudents = students.filter(s => this.isMyStudent(s));
       const _e = CK.esc || (s => s);
       select.innerHTML = myStudents.map(s => `<option value="${_e(s.full_name)}">${_e(s.full_name)}</option>`).join('');
     }
@@ -913,8 +925,7 @@ CK.coach = {
     const select = document.getElementById('coach_inline_note_student');
     if (!select) return;
     const students = (await CK.db.getProfiles('student')) || [];
-    const coachName = (this.coachProfile?.full_name || '').toLowerCase();
-    const myStudents = students.filter(s => s.coach && s.coach.toLowerCase() === coachName);
+    const myStudents = students.filter(s => this.isMyStudent(s));
     const _e = CK.esc || (s => s);
     select.innerHTML = myStudents.map(s => `<option value="${_e(s.full_name)}">${_e(s.full_name)}</option>`).join('');
   },
@@ -949,8 +960,7 @@ CK.coach = {
     const select = document.getElementById('coachReportStudentSelect');
     if (!select) return;
     const students = (await CK.db.getProfiles('student')) || [];
-    const coachName = (this.coachProfile?.full_name || '').toLowerCase();
-    const myStudents = students.filter(s => s.coach && s.coach.toLowerCase() === coachName);
+    const myStudents = students.filter(s => this.isMyStudent(s));
     const _e = CK.esc || (s => s);
     select.innerHTML = myStudents.map(s => `<option value="${_e(s.full_name)}">${_e(s.full_name)}</option>`).join('');
     if (myStudents.length > 0) {

@@ -8,10 +8,21 @@
    those need the roster normalising, and are surfaced to the coach instead
    of the student silently vanishing from the attendance sheet. */
 window.ckSameCoach = function (a, b) {
-  const norm = (v) => String(v == null ? '' : v).trim().toLowerCase().replace(/-/g, '');
+  if (a == null || b == null) return false;
+  const norm = (v) => String(v).trim().toLowerCase().replace(/-/g, '');
   const na = norm(a), nb = norm(b);
   if (!na || !nb) return false;
-  return na === nb;
+  if (na === nb) return true;
+
+  const coaches = window.allCoaches || [];
+  const ca = coaches.find(c => norm(c.id) === na || norm(c.email) === na || norm(c.name) === na);
+  const cb = coaches.find(c => norm(c.id) === nb || norm(c.email) === nb || norm(c.name) === nb);
+
+  if (ca && cb) return norm(ca.id) === norm(cb.id);
+  if (ca && (norm(ca.id) === nb || norm(ca.email) === nb || norm(ca.name) === nb)) return true;
+  if (cb && (norm(cb.id) === na || norm(cb.email) === na || norm(cb.name) === na)) return true;
+
+  return false;
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -55,8 +66,8 @@ window.renderCoachDashboard = function() {
     if (nameEl) nameEl.textContent = coach.name.split(' ')[0];
   }
 
-  const myStudents = (window.allStudents || []).filter(s => String(s.coach_id) === String(coachId));
-  const myBatches = (window.allBatches || []).filter(b => String(b.coach_id) === String(coachId));
+  const myStudents = (window.allStudents || []).filter(s => window.ckSameCoach(s.coach_id, coachId));
+  const myBatches = (window.allBatches || []).filter(b => window.ckSameCoach(b.coach_id, coachId));
 
   const statStudents = document.getElementById('coach-stat-students');
   const statBatches = document.getElementById('coach-stat-batches');
@@ -126,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!tbody) return;
 
     const myStudents = (window.allStudents || [])
-      .filter(s => String(s.coach_id) === String(coachId))
+      .filter(s => window.ckSameCoach(s.coach_id, coachId))
       .sort((a, b) => (window.getStudentName ? window.getStudentName(a) : a.name).localeCompare(window.getStudentName ? window.getStudentName(b) : b.name));
 
     if (myStudents.length === 0) {
@@ -156,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tbody = document.getElementById('coach-batches-tbody');
     if (!tbody) return;
 
-    const myBatches = (window.allBatches || []).filter(b => String(b.coach_id) === String(coachId));
+    const myBatches = (window.allBatches || []).filter(b => window.ckSameCoach(b.coach_id, coachId));
 
     if (myBatches.length === 0) {
       tbody.innerHTML = '<tr><td colspan="5" class="coach-loading-cell">No batches assigned yet.</td></tr>';
@@ -369,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextMonth = new Date();
     nextMonth.setDate(today.getDate() + 30);
 
-    const myStudents = (window.allStudents || []).filter(s => String(s.coach_id) === String(coachId));
+    const myStudents = (window.allStudents || []).filter(s => window.ckSameCoach(s.coach_id, coachId));
     const myStudentIds = myStudents.map(s => String(s.id));
 
     const upcoming = (window.allAttendance || [])
@@ -441,7 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const myStudents = (window.allStudents || []).filter(s => String(s.coach_id) === String(coachId));
+    const myStudents = (window.allStudents || []).filter(s => window.ckSameCoach(s.coach_id, coachId));
     const myStudentIds = myStudents.map(s => String(s.id));
 
     const today = new Date();
@@ -492,7 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const date = dateEl ? (dateEl.value || today) : today;
 
     const myStudents = (window.allStudents || [])
-      .filter(s => String(s.coach_id) === String(coachId))
+      .filter(s => window.ckSameCoach(s.coach_id, coachId))
       .sort((a, b) => (window.getStudentName ? window.getStudentName(a) : a.name).localeCompare(window.getStudentName ? window.getStudentName(b) : b.name));
     if (myStudents.length === 0) {
       container.innerHTML = '<tr><td colspan="3" class="coach-loading-cell">No students assigned yet.</td></tr>';
@@ -779,9 +790,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const myStudents = (window.allStudents || []).filter(s => String(s.coach_id) === String(coachId));
+    const myStudents = (window.allStudents || []).filter(s => window.ckSameCoach(s.coach_id, coachId));
     const myStudentIds = myStudents.map(s => String(s.id));
-    const myBatchIds = (window.allBatches || []).filter(b => String(b.coach_id) === String(coachId)).map(b => String(b.id));
+    const myBatchIds = (window.allBatches || []).filter(b => window.ckSameCoach(b.coach_id, coachId)).map(b => String(b.id));
 
     const assignments = (window.allHomework || [])
       .filter(h => {
@@ -852,7 +863,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const myStudents = (window.allStudents || []).filter(s => String(s.coach_id) === String(coachId));
+    const myStudents = (window.allStudents || []).filter(s => window.ckSameCoach(s.coach_id, coachId));
     const myStudentIds = myStudents.map(s => String(s.id));
     let submissions = (window.homeworkSubmissionCache || [])
       .filter(s => myStudentIds.includes(String(s.student_id)))
@@ -931,8 +942,8 @@ document.addEventListener('DOMContentLoaded', () => {
       toast('Assignment not found', 'error');
       return;
     }
-    const myBatchIds = (window.allBatches || []).filter(b => String(b.coach_id) === String(coachId)).map(b => String(b.id));
-    const myStudentIds = (window.allStudents || []).filter(s => String(s.coach_id) === String(coachId)).map(s => String(s.id));
+    const myBatchIds = (window.allBatches || []).filter(b => window.ckSameCoach(b.coach_id, coachId)).map(b => String(b.id));
+    const myStudentIds = (window.allStudents || []).filter(s => window.ckSameCoach(s.coach_id, coachId)).map(s => String(s.id));
     const isOwner = assignment.target_type === 'all'
       || (assignment.target_type === 'batch' && myBatchIds.includes(String(assignment.batch_id)))
       || (assignment.target_type === 'student' && myStudentIds.includes(String(assignment.student_id)));
@@ -980,7 +991,7 @@ window.renderCoachChess = function () {
   }
 
     const myStudents = (window.allStudents || [])
-      .filter(s => String(s.coach_id) === String(coachId))
+      .filter(s => window.ckSameCoach(s.coach_id, coachId))
       .sort((a, b) => (window.getStudentName ? window.getStudentName(a) : a.name).localeCompare(window.getStudentName ? window.getStudentName(b) : b.name));
     if (myStudents.length === 0) {
       container.innerHTML = '<div class="coach-loading-cell">No students assigned yet.</div>';

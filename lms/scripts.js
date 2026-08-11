@@ -331,6 +331,20 @@
     return div.innerHTML;
   }
 
+  function safeUrl(url) {
+    if (!url) return "#";
+    const str = String(url).trim();
+    if (!str) return "#";
+    if (/^(https?:\/\/|mailto:|tel:|\/)/i.test(str)) {
+      return escapeHtml(str);
+    }
+    if (/^([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i.test(str)) {
+      return "https://" + escapeHtml(str);
+    }
+    return "#";
+  }
+  window.safeUrl = safeUrl;
+
   // Escape string for safe embedding in JavaScript string literal inside HTML attribute
   function jsAttrEncode(value) {
     if (value == null) return "";
@@ -1672,7 +1686,7 @@
       (r) => (levelRank[r.level_requirement] || 0) <= sRank,
     );
     const myBatches = allBatches.filter(b => b.student_ids && b.student_ids.map(String).includes(String(currentStudent.id)) && b.chessable_url);
-    const classroomsHtml = myBatches.map(b => `<div class="resource-card" style="border: 1px solid var(--gold); background: rgba(218, 163, 62, 0.05);"><div class="res-type" style="color:var(--gold);">♟️ BATCH CLASSROOM</div><div class="res-title">${escapeHtml(b.name)}</div><div class="res-desc">Your official Chessable classroom for this batch.</div><div class="res-action"><a href="${escapeHtml(b.chessable_url)}" target="_blank" class="btn btn-gold btn-sm" style="width:100%">Join Classroom</a></div></div>`).join("");
+    const classroomsHtml = myBatches.map(b => `<div class="resource-card" style="border: 1px solid var(--gold); background: rgba(218, 163, 62, 0.05);"><div class="res-type" style="color:var(--gold);">♟️ BATCH CLASSROOM</div><div class="res-title">${escapeHtml(b.name)}</div><div class="res-desc">Your official Chessable classroom for this batch.</div><div class="res-action"><a href="${safeUrl(b.chessable_url)}" target="_blank" rel="noopener" class="btn btn-gold btn-sm" style="width:100%">Join Classroom</a></div></div>`).join("");
 
     if (!myRes.length && !classroomsHtml) {
       grid.innerHTML = `<div class="empty-state">No resources yet.</div>`;
@@ -1681,7 +1695,7 @@
     grid.innerHTML = classroomsHtml + myRes
       .map(
         (r) =>
-          `<div class="resource-card"><div class="res-type">${escapeHtml(r.type.toUpperCase())}</div><div class="res-title">${escapeHtml(r.title)}</div><div class="res-desc">${escapeHtml(r.description || "")}</div><div class="res-action"><a href="${escapeHtml(r.url)}" target="_blank" class="btn btn-gold btn-sm" style="width:100%">Open</a></div></div>`,
+          `<div class="resource-card"><div class="res-type">${escapeHtml(r.type.toUpperCase())}</div><div class="res-title">${escapeHtml(r.title)}</div><div class="res-desc">${escapeHtml(r.description || "")}</div><div class="res-action"><a href="${safeUrl(r.url)}" target="_blank" rel="noopener" class="btn btn-gold btn-sm" style="width:100%">Open</a></div></div>`,
       )
       .join("");
   }
@@ -6387,8 +6401,8 @@
       window.renderAttendanceList();
     }
 
-    // Mobile auto-close sidebar
-    if (window.innerWidth <= 768) {
+    // Mobile & tablet auto-close sidebar on menu selection
+    if (window.innerWidth <= 1024) {
       const sidebar = $("sidebar");
       const overlay = $("sidebar-overlay");
       if (sidebar) sidebar.classList.remove("open");
@@ -6437,7 +6451,7 @@ if (p === "stud")
       }
     }
 
-    if (window.innerWidth <= 768) {
+    if (window.innerWidth <= 1024) {
       var sidebar = document.getElementById("sidebar");
       if (sidebar) sidebar.classList.remove("open");
       var overlay = document.getElementById("sidebar-overlay");
@@ -12921,11 +12935,13 @@ Best regards,
       messages = messages.filter((m) => !getMessageIsRead(m));
     } else if (filter === "sent") {
       messages = messages.filter((m) => m.sender_type === "admin");
+    } else if (filter === "demo") {
+      messages = messages.filter((m) => (m.category || "").toLowerCase().includes("demo") || (m.subject || "").toLowerCase().includes("demo"));
     }
 
     if (messages.length === 0) {
       listEl.style.display = "grid";
-      const label = filter === "sent" ? "No sent messages yet" : filter === "unread" ? "No unread messages" : filter === "outbox" ? "No outbox broadcasts yet" : "No messages yet";
+      const label = filter === "sent" ? "No sent messages yet" : filter === "unread" ? "No unread messages" : filter === "demo" ? "No demo enquiries yet" : filter === "outbox" ? "No outbox broadcasts yet" : "No messages yet";
       listEl.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><span class="empty-icon">💬</span><p>${label}</p></div>`;
       return;
     }
@@ -13257,7 +13273,7 @@ Best regards,
   window.goChildTab = function (tab) {
     const childPage = document.getElementById("page-child");
     const alreadyOnChild = childPage && childPage.classList.contains("active");
-    if (window.innerWidth <= 768) {
+    if (window.innerWidth <= 1024) {
       const sb = document.getElementById("sidebar");
       if (sb) sb.classList.remove("open");
       const ov = document.getElementById("sidebar-overlay");

@@ -3706,3 +3706,119 @@ body[data-theme="light"] .trace-chip.failed {
 /* moreActions buttons were authored full-width for the old dropdown; inline
    them so History/Receipt/WhatsApp sit beside the primary actions. */
 .row-actions .btn { flex-shrink: 0; width: auto !important; margin-bottom: 0 !important; white-space: nowrap; }
+
+/* ── MASTER MATRIX INLINE BATCH EDITOR ── */
+.mat-edit-popover {
+  position: fixed;
+  z-index: 10500;
+  background: var(--surface2, #1c2030);
+  border: 1px solid var(--border, rgba(232,168,48,0.25));
+  border-radius: 10px;
+  padding: 16px;
+  width: 340px;
+  max-width: 90vw;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  color: var(--ivory, #fff);
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.mat-edit-popover h4 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: var(--gold, #e8a830);
+}
+.mat-edit-popover label {
+  display: block;
+  font-size: 11px;
+  color: var(--ivory-dim, #8a90a6);
+  margin-top: 8px;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+.mat-edit-popover input[type="text"] {
+  width: 100%;
+  padding: 6px 10px;
+  background: var(--bg3, #141722);
+  border: 1px solid var(--border, #2c3242);
+  border-radius: 6px;
+  color: var(--ivory, #fff);
+  font-size: 12px;
+  box-sizing: border-box;
+}
+.day-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.day-pill {
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 4px;
+  background: var(--bg3, #141722);
+  border: 1px solid var(--border, #2c3242);
+  color: var(--ivory-dim, #8a90a6);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+}
+.day-pill.active {
+  background: var(--gold, #e8a830);
+  color: #111;
+  font-weight: 600;
+  border-color: var(--gold, #e8a830);
+}
+.mat-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border, rgba(255,255,255,0.08));
+}
+.mat-btn-cancel {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid var(--border, #2c3242);
+  color: var(--ivory-dim, #8a90a6);
+  cursor: pointer;
+}
+.mat-btn-save {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  background: var(--gold, #e8a830);
+  border: none;
+  color: #111;
+  cursor: pointer;
+}
+
+/* Mobile responsive fixes for coach portal header & modals */
+@media (max-width: 768px) {
+  .coach-header-actions {
+    width: 100%;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+  }
+  .coach-header-actions input,
+  .coach-header-actions select,
+  .coach-header-actions button {
+    flex: 1 1 auto;
+    min-width: 130px;
+  }
+  #monthly-attendance-modal .modal-sub {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  #monthly-attendance-modal .modal-sub > div {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+  #monthly-attendance-modal .modal-sub input,
+  #monthly-attendance-modal .modal-sub select {
+    width: 100%;
+  }
+}

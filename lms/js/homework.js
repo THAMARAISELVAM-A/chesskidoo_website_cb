@@ -37,6 +37,19 @@
     return String(value).padStart(2, '0');
   }
 
+  function safeUrl(url) {
+    if (!url) return '#';
+    const str = String(url).trim();
+    if (!str) return '#';
+    if (/^(https?:\/\/|mailto:|tel:|\/)/i.test(str)) {
+      return escapeValue(str);
+    }
+    if (/^([a-z0-9-]+\.)+[a-z]{2,}(\/.*)?$/i.test(str)) {
+      return 'https://' + escapeValue(str);
+    }
+    return '#';
+  }
+
   function monthKey(date) {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
   }
@@ -64,7 +77,7 @@
     if (assignment.target_type === 'batch') {
       const student = students.find((item) => String(item.id) === sid);
       if (student && String(student.batch_id) === String(assignment.batch_id)) return true;
-      const batch = (assignment && assignment._batch) || null;
+      const batch = (assignment && assignment._batch) || (window.allBatches || []).find(b => String(b.id) === String(assignment.batch_id));
       return batch ? getBatchStudentIds(batch, students).includes(sid) : false;
     }
     return false;
@@ -244,10 +257,12 @@ let homeworkSubmissionCache = [];
 
     return function(entity) {
       if (!entity) return false;
-      const eCoach = String(entity.coach_id || entity.coach || entity.assigned_coach || '').toLowerCase();
+      const eCoach = entity.coach_id || entity.coach || entity.assigned_coach;
+      if (window.ckSameCoach && window.ckSameCoach(eCoach, currentCoachId)) return true;
       const eName = String(entity.name || entity.full_name || '').toLowerCase();
-      const matchesId = (cId && eCoach.includes(cId)) || (cProfId && eCoach.includes(cProfId));
-      const matchesName = cName && (eCoach.includes(cName) || eName.includes(cName));
+      const ecStr = String(eCoach || '').toLowerCase();
+      const matchesId = (cId && ecStr.includes(cId)) || (cProfId && ecStr.includes(cProfId));
+      const matchesName = cName && (ecStr.includes(cName) || eName.includes(cName));
       return matchesId || matchesName;
     };
   }
@@ -662,6 +677,19 @@ let homeworkSubmissionCache = [];
 
   async function deleteHomeworkAssignment(id) {
     if (!canEditOrDeleteHomework()) return window.toast ? window.toast('Only coaches and administrators can delete homework.', 'error') : null;
+    const role = (window.role || window.userRole || 'student').toLowerCase();
+    if (role === 'coach') {
+      const hw = (window.allHomework || []).find(h => String(h.id) === String(id));
+      const cId = window.currentCoachId || window.userId;
+      if (hw && cId && window.ckSameCoach) {
+        const myBatchIds = (window.allBatches || []).filter(b => window.ckSameCoach(b.coach_id, cId)).map(b => String(b.id));
+        const myStudentIds = (window.allStudents || []).filter(s => window.ckSameCoach(s.coach_id, cId)).map(s => String(s.id));
+        const isOwner = hw.target_type === 'all'
+          || (hw.target_type === 'batch' && myBatchIds.includes(String(hw.batch_id)))
+          || (hw.target_type === 'student' && myStudentIds.includes(String(hw.student_id)));
+        if (!isOwner) return window.toast ? window.toast('You can only delete your own assignments.', 'error') : null;
+      }
+    }
     if (!window.confirm('Delete this homework assignment? This cannot be undone.')) return;
     try {
       const res = await window.apiCall(`/api/homework?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
@@ -742,6 +770,9 @@ let homeworkSubmissionCache = [];
       } catch (e) {}
     }
 
+    let studentObj = (window.allStudents || []).find(s => String(s.id) === String(studentId));
+    let sName = studentObj ? (window.getStudentName ? window.getStudentName(studentObj) : (studentObj.name || studentObj.full_name)) : null;
+
     try {
       const res = await window.apiCall('/api/homework?action=submit', {
         method: 'POST',
@@ -749,6 +780,7 @@ let homeworkSubmissionCache = [];
         body: JSON.stringify({
           assignment_id: assignment.id,
           student_id: studentId || null,
+          student_name: sName,
           submission_text: text,
           submission_url: url,
           file_urls: uploadedUrls.length > 0 ? uploadedUrls : null
@@ -805,7 +837,7 @@ let homeworkSubmissionCache = [];
     const filesHtml = Array.isArray(fileUrls) && fileUrls.length > 0 
       ? `<div style="margin-top:6px;font-size:12px;color:var(--gold);">
           <strong>Attachments:</strong><br>
-          ${fileUrls.map((url, i) => `<a href="${escapeValue(url)}" target="_blank" rel="noopener" style="display:block;margin-top:4px;">📎 File ${i + 1}</a>`).join('')}
+          ${fileUrls.map((url, i) => `<a href="${safeUrl(url)}" target="_blank" rel="noopener" style="display:block;margin-top:4px;">📎 File ${i + 1}</a>`).join('')}
         </div>` 
       : '';
 
@@ -818,7 +850,7 @@ let homeworkSubmissionCache = [];
       </div>
       ${feedback ? `<div style="margin:8px 0;padding:10px;background:rgba(218,163,62,0.06);border:1px solid rgba(218,163,62,0.25);border-radius:8px;font-size:12px;color:var(--ivory);white-space:pre-wrap;">${escapeValue(feedback)}</div>` : ''}
       ${currentText ? `<div style="font-size:12px;color:var(--ivory-dim);line-height:1.55;white-space:pre-wrap;">${escapeValue(currentText)}</div>` : ''}
-      ${currentUrl ? `<div style="margin-top:6px;font-size:12px;color:var(--gold);"><a href="${escapeValue(currentUrl)}" target="_blank" rel="noopener">Open submission link</a></div>` : ''}
+      ${currentUrl ? `<div style="margin-top:6px;font-size:12px;color:var(--gold);"><a href="${safeUrl(currentUrl)}" target="_blank" rel="noopener">Open submission link</a></div>` : ''}
       ${filesHtml}
       ${canSubmit ? `<div style="display:grid;gap:8px;margin-top:12px;">
         <textarea id="homework-submission-text-${assignment.id}" class="input-field" placeholder="Type your completed homework response or practice notes..." style="min-height:90px;">${escapeValue(currentText)}</textarea>
@@ -861,7 +893,7 @@ let homeworkSubmissionCache = [];
       ${assignment.description ? `<div style="margin-top:12px; color:var(--ivory-dim); font-size:13px; line-height:1.65; white-space:pre-wrap;">${escapeValue(assignment.description)}</div>` : '<div style="margin-top:12px;color:var(--ivory-dim);font-size:13px;">No detailed instructions provided.</div>'}
       ${assignment.attachment_urls && Array.isArray(assignment.attachment_urls) && assignment.attachment_urls.length > 0 ? `<div style="margin-top:12px; font-size:12px; color:var(--gold);">
           <strong>Attachments:</strong><br>
-          ${assignment.attachment_urls.map((url, i) => `<a href="${escapeValue(url)}" target="_blank" rel="noopener" style="display:block; margin-top:4px;">📎 File ${i + 1}</a>`).join('')}
+          ${assignment.attachment_urls.map((url, i) => `<a href="${safeUrl(url)}" target="_blank" rel="noopener" style="display:block; margin-top:4px;">📎 File ${i + 1}</a>`).join('')}
         </div>` : ''}
       ${!isAdminUser() ? renderChildSubmissionPanel(assignment) : ''}
     </div>`;
@@ -1081,8 +1113,8 @@ let homeworkSubmissionCache = [];
           </div>
         </div>
         ${submission.submission_text ? `<div style="margin-top:10px;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--ivory);line-height:1.55;white-space:pre-wrap;">${escapeValue(submission.submission_text)}</div>` : ''}
-        ${submission.submission_url ? `<div style="margin-top:6px;font-size:12px;color:var(--gold);"><a href="${escapeValue(submission.submission_url)}" target="_blank" rel="noopener">Open submission link</a></div>` : ''}
-        ${Array.isArray(submission.file_urls) && submission.file_urls.length > 0 ? `<div style="margin-top:6px;font-size:12px;color:var(--gold);"><strong>Attachments:</strong> ${submission.file_urls.map((url, i) => `<a href="${escapeValue(url)}" target="_blank" rel="noopener" style="display:block;margin-top:4px;">📎 File ${i + 1}</a>`).join('')}</div>` : ''}
+        ${submission.submission_url ? `<div style="margin-top:6px;font-size:12px;color:var(--gold);"><a href="${safeUrl(submission.submission_url)}" target="_blank" rel="noopener">Open submission link</a></div>` : ''}
+        ${Array.isArray(submission.file_urls) && submission.file_urls.length > 0 ? `<div style="margin-top:6px;font-size:12px;color:var(--gold);"><strong>Attachments:</strong> ${submission.file_urls.map((url, i) => `<a href="${safeUrl(url)}" target="_blank" rel="noopener" style="display:block;margin-top:4px;">📎 File ${i + 1}</a>`).join('')}</div>` : ''}
         ${feedback ? `<div style="margin-top:10px;padding:10px;background:rgba(218,163,62,0.06);border:1px solid rgba(218,163,62,0.25);border-radius:8px;font-size:12px;color:var(--ivory);white-space:pre-wrap;">${escapeValue(feedback)}</div>` : ''}
         <div style="display:grid;gap:8px;margin-top:12px;">
           <textarea id="homework-feedback-${submission.id}" class="input-field" placeholder="Teacher feedback or revision instructions..." style="min-height:70px;">${escapeValue(feedback)}</textarea>

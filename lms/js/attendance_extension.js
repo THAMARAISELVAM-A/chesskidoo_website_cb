@@ -376,10 +376,10 @@ window.openBatchInlineEdit = function(coachId, batchIndex, btnEl) {
     });
   }
 
-  // Position popover near the button
+  // Position popover near the button (prevent overflow on mobile screens)
   const rect = btnEl.getBoundingClientRect();
-  const popX = Math.min(rect.left, window.innerWidth - 400);
-  const popY = Math.min(rect.bottom + 4, window.innerHeight - 400);
+  const popX = Math.max(10, Math.min(rect.left, window.innerWidth - 350));
+  const popY = Math.max(10, Math.min(rect.bottom + 4, window.innerHeight - 380));
 
   const popover = document.createElement('div');
   popover.className = 'mat-edit-popover';
