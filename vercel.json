@@ -11,6 +11,14 @@
       "destination": "/lms/index.html"
     },
     {
+      "source": "/api/chesscom-games-proxy",
+      "destination": "/api/chesscom-proxy?type=games"
+    },
+    {
+      "source": "/api/chesscom-clubs-proxy",
+      "destination": "/api/chesscom-proxy?type=clubs"
+    },
+    {
       "source": "/((?!assets/|public/|api/|lms|sw\\.js|manifest\\.json|robots\\.txt|sitemap\\.xml|clear\\.html|.*\\.[a-zA-Z0-9]+$).*)",
       "destination": "/index.html"
     }
