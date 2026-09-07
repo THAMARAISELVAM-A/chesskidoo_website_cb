@@ -27,14 +27,14 @@ serve(async (req) => {
     return new Response('Method not allowed', { status: 405, headers: CORS });
   }
 
-  let body: { name?: string; phone?: string; age?: string; city?: string };
+  let body: { name?: string; phone?: string; age?: string; city?: string; language?: string };
   try {
     body = await req.json();
   } catch {
     return new Response('Invalid JSON', { status: 400, headers: CORS });
   }
 
-  const { name = 'Parent', phone = '—', age = '—', city = '—' } = body;
+  const { name = 'Parent', phone = '—', age = '—', city = '—', language = 'English' } = body;
 
   if (!RESEND_API_KEY) {
     console.error('[send-demo-email] RESEND_API_KEY not set in secrets');
@@ -48,6 +48,7 @@ serve(async (req) => {
       <tr><td><strong>Phone / WhatsApp</strong></td><td>${escHtml(phone)}</td></tr>
       <tr><td><strong>Child's Age</strong></td><td>${escHtml(age)}</td></tr>
       <tr><td><strong>City</strong></td><td>${escHtml(city)}</td></tr>
+      <tr><td><strong>Preferred Language</strong></td><td>${escHtml(language)}</td></tr>
     </table>
     <p style="margin-top:16px;color:#666;">Submitted from the ChessKidoo website booking form.</p>
   `;
@@ -86,3 +87,4 @@ function escHtml(str: string): string {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+

@@ -80,7 +80,7 @@ window.getPaymentPayee = function () {
       return { number: String(saved.number), name: String(saved.name || '') };
     }
   } catch (e) {}
-  return { number: '9025846663', name: 'Ranjith' };
+  return { number: '9514266505', name: 'Ranjith' };
 };
 
 window.setPaymentPayee = function (number, name) {
@@ -90,7 +90,7 @@ window.setPaymentPayee = function (number, name) {
   }));
 };
 
-// Convenience string: "9025846663 (Ranjith)" or just the number if no name.
+// Convenience string: "9514266505 (Ranjith)" or just the number if no name.
 window.getPaymentPayeeText = function () {
   const p = window.getPaymentPayee();
   return p.name ? `${p.number} (${p.name})` : p.number;

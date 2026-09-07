@@ -27,7 +27,7 @@
         id: 's1',
         name: 'Student',
         parent_name: 'Parent',
-        phone: '9025846663',
+        phone: '9514266505',
         coach: 'Coach Saran',
         rating: 1200,
         batch: 'Regular Online Batch',
@@ -38,7 +38,7 @@
 
     const studentName = student.name || student.full_name || 'Student';
     const fatherName = student.parent_name || student.father_name || student.guardian_name || 'Parent';
-    const phone = student.phone || student.parent_phone || student.mobile || '9025846663';
+    const phone = student.phone || student.parent_phone || student.mobile || '9514266505';
     const coachName = student.coach || student.assigned_coach || 'Coach Saran';
     const rating = student.rating || student.elo || 1200;
     const batchName = student.batch || student.batch_name || 'Regular Batch';
@@ -234,3 +234,4 @@
     return d.innerHTML;
   }
 })();
+

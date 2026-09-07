@@ -1336,29 +1336,54 @@ document.addEventListener('DOMContentLoaded', () => {
       toast('Assignment not found', 'error');
       return;
     }
-    const myBatchIds = (window.allBatches || []).filter(b => window.ckSameCoach(b.coach_id, coachId)).map(b => String(b.id));
-    const myStudentIds = (window.allStudents || []).filter(s => window.ckSameCoach(s.coach_id, coachId)).map(s => String(s.id));
+    const myBatchIds = (window.allBatches || []).filter(b => window.ckSameCoach ? window.ckSameCoach(b.coach_id, coachId) : String(b.coach_id) === String(coachId)).map(b => String(b.id));
+    const myStudentIds = (window.allStudents || []).filter(s => window.ckSameCoach ? window.ckSameCoach(s.coach_id, coachId) : String(s.coach_id) === String(coachId)).map(s => String(s.id));
     const isOwner = assignment.target_type === 'all'
+      || (assignment.created_by && window.ckSameCoach ? window.ckSameCoach(assignment.created_by, coachId) : String(assignment.created_by) === String(coachId))
+      || (assignment.coach_id && window.ckSameCoach ? window.ckSameCoach(assignment.coach_id, coachId) : String(assignment.coach_id) === String(coachId))
       || (assignment.target_type === 'batch' && myBatchIds.includes(String(assignment.batch_id)))
       || (assignment.target_type === 'student' && myStudentIds.includes(String(assignment.student_id)));
     if (!isOwner) {
       toast('You can only delete your own assignments.', 'error');
       return;
     }
+
+    let deleted = false;
     try {
       const res = await apiCall(`/api/homework?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `Server error ${res.status}`);
+      if (res && res.ok) {
+        deleted = true;
       }
-      toast('Assignment deleted', 'success');
-      window.allHomework = (window.allHomework || []).filter(h => String(h.id) !== String(id));
-      if (window.loadHomeworkData) await window.loadHomeworkData(true);
-      renderCoachAssignments(window.coachAssignPage || 1);
-      if (typeof window.refreshHomeworkViews === 'function') window.refreshHomeworkViews();
-    } catch (e) {
-      toast(`Delete failed: ${e.message}`, 'error');
+    } catch (apiErr) {
+      console.warn('[Coach Homework] apiCall delete error:', apiErr);
     }
+
+    // Direct Supabase fallback
+    if (!deleted && window.supabaseClient && typeof window.supabaseClient.from === 'function') {
+      try {
+        const { error } = await window.supabaseClient.from('homework_assignments').delete().eq('id', id);
+        if (!error) deleted = true;
+      } catch (sbErr) {
+        console.warn('[Coach Homework] Direct Supabase delete error:', sbErr);
+      }
+    }
+
+    if (!deleted) {
+      toast('Delete failed. Please try again.', 'error');
+      return;
+    }
+
+    toast('Assignment deleted', 'success');
+    window.allHomework = (window.allHomework || []).filter(h => String(h.id) !== String(id));
+    try {
+      const stored = JSON.parse(localStorage.getItem('ck_homework_assignments') || '[]');
+      const filtered = stored.filter(h => String(h.id) !== String(id));
+      localStorage.setItem('ck_homework_assignments', JSON.stringify(filtered));
+    } catch (e) {}
+
+    if (window.loadHomeworkData) await window.loadHomeworkData(true).catch(() => {});
+    renderCoachAssignments(window.coachAssignPage || 1);
+    if (typeof window.refreshHomeworkViews === 'function') window.refreshHomeworkViews();
   };
 
 if (typeof window.setPage === 'function') {

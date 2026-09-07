@@ -243,13 +243,13 @@
     // ───── Demo / signup / contact ─────
     { id: 'demo', priority: 80,
       patterns: [/\b(demo|trial|free class|book.*class|book.*session|try.*free)\b/i, /\bsign\s*up|register|join/i],
-      answer: () => `Awesome — book a **free demo class** by clicking *Book Free Demo* on the home page, or message us:\n\n📧 **Chesskidoo37@gmail.com**\n💬 **WhatsApp: +91 9025846663**\n\nWe'll set up a 30-minute intro session at a time that works for you.`,
+      answer: () => `Awesome — book a **free demo class** by clicking *Book Free Demo* on the home page, or message us:\n\n📧 **Chesskidoo37@gmail.com**\n💬 **WhatsApp: +91 9514266505**\n\nWe'll set up a 30-minute intro session at a time that works for you.`,
       suggest: () => ['Open demo form', 'WhatsApp us', 'Show fees'],
       action: () => { if (CK.openDemoModal) CK.openDemoModal(); },
     },
     { id: 'contact', priority: 70,
       patterns: [/\b(contact|reach|email|phone|whatsapp|call)\b/i],
-      answer: () => `Get in touch:\n\n📧 **Chesskidoo37@gmail.com**\n💬 **WhatsApp: +91 9025846663**\n📍 Online classes, India\n\nWe usually reply within a few hours.`,
+      answer: () => `Get in touch:\n\n📧 **Chesskidoo37@gmail.com**\n💬 **WhatsApp: +91 9514266505**\n📍 Online classes, India\n\nWe usually reply within a few hours.`,
       suggest: () => ['Book a demo', 'Show programmes'],
     },
     { id: 'timings', priority: 65,
@@ -769,3 +769,4 @@
     startObserver();
   }
 })();
+

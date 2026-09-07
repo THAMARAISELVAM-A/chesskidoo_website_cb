@@ -18,7 +18,7 @@
         full_name: "Academy Admin",
         role: "admin",
         userid: "admin",
-        phone_number: "+91 90258 46663",
+        phone_number: "+91 95142 66505",
         city: "Chennai"
       },
 
@@ -223,7 +223,8 @@
     // --- USER PROFILE OPERATIONS ---
 
     // Fetch all profiles of a certain role
-    async getProfiles(role = null) {
+    async getProfiles(role = null, options = {}) {
+      const includeArchived = options.includeArchived || false;
       if (canUseSupabase()) {
         try {
           let query = window.supabaseClient.from('users').select('*');
@@ -256,6 +257,9 @@
                 setLocal('users', Object.values(byId));
               }
             } catch (_) { /* localStorage full / disabled — non-fatal */ }
+            if (!includeArchived) {
+              return rows.filter(u => u.status !== 'Archived');
+            }
             return rows;
           }
           console.warn("[ChessKidoo DB] Supabase query failed, falling back to local storage:", error.message || error);
@@ -267,7 +271,11 @@
       }
 
       const localUsers = getLocal('users');
-      return role ? localUsers.filter(u => u.role === role) : localUsers;
+      const filtered = role ? localUsers.filter(u => u.role === role) : localUsers;
+      if (!includeArchived) {
+        return filtered.filter(u => u.status !== 'Archived');
+      }
+      return filtered;
     },
 
     // Fetch a single profile by user ID or custom readable userid string
@@ -2016,3 +2024,4 @@
   };
 
 })();
+

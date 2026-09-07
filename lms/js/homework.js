@@ -972,11 +972,43 @@ let homeworkSubmissionCache = [];
     const descEl = document.getElementById('homework-edit-description');
     const dueDateEl = document.getElementById('homework-edit-due-date');
     const modalTitle = document.getElementById('homework-edit-modal-title');
+    const targetInfoEl = document.getElementById('homework-edit-target-info');
+    const statusBadgeEl = document.getElementById('homework-edit-status-badge');
+    const filesWrapEl = document.getElementById('homework-edit-files-wrap');
+    const filesListEl = document.getElementById('homework-edit-files-list');
 
     if (titleEl) titleEl.value = hw.title || '';
     if (descEl) descEl.value = hw.description || '';
     if (dueDateEl) dueDateEl.value = hw.due_date || '';
     if (modalTitle) modalTitle.textContent = 'Edit Homework';
+
+    if (targetInfoEl) {
+      const targetTxt = typeof assigneeLabel === 'function' ? assigneeLabel(hw) : (hw.target_type === 'all' ? 'All Students' : hw.target_type === 'batch' ? 'Batch' : 'Student');
+      targetInfoEl.textContent = `Target: ${targetTxt}`;
+    }
+    if (statusBadgeEl) {
+      const st = (hw.status || 'active').toLowerCase();
+      statusBadgeEl.textContent = st.charAt(0).toUpperCase() + st.slice(1);
+      statusBadgeEl.className = st === 'completed' ? 'badge badge-success' : st === 'archived' ? 'badge badge-grey' : 'badge badge-warning';
+    }
+
+    const files = (Array.isArray(hw.questions_files) && hw.questions_files.length ? hw.questions_files : (Array.isArray(hw.attachment_urls) ? hw.attachment_urls : []));
+    if (filesWrapEl && filesListEl) {
+      if (files.length > 0) {
+        filesWrapEl.style.display = 'block';
+        filesListEl.innerHTML = files.map((f, i) => {
+          const url = typeof f === 'string' ? f : (f.url || '');
+          const name = typeof f === 'string' ? (f.split('/').pop() || `Attachment ${i + 1}`) : (f.name || `Attachment ${i + 1}`);
+          return `<div style="display:flex; align-items:center; gap:6px; background:var(--bg2); padding:4px 8px; border-radius:4px;">
+            <span>📎</span>
+            <a href="${escapeValue(url)}" target="_blank" rel="noopener" style="color:var(--gold); text-decoration:none; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:480px;">${escapeValue(name)}</a>
+          </div>`;
+        }).join('');
+      } else {
+        filesWrapEl.style.display = 'none';
+        filesListEl.innerHTML = '';
+      }
+    }
 
     // Set up save button handler
     const saveBtn = document.getElementById('homework-edit-save-btn');

@@ -35,15 +35,15 @@ window.APP_CONFIG = {
   // Academy display info
   ACADEMY_NAME:     "ChessKidoo Academy",
   ACADEMY_EMAIL:    "Chesskidoo37@gmail.com",
-  ACADEMY_PHONE:    "+91 90258 46663",
+  ACADEMY_PHONE:    "+91 95142 66505",
   ACADEMY_CITY:     "Bhavani, Erode, Tamil Nadu",
 
   // UPI Payment — direct bank transfer (no gateway needed)
   // IMPORTANT: Replace ACADEMY_UPI_ID with the actual UPI VPA from your bank app
-  // (e.g. ranjithas@okaxis, 9025846663@ybl, etc.)
+  // (e.g. ranjithas@okaxis, 9514266505@ybl, etc.)
   ACADEMY_UPI_ID:     "saminathanranjith73@okaxis",
   ACADEMY_UPI_NAME:   "Ranjith A S",
-  ACADEMY_UPI_MOBILE: "9025846663",
+  ACADEMY_UPI_MOBILE: "9514266505",
 
   // EmailJS (public keys — safe for client-side)
   EMAILJS_SERVICE:  "service_7mn07q9",
@@ -55,7 +55,13 @@ window.APP_CONFIG = {
   // avatar. Get free/cheap credentials from metered.ca, Twilio, or self-host
   // coturn, then fill this in. Example:
   //   TURN_SERVERS: [{ urls: "turn:host:3478", username: "user", credential: "pass" }]
-  TURN_SERVERS: []
+  TURN_SERVERS: [],
+
+  // Google Sheets Demo Booking Integration
+  // Sheet: https://docs.google.com/spreadsheets/d/1AG6Mvpctz6TFzCRGa1-6Qz0V1cl0NDI-QqxINHPn5mU/edit?usp=sharing
+  GOOGLE_SHEET_DEMO_ID: "1AG6Mvpctz6TFzCRGa1-6Qz0V1cl0NDI-QqxINHPn5mU",
+  GOOGLE_SHEET_DEMO_URL: "https://docs.google.com/spreadsheets/d/1AG6Mvpctz6TFzCRGa1-6Qz0V1cl0NDI-QqxINHPn5mU/edit?usp=sharing",
+  GOOGLE_SHEET_WEBHOOK_URL: ""
 };
 
 // Expose Razorpay key via global for student.js payment gateway
@@ -115,4 +121,5 @@ window.CK.esc = function(str) {
 
   attemptInit();
 })();
+
 

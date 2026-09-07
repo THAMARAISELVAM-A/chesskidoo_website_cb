@@ -35,7 +35,7 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS specialty TEXT;
 
 -- 3. Insert the Academy Admin Account
 INSERT INTO public.users (id, email, full_name, role, userid, phone_number, city)
-VALUES ('a007b0b0-9b30-478f-a147-1af18dff20ce', 'admin@gmail.com', 'Academy Admin', 'admin', 'admin', '+91 90258 46663', 'Chennai');
+VALUES ('a007b0b0-9b30-478f-a147-1af18dff20ce', 'admin@gmail.com', 'Academy Admin', 'admin', 'admin', '+91 95142 66505', 'Chennai');
 
 -- 4. Insert Coach Accounts (using the specialty column instead of overriding puzzle)
 INSERT INTO public.users (id, full_name, email, role, phone_number, level, batches, timetable, revenue, classes, star, specialty) VALUES
@@ -47,3 +47,4 @@ INSERT INTO public.users (id, full_name, email, role, phone_number, level, batch
 ('c6', 'SUDHIN', 'sudhin@gmail.com', 'coach', '+91 98400 66778', 'Beginner', 'Evening 17:00, Group', 'Mon-Wed 5PM', '₹9,600', 14, 4, 'Pawn Structures'),
 ('c7', 'RANJITH', 'ranjith@gmail.com', 'coach', '+91 98400 77889', 'Advanced', 'Weekend, Group 17:00', 'Thu-Sun 5PM', '₹21,000', 25, 5, 'Positional Master'),
 ('c8', 'ROHITH SELVARAJ', 'rohith@gmail.com', 'coach', '+91 98400 88990', 'Beginner', 'Group 17:00, MORNING & EVENING', 'Mon-Fri 5PM', '₹13,700', 21, 4, 'Tactical Trainer');
+

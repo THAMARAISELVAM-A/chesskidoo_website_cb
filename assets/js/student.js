@@ -134,7 +134,7 @@ CK.student = {
               Hello <strong style="color:#fff;">${_e(p.full_name || 'Student')}</strong>! Your learning portal access has been temporarily paused by the academy admin due to pending monthly fees (₹${_e(String(p.monthly_fee || p.fee || p.fees || p.tuition_fee || 1800))}). Access will <strong>automatically resume</strong> once fees are cleared.
             </p>
             <div style="display:flex;flex-direction:column;gap:12px;">
-              <a href="https://wa.me/919025846663?text=${encodeURIComponent('Hello Admin, I have paid the fee for student ' + (p.full_name || '') + '. Please resume my access.')}" target="_blank" style="background:#22c55e;color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;font-size:0.95rem;box-shadow:0 4px 14px rgba(34,197,94,0.3);">
+              <a href="https://wa.me/919514266505?text=${encodeURIComponent('Hello Admin, I have paid the fee for student ' + (p.full_name || '') + '. Please resume my access.')}" target="_blank" style="background:#22c55e;color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;font-size:0.95rem;box-shadow:0 4px 14px rgba(34,197,94,0.3);">
                 💬 Send Payment Screenshot via WhatsApp
               </a>
               <button onclick="location.reload()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:10px 20px;border-radius:10px;font-weight:600;cursor:pointer;font-size:0.9rem;">
@@ -4084,3 +4084,4 @@ CK.student = {
     localStorage.setItem(`ck_video_saved_${studentId}`, JSON.stringify(savedMap));
     this.renderVideoAcademy();
   }};
+

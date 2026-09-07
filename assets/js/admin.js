@@ -538,7 +538,8 @@ CK.admin = {
     const tbody = document.getElementById('adminStudentsTable');
     if (!tbody) return;
 
-    const list = data || (await CK.db.getProfiles('student')) || [];
+    const all = data || (await CK.db.getProfiles('student')) || [];
+    const list = all.filter(s => s.status !== 'Archived');
     if (list.length === 0) {
       tbody.innerHTML = '<tr><td colspan="11"><div class="cls-empty">🎓 No students found matching your criteria.</div></td></tr>';
       return;
@@ -1534,9 +1535,8 @@ CK.admin = {
 
   async saveStudent() {
     const getV = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
-    const name  = getV('admin_s_name');
+    const name  = getV('admin_s_name') || 'New Student';
     const phone = getV('admin_s_phone');
-    if (!name) return CK.showToast('Student Full Name is required', 'error');
 
     const existingId = getV('admin_s_id');
     const isNew = !existingId;
@@ -1549,8 +1549,8 @@ CK.admin = {
     let authUid = existingId;
     
     // Auto-generate email and password based on user request if missing
-    const safeName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const email = getV('admin_s_email') || existing.email || `${safeName}@gmail.com`;
+    const safeName = (name || 'student').toLowerCase().replace(/[^a-z0-9]/g, '') || 'student';
+    const email = getV('admin_s_email') || existing.email || `${safeName}${Date.now().toString().slice(-4)}@gmail.com`;
     const password = getV('admin_s_password') || '123456';
 
     if (isNew) {
@@ -1617,13 +1617,20 @@ CK.admin = {
   },
 
   async deleteStudent(id) {
-    if (await CK.confirm('Are you sure you want to permanently remove this student profile?')) {
-      await CK.db.deleteProfile(id);
+    if (await CK.confirm('Are you sure you want to remove this student from active lists? Their profile, attendance, and historical records will be preserved.')) {
+      const s = await CK.db.getProfile(id);
+      if (s) {
+        s.status = 'Archived';
+        s.batch = '';
+        s.coach = '';
+        s.phone_number = '';
+        await CK.db.saveProfile(s);
+      }
       await this.loadStudents();
       await this.loadAttendance();
       this.updateStats();
       this.initCharts();
-      CK.showToast('Student deleted successfully', 'success');
+      CK.showToast('Student archived successfully. Historical data preserved.', 'success');
     }
   },
 
@@ -1645,6 +1652,7 @@ CK.admin = {
     const coach = form?.coach?.value?.trim() || '';
     const students = (await CK.db.getProfiles('student')) || [];
     const filtered = students.filter(s => {
+      if (s.status === 'Archived') return false;
       const lvlMatch = !level || s.level === level;
       const batchMatch = !batch || (s.batch || '').toLowerCase() === batch.toLowerCase();
       const coachMatch = !coach ||
@@ -1833,10 +1841,9 @@ CK.admin = {
       });
 
       // ── Combined Attendance Recording ──
-      // Every roster student is recorded for today: checked = Present, unchecked = Absent.
-      // The classwork notes, homework title and class link are attached so the
-      // Attendance + Homework tracker sheet shows the topic alongside each record.
-      let presentCount = 0, absentCount = 0;
+      // Only present (checked) students receive attendance + homework.
+      // Unchecked students are skipped entirely — no absent record is created.
+      let presentCount = 0;
       if (rosterBoxes.length) {
         const noteParts = [];
         if (form.notes?.value?.trim()) noteParts.push('CW: ' + form.notes.value.trim());
@@ -1846,7 +1853,8 @@ CK.admin = {
 
         for (const box of Array.from(rosterBoxes)) {
           const isPresent = box.checked;
-          if (isPresent) presentCount++; else absentCount++;
+          if (!isPresent) continue;
+          presentCount++;
           await CK.db.saveAttendance({
             userid: box.value,
             studentId: box.value,
@@ -1856,7 +1864,7 @@ CK.admin = {
             batch: batchName,
             class_link: classLink,
             level: targetLevel,
-            status: isPresent ? 'present' : 'absent',
+            status: 'present',
             notes: attNote,
             date: today,
             markedVia: 'class-session',
@@ -1865,10 +1873,19 @@ CK.admin = {
         }
       }
 
+      // Notify only the selected students about the new homework/resource
+      if (selectedUserIds.length && customName) {
+        const notifTitle = `New Homework: ${customName}`;
+        const notifBody = `${coachName || 'Your coach'} assigned "${customName}" (${targetLevel} · ${batchName}). Check your portal!`;
+        selectedUserIds.forEach(uid => {
+          try { if (window.CK?.notifs?.push) CK.notifs.push('new_assignment', notifTitle, notifBody, uid, 'student'); } catch (e) { /* non-fatal */ }
+        });
+      }
+
       CK.showToast(
         `✅ ${storageKind === 'link' ? 'Link' : 'File'} published` +
         (selectedUserIds.length ? ` · homework sent to ${selectedUserIds.length} student(s).` : '') +
-        (rosterBoxes.length ? ` · attendance marked for ${presentCount} present / ${absentCount} absent.` : ''),
+        (presentCount ? ` · attendance marked for ${presentCount} present.` : ''),
         'success'
       );
       CK.closeModal('uploadModal');

@@ -190,7 +190,7 @@ new_footer = """      <!-- Call to Action -->
         <p style="font-size:1.2rem; color:#ccc; margin-bottom:40px;">Join India's first data-driven chess tracking system.</p>
         <div style="display:flex; justify-content:center; gap:20px;">
           <button class="ck-btn-primary" onclick="CK.openDemoModal()">Book Free Demo Class</button>
-          <a href="https://wa.me/919025846663" target="_blank" class="ck-btn-outline" style="text-decoration:none;">Chat on WhatsApp</a>
+          <a href="https://wa.me/919514266505" target="_blank" class="ck-btn-outline" style="text-decoration:none;">Chat on WhatsApp</a>
         </div>
       </section>
     </main>
@@ -221,7 +221,7 @@ new_footer = """      <!-- Call to Action -->
           <h5 style="font-family:var(--font-display); font-size:1rem; margin-bottom:20px; text-transform:uppercase; letter-spacing:1px;">Support</h5>
           <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:15px;">
             <li><a href="mailto:chesskidoo37@gmail.com" style="color:#aaa; text-decoration:none;">Email Us</a></li>
-            <li><a href="https://wa.me/919025846663" target="_blank" style="color:#aaa; text-decoration:none;">WhatsApp</a></li>
+            <li><a href="https://wa.me/919514266505" target="_blank" style="color:#aaa; text-decoration:none;">WhatsApp</a></li>
           </ul>
         </div>
 
@@ -252,3 +252,4 @@ html = re.sub(old_footer, new_footer, html)
 
 with open('index.html', 'w', encoding='utf-8') as f:
     f.write(html)
+

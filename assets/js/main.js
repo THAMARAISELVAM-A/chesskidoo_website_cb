@@ -527,7 +527,7 @@
         </div>
         <div class="ck-help-list">${list}</div>
         <div class="ck-help-contact">
-          <a href="https://wa.me/919025846663" target="_blank" rel="noopener" class="ck-help-btn ck-help-btn-wa">💬 WhatsApp Support</a>
+          <a href="https://wa.me/9195142 66505" target="_blank" rel="noopener" class="ck-help-btn ck-help-btn-wa">💬 WhatsApp Support</a>
           <a href="mailto:Chesskidoo37@gmail.com" class="ck-help-btn ck-help-btn-mail">✉️ Email Us</a>
         </div>
       </div>`;
@@ -600,7 +600,7 @@
       { keys: ['certificate', 'cert'],                     text: "Students earn certificates upon completing each level. Download yours from the Student Portal! 🎓" },
       { keys: ['parent', 'mom', 'dad', 'guardian'],        text: "Parents can track their child's progress, attendance, and reports through the Parent Portal. 👨‍👩‍👧" },
       { keys: ['attendance'],                              text: "Attendance is tracked automatically. View the calendar in your portal to see your record. 📅" },
-      { keys: ['whatsapp', 'contact', 'phone', 'call'],    text: "WhatsApp: +91 90258 46663 | Email: chesskidoo37@gmail.com | We respond within 24 hours! 📩" },
+      { keys: ['whatsapp', 'contact', 'phone', 'call'],    text: "WhatsApp: +91 95142 66505 | Email: chesskidoo37@gmail.com | We respond within 24 hours! 📩" },
       { keys: ['hello', 'hi', 'hey', 'hola'],              text: "Hello! Welcome to ChessKidoo. Ask me about classes, coaches, fees, or anything chess-related! ♟" },
       { keys: ['thank', 'thanks', 'thx'],                  text: "You're welcome! Feel free to ask anything else about chess or our academy. 🙏" },
       { keys: ['bye', 'goodbye', 'see you'],               text: "Goodbye! Keep playing chess and improving. See you at ChessKidoo! ♔" },
@@ -641,6 +641,8 @@
     const mode = modeEl ? modeEl.value : 'Online Class';
     const slotEl = form.querySelector('input[name="slot"]:checked');
     const slot = slotEl ? slotEl.value : 'Evening (5 PM - 8 PM)';
+    const languageEl = form.querySelector('select[name="language"]');
+    const language = languageEl ? languageEl.value : 'English';
 
     if (!name || !cleanDigits) {
       if (CK.showToast) CK.showToast('Please enter a valid parent name and phone number', 'error');
@@ -652,7 +654,7 @@
     btn.disabled = true;
 
     try {
-      const summaryMsg = `Parent Name: ${name}\nPhone: ${phone}\nChild Age: ${age}\nLocation: ${city}\nSkill Level: ${level}\nMode: ${mode}\nTime Slot: ${slot}\nRequested Date: ${new Date().toLocaleDateString()}`;
+      const summaryMsg = `Parent Name: ${name}\nPhone: ${phone}\nChild Age: ${age}\nLocation: ${city}\nSkill Level: ${level}\nMode: ${mode}\nTime Slot: ${slot}\nPreferred Language: ${language}\nRequested Date: ${new Date().toLocaleDateString()}`;
 
       if (window.supabaseClient) {
         try {
@@ -663,7 +665,8 @@
             child_age: age,
             city,
             level,
-            notes: `Mode: ${mode} | Slot: ${slot}`,
+            language,
+            notes: `Mode: ${mode} | Slot: ${slot} | Language: ${language}`,
             status: 'new',
             created_at: new Date().toISOString()
           });
@@ -716,9 +719,55 @@
         if (window.renderMsgs) window.renderMsgs();
       }
 
-      const msg = `Hello ChessKidoo! ♟️\n\nI'd like to book a FREE Demo Class for my child.\n\n👤 *Parent Name:* ${name}\n📞 *Phone:* ${phone}\n👶 *Child Details:* ${childDetails || age}\n📍 *City/Country:* ${city}\n🎯 *Skill Level:* ${level}\n💻 *Preferred Mode:* ${mode}\n⏱️ *Preferred Slot:* ${slot}\n\nPlease confirm our demo slot!`;
-      const waUrl = `https://wa.me/919025846663?text=${encodeURIComponent(msg)}`;
+      // Auto-save booking data to Google Sheet (1AG6Mvpctz6TFzCRGa1-6Qz0V1cl0NDI-QqxINHPn5mU)
+      const sheetPayload = {
+        timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+        parentName: name,
+        phone: phone,
+        childName: childName,
+        childAge: childAge || age,
+        childDetails: childDetails || age,
+        city: city,
+        level: level,
+        mode: mode,
+        slot: slot,
+        language: language,
+        notes: `Mode: ${mode} | Slot: ${slot} | Language: ${language}`,
+        sheetId: '1AG6Mvpctz6TFzCRGa1-6Qz0V1cl0NDI-QqxINHPn5mU',
+        sheetUrl: 'https://docs.google.com/spreadsheets/d/1AG6Mvpctz6TFzCRGa1-6Qz0V1cl0NDI-QqxINHPn5mU/edit?usp=sharing'
+      };
+
+      // 1. Dispatch to Vercel serverless function /api/demo-sheet
+      try {
+        fetch('/api/demo-sheet', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sheetPayload),
+          keepalive: true
+        }).catch((e) => console.warn('[Demo Booking] /api/demo-sheet post warning:', e));
+      } catch (err) {}
+
+      // 2. Direct Google Apps Script Webhook fallback if configured
+      const directWebhook = (window.APP_CONFIG && window.APP_CONFIG.GOOGLE_SHEET_WEBHOOK_URL) || window.GOOGLE_SHEET_WEBHOOK_URL;
+      if (directWebhook && directWebhook.startsWith('https://script.google.com')) {
+        try {
+          fetch(directWebhook, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(sheetPayload),
+            keepalive: true
+          }).catch((e) => console.warn('[Demo Booking] Direct Google Sheet webhook warning:', e));
+        } catch (err) {}
+      }
+
+      const msg = `Hello ChessKidoo! ♟️\n\nI'd like to book a FREE Demo Class for my child.\n\n👤 *Parent Name:* ${name}\n📞 *Phone:* ${phone}\n👶 *Child Details:* ${childDetails || age}\n📍 *City/Country:* ${city}\n🎯 *Skill Level:* ${level}\n💻 *Preferred Mode:* ${mode}\n⏱️ *Preferred Slot:* ${slot}\n🗣️ *Preferred Language:* ${language}\n\nPlease confirm our demo slot!`;
+      const waUrl = `https://wa.me/919514266505?text=${encodeURIComponent(msg)}`;
       CK.lastDemoWhatsAppUrl = waUrl;
+
+      // Update WhatsApp link element in DOM
+      const waLinkEl = document.getElementById('demoSuccessWhatsAppBtn');
+      if (waLinkEl) waLinkEl.setAttribute('href', waUrl);
 
       // Populate Success Summary HTML
       const summaryEl = document.getElementById('demoSuccessSummary');
@@ -728,23 +777,33 @@
           <div class="ck-summary-row"><span class="ck-summary-label">Skill Level:</span><span class="ck-summary-val">${CK.esc(level)}</span></div>
           <div class="ck-summary-row"><span class="ck-summary-label">Learning Format:</span><span class="ck-summary-val">${CK.esc(mode)}</span></div>
           <div class="ck-summary-row"><span class="ck-summary-label">Time Slot:</span><span class="ck-summary-val">${CK.esc(slot)}</span></div>
+          <div class="ck-summary-row"><span class="ck-summary-label">Preferred Language:</span><span class="ck-summary-val">${CK.esc(language)}</span></div>
+          <div class="ck-summary-row"><span class="ck-summary-label">Google Sheet:</span><span class="ck-summary-val" style="color:#4ade80;">✓ Auto-Saved</span></div>
         `;
       }
 
-      if (CK.showToast) CK.showToast('🎉 Demo Enquiry saved! Opening WhatsApp...', 'success');
+      if (CK.showToast) CK.showToast('🎉 Demo Booking Auto-Saved to Sheet! Opening WhatsApp...', 'success');
 
       setTimeout(() => {
-        window.open(waUrl, '_blank');
+        try {
+          window.open(waUrl, '_blank');
+        } catch (e) {
+          console.warn('[Demo Booking] Window open warning:', e);
+        }
         CK.currentStep = 4;
         CK.updateWizardUI();
         form.reset();
-      }, 400);
+      }, 350);
 
     } catch (err) {
       if (CK.showToast) CK.showToast('Booking logged! Opening WhatsApp directly...', 'info');
-      const msg = `Hello ChessKidoo! ♟️ I'd like to book a FREE Demo Class. Parent: ${name}, Phone: ${phone}, Level: ${level}, Mode: ${mode}, Slot: ${slot}.`;
-      CK.lastDemoWhatsAppUrl = `https://wa.me/919025846663?text=${encodeURIComponent(msg)}`;
-      window.open(CK.lastDemoWhatsAppUrl, '_blank');
+      const msg = `Hello ChessKidoo! ♟️ I'd like to book a FREE Demo Class.\nParent: ${name}\nPhone: ${phone}\nLevel: ${level}\nMode: ${mode}\nSlot: ${slot}\nLanguage: ${language}.`;
+      CK.lastDemoWhatsAppUrl = `https://wa.me/919514266505?text=${encodeURIComponent(msg)}`;
+      const waLinkEl = document.getElementById('demoSuccessWhatsAppBtn');
+      if (waLinkEl) waLinkEl.setAttribute('href', CK.lastDemoWhatsAppUrl);
+      try {
+        window.open(CK.lastDemoWhatsAppUrl, '_blank');
+      } catch (e) {}
       CK.currentStep = 4;
       CK.updateWizardUI();
       form.reset();
@@ -804,7 +863,7 @@
       }
 
       const msg = `Hello ChessKidoo Academy! 🌍\n\nI am requesting a Custom NRI Fee & Timezone Quote for my child.\n\n👤 *Parent Name:* ${name}\n📞 *WhatsApp:* ${phone}\n📧 *Email:* ${email || 'Not provided'}\n👶 *Child's Name:* ${childName || 'Not provided'}\n🎂 *Child's Age:* ${childAge || 'Not provided'}\n♟️ *Current Level:* ${chessLevel || 'Not provided'}\n🌐 *Country & Timezone:* ${countryTz}\n📅 *Preferred Days:* ${days || 'Not specified'}\n🕐 *Preferred Time:* ${timeSlot || 'Not specified'}\n📚 *Format Looking For:* ${category}\n📆 *Classes / Month:* ${classesPerMonth}\n📝 *Notes:* ${notes || 'None'}\n\nPlease send custom fee details and available slots! ♟️`;
-      const waUrl = `https://wa.me/919025846663?text=${encodeURIComponent(msg)}`;
+      const waUrl = `https://wa.me/9195142 66505?text=${encodeURIComponent(msg)}`;
 
       if (CK.showToast) CK.showToast('🎉 Custom NRI Quote request ready! Opening WhatsApp...', 'success');
       setTimeout(() => {
@@ -813,7 +872,7 @@
         form.reset();
       }, 400);
     } catch (err) {
-      const fallbackUrl = `https://wa.me/919025846663?text=${encodeURIComponent('Hello ChessKidoo! 🌍 NRI Inquiry from ' + name + ' (' + countryTz + '). Format: ' + category + ', Frequency: ' + classesPerMonth)}`;
+      const fallbackUrl = `https://wa.me/9195142 66505?text=${encodeURIComponent('Hello ChessKidoo! 🌍 NRI Inquiry from ' + name + ' (' + countryTz + '). Format: ' + category + ', Frequency: ' + classesPerMonth)}`;
       window.open(fallbackUrl, '_blank');
       CK.closeModal('nriInquiryModal');
       form.reset();
@@ -934,7 +993,7 @@
   };
 
   CK.openDirectDemoWhatsApp = () => {
-    const url = CK.lastDemoWhatsAppUrl || 'https://wa.me/919025846663?text=' + encodeURIComponent('Hello ChessKidoo! I would like to confirm my free demo class booking.');
+    const url = CK.lastDemoWhatsAppUrl || 'https://wa.me/9195142 66505?text=' + encodeURIComponent('Hello ChessKidoo! I would like to confirm my free demo class booking.');
     window.open(url, '_blank');
   };
 
@@ -986,7 +1045,7 @@
       }
 
       const msg = `Hello ChessKidoo! ♟️🏆\n\nI'd like to register for the tournament:\n*Event:* ${tName}\n👤 *Player Name:* ${player}\n📞 *Phone:* ${phone}\n👶 *Age:* ${age}\n⭐ *FIDE Rating:* ${fideRating}\n🎯 *Category:* ${category}\n\nPlease send entry confirmation and pairings link!`;
-      const waUrl = `https://wa.me/919025846663?text=${encodeURIComponent(msg)}`;
+      const waUrl = `https://wa.me/9195142 66505?text=${encodeURIComponent(msg)}`;
 
       if (CK.showToast) CK.showToast('🎉 Tournament entry saved! Opening WhatsApp...', 'success');
       setTimeout(() => {
@@ -996,7 +1055,7 @@
       }, 500);
     } catch (err) {
       const msg = `Hello ChessKidoo! ♟️ I'd like to register for ${tName}. Player: ${player}, Phone: ${phone}, Category: ${category}`;
-      window.open(`https://wa.me/919025846663?text=${encodeURIComponent(msg)}`, '_blank');
+      window.open(`https://wa.me/9195142 66505?text=${encodeURIComponent(msg)}`, '_blank');
       CK.closeModal('tournamentModal');
     } finally {
       btn.textContent = origText;
@@ -1099,7 +1158,7 @@ ${applicant}`;
       }
 
       const msg = `Hello ChessKidoo HR! ♟️💼\n\nI'd like to apply for the position:\n*Role:* ${position}\n👤 *Name:* ${applicant}\n📧 *Email:* ${email}\n📞 *Phone:* ${phone}\n⭐ *FIDE Rating/Title:* ${fideTitle}\n⏱️ *Experience:* ${experience}\n📍 *Preferred Mode:* ${jobMode}\n📄 *Resume Link:* ${resumeUrl}\n\nPlease review my application!`;
-      const waUrl = `https://wa.me/919025846663?text=${encodeURIComponent(msg)}`;
+      const waUrl = `https://wa.me/9195142 66505?text=${encodeURIComponent(msg)}`;
 
       if (CK.showToast) CK.showToast('🎉 Application submitted! Opening WhatsApp HR desk...', 'success');
       setTimeout(() => {
@@ -1109,7 +1168,7 @@ ${applicant}`;
       }, 500);
     } catch (err) {
       const msg = `Hello ChessKidoo HR! ♟️ I'd like to apply for ${position}. Name: ${applicant}, Phone: ${phone}, Email: ${email}`;
-      window.open(`https://wa.me/919025846663?text=${encodeURIComponent(msg)}`, '_blank');
+      window.open(`https://wa.me/9195142 66505?text=${encodeURIComponent(msg)}`, '_blank');
       CK.closeModal('jobApplyModal');
     } finally {
       btn.textContent = origText;

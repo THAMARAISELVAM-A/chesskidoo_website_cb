@@ -73,7 +73,7 @@ new_student_html = """
               <div style="font-size:0.75rem; opacity:0.6;">Professional FIDE Coach</div>
             </div>
           </div>
-          <button class="dash-btn" style="width:100%;" onclick="window.open('https://wa.me/919025846663')">💬 Chat with Support</button>
+          <button class="dash-btn" style="width:100%;" onclick="window.open('https://wa.me/919514266505')">💬 Chat with Support</button>
         </div>
       </div>
 
@@ -108,3 +108,4 @@ js = re.sub(r'const fullName = user\.full_name \|\| [\s\S]*?container\.innerHTML
 
 with open('assets/js/student.js', 'w', encoding='utf-8') as f:
     f.write(js)
+

@@ -137,7 +137,7 @@
       const status = (profile.status || '').toLowerCase();
       const access = (profile.access_status || '').toLowerCase();
       if ((profile.role || '').toLowerCase() === 'student' && (status.includes('paused') || access === 'paused')) {
-        const adminPhone = '+91 90258 46663';
+        const adminPhone = '+91 95142 66505';
         const waMsg = encodeURIComponent(`Hello Admin, my access is paused for ${profile.full_name || 'student'}. I want to pay fees / send payment receipt to resume my access.`);
         
         let pauseModal = document.getElementById('loginPausedModal');
@@ -154,7 +154,7 @@
                 Hello <strong style="color:#fff;">${profile.full_name || 'Student'}</strong>! Your student portal access has been temporarily paused by the academy admin due to pending monthly fees.
               </p>
               <div style="display:flex;flex-direction:column;gap:10px;">
-                <a href="https://wa.me/919025846663?text=${waMsg}" target="_blank" style="background:#22c55e;color:#fff;text-decoration:none;padding:12px;border-radius:8px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;">
+                <a href="https://wa.me/919514266505?text=${waMsg}" target="_blank" style="background:#22c55e;color:#fff;text-decoration:none;padding:12px;border-radius:8px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;">
                   💬 Call / WhatsApp Admin (${adminPhone})
                 </a>
                 <button onclick="document.getElementById('loginPausedModal').style.display='none'" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:10px;border-radius:8px;font-weight:600;cursor:pointer;">Close</button>

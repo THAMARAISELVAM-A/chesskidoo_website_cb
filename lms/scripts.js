@@ -3126,7 +3126,7 @@
       getStudentLocalCurrencyAmount(s, amount);
     const payTo = window.getPaymentPayeeText
       ? window.getPaymentPayeeText()
-      : "9025846663 (Ranjith)";
+      : "9514266505 (Ranjith)";
     if (isDueOrOverdue) {
       return (
         `\u{1F534} FEE PAYMENT DUE\n\n` + // 🔴
@@ -3651,9 +3651,40 @@
         auditTarget = "coaches";
         successMsg = "Coach removed from academy!";
       } else if (type === "student") {
+        if (!isHardDelete) {
+          // Soft-delete: remove student from THIS MONTH'S active data onwards while keeping all previous historical records intact
+          const targetMonth = window.reportMonth !== undefined ? window.reportMonth : new Date().getUTCMonth();
+          const targetYear = window.reportYear !== undefined ? window.reportYear : new Date().getUTCFullYear();
+          const archiveKey = `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}`;
+          const sObj = (window.allStudents || []).find((s) => String(s.id) === String(id));
+          const currentNotes = (sObj && sObj.notes) ? sObj.notes : "";
+          const cleanNotes = currentNotes.replace(/\[ARCHIVED_MONTH:[^\]]+\]/g, "").trim();
+          const newNotes = `${cleanNotes} [ARCHIVED_MONTH:${archiveKey}]`.trim();
+
+          const res = await apiCall(`/api/students?id=${id}`, {
+            method: "PUT",
+            body: JSON.stringify({
+              status: "archived",
+              account_status: "archived",
+              notes: newNotes
+            })
+          });
+
+          if (sObj) {
+            sObj.status = "archived";
+            sObj.account_status = "archived";
+            sObj.notes = newNotes;
+          }
+          logAudit("students", id, "archive", { id, archiveKey }, null);
+          toast(`Student removed from ${archiveKey} data! Prior months' attendance and fee records remain preserved.`, "success");
+          closeModals();
+          loadAllData(true);
+          return;
+        }
+
         endpoint = "/api/students?id=" + id;
         auditTarget = "students";
-        successMsg = "Student enrollment deleted!";
+        successMsg = "Student enrollment permanently deleted!";
       } else if (type === "batch") {
         endpoint = "/api/batches?id=" + id;
         auditTarget = "batches";
@@ -3825,6 +3856,26 @@
       .replace(/\[STYPE:[^\]]*\]/gi, "")
       .trim();
   }
+
+    function isStudentScheduledOnDate(s, dateStr) {
+    if (!s || (s.status || "active").toLowerCase() !== "active") return false;
+    const targetDate = dateStr ? new Date(dateStr + "T12:00:00Z") : new Date();
+    const day = targetDate.getUTCDay();
+    const dayName = targetDate.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" }).toUpperCase();
+    const shortDay = dayName.slice(0, 3);
+    const days = (s.days || "").toUpperCase();
+    const time = (s.session_time || s.batch_time || "").toUpperCase();
+    if (!time && !days) return true;
+    if (days.includes("WEEKEND")) return (day === 0 || day === 6);
+    if (days.includes("WEEKDAY")) return (day >= 1 && day <= 5);
+    if (days.includes("DAILY")) return true;
+    return days.includes(dayName) || days.includes(shortDay) ||
+      (days.includes("MON") && day === 1) || (days.includes("TUE") && day === 2) ||
+      (days.includes("WED") && day === 3) || (days.includes("THU") && day === 4) ||
+      (days.includes("FRI") && day === 5) || (days.includes("SAT") && day === 6) ||
+      (days.includes("SUN") && day === 0);
+  }
+  window.isStudentScheduledOnDate = isStudentScheduledOnDate;
 
   function isStudentScheduledToday(s) {
     if (!s || (s.status || "active").toLowerCase() !== "active") return false;
@@ -8637,8 +8688,22 @@ setTimeout(function () {
       studs = studs.filter((s) => {
         const sStatus = getStudentStatus(s);
         const fEnrollStatus = $("f-enroll-status")?.value;
-        if (sStatus === "archived" && fEnrollStatus !== "archived")
+        const targetKey = `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}`;
+
+        // Check if student was archived starting from a specific month
+        const archMatch = /\[ARCHIVED_MONTH:(\d{4}-\d{2})\]/i.exec(s.notes || "");
+        if (archMatch) {
+          const archMonth = archMatch[1];
+          if (targetKey < archMonth) {
+            // Student was active in this past historical month; retain in historical records!
+          } else {
+            // Student is archived for this month and future months
+            if (fEnrollStatus !== "archived") return false;
+          }
+        } else if (sStatus === "archived" && fEnrollStatus !== "archived") {
           return false;
+        }
+
         const enrollDateStr = getStudentDate(s);
         const enrollDate = enrollDateStr
           ? new Date(enrollDateStr)
@@ -9759,13 +9824,13 @@ setTimeout(function () {
   };
 
   async function saveStudent() {
-    const rawPhone = $("m-phone").value.trim();
+    const rawPhone = $("m-phone") ? $("m-phone").value.trim() : "";
     const countryCode = window.selectedCountryCode || "IN";
-    const validation = validatePhoneNumber(rawPhone, countryCode);
-    const fullPhone = getFullInternationalPhoneDigits(rawPhone, countryCode);
+    const fullPhone = rawPhone ? getFullInternationalPhoneDigits(rawPhone, countryCode) : "";
     const selectedStatus = $("m-status")?.value || "active";
-    const sFullName = $("m-name").value.trim();
-    const sDefaultEmail = sFullName.toLowerCase().replace(/[^a-z0-9]/g, '') + '@gmail.com';
+    const sFullName = ($("m-name") ? $("m-name").value.trim() : "") || "New Student";
+    const cleanPrefix = sFullName.toLowerCase().replace(/[^a-z0-9]/g, '') || ('student_' + Date.now().toString(36));
+    const sDefaultEmail = cleanPrefix + '@gmail.com';
     const data = {
        full_name: sFullName,
        email: ($("m-email") && $("m-email").value.trim()) ? $("m-email").value.trim() : sDefaultEmail,
@@ -11594,173 +11659,8 @@ Best regards,
   }
   window.sendPaymentReceiptNotification = sendPaymentReceiptNotification;
 
-  window.togglePaymentStatus = async function (id, name, fee) {
-    const s = allStudents.find((x) => String(x.id) === String(id));
-    if (!s) return;
+  // Duplicate window.togglePaymentStatus removed — authoritative version is defined earlier.
 
-    const currentStatus = getStudentPaymentStatus(s);
-    const isCurrentlyPaid = currentStatus === "Paid";
-    const action = isCurrentlyPaid ? "unpaid" : "paid";
-    const confirmMsg = isCurrentlyPaid
-      ? `Mark ${name} as Unpaid? This will remove this month's payment record and revert status to Pending.`
-      : `Mark ${name} as Paid? This will create a payment record for this month.`;
-
-    if (!confirm(confirmMsg)) return;
-
-    const targetMonth = window.reportMonth;
-    const targetYear = window.reportYear;
-    const originalPayments = [...window.allPayments];
-
-    // --- Optimistic Local Updates ---
-    let mockPayment = null;
-    let removedPayments = [];
-    if (isCurrentlyPaid) {
-      const targetKey = `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}`;
-      removedPayments = window.allPayments.filter((p) => {
-        if (String(p.student_id) !== String(id) || p.status !== "paid") return false;
-        
-        if (p.applied_month) {
-          return normalizeMonth(p.applied_month) === targetKey;
-        }
-        
-        const pd = new Date(p.payment_date || p.created_at);
-        if (!isNaN(pd.getTime())) {
-          const pm = pd.getUTCFullYear() + "-" + String(pd.getUTCMonth() + 1).padStart(2, "0");
-          return pm === targetKey;
-        }
-        return false;
-      });
-      window.allPayments = window.allPayments.filter(
-        (p) => !removedPayments.includes(p),
-      );
-    } else {
-      mockPayment = {
-        id: "pay_toggle_temp_" + Date.now(),
-        student_id: id,
-        amount: parseFloat(fee),
-        status: "paid",
-        payment_method: "Manual Toggle",
-        description: "Monthly Tuition",
-        transaction_id: "TGL-" + Math.floor(Math.random() * 1000000),
-        payment_date:
-          window.reportMonth !== new Date().getUTCMonth() ||
-          window.reportYear !== new Date().getUTCFullYear()
-            ? new Date(
-                Date.UTC(window.reportYear, window.reportMonth, 1, 12, 0, 0),
-              ).toISOString()
-            : new Date().toISOString(),
-      };
-      window.allPayments.unshift(mockPayment);
-    }
-
-    if (dataCache) dataCache.payments = window.allPayments;
-
-    const pMap = {};
-    const seenMonths = new Set();
-    window.allPayments.forEach((p) => {
-      if (p.status === "paid") {
-        const sid = String(p.student_id || "")
-          .trim()
-          .toLowerCase();
-        if (!sid) return;
-        const pDate = new Date(p.payment_date || p.created_at);
-        const mKey = `${sid}_${pDate.getUTCFullYear()}-${pDate.getUTCMonth()}`;
-        if (seenMonths.has(mKey)) return;
-        seenMonths.add(mKey);
-        pMap[sid] = (pMap[sid] || 0) + 1;
-      }
-    });
-    window.totalPaymentsMap = pMap;
-
-    const active = document.querySelector(".page.active")?.id;
-    if (active === "page-dash") renderDash();
-    else if (active === "page-stud") renderStudents();
-    else if (active === "page-bills") renderBills();
-
-    // --- Background Sync with Database ---
-    try {
-      if (isCurrentlyPaid) {
-        for (const p of removedPayments) {
-          if (!p.id.startsWith("pay_toggle_temp_")) {
-            await apiCall(`${API_BASE}/payments?id=${p.id}`, {
-              method: "DELETE",
-            });
-          }
-        }
-
-        await apiCall(`${API_BASE}/students?id=${id}`, {
-          method: "PUT",
-          body: JSON.stringify({ payment_status: "Pending" }),
-        });
-
-        toast(
-          `Marked Unpaid. ${removedPayments.length} payment record(s) removed.`,
-          "info",
-        );
-      } else {
-        const paymentData = {
-          id:
-            "pay_toggle_" +
-            Date.now() +
-            "_" +
-            Math.random().toString(36).substr(2, 9),
-          student_id: id,
-          amount: parseFloat(fee),
-          status: "paid",
-          payment_method: "Manual Toggle",
-          description: "Monthly Tuition",
-          transaction_id: "TGL-" + Math.floor(Math.random() * 1000000),
-          payment_date: mockPayment.payment_date,
-        };
-
-        const res = await apiCall(`${API_BASE}/payments`, {
-          method: "POST",
-          body: JSON.stringify(paymentData),
-        });
-
-        if (res.ok) {
-          await apiCall(`${API_BASE}/students?id=${id}`, {
-            method: "PUT",
-            body: JSON.stringify({ payment_status: "Paid" }),
-          });
-          toast("Marked as Paid with transaction record", "success");
-          if (window.sendPaymentReceiptNotification) {
-            sendPaymentReceiptNotification(id, fee);
-          }
-        } else {
-          throw new Error("POST failed");
-        }
-      }
-
-      loadAllData(true);
-    } catch (e) {
-      console.error("Toggle status sync failed, rolling back:", e);
-      toast("Sync failed, rolling back UI...", "error");
-      window.allPayments = originalPayments;
-      if (dataCache) dataCache.payments = window.allPayments;
-
-      const rollMap = {};
-      const rollSeen = new Set();
-      window.allPayments.forEach((p) => {
-        if (p.status === "paid") {
-          const sid = String(p.student_id || "")
-            .trim()
-            .toLowerCase();
-          if (!sid) return;
-          const pDate = new Date(p.payment_date || p.created_at);
-          const mKey = `${sid}_${pDate.getUTCFullYear()}-${pDate.getUTCMonth()}`;
-          if (rollSeen.has(mKey)) return;
-          rollSeen.add(mKey);
-          rollMap[sid] = (rollMap[sid] || 0) + 1;
-        }
-      });
-      window.totalPaymentsMap = rollMap;
-
-      if (active === "page-dash") renderDash();
-      else if (active === "page-stud") renderStudents();
-      else if (active === "page-bills") renderBills();
-    }
-  };
     // Open the Record Payment dialog to collect date/time/mode before
     // logging. Used by the manual "Mark Paid" button so receipts carry the
     // real payment details instead of a random date/method.
@@ -12479,11 +12379,21 @@ Best regards,
 
         // 1. Enrollment Check
         const enrollStatus = getStudentStatus(s);
+        const targetPeriodKey = `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}`;
+        const archMatchBill = /\[ARCHIVED_MONTH:(\d{4}-\d{2})\]/i.exec(s.notes || "");
+        let isArchivedForThisPeriod = false;
+        if (archMatchBill) {
+          isArchivedForThisPeriod = targetPeriodKey >= archMatchBill[1];
+        } else if (enrollStatus === "archived") {
+          isArchivedForThisPeriod = true;
+        }
+
         const isNotEnrolled =
           enrollStatus === "pending" ||
           enrollStatus === "upcoming" ||
           enrollStatus === "waitlist" ||
-          enrollStatus === "inactive";
+          enrollStatus === "inactive" ||
+          isArchivedForThisPeriod;
         const wasEnrolled =
           enrollDate && enrollDate <= targetMonthEnd && !isNotEnrolled;
         if (!wasEnrolled || isNotEnrolled) {
@@ -14304,7 +14214,7 @@ Best regards,
     const student = currentStudent || (allStudents && allStudents[0]) || { name: 'Student' };
     const studentName = getStudentName(student);
     const coach = allCoaches.find((c) => String(c.id) === String(student.coach_id)) || allCoaches[0];
-    const coachPhone = coach?.phone || '9025846663';
+    const coachPhone = coach?.phone || '9514266505';
     const cleanPhone = String(coachPhone).replace(/\D/g, '');
     const targetNumber = cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone;
 
@@ -14372,7 +14282,7 @@ Best regards,
     const studentName = getStudentName(student);
 
     const fullMsg = `🌟 *ChessKidoo Academy Feedback*\nStudent: *${studentName}*\nRating: ${rating}\nCategory: ${category}\n\nFeedback: "${msg}"`;
-    window.open(`https://api.whatsapp.com/send?phone=919025846663&text=${encodeURIComponent(fullMsg)}`, '_blank');
+    window.open(`https://api.whatsapp.com/send?phone=919514266505&text=${encodeURIComponent(fullMsg)}`, '_blank');
     toast("WhatsApp feedback opened!", "success");
     if ($("fb-msg")) $("fb-msg").value = "";
     closeModals();

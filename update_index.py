@@ -23,7 +23,7 @@ new_landing_page = """<!-- ======================== LANDING PAGE ===============
               <p class="hero-sub">Manage your chess students, track progress, and level up your coaching experience with FIDE-certified experts.</p>
               <div class="hero-btns">
                 <button class="btn btn-primary" onclick="CK.openDemoModal()">📅 Book Free Demo</button>
-                <a href="https://wa.me/919025846663" target="_blank" class="btn btn-ghost">💬 WhatsApp Us</a>
+                <a href="https://wa.me/919514266505" target="_blank" class="btn btn-ghost">💬 WhatsApp Us</a>
               </div>
               <div class="hero-stats">
                 <div><div class="hero-stat-num">500+</div><div class="hero-stat-label">Active Students</div></div>
@@ -368,7 +368,7 @@ new_landing_page = """<!-- ======================== LANDING PAGE ===============
           <p style="opacity: 0.7; margin: 20px auto 40px; max-width:600px; font-size:1.1rem; line-height:1.6;">Join 500+ students and families who chose ChessKidoo. No experience needed – just curiosity.</p>
           <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
             <button class="btn btn-primary" onclick="CK.openDemoModal()">📅 Book Free Demo</button>
-            <a href="https://wa.me/919025846663" target="_blank" class="btn btn-ghost" style="color:#fff; border-color:rgba(255,255,255,0.3);">💬 Chat on WhatsApp</a>
+            <a href="https://wa.me/919514266505" target="_blank" class="btn btn-ghost" style="color:#fff; border-color:rgba(255,255,255,0.3);">💬 Chat on WhatsApp</a>
           </div>
         </div>
       </section>
@@ -404,7 +404,7 @@ new_landing_page = """<!-- ======================== LANDING PAGE ===============
           <div>
             <h5 style="margin-bottom:20px; color:var(--amber); font-family:var(--font-display);">Contact Us</h5>
             <div style="display:flex; flex-direction:column; gap:12px; opacity:0.7;">
-              <span>📞 +91 90258 46663</span>
+              <span>📞 +91 95142 66505</span>
               <span>📧 chesskidoo@gmail.com</span>
               <button class="btn btn-outline btn-sm" style="color:#fff; border-color:#fff; width:fit-content; margin-top:10px;" onclick="CK.openDemoModal()">Get Free Demo</button>
             </div>
@@ -429,3 +429,4 @@ if start_marker in content and login_marker in content:
     print("Replaced content successfully.")
 else:
     print("Markers not found.")
+
