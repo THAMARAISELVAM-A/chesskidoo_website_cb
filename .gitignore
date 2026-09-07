@@ -59,3 +59,9 @@ replace_ui.py
 
 # ─── Claude agent worktrees ──────────────
 .claude/worktrees/
+
+# ─── Supabase local temp state ───────────
+supabase/.temp/
+
+# ─── Remote repo backup ──────────────────
+remote_repo/
