@@ -453,6 +453,7 @@ let homeworkSubmissionCache = [];
     if ($('hw-due-date')) $('hw-due-date').value = '';
     if ($('hw-file-input')) $('hw-file-input').value = '';
     if ($('hw-file-preview')) $('hw-file-preview').innerHTML = '';
+    setupHomeworkFileDropzone();
     if ($('hw-past-search')) $('hw-past-search').value = '';
     updatePastHomeworkHistory();
     window.openModal && window.openModal('homework-assignment-modal');
@@ -598,6 +599,39 @@ let homeworkSubmissionCache = [];
     previewEl.innerHTML = html;
   };
 
+  function setupHomeworkFileDropzone() {
+    const input = $('hw-file-input');
+    const dropzone = $('hw-file-drop');
+    if (!input || !dropzone || dropzone.dataset.bound === 'true') return;
+
+    const applyFiles = (fileList) => {
+      const files = Array.from(fileList || []);
+      if (!files.length) return;
+      const dataTransfer = new DataTransfer();
+      files.forEach(file => dataTransfer.items.add(file));
+      input.files = dataTransfer.files;
+      window.handleHomeworkFileSelectPreview(input, 'hw-file-preview');
+    };
+
+    input.addEventListener('change', () => window.handleHomeworkFileSelectPreview(input, 'hw-file-preview'));
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, event => {
+        event.preventDefault();
+        event.stopPropagation();
+        dropzone.classList.add('drag-over');
+      });
+    });
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, event => {
+        event.preventDefault();
+        event.stopPropagation();
+        dropzone.classList.remove('drag-over');
+      });
+    });
+    dropzone.addEventListener('drop', event => applyFiles(event.dataTransfer.files));
+    dropzone.dataset.bound = 'true';
+  }
+
   function isImageFile(file) {
     if (!file) return false;
     const mime = (file.type || '').toLowerCase();
@@ -694,7 +728,8 @@ let homeworkSubmissionCache = [];
     });
   }
 
-  async function saveHomeworkAssignment() {
+  async function saveHomeworkAssignment(options = {}) {
+    const quiet = options.suppressUi === true;
     const targetType = $('hw-target-type') ? $('hw-target-type').value : 'student';
     const title = $('hw-title') ? $('hw-title').value.trim() : '';
     const description = $('hw-description') ? $('hw-description').value.trim() : '';
@@ -703,9 +738,18 @@ let homeworkSubmissionCache = [];
     const batchId = $('hw-batch-select') ? $('hw-batch-select').value : '';
     const fileInput = $('hw-file-input');
 
-    if (!title) return window.toast ? window.toast('Homework title is required', 'error') : null;
-    if (targetType === 'student' && !studentId) return window.toast ? window.toast('Select a student', 'error') : null;
-    if (targetType === 'batch' && !batchId) return window.toast ? window.toast('Select a batch', 'error') : null;
+    if (!title) {
+      if (!quiet && window.toast) window.toast('Homework title is required', 'error');
+      return { success: false, error: 'Homework title is required' };
+    }
+    if (targetType === 'student' && !studentId) {
+      if (!quiet && window.toast) window.toast('Select a student', 'error');
+      return { success: false, error: 'Select a student' };
+    }
+    if (targetType === 'batch' && !batchId) {
+      if (!quiet && window.toast) window.toast('Select a batch', 'error');
+      return { success: false, error: 'Select a batch' };
+    }
 
     let attachmentUrls = [];
     if (fileInput && fileInput.files && fileInput.files.length > 0) {
@@ -718,9 +762,14 @@ let homeworkSubmissionCache = [];
       }
     }
 
+    if (options.requireFiles === true && attachmentUrls.length === 0) {
+      if (!quiet && window.toast) window.toast('The PDF upload failed. Please select the PDF again.', 'error');
+      return { success: false, error: 'The PDF upload failed' };
+    }
+
     const hwId = generateUuid();
     const files = attachmentUrls.length > 0 ? attachmentUrls : [];
-    const coachId = window.currentCoachId || window.userId || (window.currentUser && window.currentUser.id) || null;
+    const coachId = options.coachId || window.currentCoachId || window.userId || (window.currentUser && window.currentUser.id) || null;
 
     const payload = {
       id: hwId,
@@ -793,6 +842,11 @@ let homeworkSubmissionCache = [];
       }
     }
 
+    if (!saved) {
+      if (!quiet && window.toast) window.toast('Failed to save homework assignment. Please try again.', 'error');
+      return { success: false, error: 'Failed to save homework assignment' };
+    }
+
     // Update local storage persistence
     try {
       const stored = JSON.parse(localStorage.getItem('ck_homework_assignments') || '[]');
@@ -813,12 +867,15 @@ let homeworkSubmissionCache = [];
       : targetType === 'batch'
         ? `Batch: ${(window.allBatches || []).find(b => String(b.id) === String(batchId))?.name || 'Batch #' + batchId}`
         : 'All Active Students';
-    if (window.toast) window.toast(`✅ Homework "${title}" assigned successfully to ${targetLabel}!`, 'success');
-    window.closeModals && window.closeModals();
+    if (!quiet && window.toast) window.toast(`✅ Homework "${title}" assigned successfully to ${targetLabel}!`, 'success');
+    if (!quiet) window.closeModals && window.closeModals();
 
-    if (window.loadHomeworkData) await window.loadHomeworkData(true).catch(() => {});
-    else if (window.loadAllData) await window.loadAllData(true).catch(() => {});
-    refreshHomeworkViews();
+    if (!quiet) {
+      if (window.loadHomeworkData) await window.loadHomeworkData(true).catch(() => {});
+      else if (window.loadAllData) await window.loadAllData(true).catch(() => {});
+      refreshHomeworkViews();
+    }
+    return { success: true, assignment: payload };
   }
 
   async function updateHomeworkStatus(id, status) {
@@ -1353,12 +1410,59 @@ let homeworkSubmissionCache = [];
       ${canSubmit ? `<div style="display:grid;gap:8px;margin-top:12px;">
         <textarea id="homework-submission-text-${assignment.id}" class="input-field" placeholder="Type your completed homework response or practice notes..." style="min-height:90px;">${escapeValue(currentText)}</textarea>
         <input id="homework-submission-url-${assignment.id}" class="input-field" placeholder="Optional submission link (Google Drive, Dropbox, etc.)" value="${escapeValue(currentUrl)}">
-        <div style="font-size:11px; font-weight:700; color:var(--gold); margin-top:4px;">Attach Solution Files <span style="font-size:10px; font-weight:normal; color:var(--ivory-dim);">(Max 5 files, up to 15 MB each: .pgn, .pdf, .png, .jpg)</span></div>
-        <input type="file" id="homework-submission-files-${assignment.id}" class="input-field" accept=".pdf,.ppt,.pptx,.doc,.docx,.png,.jpg,.jpeg,.gif,.pgn,.txt,.md,.zip" multiple style="font-size:12px; color:var(--ivory-dim);" onchange="window.handleHomeworkFileSelectPreview(this, 'homework-submission-preview-${assignment.id}')">
-        <div id="homework-submission-preview-${assignment.id}" style="margin-top:6px; display:flex; flex-wrap:wrap; gap:8px;"></div>
+        <button type="button" class="btn btn-outline-grey btn-sm homework-attach-toggle" onclick="toggleHomeworkSubmissionUpload('${assignment.id}')">📎 Attach Solution Files</button>
+        <div id="homework-submission-upload-${assignment.id}" style="display:none;">
+          <div style="font-size:11px; font-weight:700; color:var(--gold); margin-top:4px;">Attach Solution Files <span style="font-size:10px; font-weight:normal; color:var(--ivory-dim);">(Max 5 files, up to 15 MB each: .pgn, .pdf, .png, .jpg)</span></div>
+          <div class="upload-zone homework-submission-dropzone" id="homework-submission-drop-${assignment.id}">
+            <span>Drop solution files here</span>
+            <label class="btn btn-outline-grey btn-sm homework-submission-picker" for="homework-submission-files-${assignment.id}">Choose Files</label>
+            <input type="file" id="homework-submission-files-${assignment.id}" accept=".pdf,.ppt,.pptx,.doc,.docx,.png,.jpg,.jpeg,.gif,.pgn,.txt,.md,.zip" multiple onchange="window.handleHomeworkFileSelectPreview(this, 'homework-submission-preview-${assignment.id}')">
+          </div>
+          <div id="homework-submission-preview-${assignment.id}" style="margin-top:6px; display:flex; flex-wrap:wrap; gap:8px;"></div>
+        </div>
         <button class="btn btn-gold btn-sm" onclick="submitHomeworkForChild('${assignment.id}')">${submissionActionLabel(status)}</button>
       </div>` : ''}
     </div>`;
+  }
+
+  window.toggleHomeworkSubmissionUpload = function (assignmentId) {
+    const panel = $(`homework-submission-upload-${assignmentId}`);
+    if (!panel) return;
+    const isHidden = panel.style.display === 'none';
+    panel.style.display = isHidden ? 'block' : 'none';
+    if (isHidden) setupHomeworkSubmissionDropzone(assignmentId);
+  };
+
+  function setupHomeworkSubmissionDropzone(assignmentId) {
+    const input = $(`homework-submission-files-${assignmentId}`);
+    const dropzone = $(`homework-submission-drop-${assignmentId}`);
+    if (!input || !dropzone || dropzone.dataset.bound === 'true') return;
+
+    const applyFiles = (fileList) => {
+      const files = Array.from(fileList || []);
+      if (!files.length) return;
+      if (files.length > 5) {
+        window.toast?.('Maximum 5 solution files can be uploaded.', 'error');
+        return;
+      }
+      const dataTransfer = new DataTransfer();
+      files.forEach(file => dataTransfer.items.add(file));
+      input.files = dataTransfer.files;
+      window.handleHomeworkFileSelectPreview(input, `homework-submission-preview-${assignmentId}`);
+    };
+
+    ['dragenter', 'dragover'].forEach(eventName => dropzone.addEventListener(eventName, event => {
+      event.preventDefault();
+      event.stopPropagation();
+      dropzone.classList.add('drag-over');
+    }));
+    ['dragleave', 'drop'].forEach(eventName => dropzone.addEventListener(eventName, event => {
+      event.preventDefault();
+      event.stopPropagation();
+      dropzone.classList.remove('drag-over');
+    }));
+    dropzone.addEventListener('drop', event => applyFiles(event.dataTransfer.files));
+    dropzone.dataset.bound = 'true';
   }
 
   function renderHomeworkCard(assignment, options = {}) {
@@ -1474,10 +1578,10 @@ let homeworkSubmissionCache = [];
     renderHomeworkCalendar();
   }
 
-  function renderHomeworkCalendarGrid(items) {
-    const grid = $('homework-calendar-grid');
+  function renderHomeworkCalendarGrid(items, gridId = 'homework-calendar-grid', monthValue = '') {
+    const grid = $(gridId);
     if (!grid) return;
-    const month = $('homework-month-filter') ? $('homework-month-filter').value : monthKey(homeworkCalendarMonth);
+    const month = monthValue || ($('homework-month-filter') ? $('homework-month-filter').value : monthKey(homeworkCalendarMonth));
     const [year, monthNumber] = (month || monthKey(homeworkCalendarMonth)).split('-').map(Number);
     const first = new Date(year, monthNumber - 1, 1);
     const daysInMonth = new Date(year, monthNumber, 0).getDate();
@@ -1520,8 +1624,8 @@ let homeworkSubmissionCache = [];
     grid.innerHTML = html;
   }
 
-  function renderHomeworkCalendarList(items) {
-    const list = $('homework-calendar-list');
+  function renderHomeworkCalendarList(items, listId = 'homework-calendar-list') {
+    const list = $(listId);
     if (!list) return;
     if (!items.length) {
       list.innerHTML = '<div class="empty-state"><span class="empty-icon">📝</span><p>No homework matches the selected filters.</p></div>';
@@ -1566,6 +1670,69 @@ let homeworkSubmissionCache = [];
       }
     }
   }
+
+  function renderHomeworkCalendarForTarget(items, config) {
+    const month = $(config.monthId);
+    if (month && !month.value) month.value = monthKey(new Date());
+    const monthValue = month ? month.value : monthKey(new Date());
+    renderHomeworkCalendarGrid(items, config.gridId, monthValue);
+    renderHomeworkCalendarList(items, config.listId);
+    const grid = $(config.gridId);
+    const list = $(config.listId);
+    const viewMode = config.viewMode || 'calendar';
+    if (grid) grid.style.display = viewMode === 'calendar' ? 'grid' : 'none';
+    if (list) list.style.display = viewMode === 'list' ? 'grid' : 'none';
+    const calendarButton = $(config.calendarButtonId);
+    const listButton = $(config.listButtonId);
+    if (calendarButton) {
+      calendarButton.style.background = viewMode === 'calendar' ? 'var(--gold)' : 'transparent';
+      calendarButton.style.color = viewMode === 'calendar' ? '#111' : 'var(--ivory)';
+    }
+    if (listButton) {
+      listButton.style.background = viewMode === 'list' ? 'var(--gold)' : 'transparent';
+      listButton.style.color = viewMode === 'list' ? '#111' : 'var(--ivory)';
+    }
+  }
+
+  window.renderCoachAttendanceHomeworkCalendar = function () {
+    const coachId = window.currentCoachId || window.userId;
+    const coachBatches = (window.allBatches || []).filter(batch =>
+      window.ckSameCoach ? window.ckSameCoach(batch.coach_id, coachId) : String(batch.coach_id) === String(coachId)
+    );
+    const batchIds = new Set(coachBatches.map(batch => String(batch.id)));
+    const studentIds = new Set();
+    coachBatches.forEach(batch => getBatchStudentIds(batch, window.allStudents || []).forEach(id => studentIds.add(String(id))));
+    (window.allStudents || []).forEach(student => {
+      if (window.ckSameCoach && window.ckSameCoach(student.coach_id, coachId)) studentIds.add(String(student.id));
+    });
+
+    const monthInput = $('coach-attendance-homework-month');
+    const monthValue = monthInput && monthInput.value ? monthInput.value : monthKey(new Date());
+    if (monthInput && !monthInput.value) monthInput.value = monthValue;
+    const [year, monthNumber] = monthValue.split('-').map(Number);
+    const items = sortHomework((window.allHomework || []).filter(assignment => {
+      const targetType = String(assignment.target_type || '').toLowerCase();
+      const appliesToStudent = targetType === 'student' && studentIds.has(String(assignment.student_id));
+      const appliesToBatch = targetType === 'batch' && batchIds.has(String(assignment.batch_id));
+      if (!appliesToStudent && !appliesToBatch) return false;
+      if (!assignment.due_date) return true;
+      const due = parseDateKey(assignment.due_date);
+      return !!due && due.getFullYear() === year && due.getMonth() === monthNumber - 1;
+    }));
+    renderHomeworkCalendarForTarget(items, {
+      monthId: 'coach-attendance-homework-month',
+      gridId: 'coach-attendance-homework-grid',
+      listId: 'coach-attendance-homework-list',
+      calendarButtonId: 'coach-attendance-homework-calendar',
+      listButtonId: 'coach-attendance-homework-list-view',
+      viewMode: window.coachAttendanceHomeworkView || 'calendar'
+    });
+  };
+
+  window.setCoachAttendanceHomeworkView = function (mode) {
+    window.coachAttendanceHomeworkView = mode === 'list' ? 'list' : 'calendar';
+    window.renderCoachAttendanceHomeworkCalendar?.();
+  };
 
   window.setHomeworkView = function (mode) {
     window.homeworkViewMode = mode;

@@ -688,11 +688,10 @@ document.addEventListener('DOMContentLoaded', () => {
   window.renderCoachAttendanceMarking = function () {
     const container = document.getElementById('coach-att-marking-body');
     const summary = document.getElementById('coach-attendance-summary');
-    if (!container) return;
 
     const coachId = window.currentCoachId || window.userId || getCurrentCoachIdFromStorage();
     if (!coachId) {
-      container.innerHTML = '<tr><td colspan="3" class="coach-loading-cell">Coach ID not found.</td></tr>';
+      if (container) container.innerHTML = '<tr><td colspan="3" class="coach-loading-cell">Coach ID not found.</td></tr>';
       return;
     }
 
@@ -729,6 +728,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     const selectedBatchId = batchSelect ? batchSelect.value : '';
+
+    if (!container) {
+      if (typeof window.renderCoachAttendanceHomeworkCalendar === 'function') {
+        window.renderCoachAttendanceHomeworkCalendar();
+      }
+      return;
+    }
 
     let myStudents = (window.allStudents || []).filter(s => {
       if (window.ckSameCoach(s.coach_id, coachId)) return true;
@@ -771,6 +777,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }).join('');
 
     updateCoachAttStats();
+    if (typeof window.renderCoachAttendanceHomeworkCalendar === 'function') {
+      window.renderCoachAttendanceHomeworkCalendar();
+    }
   };
 
   window.updateCoachAttStats = function () {

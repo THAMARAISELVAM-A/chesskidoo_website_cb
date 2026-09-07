@@ -248,10 +248,12 @@
     }
 
     const cleanEndpoint = endpoint.replace(/^\/api/, '');
-    const url =
-      cleanEndpoint.startsWith("http") || cleanEndpoint.startsWith(API_BASE)
+    const useLocalApiProxy = window.location.hostname === 'localhost' && endpoint.startsWith('/api');
+    const url = useLocalApiProxy
+      ? endpoint
+      : (cleanEndpoint.startsWith("http") || cleanEndpoint.startsWith(API_BASE)
         ? cleanEndpoint
-        : `${API_BASE}${cleanEndpoint}`;
+        : `${API_BASE}${cleanEndpoint}`);
     // Forward a real Supabase JWT or authorization token when available.
     const storedTok = sessionStorage.getItem("sb-access-token") || localStorage.getItem("sb-access-token");
     let auth = {};
@@ -2831,12 +2833,71 @@
   }
 
   /* ════════════════ COMBINED CLASS SESSION (Homework + Attendance) ════════════════ */
+  function qcsFormatBytes(bytes) {
+    if (!bytes) return "0 B";
+    const units = ["B", "KB", "MB", "GB"];
+    const unitIndex = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+    return `${parseFloat((bytes / Math.pow(1024, unitIndex)).toFixed(1))} ${units[unitIndex]}`;
+  }
+
+  function setupQcsFileDropzone() {
+    const input = $("qcs-file");
+    const dropzone = $("qcs-file-drop");
+    const preview = $("qcs-file-preview");
+    if (!input || !dropzone || dropzone.dataset.bound === "true") return;
+
+    const renderFiles = () => {
+      const files = Array.from(input.files || []);
+      if (preview) {
+        preview.innerHTML = files.length
+          ? files.map((file) => `${escapeHtml(file.name)} (${qcsFormatBytes(file.size)})`).join("<br>")
+          : "No files selected";
+      }
+    };
+    const setFiles = (fileList) => {
+      const files = Array.from(fileList || []);
+      if (!files.length) return;
+      const invalid = files.find((file) => {
+        const type = String(file.type || "").toLowerCase();
+        return type !== "application/pdf" && !/\.pdf$/i.test(file.name || "");
+      });
+      if (invalid) {
+        toast("Only PDF files can be uploaded for attendance sessions.", "error");
+        return;
+      }
+      if (files.length > 5) {
+        toast("Maximum 5 PDF files can be uploaded.", "error");
+        return;
+      }
+      const dataTransfer = new DataTransfer();
+      files.forEach((file) => dataTransfer.items.add(file));
+      input.files = dataTransfer.files;
+      renderFiles();
+    };
+
+    input.addEventListener("change", () => setFiles(input.files));
+    ["dragenter", "dragover"].forEach((eventName) => dropzone.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      dropzone.classList.add("drag-over");
+    }));
+    ["dragleave", "drop"].forEach((eventName) => dropzone.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      dropzone.classList.remove("drag-over");
+    }));
+    dropzone.addEventListener("drop", (event) => setFiles(event.dataTransfer.files));
+    dropzone.dataset.bound = "true";
+  }
+
   window.openQuickClassSessionModal = function () {
     const coachSel = $("qcs-coach");
     const batchSel = $("qcs-batch");
+    const isCoach = String(window.role || "").toLowerCase() === "coach";
+    const currentCoachId = String(window.currentCoachId || window.userId || "");
     if (coachSel) {
-      const coaches = window.allCoaches || [];
-      const cur = window.currentCoachId || window.userId;
+      const coaches = isCoach
+        ? (window.allCoaches || []).filter((coach) => String(coach.id) === currentCoachId)
+        : (window.allCoaches || []);
+      const cur = isCoach ? currentCoachId : (window.currentCoachId || window.userId);
       coachSel.innerHTML =
         '<option value="">-- Select Coach --</option>' +
         coaches
@@ -2846,9 +2907,17 @@
             return `<option value="${escapeHtml(c.id)}"${sel}>${escapeHtml(name)}</option>`;
           })
           .join("");
+      if (isCoach) {
+        coachSel.value = currentCoachId;
+        coachSel.disabled = true;
+      } else {
+        coachSel.disabled = false;
+      }
     }
     if (batchSel) {
-      const batches = window.allBatches || [];
+      const batches = isCoach
+        ? (window.allBatches || []).filter((batch) => window.ckSameCoach?.(batch.coach_id, currentCoachId))
+        : (window.allBatches || []);
       batchSel.innerHTML =
         '<option value="">-- Select Batch --</option>' +
         batches.map((b) => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.name || b.batchName || b.id)}</option>`).join("");
@@ -2859,6 +2928,9 @@
       if (el.type === "file") el.value = "";
       else el.value = "";
     });
+    const filePreview = $("qcs-file-preview");
+    if (filePreview) filePreview.textContent = "No files selected";
+    setupQcsFileDropzone();
     const sl = $("qcs-student-list");
     if (sl) sl.innerHTML = '<div class="empty-state" style="padding:14px">Select a batch to load students</div>';
     if (typeof openModal === "function") openModal("quick-class-session-modal");
@@ -2873,6 +2945,12 @@
       return;
     }
     const batch = (window.allBatches || []).find((b) => String(b.id) === String(batchId));
+    const isCoach = String(window.role || "").toLowerCase() === "coach";
+    const currentCoachId = String(window.currentCoachId || window.userId || "");
+    if (isCoach && (!batch || !window.ckSameCoach?.(batch.coach_id, currentCoachId))) {
+      sl.innerHTML = '<div class="empty-state" style="padding:14px">You can only select one of your assigned batches</div>';
+      return;
+    }
     const studentIds = batch && batch.student_ids ? (typeof window.parseStudentIds === "function" ? window.parseStudentIds(batch.student_ids) : []) : [];
     let students = (window.allStudents || []).filter((s) =>
       studentIds.length
@@ -2912,6 +2990,19 @@
     const level = $("qcs-level");
     const due = $("qcs-due");
     const fileInput = $("qcs-file");
+    const isCoach = String(window.role || "").toLowerCase() === "coach";
+    const currentCoachId = String(window.currentCoachId || window.userId || "");
+    const today = new Date().toISOString().split("T")[0];
+
+    if (isCoach && (!coachId || coachId !== currentCoachId)) {
+      return toast("Your coach account can only save sessions under its own coach profile.", "error");
+    }
+    if (isCoach) {
+      const selectedBatch = (window.allBatches || []).find((batch) => String(batch.id) === String(batchId));
+      if (!selectedBatch || !window.ckSameCoach?.(selectedBatch.coach_id, currentCoachId)) {
+        return toast("You can only save attendance for one of your assigned batches.", "error");
+      }
+    }
 
     let finalTitle = (title && title.value ? title.value.trim() : "");
     if (!finalTitle && notes && notes.value.trim()) {
@@ -2928,12 +3019,27 @@
 
     if (!batchId) return toast("Please select a batch from the dropdown", "warning");
 
+    const boxes = Array.from(document.querySelectorAll("#qcs-student-list .qcs-att"));
+    if (!boxes.length) return toast("Select a batch with students before saving the session.", "warning");
+    if (!fileInput || !fileInput.files || !fileInput.files.length) {
+      return toast("Select or drop at least one PDF before saving the session.", "warning");
+    }
+
     // 1) Delegate homework creation to the existing assignment flow
     const ht = $("hw-target-type");
     if (ht) ht.value = "batch";
     if (typeof updateHomeworkTargetFields === "function") updateHomeworkTargetFields();
     const hb = $("hw-batch-select");
-    if (hb) hb.value = batchId;
+    if (hb) {
+      const selectedBatch = (window.allBatches || []).find((batch) => String(batch.id) === String(batchId));
+      if (selectedBatch && !Array.from(hb.options).some((option) => String(option.value) === String(batchId))) {
+        const option = document.createElement("option");
+        option.value = String(selectedBatch.id);
+        option.textContent = selectedBatch.name || selectedBatch.batchName || selectedBatch.id;
+        hb.appendChild(option);
+      }
+      hb.value = String(batchId);
+    }
     const hTitle = $("hw-title");
     if (hTitle) hTitle.value = finalTitle;
     const hDesc = $("hw-description");
@@ -2943,7 +3049,7 @@
         (classLink && classLink.value ? "\nClass Link: " + classLink.value : "") +
         (refLink && refLink.value ? "\nReference: " + refLink.value : "");
     const hDue = $("hw-due-date");
-    if (hDue) hDue.value = due && due.value ? due.value : new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+    if (hDue) hDue.value = due && due.value ? due.value : today;
     const hwFile = $("hw-file-input");
     if (hwFile && fileInput && fileInput.files && fileInput.files.length) {
       try {
@@ -2952,17 +3058,22 @@
         hwFile.files = dt.files;
       } catch (e) {}
     }
-    if (typeof window.saveHomeworkAssignment === "function") {
-      await window.saveHomeworkAssignment();
+    if (typeof window.saveHomeworkAssignment !== "function") {
+      return toast("Homework service is unavailable. Please refresh and try again.", "error");
+    }
+    const homeworkResult = await window.saveHomeworkAssignment({
+      coachId,
+      requireFiles: true,
+      suppressUi: true
+    });
+    if (!homeworkResult || homeworkResult.success !== true) {
+      return toast(homeworkResult?.error || "Homework could not be saved. Attendance was not submitted.", "error");
     }
 
     // 2) Mark attendance for the batch (checked = present, unchecked = absent)
-    const boxes = Array.from(document.querySelectorAll("#qcs-student-list .qcs-att"));
-    if (!boxes.length) {
-      if (typeof closeModals === "function") closeModals();
-      return;
-    }
-    const date = $("att-date") && $("att-date").value ? $("att-date").value : new Date().toISOString().split("T")[0];
+    const date = isCoach
+      ? today
+      : ($("att-date") && $("att-date").value ? $("att-date").value : today);
     const cw = notes ? notes.value.trim() : "";
     const hw = finalTitle;
     const link = classLink && classLink.value.trim() ? classLink.value.trim() : "";
@@ -2972,16 +3083,31 @@
         : (cw ? "CW: " + cw + "\n" : "") + (hw ? "HW: " + hw + "\n" : "") + (link ? "LINK: " + link : "");
     const records = boxes.map((b) => ({
       student_id: b.value,
+      studentId: b.value,
       student_name: b.dataset.name || "",
+      studentName: b.dataset.name || "",
       status: b.checked ? "present" : "absent",
       date: date,
       coach_id: coachId || null,
+      coachId: coachId || null,
       notes: noteStr,
     }));
     try {
       const res = await apiCall("/api/attendance", { method: "POST", body: JSON.stringify(records) });
       if (!res || !res.ok) {
-        if (window.supabaseClient) await window.supabaseClient.from("attendance").upsert(records);
+        if (!window.supabaseClient) throw new Error("Attendance API is unavailable");
+        const attendancePayload = records.map((record) => ({
+          id: record.id || undefined,
+          date: record.date,
+          status: record.status,
+          studentId: record.studentId || record.student_id,
+          studentName: record.studentName || record.student_name || null,
+          coachId: record.coachId || record.coach_id || null,
+          markedAt: new Date().toISOString(),
+          created_at: new Date().toISOString()
+        }));
+        const { error: attendanceError } = await window.supabaseClient.from("attendance").upsert(attendancePayload);
+        if (attendanceError) throw attendanceError;
       }
       if (!window.allAttendance) window.allAttendance = [];
       records.forEach((r) => {
@@ -2994,6 +3120,8 @@
       toast(`✅ Session material & attendance marked for ${present} present / ${boxes.length - present} absent.`, "success");
       if (typeof renderAttendance === "function") renderAttendance();
       if (typeof renderCoachAttendance === "function") renderCoachAttendance();
+      if (typeof window.loadHomeworkData === "function") await window.loadHomeworkData(true).catch(() => {});
+      if (typeof window.renderCoachAttendanceHomeworkCalendar === "function") window.renderCoachAttendanceHomeworkCalendar();
       if (typeof closeModals === "function") closeModals();
     } catch (e) {
       if (!window.allAttendance) window.allAttendance = [];
@@ -3003,7 +3131,9 @@
         else window.allAttendance.unshift(r);
       });
       localStorage.setItem('ck_attendance_records', JSON.stringify(window.allAttendance));
-      toast("✅ Material & Attendance recorded locally.", "success");
+      toast("Homework was saved, but attendance could not sync. Attendance was saved locally; please retry sync.", "warning");
+      if (typeof window.loadHomeworkData === "function") await window.loadHomeworkData(true).catch(() => {});
+      if (typeof window.renderCoachAttendanceHomeworkCalendar === "function") window.renderCoachAttendanceHomeworkCalendar();
       if (typeof renderAttendance === "function") renderAttendance();
       if (typeof renderCoachAttendance === "function") renderCoachAttendance();
       if (typeof closeModals === "function") closeModals();
@@ -7161,7 +7291,19 @@ setTimeout(function () {
        if (p === "coach-batches" && window.renderCoachBatches) window.renderCoachBatches();
        if (p === "coach-schedule" && window.renderCoachSchedule) window.renderCoachSchedule();
        if (p === "coach-events" && window.renderCoachEvents) window.renderCoachEvents();
-        if (p === "coach-attendance" && window.renderCoachAttendanceMarking) window.renderCoachAttendanceMarking();
+        if (p === "coach-attendance") {
+          if (window.renderCoachAttendanceMarking) window.renderCoachAttendanceMarking();
+          const renderCoachAttendanceHomework = () => {
+            if (window.renderCoachAttendanceHomeworkCalendar) window.renderCoachAttendanceHomeworkCalendar();
+            if (window.loadHomeworkSubmissions) window.loadHomeworkSubmissions(true);
+            if (window.renderCoachHomework) window.renderCoachHomework();
+          };
+          if (window.loadHomeworkData) {
+            window.loadHomeworkData().then(renderCoachAttendanceHomework).catch(renderCoachAttendanceHomework);
+          } else {
+            renderCoachAttendanceHomework();
+          }
+        }
           if (p === "coach-homework") {
             if (window.loadHomeworkData) {
               window.loadHomeworkData().then(() => {

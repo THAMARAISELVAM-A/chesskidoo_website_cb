@@ -45,7 +45,7 @@
    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
    <!-- Security Hardening - Fully offline-first, only Supabase external -->
-   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://*.supabase.co https://i.ibb.co https://*.ibb.co https://api.imgbb.com https://flagcdn.com https://*.flagcdn.com https://*.chessable.com https://chessable.com https://*.lichess.org https://lichess.org https://*.chess.com https://chess.com https://images.chesscomfiles.com https://*.chesscomfiles.com https://img.youtube.com https://i.ytimg.com https://*.ytimg.com https://*.youtube.com https://youtube.com; connect-src 'self' https://cdnjs.cloudflare.com https://*.cloudflare.com https://open.er-api.com https://*.er-api.com https://er-api.com https://*.supabase.co wss://*.supabase.co https://api.imgbb.com https://ipapi.co https://ip-api.com https://ipinfo.io https://html2canvas.hertzen.com https://lichess.org https://*.lichess.org https://explorer.lichess.ovh https://*.lichess.ovh https://api.chess.com https://*.chess.com https://chessable.com https://*.chessable.com; frame-src 'self' https://lichess.org https://*.lichess.org https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://*.youtube.com https://chess.com https://*.chess.com;"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co https://html2canvas.hertzen.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://*.supabase.co https://i.ibb.co https://*.ibb.co https://api.imgbb.com https://flagcdn.com https://*.flagcdn.com https://*.chessable.com https://chessable.com https://*.lichess.org https://lichess.org https://*.chess.com https://chess.com https://images.chesscomfiles.com https://*.chesscomfiles.com https://img.youtube.com https://i.ytimg.com https://*.ytimg.com https://*.youtube.com https://youtube.com; connect-src 'self' https://cdnjs.cloudflare.com https://*.cloudflare.com https://open.er-api.com https://*.er-api.com https://er-api.com https://cdn.jsdelivr.net https://*.supabase.co wss://*.supabase.co https://api.imgbb.com https://ipapi.co https://ip-api.com https://ipinfo.io https://html2canvas.hertzen.com https://lichess.org https://*.lichess.org https://explorer.lichess.ovh https://*.lichess.ovh https://api.chess.com https://*.chess.com https://chessable.com https://*.chessable.com; frame-src 'self' https://lichess.org https://*.lichess.org https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://*.youtube.com https://chess.com https://*.chess.com;"/>
   <meta name="referrer" content="strict-origin-when-cross-origin"/>
   <!-- X-Frame-Options must be an HTTP header, not a meta tag — set in vercel.json -->
 
@@ -154,7 +154,7 @@
     <div class="nav-item coach-only" id="nav-coach-schedule" onclick="setPage('coach-schedule')"><span class="ico">📅</span> Schedule</div>
     <div class="nav-item coach-only" id="nav-coach-events" onclick="setPage('coach-events')"><span class="ico">🏆</span> Events</div>
     <div class="nav-item coach-only" id="nav-coach-attendance" onclick="setPage('coach-attendance')"><span class="ico">📋</span> Attendance</div>
-    <div class="nav-item coach-only" id="nav-coach-homework" onclick="setPage('coach-homework')"><span class="ico">📚</span> Homework</div>
+    <div class="nav-item coach-only" id="nav-coach-homework" onclick="setPage('coach-attendance')"><span class="ico">📚</span> Homework</div>
     <div class="nav-item coach-only" id="nav-coach-elibrary" onclick="setPage('coach-elibrary')"><span class="ico">📖</span> E-Library Hub</div>
     <div class="nav-item coach-only" id="nav-coach-studypgn" onclick="setPage('coach-studypgn')"><span class="ico">♟️</span> Study Lab &amp; Topics</div>
     <div class="nav-item admin-only" id="nav-stud" onclick="setPage('stud')"><span class="ico">👨‍🎓</span> Students</div>
@@ -410,100 +410,71 @@
          <div class="coach-shell">
            <div class="coach-section-block">
              <div class="coach-section-row">
-               <h2 class="coach-section-title">Attendance</h2>
+               <h2 class="coach-section-title">Attendance &amp; Homework</h2>
               <div class="coach-header-actions" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-                 <input type="date" id="coach-att-date" style="padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px" onchange="renderCoachAttendanceMarking()">
-                 <select id="coach-att-batch-filter" style="padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px" onchange="renderCoachAttendanceMarking()">
+                 <button class="btn btn-gold" onclick="openQuickClassSessionModal()">📄 Upload PDF / Class Session</button>
+                 <input type="date" id="coach-att-date" aria-label="Attendance date" style="padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px">
+                 <select id="coach-att-batch-filter" aria-label="Attendance batch" style="padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px">
                    <option value="">All Batches</option>
                  </select>
-<button class="btn btn-outline-grey" onclick="markAllCoachPresent()">✅ Mark All Present</button>
-                  <button class="btn btn-outline-grey" onclick="markAllCoachAbsent()">❌ Mark All Absent</button>
-                  <button class="btn btn-outline" onclick="clearAllCoachAttendance()">🔄 Clear All</button>
-                  <button class="btn btn-gold" onclick="saveCoachAttendance()" style="padding: 10px 24px; font-weight:700">💾 Save Attendance</button>
                </div>
              </div>
-             <div id="coach-attendance-summary" style="margin-bottom:16px;"></div>
-             <div class="table-wrap">
-               <table style="font-size:14px">
-                 <thead><tr>
-                   <th style="width:200px">Student</th>
-                   <th style="width:150px">Status</th>
-                   <th>Classwork & Homework Notes</th>
-                 </tr></thead>
-                 <tbody id="coach-att-marking-body"><tr><td colspan="3"><div class="loading-state"><span class="spinner"></span> Select a date to load your students</div></td></tr></tbody>
-               </table>
+             <div class="coach-attendance-homework" style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border);">
+               <div class="coach-section-row" style="margin-bottom:14px;">
+                 <div>
+                   <h3 class="coach-section-title" style="font-size:18px;">Homework Calendar</h3>
+                   <p style="margin:4px 0 0; color:var(--ivory-dim); font-size:12px;">Homework assigned to your students and batches.</p>
+                 </div>
+                 <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+                   <input id="coach-attendance-homework-month" type="month" min="2026-01" class="input-field" onchange="renderCoachAttendanceHomeworkCalendar()">
+                   <button class="btn btn-outline-grey btn-sm" id="coach-attendance-homework-calendar" onclick="setCoachAttendanceHomeworkView('calendar')" title="Calendar view">📅</button>
+                   <button class="btn btn-outline-grey btn-sm" id="coach-attendance-homework-list-view" onclick="setCoachAttendanceHomeworkView('list')" title="List view">📋</button>
+                 </div>
+               </div>
+               <div id="coach-attendance-homework-grid" class="coach-attendance-homework-grid" style="display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:8px;"></div>
+               <div id="coach-attendance-homework-list" style="display:none; gap:12px; margin-top:18px;"></div>
+             </div>
+             <div class="coach-section-block" style="margin-top:24px;">
+               <!-- <div class="coach-section-row">
+                 <h2 class="coach-section-title">Homework &amp; Submissions</h2>
+               </div> -->
+               <div class="coach-header-actions" style="margin-bottom:14px;">
+                 <input type="text" id="coach-hw-search" placeholder="Search by student, assignment, file, or note..." style="padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px; min-width:260px;" oninput="switchCoachHomeworkTab('submissions'); renderCoachSubmissions(this.value, 1); document.getElementById('coach-hw-sub-search')?.value && (document.getElementById('coach-hw-sub-search').value = this.value);">
+                 <select id="coach-hw-status" style="padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px" onchange="switchCoachHomeworkTab('submissions'); renderCoachSubmissions(document.getElementById('coach-hw-search')?.value || '', 1); document.getElementById('coach-hw-sub-status')?.value && (document.getElementById('coach-hw-sub-status').value = this.value);">
+                   <option value="">All Statuses</option>
+                   <option value="submitted">Submitted</option>
+                   <option value="approved">Approved</option>
+                   <option value="needs_revision">Needs Revision</option>
+                   <option value="closed">Closed</option>
+                 </select>
+               </div>
+               <div class="tabs-nav" style="margin-bottom:18px;">
+                 <button class="tab-link active" onclick="switchCoachHomeworkTab('assignments')" id="btn-coach-hw-assign">My Assignments</button>
+                 <button class="tab-link" onclick="switchCoachHomeworkTab('submissions')" id="btn-coach-hw-sub">Submissions</button>
+               </div>
+               <div id="coach-hw-assign" class="hw-tab-content active" style="display:block;">
+                 <div class="coach-table-wrap">
+                   <table class="coach-mini-table">
+                     <thead><tr><th>Assignment</th><th>Target</th><th>Due Date</th><th>Status</th><th>Actions</th></tr></thead>
+                     <tbody id="coach-assignments-tbody"><tr><td colspan="5" class="coach-loading-cell">Loading assignments...</td></tr></tbody>
+                   </table>
+                 </div>
+                 <div id="coach-assign-pagination" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end; margin-top:14px;"></div>
+               </div>
+               <div id="coach-hw-submissions" class="hw-tab-content" style="display:none;">
+                 <div class="coach-table-wrap">
+                   <table class="coach-mini-table">
+                     <thead><tr><th>Student</th><th>Assignment</th><th>Submitted</th><th>Status</th><th>Review</th></tr></thead>
+                     <tbody id="coach-submissions-tbody"><tr><td colspan="5" class="coach-loading-cell">Loading submissions...</td></tr></tbody>
+                   </table>
+                 </div>
+                 <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+                   <div id="coach-sub-pagination" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;"></div>
+                   <div style="font-size:12px; color:var(--ivory-dim);" id="coach-sub-count"></div>
+                 </div>
+               </div>
              </div>
            </div>
-          </div>
-        </div>
-
-         <div id="page-coach-homework" class="page coach-only">
-          <div class="coach-shell">
-            <div class="coach-section-block">
-              <div class="coach-section-row">
-                <h2 class="coach-section-title">Homework &amp; Submissions</h2>
-                <button class="btn btn-gold btn-sm" onclick="openCoachHomeworkModal()">
-                  <span class="ico">➕</span> Assign Homework
-                </button>
-              </div>
-              <div class="coach-header-actions" style="margin-bottom:14px;">
-                <input type="text" id="coach-hw-search" placeholder="Search by student, assignment, file, or note..." style="padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px; min-width:260px;" oninput="switchCoachHomeworkTab('submissions'); renderCoachSubmissions(this.value, 1); document.getElementById('coach-hw-sub-search')?.value && (document.getElementById('coach-hw-sub-search').value = this.value);">
-                <select id="coach-hw-status" style="padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px" onchange="switchCoachHomeworkTab('submissions'); renderCoachSubmissions(document.getElementById('coach-hw-search')?.value || '', 1); document.getElementById('coach-hw-sub-status')?.value && (document.getElementById('coach-hw-sub-status').value = this.value);">
-                  <option value="">All Statuses</option>
-                  <option value="submitted">Submitted</option>
-                  <option value="approved">Approved</option>
-                  <option value="needs_revision">Needs Revision</option>
-                  <option value="closed">Closed</option>
-                </select>
-              </div>
-              <div class="tabs-nav" style="margin-bottom: 18px;">
-                <button class="tab-link active" onclick="switchCoachHomeworkTab('assignments')" id="btn-coach-hw-assign">My Assignments</button>
-                <button class="tab-link" onclick="switchCoachHomeworkTab('submissions')" id="btn-coach-hw-sub">Submissions</button>
-              </div>
-
-              <div id="coach-hw-assign" class="hw-tab-content active" style="display:block;">
-                <div class="coach-table-wrap">
-                  <table class="coach-mini-table">
-                    <thead>
-                      <tr>
-                        <th>Assignment</th>
-                        <th>Target</th>
-                        <th>Due Date</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="coach-assignments-tbody">
-                      <tr><td colspan="5" class="coach-loading-cell">Loading assignments...</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-                <div id="coach-assign-pagination" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end; margin-top:14px;"></div>
-              </div>
-
-              <div id="coach-hw-submissions" class="hw-tab-content" style="display:none;">
-                <div class="coach-table-wrap">
-                  <table class="coach-mini-table">
-                    <thead>
-                      <tr>
-                        <th>Student</th>
-                        <th>Assignment</th>
-                        <th>Submitted</th>
-                        <th>Status</th>
-                        <th>Review</th>
-                      </tr>
-                    </thead>
-                    <tbody id="coach-submissions-tbody">
-                      <tr><td colspan="5" class="coach-loading-cell">Loading submissions...</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-                <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
-                  <div id="coach-sub-pagination" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;"></div>
-                  <div style="font-size:12px; color:var(--ivory-dim);" id="coach-sub-count"></div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -5111,8 +5082,14 @@
            <div class="modal-sub">Upload class material &amp; homework, then mark batch attendance in one step.</div>
            <div class="modal-grid" style="margin-top:14px;">
              <div class="form-group">
-               <label class="label" for="qcs-file">Select Files (PDF / Material)</label>
-               <input type="file" id="qcs-file" class="input-field" multiple accept=".pdf,.ppt,.pptx,.doc,.docx,.png,.jpg,.jpeg,.gif,.pgn,.txt,.md,.zip">
+               <label class="label" for="qcs-file">Select PDF / Class Material</label>
+               <label class="upload-zone qcs-upload-zone" id="qcs-file-drop" for="qcs-file">
+                 <span style="font-size:24px;display:block;margin-bottom:6px;">📄</span>
+                 <span>Drop PDF files here or click to browse</span>
+                 <small style="display:block;margin-top:6px;color:var(--ivory-dim);">PDF, maximum 5 files</small>
+                 <input type="file" id="qcs-file" multiple accept=".pdf,application/pdf">
+               </label>
+               <div id="qcs-file-preview" style="font-size:12px;color:var(--ivory-dim);"></div>
              </div>
              <div class="form-group">
                <label class="label" for="qcs-title">Topic / Homework Title</label>
@@ -5208,7 +5185,12 @@
               </div>
               <div class="form-group" style="grid-column:1/-1;">
                 <label class="label" for="hw-file-input">Attachments <span style="font-size:11px; font-weight:normal; color:var(--gold); margin-left:6px;">(Max 5 files, up to 15 MB per file: .pgn, .pdf, .png, .jpg)</span></label>
-                <input type="file" id="hw-file-input" class="input-field" multiple accept=".pdf,.ppt,.pptx,.doc,.docx,.png,.jpg,.jpeg,.gif,.pgn,.txt,.md,.zip" onchange="window.handleHomeworkFileSelectPreview(this, 'hw-file-preview')">
+                <label class="upload-zone homework-upload-zone" id="hw-file-drop" for="hw-file-input">
+                  <span style="font-size:24px;display:block;margin-bottom:6px;">📎</span>
+                  <span>Drop homework files here or click to browse</span>
+                  <small style="display:block;margin-top:6px;color:var(--ivory-dim);">PDF, PGN, images, documents, or ZIP files</small>
+                  <input type="file" id="hw-file-input" multiple accept=".pdf,.ppt,.pptx,.doc,.docx,.png,.jpg,.jpeg,.gif,.pgn,.txt,.md,.zip" onchange="window.handleHomeworkFileSelectPreview(this, 'hw-file-preview')">
+                </label>
                 <div id="hw-file-preview" style="margin-top:8px; font-size:12px; color:var(--ivory-dim);"></div>
               </div>
               <div id="hw-past-history-section" style="grid-column:1/-1; margin-top:12px; border-top:1px solid var(--border); padding-top:12px; display:none;">
