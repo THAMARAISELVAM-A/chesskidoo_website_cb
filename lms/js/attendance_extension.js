@@ -43,7 +43,7 @@ window.renderMonthlyMatrix = function() {
              
     for (let i = 1; i <= daysInMonth; i++) {
       const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-      const record = allAttendance.find(a => String(a.student_id) === String(s.id) && a.date === dateStr);
+      const record = allAttendance.find(a => String(a.student_id || a.studentId) === String(s.id) && a.date === dateStr);
       const status = record ? record.status : '';
       
       let cellContent = '';
@@ -606,12 +606,15 @@ window.renderAttendanceCalendar = function(studentOrId, containerEl, year, month
   // Get student attendance records
   const attList = window.allAttendance || [];
   const sId = String(s.id);
-  const myAttendance = attList.filter(a => String(a.student_id) === sId);
+  const myAttendance = attList.filter(a => String(a.student_id || a.studentId) === sId);
 
   // Get homework assignments for this student
   const hwList = window.allHomework || [];
   const myHomework = hwList.filter(h => {
     if (!h) return false;
+    if (typeof window.assignmentAppliesToStudent === 'function') {
+      return window.assignmentAppliesToStudent(h, sId, window.allStudents || []);
+    }
     if (h.student_id && String(h.student_id) === sId) return true;
     if (h.batch_id && s.batch_id && String(h.batch_id) === String(s.batch_id)) return true;
     if (h.target_type === 'all') return true;
@@ -734,10 +737,17 @@ window.openAttendanceDayDetail = function(studentId, dateStr) {
   const s = (window.allStudents || []).find(st => String(st.id) === String(studentId));
   if (!s) return;
 
-  const att = (window.allAttendance || []).find(a => String(a.student_id) === String(studentId) && a.date === dateStr);
+  const att = (window.allAttendance || []).find(a => String(a.student_id || a.studentId) === String(studentId) && a.date === dateStr);
   const hw = (window.allHomework || []).filter(h => {
     const hDate = (h.due_date || h.created_at || '').slice(0, 10);
-    return hDate === dateStr;
+    if (hDate !== dateStr) return false;
+    if (typeof window.assignmentAppliesToStudent === 'function') {
+      return window.assignmentAppliesToStudent(h, String(studentId), window.allStudents || []);
+    }
+    if (h.student_id && String(h.student_id) === String(studentId)) return true;
+    if (h.batch_id && s.batch_id && String(h.batch_id) === String(s.batch_id)) return true;
+    if (h.target_type === 'all') return true;
+    return false;
   });
 
   const parsed = att ? window.parseAttendanceNotes(att.notes || att.note || '') : null;
@@ -804,7 +814,7 @@ window.renderSessionSheet = function(studentId, containerEl, filterMonth) {
   if (!s && window.currentStudent) s = window.currentStudent;
 
   const attList = window.allAttendance || [];
-  let myAtt = s ? attList.filter(a => String(a.student_id) === String(s.id)) : attList;
+    let myAtt = s ? attList.filter(a => String(a.student_id || a.studentId) === String(s.id)) : attList;
 
    // Ensure myAtt is an array
    if (!myAtt || myAtt.length === 0) {
@@ -832,14 +842,17 @@ window.renderSessionSheet = function(studentId, containerEl, filterMonth) {
 
    // Get matching homework for this student
    const hwList = window.allHomework || [];
-   const myHomework = hwList.filter(h => {
-     if (!s) return true;
-     const sId = String(s.id);
-     if (h.student_id && String(h.student_id) === sId) return true;
-     if (h.batch_id && s.batch_id && String(h.batch_id) === String(s.batch_id)) return true;
-     if (h.target_type === 'all') return true;
-     return false;
-   });
+    const myHomework = hwList.filter(h => {
+      if (!s) return true;
+      const sId = String(s.id);
+      if (typeof window.assignmentAppliesToStudent === 'function') {
+        return window.assignmentAppliesToStudent(h, sId, window.allStudents || []);
+      }
+      if (h.student_id && String(h.student_id) === sId) return true;
+      if (h.batch_id && s.batch_id && String(h.batch_id) === String(s.batch_id)) return true;
+      if (h.target_type === 'all') return true;
+      return false;
+    });
 
    let rowsHtml = '';
    const monthKeys = Object.keys(monthGroups);
@@ -969,8 +982,15 @@ window.renderChildAttendanceAndHomework = function() {
   if (!s) return;
 
   const attList = window.allAttendance || [];
-  const myAtt = attList
-    .filter((a) => String(a.student_id) === String(s.id))
+  try {
+    const localAtt = JSON.parse(localStorage.getItem('ck_attendance_records') || '[]');
+    if (localAtt.length) {
+      window.allAttendance = localAtt;
+    }
+  } catch (_) {}
+  const finalAttList = window.allAttendance || [];
+  const myAtt = finalAttList
+    .filter((a) => String(a.student_id || a.studentId) === String(s.id))
     .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
 
   const present = myAtt.filter((a) => ["present", "late"].includes((a.status || "").toLowerCase())).length;

@@ -83,6 +83,17 @@
     if (!assignment || !studentId) return false;
     const sid = String(studentId);
     const targetType = (assignment.target_type || 'all').toLowerCase();
+
+    let presentIds = assignment.present_student_ids;
+    if (typeof presentIds === 'string') {
+      try {
+        presentIds = JSON.parse(presentIds);
+      } catch (_) {}
+    }
+    if (Array.isArray(presentIds) && presentIds.length) {
+      return presentIds.some((id) => String(id) === sid);
+    }
+
     if (targetType === 'all' || !assignment.target_type) return true;
 
     if (targetType === 'student') {
@@ -202,6 +213,11 @@
   // older responses) derive it locally instead of rendering a misleading 0.
   function recipientCount(assignment) {
     if (typeof assignment.recipient_count === 'number') return assignment.recipient_count;
+    let presentIds = assignment.present_student_ids;
+    if (typeof presentIds === 'string') {
+      try { presentIds = JSON.parse(presentIds); } catch (_) {}
+    }
+    if (Array.isArray(presentIds) && presentIds.length) return presentIds.length;
     const students = window.allStudents || [];
     if (assignment.target_type === 'student') return 1;
     if (assignment.target_type === 'batch') {
@@ -730,12 +746,13 @@ let homeworkSubmissionCache = [];
 
   async function saveHomeworkAssignment(options = {}) {
     const quiet = options.suppressUi === true;
-    const targetType = $('hw-target-type') ? $('hw-target-type').value : 'student';
-    const title = $('hw-title') ? $('hw-title').value.trim() : '';
-    const description = $('hw-description') ? $('hw-description').value.trim() : '';
-    const dueDate = $('hw-due-date') ? $('hw-due-date').value : '';
-    const studentId = $('hw-student-select') ? $('hw-student-select').value : '';
-    const batchId = $('hw-batch-select') ? $('hw-batch-select').value : '';
+    const targetType = options.targetType || ($('hw-target-type') ? $('hw-target-type').value : 'student');
+    const title = options.title || ($('hw-title') ? $('hw-title').value.trim() : '');
+    const description = options.description || ($('hw-description') ? $('hw-description').value.trim() : '');
+    const dueDate = options.dueDate || ($('hw-due-date') ? $('hw-due-date').value : '');
+    const studentId = options.studentId || ($('hw-student-select') ? $('hw-student-select').value : '');
+    const batchId = options.batchId || ($('hw-batch-select') ? $('hw-batch-select').value : '');
+    const presentStudentIds = options.presentStudentIds || [];
     const fileInput = $('hw-file-input');
 
     if (!title) {
@@ -752,11 +769,23 @@ let homeworkSubmissionCache = [];
     }
 
     let attachmentUrls = [];
-    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+    if (options.files && options.files.length > 0) {
+      if (options.files[0] instanceof File) {
+        try {
+          const uploadPromises = Array.from(options.files).map((f) => uploadHomeworkFile(f));
+          const uploaded = await Promise.all(uploadPromises);
+          attachmentUrls = uploaded.filter((url) => url !== null);
+        } catch (e) {
+          console.warn('[Homework] File upload warning:', e);
+        }
+      } else {
+        attachmentUrls = options.files;
+      }
+    } else if (fileInput && fileInput.files && fileInput.files.length > 0) {
       try {
-        const uploadPromises = Array.from(fileInput.files).map(f => uploadHomeworkFile(f));
+        const uploadPromises = Array.from(fileInput.files).map((f) => uploadHomeworkFile(f));
         const uploaded = await Promise.all(uploadPromises);
-        attachmentUrls = uploaded.filter(url => url !== null);
+        attachmentUrls = uploaded.filter((url) => url !== null);
       } catch (e) {
         console.warn('[Homework] File upload warning:', e);
       }
@@ -785,7 +814,8 @@ let homeworkSubmissionCache = [];
       questions_files: files,
       status: 'active',
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      present_student_ids: presentStudentIds.length ? presentStudentIds : null
     };
 
     let saved = false;
@@ -808,7 +838,8 @@ let homeworkSubmissionCache = [];
             questions_files: payload.questions_files,
             status: payload.status,
             created_at: payload.created_at,
-            updated_at: payload.updated_at
+            updated_at: payload.updated_at,
+            present_student_ids: payload.present_student_ids
           })
           .select()
           .single();
@@ -1473,6 +1504,25 @@ let homeworkSubmissionCache = [];
     const checkbox = selectable ? `<input type="checkbox" data-homework-id="${assignment.id}" ${selected ? 'checked' : ''} onchange="toggleHomeworkSelection('${assignment.id}', this.checked)" style="accent-color:var(--gold);">` : '';
     const coachName = coachNameForHomework(assignment);
 
+    let presentStudentsHtml = '';
+    {
+      let presentIds = assignment.present_student_ids;
+      if (typeof presentIds === 'string') {
+        try { presentIds = JSON.parse(presentIds); } catch (_) {}
+      }
+      if (Array.isArray(presentIds) && presentIds.length) {
+        const names = presentIds
+          .map((id) => {
+            const s = (window.allStudents || []).find((st) => String(st.id) === String(id));
+            return s ? (window.getStudentName ? window.getStudentName(s) : (s.name || s.full_name || 'Student')) : null;
+          })
+          .filter(Boolean);
+        if (names.length) {
+          presentStudentsHtml = `<div style="font-size:12px; color:var(--ivory-dim); line-height:1.6; margin-top:4px;"><strong>Assigned to:</strong> ${names.join(', ')}</div>`;
+        }
+      }
+    }
+
     return `<div class="card" style="padding:16px; border-left: 4px solid ${assignment.status === 'completed' ? 'var(--emerald)' : 'var(--gold)'};">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
         <div style="display:flex; gap:8px; align-items:flex-start; min-width:0;">
@@ -1485,6 +1535,7 @@ let homeworkSubmissionCache = [];
             <div style="font-size:12px; color:${dueClass}; line-height:1.6;">
               <strong>Due:</strong> ${formatDate(assignment.due_date)} · <strong>Coach:</strong> ${escapeValue(coachName)} · <strong>Assignee:</strong> ${escapeValue(assigneeLabel(assignment))} · <strong>Recipients:</strong> ${recipientCount(assignment)}
             </div>
+            ${presentStudentsHtml}
           </div>
         </div>
         ${showActions ? `<div style="display:flex; gap:6px; flex-wrap:wrap;">
@@ -2044,6 +2095,8 @@ let homeworkSubmissionCache = [];
     list.innerHTML = html;
   }
 
+  window.assignmentAppliesToStudent = assignmentAppliesToStudent;
+  window.assignmentAppliesToBatch = assignmentAppliesToBatch;
   window.updateHomeworkTargetFields = updateHomeworkTargetFields;
   window.openHomeworkAssignmentModal = openHomeworkAssignmentModal;
   window.updatePastHomeworkHistory = updatePastHomeworkHistory;

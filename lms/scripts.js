@@ -508,7 +508,16 @@
       }
     }
     if (tabId === "billing") renderChildBilling();
-    if (tabId === "attendance" || tabId === "homework") { if (window.renderChildAttendanceAndHomework) window.renderChildAttendanceAndHomework(); else renderChildAttendance(); }
+    if (tabId === "attendance" || tabId === "homework") {
+      try {
+        const localAtt = JSON.parse(localStorage.getItem('ck_attendance_records') || '[]');
+        if (localAtt.length) {
+          window.allAttendance = localAtt;
+          allAttendance = localAtt;
+        }
+      } catch (_) {}
+      if (window.renderChildAttendanceAndHomework) window.renderChildAttendanceAndHomework(); else renderChildAttendance();
+    }
     if (tabId === "homework") {
       if (window.loadHomeworkData) {
         window.loadHomeworkData().then(() => {
@@ -594,7 +603,7 @@
     if (!s) return;
     const attList = window.allAttendance || allAttendance || [];
     const myAtt = attList
-      .filter((a) => String(a.student_id) === String(s.id))
+      .filter((a) => String(a.student_id || a.studentId) === String(s.id))
       .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
 
     const present = myAtt.filter(
@@ -888,7 +897,7 @@
     let isFilteredByMonth = true;
     if (monthAtt.length === 0) {
       const allStudentAtt = (allAttendance || [])
-        .filter((a) => String(a.student_id) === String(s.id))
+        .filter((a) => String(a.student_id || a.studentId) === String(s.id))
         .sort((a, b) => new Date(b.date) - new Date(a.date));
       if (allStudentAtt.length > 0) {
         monthAtt = allStudentAtt.slice(0, 30); // show recent 30 sessions
@@ -1224,7 +1233,7 @@
     const heatmap = document.getElementById("attendance-heatmap");
     if (heatmap) {
       const myAtt = allAttendance.filter(
-        (a) => String(a.student_id) === String(s.id),
+        (a) => String(a.student_id || a.studentId) === String(s.id),
       );
       // Local (not UTC) date key — toISOString() shifted IST dates a day back.
       const localYMD = (d) =>
@@ -2539,7 +2548,7 @@
 
     tbody.innerHTML = filteredStudents
       .map((s) => {
-         const existing = dayRecords.find((a) => String(a.student_id) === String(s.id));
+         const existing = dayRecords.find((a) => String(a.student_id || a.studentId) === String(s.id));
          const status = existing?.status || "";
          const notes = existing?.notes || "";
          const parsed = window.parseAttendanceNotes ? window.parseAttendanceNotes(notes) : { cw: "", hw: "", general: "" };
@@ -2892,7 +2901,17 @@
     const coachSel = $("qcs-coach");
     const batchSel = $("qcs-batch");
     const isCoach = String(window.role || "").toLowerCase() === "coach";
-    const currentCoachId = String(window.currentCoachId || window.userId || "");
+    let currentCoachId = String(window.currentCoachId || window.userId || "");
+    if (isCoach && !currentCoachId) {
+      try {
+        const auth = sessionStorage.getItem("chesskidoo_auth") || sessionStorage.getItem("twoknights_auth");
+        if (auth) {
+          const data = JSON.parse(auth);
+          if (data.coachId) currentCoachId = String(data.coachId);
+          else if (data.coach_id) currentCoachId = String(data.coach_id);
+        }
+      } catch (_) {}
+    }
     if (coachSel) {
       const coaches = isCoach
         ? (window.allCoaches || []).filter((coach) => String(coach.id) === currentCoachId)
@@ -2946,7 +2965,17 @@
     }
     const batch = (window.allBatches || []).find((b) => String(b.id) === String(batchId));
     const isCoach = String(window.role || "").toLowerCase() === "coach";
-    const currentCoachId = String(window.currentCoachId || window.userId || "");
+    let currentCoachId = String(window.currentCoachId || window.userId || "");
+    if (isCoach && !currentCoachId) {
+      try {
+        const auth = sessionStorage.getItem("chesskidoo_auth") || sessionStorage.getItem("twoknights_auth");
+        if (auth) {
+          const data = JSON.parse(auth);
+          if (data.coachId) currentCoachId = String(data.coachId);
+          else if (data.coach_id) currentCoachId = String(data.coach_id);
+        }
+      } catch (_) {}
+    }
     if (isCoach && (!batch || !window.ckSameCoach?.(batch.coach_id, currentCoachId))) {
       sl.innerHTML = '<div class="empty-state" style="padding:14px">You can only select one of your assigned batches</div>';
       return;
@@ -3025,6 +3054,14 @@
       return toast("Select or drop at least one PDF before saving the session.", "warning");
     }
 
+    const cw = notes ? notes.value.trim() : "";
+    const hw = finalTitle;
+    const link = classLink && classLink.value.trim() ? classLink.value.trim() : "";
+    const noteStr =
+      typeof window.formatAttendanceNotesForSave === "function"
+        ? window.formatAttendanceNotesForSave(cw, hw, link ? "Link: " + link : "")
+        : (cw ? "CW: " + cw + "\n" : "") + (hw ? "HW: " + hw + "\n" : "") + (link ? "LINK: " + link : "");
+
     // 1) Delegate homework creation to the existing assignment flow
     const ht = $("hw-target-type");
     if (ht) ht.value = "batch";
@@ -3061,26 +3098,36 @@
     if (typeof window.saveHomeworkAssignment !== "function") {
       return toast("Homework service is unavailable. Please refresh and try again.", "error");
     }
-    const homeworkResult = await window.saveHomeworkAssignment({
-      coachId,
-      requireFiles: true,
-      suppressUi: true
-    });
-    if (!homeworkResult || homeworkResult.success !== true) {
-      return toast(homeworkResult?.error || "Homework could not be saved. Attendance was not submitted.", "error");
+    const presentBoxes = boxes.filter((b) => b.checked);
+    if (!presentBoxes.length) {
+      return toast("No students are marked as present. Homework cannot be assigned.", "warning");
+    }
+    const allPresent = presentBoxes.length === boxes.length;
+    const presentStudentIds = allPresent ? [] : presentBoxes.map((b) => b.value);
+    const homeworkResults = [
+      await window.saveHomeworkAssignment({
+        title: finalTitle,
+        description: noteStr,
+        batchId: batchId,
+        studentId: null,
+        coachId: coachId || null,
+        dueDate: due && due.value ? due.value : today,
+        targetType: "batch",
+        files: fileInput && fileInput.files ? Array.from(fileInput.files) : [],
+        requireFiles: true,
+        suppressUi: true,
+        presentStudentIds: presentStudentIds
+      })
+    ];
+    const failedCount = homeworkResults.filter((r) => !r || r.success !== true).length;
+    if (failedCount > 0) {
+      return toast(`Homework could not be saved for ${failedCount} student(s). Attendance was not submitted.`, "error");
     }
 
     // 2) Mark attendance for the batch (checked = present, unchecked = absent)
     const date = isCoach
       ? today
       : ($("att-date") && $("att-date").value ? $("att-date").value : today);
-    const cw = notes ? notes.value.trim() : "";
-    const hw = finalTitle;
-    const link = classLink && classLink.value.trim() ? classLink.value.trim() : "";
-    const noteStr =
-      typeof window.formatAttendanceNotesForSave === "function"
-        ? window.formatAttendanceNotesForSave(cw, hw, link ? "Link: " + link : "")
-        : (cw ? "CW: " + cw + "\n" : "") + (hw ? "HW: " + hw + "\n" : "") + (link ? "LINK: " + link : "");
     const records = boxes.map((b) => ({
       student_id: b.value,
       studentId: b.value,
@@ -3100,9 +3147,9 @@
           id: record.id || undefined,
           date: record.date,
           status: record.status,
-          studentId: record.studentId || record.student_id,
-          studentName: record.studentName || record.student_name || null,
-          coachId: record.coachId || record.coach_id || null,
+          student_id: record.student_id || record.studentId,
+          student_name: record.student_name || record.studentName || null,
+          coach_id: record.coach_id || record.coachId || null,
           markedAt: new Date().toISOString(),
           created_at: new Date().toISOString()
         }));
@@ -3111,31 +3158,41 @@
       }
       if (!window.allAttendance) window.allAttendance = [];
       records.forEach((r) => {
-        const i = window.allAttendance.findIndex((a) => String(a.student_id) === String(r.student_id) && a.date === r.date);
+        const i = window.allAttendance.findIndex((a) => String(a.student_id || a.studentId) === String(r.student_id || r.studentId) && a.date === r.date);
         if (i !== -1) window.allAttendance[i] = { ...window.allAttendance[i], ...r };
         else window.allAttendance.unshift(r);
       });
       localStorage.setItem('ck_attendance_records', JSON.stringify(window.allAttendance));
+      allAttendance = window.allAttendance;
+      if (typeof dataCache !== 'undefined') {
+        dataCache.attendance = window.allAttendance;
+        dataCache.homework = window.allHomework || dataCache.homework;
+        dataCache.timestamp = Date.now();
+      }
       const present = boxes.filter((b) => b.checked).length;
       toast(`✅ Session material & attendance marked for ${present} present / ${boxes.length - present} absent.`, "success");
-      if (typeof renderAttendance === "function") renderAttendance();
-      if (typeof renderCoachAttendance === "function") renderCoachAttendance();
+      if (typeof window.renderAttendanceList === "function") window.renderAttendanceList();
       if (typeof window.loadHomeworkData === "function") await window.loadHomeworkData(true).catch(() => {});
       if (typeof window.renderCoachAttendanceHomeworkCalendar === "function") window.renderCoachAttendanceHomeworkCalendar();
       if (typeof closeModals === "function") closeModals();
     } catch (e) {
       if (!window.allAttendance) window.allAttendance = [];
       records.forEach((r) => {
-        const i = window.allAttendance.findIndex((a) => String(a.student_id) === String(r.student_id) && a.date === r.date);
+        const i = window.allAttendance.findIndex((a) => String(a.student_id || a.studentId) === String(r.student_id || r.studentId) && a.date === r.date);
         if (i !== -1) window.allAttendance[i] = { ...window.allAttendance[i], ...r };
         else window.allAttendance.unshift(r);
       });
       localStorage.setItem('ck_attendance_records', JSON.stringify(window.allAttendance));
+      allAttendance = window.allAttendance;
+      if (typeof dataCache !== 'undefined') {
+        dataCache.attendance = window.allAttendance;
+        dataCache.homework = window.allHomework || dataCache.homework;
+        dataCache.timestamp = Date.now();
+      }
       toast("Homework was saved, but attendance could not sync. Attendance was saved locally; please retry sync.", "warning");
+      if (typeof window.renderAttendanceList === "function") window.renderAttendanceList();
       if (typeof window.loadHomeworkData === "function") await window.loadHomeworkData(true).catch(() => {});
       if (typeof window.renderCoachAttendanceHomeworkCalendar === "function") window.renderCoachAttendanceHomeworkCalendar();
-      if (typeof renderAttendance === "function") renderAttendance();
-      if (typeof renderCoachAttendance === "function") renderCoachAttendance();
       if (typeof closeModals === "function") closeModals();
     }
   };
@@ -6507,11 +6564,13 @@
           if (localAtt && localAtt.length) {
             const attMap = new Map();
             (allAttendance || []).forEach(a => {
-              if (a && a.student_id && a.date) attMap.set(`${a.student_id}_${a.date}`, a);
+              const sid = a.student_id || a.studentId;
+              if (sid && a.date) attMap.set(`${String(sid)}_${a.date}`, a);
             });
             localAtt.forEach(a => {
-              if (a && a.student_id && a.date) {
-                const k = `${a.student_id}_${a.date}`;
+              const sid = a.student_id || a.studentId;
+              if (sid && a.date) {
+                const k = `${String(sid)}_${a.date}`;
                 if (!attMap.has(k)) attMap.set(k, a);
                 else attMap.set(k, { ...a, ...attMap.get(k) });
               }
@@ -14168,7 +14227,7 @@ Best regards,
     let attendanceRate = 0;
     if (s.attendance_rate != null) attendanceRate = Number(s.attendance_rate);
     else if (window.allAttendance && Array.isArray(window.allAttendance)) {
-      const studentLogs = window.allAttendance.filter(a => String(a.student_id) === String(s.id));
+      const studentLogs = window.allAttendance.filter(a => String(a.student_id || a.studentId) === String(s.id));
       if (studentLogs.length > 0) {
         const presentCount = studentLogs.filter(a => a.status === 'present' || a.status === 'Present').length;
         attendanceRate = Math.round((presentCount / studentLogs.length) * 100);
@@ -14547,7 +14606,7 @@ Best regards,
       .filter((e) => new Date(e.date) >= new Date())
       .slice(0, 5);
     const myAttendance = allAttendance
-      .filter((a) => String(a.student_id) === String(currentStudent.id))
+      .filter((a) => String(a.student_id || a.studentId) === String(currentStudent.id))
       .slice(-30);
 
     return {
@@ -15419,7 +15478,7 @@ Best regards,
             (c) => String(c.id) === String(s.coach_id),
           );
           const sAtt = allAttendance.filter(
-            (a) => String(a.student_id) === String(s.id),
+            (a) => String(a.student_id || a.studentId) === String(s.id),
           );
           const present = sAtt.filter((a) => a.status === "present").length;
           const attRate =

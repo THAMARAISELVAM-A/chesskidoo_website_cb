@@ -914,6 +914,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const hw = hwInput ? hwInput.value : '';
         const general = notesInput ? notesInput.value : '';
         return {
+          student_id: studentId,
           studentId: studentId,
           status: select.value,
           date: date,
@@ -1714,7 +1715,7 @@ window.exportDataSheetCSV = function(targetStudentId) {
   const s = (window.allStudents || []).find(st => String(st.id) === String(studentId)) || window.currentStudent || (window.allStudents || [])[0];
   if (!s) return;
 
-  const attList = (window.allAttendance || []).filter(a => String(a.student_id) === String(s.id));
+  const attList = (window.allAttendance || []).filter(a => String(a.student_id || a.studentId) === String(s.id));
   const hwList = window.allHomework || [];
   let csv = "DATE,DAY,CLASSWORK / TOPIC,HOMEWORK NOTES,GENERAL NOTES,SESSION COMPLETED,ATTENDEE NAME,TOTAL PRESENT,TIME DURATION\n";
 
