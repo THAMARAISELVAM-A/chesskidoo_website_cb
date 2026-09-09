@@ -2,6 +2,9 @@
   const $ = (id) => document.getElementById(id);
   let homeworkSelectedIds = new Set();
   let homeworkCalendarMonth = new Date();
+  let editingHomeworkFiles = [];
+  let editingHomeworkRemovedIds = new Set();
+  let editingHomeworkNewFiles = [];
 
   function studentName(student) {
     return window.getStudentName ? window.getStudentName(student) : (student && (student.name || student.full_name || student.id)) || 'Student';
@@ -1026,6 +1029,11 @@ let homeworkSubmissionCache = [];
     homeworkSelectedIds.delete(id);
     window.allHomework = (window.allHomework || []).filter(h => String(h.id) !== String(id));
 
+    if (typeof dataCache !== 'undefined') {
+      dataCache.homework = (dataCache.homework || []).filter(h => String(h.id) !== String(id));
+      dataCache.timestamp = Date.now();
+    }
+
     if (window.toast) window.toast('Homework assignment deleted successfully', 'success');
     if (window.loadHomeworkData) await window.loadHomeworkData(true).catch(() => {});
     else if (window.loadAllData) await window.loadAllData(true).catch(() => {});
@@ -1081,21 +1089,28 @@ let homeworkSubmissionCache = [];
     }
 
     const files = (Array.isArray(hw.questions_files) && hw.questions_files.length ? hw.questions_files : (Array.isArray(hw.attachment_urls) ? hw.attachment_urls : []));
+    editingHomeworkFiles = Array.isArray(files) ? [...files] : [];
+    editingHomeworkRemovedIds = new Set();
+    editingHomeworkNewFiles = [];
     if (filesWrapEl && filesListEl) {
-      if (files.length > 0) {
+      if (editingHomeworkFiles.length > 0) {
         filesWrapEl.style.display = 'block';
-        filesListEl.innerHTML = files.map((f, i) => {
-          const url = typeof f === 'string' ? f : (f.url || '');
-          const name = typeof f === 'string' ? (f.split('/').pop() || `Attachment ${i + 1}`) : (f.name || `Attachment ${i + 1}`);
-          return `<div style="display:flex; align-items:center; gap:6px; background:var(--bg2); padding:4px 8px; border-radius:4px;">
-            <span>📎</span>
-            <a href="${escapeValue(url)}" target="_blank" rel="noopener" style="color:var(--gold); text-decoration:none; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:480px;">${escapeValue(name)}</a>
-          </div>`;
-        }).join('');
+        renderEditFileList();
       } else {
         filesWrapEl.style.display = 'none';
         filesListEl.innerHTML = '';
       }
+    }
+
+    const fileInput = document.getElementById('homework-edit-file-input');
+    if (fileInput) {
+      fileInput.value = '';
+      fileInput.onchange = () => {
+        if (!fileInput.files || !fileInput.files.length) return;
+        Array.from(fileInput.files).forEach((f) => editingHomeworkNewFiles.push(f));
+        fileInput.value = '';
+        renderEditFileList();
+      };
     }
 
     // Set up save button handler
@@ -1118,6 +1133,34 @@ let homeworkSubmissionCache = [];
     }
   };
 
+  function renderEditFileList() {
+    const filesListEl = document.getElementById('homework-edit-files-list');
+    if (!filesListEl) return;
+    const kept = editingHomeworkFiles.filter((f, idx) => {
+      const key = typeof f === 'string' ? f : (f.url || f.name || String(idx));
+      return !editingHomeworkRemovedIds.has(key);
+    });
+    if (!kept.length && !editingHomeworkNewFiles.length) {
+      filesListEl.innerHTML = '';
+      return;
+    }
+    filesListEl.innerHTML = kept.map((f, i) => {
+      const url = typeof f === 'string' ? f : (f.url || '');
+      const name = typeof f === 'string' ? (f.split('/').pop() || `Attachment ${i + 1}`) : (f.name || `Attachment ${i + 1}`);
+      const key = typeof f === 'string' ? f : (f.url || f.name || String(i));
+      return `<div style="display:flex; align-items:center; gap:6px; background:var(--bg2); padding:4px 8px; border-radius:4px;">
+        <span>📎</span>
+        <a href="${escapeValue(url)}" target="_blank" rel="noopener" style="color:var(--gold); text-decoration:none; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:480px;">${escapeValue(name)}</a>
+        <button type="button" onclick="removeEditHomeworkFile('${escapeValue(key).replace(/'/g, "\\'")}')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  window.removeEditHomeworkFile = function (key) {
+    editingHomeworkRemovedIds.add(key);
+    renderEditFileList();
+  };
+
   async function saveHomeworkEdit(id) {
     const hw = (window.allHomework || []).find(h => String(h.id) === String(id));
     if (!hw) return;
@@ -1134,12 +1177,31 @@ let homeworkSubmissionCache = [];
       return window.toast ? window.toast('Title is required.', 'error') : null;
     }
 
+    let newFiles = [...editingHomeworkFiles];
+    const kept = newFiles.filter((f, idx) => {
+      const key = typeof f === 'string' ? f : (f.url || f.name || String(idx));
+      return !editingHomeworkRemovedIds.has(key);
+    });
+    let uploadedUrls = [];
+    if (editingHomeworkNewFiles.length) {
+      try {
+        const uploadPromises = Array.from(editingHomeworkNewFiles).map((f) => uploadHomeworkFile(f));
+        const uploaded = await Promise.all(uploadPromises);
+        uploadedUrls = uploaded.filter((url) => url !== null);
+      } catch (e) {
+        console.warn('[Homework] File upload warning:', e);
+      }
+    }
+    const finalFiles = [...kept, ...uploadedUrls];
+
     const updatedPayload = {
       ...hw,
       title: newTitle,
       description: newDesc,
       due_date: newDueDate || hw.due_date,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      attachment_urls: finalFiles,
+      questions_files: finalFiles
     };
 
     let updated = false;
@@ -1152,7 +1214,9 @@ let homeworkSubmissionCache = [];
           title: updatedPayload.title,
           description: updatedPayload.description,
           due_date: updatedPayload.due_date,
-          updated_at: updatedPayload.updated_at
+          updated_at: updatedPayload.updated_at,
+          attachment_urls: updatedPayload.attachment_urls,
+          questions_files: updatedPayload.questions_files
         }),
         silent: true
       });
@@ -1175,7 +1239,9 @@ let homeworkSubmissionCache = [];
             title: updatedPayload.title,
             description: updatedPayload.description,
             due_date: updatedPayload.due_date,
-            updated_at: updatedPayload.updated_at
+            updated_at: updatedPayload.updated_at,
+            attachment_urls: updatedPayload.attachment_urls,
+            questions_files: updatedPayload.questions_files
           })
           .eq('id', id);
         if (!error) {
@@ -1200,6 +1266,12 @@ let homeworkSubmissionCache = [];
 
     const idx = (window.allHomework || []).findIndex(h => String(h.id) === String(id));
     if (idx !== -1) window.allHomework[idx] = updatedPayload;
+
+    if (typeof dataCache !== 'undefined') {
+      const cacheIdx = (dataCache.homework || []).findIndex(h => String(h.id) === String(id));
+      if (cacheIdx !== -1) dataCache.homework[cacheIdx] = updatedPayload;
+      dataCache.timestamp = Date.now();
+    }
 
     if (window.toast) window.toast('Homework updated successfully', 'success');
     if (typeof window.closeModal === 'function') window.closeModal('homework-edit-modal');

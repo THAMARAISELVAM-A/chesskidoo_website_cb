@@ -301,6 +301,11 @@ body.coach-mode .nav-item.coach-only.active {
 
 .top-nav-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
 .top-nav-right .btn { padding: 8px 14px; font-size: 12px; white-space: nowrap; }
+body.parent-mode .top-nav-right { display: none !important; }
+body.parent-mode #child-portal-tabs,
+body.student-mode #child-portal-tabs { display: none !important; }
+body.parent-mode #child-portal-tabs.force-show,
+body.student-mode #child-portal-tabs.force-show { display: flex !important; }
 #top-btn-area { flex-wrap: wrap !important; gap: 10px !important; }
 .content { padding: 24px 28px 40px; }
 

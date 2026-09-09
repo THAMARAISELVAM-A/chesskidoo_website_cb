@@ -761,14 +761,16 @@
       .getElementById(`btn-child-events-${tabName}`)
       .classList.add("active");
 
+    document.getElementById("child-ev-list-view").style.display = "none";
+    document.getElementById("child-tf-list-view").style.display = "none";
+    const fameView = document.getElementById("child-fame-list-view");
+    if (fameView) fameView.style.display = "none";
+
     if (tabName === "academy") {
       document.getElementById("child-ev-list-view").style.display = "block";
-      document.getElementById("child-tf-list-view").style.display = "none";
       renderChildEvents();
-    } else {
-      document.getElementById("child-ev-list-view").style.display = "none";
+    } else if (tabName === "finder") {
       document.getElementById("child-tf-list-view").style.display = "block";
-      // Load Tournament Finder if needed
       const tfView = document.getElementById("child-tf-list-view");
       if (tfView && !tfView.innerHTML.trim()) {
         tfView.innerHTML = `
@@ -781,7 +783,43 @@
           </div>
         `;
       }
+    } else if (tabName === "fame") {
+      if (fameView) fameView.style.display = "block";
+      if (window.renderChildFame) window.renderChildFame();
     }
+  };
+
+  window.renderChildFame = function() {
+    const container = document.getElementById("child-fame-grid");
+    if (!container) return;
+
+    const topPlayers = [...(allStudents || [])]
+      .filter((s) => (s.status || "active").toLowerCase() !== "archived" && s.rating > 800)
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      .slice(0, 10);
+
+    let html = `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">`;
+
+    if (topPlayers.length === 0) {
+      html += `<div class="card" style="padding:24px; text-align:center; color:var(--ivory-dim);">No rated players yet</div>`;
+    } else {
+      topPlayers.forEach((s, i) => {
+        const rankBadge = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`;
+        html += `
+          <div class="card" style="padding:16px; display:flex; align-items:center; gap:14px; border-left:4px solid ${i === 0 ? 'var(--gold)' : 'var(--border)'};">
+            <div style="font-size:28px;">${rankBadge}</div>
+            <div style="flex:1; min-width:0;">
+              <div style="font-weight:700; color:var(--ivory); font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(getStudentName(s))}</div>
+              <div style="font-size:12px; color:var(--ivory-dim); margin-top:2px;">Level: ${escapeHtml(s.level || "Beginner")}</div>
+            </div>
+            <div style="font-weight:800; color:var(--gold); font-size:16px;">${s.rating || 0}</div>
+          </div>
+        `;
+      });
+    }
+
+    html += `</div>`;
+    container.innerHTML = html;
   };
 
   window.renderChildReports = function() {
@@ -6770,7 +6808,6 @@
           } else if (role === "parent") {
            renderChild();
             renderEvents();
-            if (document.querySelector(".page.active")?.id === "page-parent-ai" && window.setAIModule) window.setAIModule("parent");
           }
 
         setLoading("data", false);
@@ -6833,16 +6870,19 @@
       try {
         const localHw = JSON.parse(localStorage.getItem('ck_homework_assignments') || '[]');
         const map = new Map();
+        const serverIds = new Set();
         (fetchedHomework || []).forEach(h => {
-          if (h && h.id) map.set(String(h.id), h);
+          if (h && h.id) {
+            map.set(String(h.id), h);
+            serverIds.add(String(h.id));
+          }
         });
         (localHw || []).forEach(h => {
           if (h && h.id) {
-            if (!map.has(String(h.id))) {
-              map.set(String(h.id), h);
-            } else {
-              map.set(String(h.id), { ...h, ...map.get(String(h.id)) });
-            }
+            const hid = String(h.id);
+            if (!serverIds.has(hid)) return;
+            if (!map.has(hid)) map.set(hid, h);
+            else map.set(hid, { ...h, ...map.get(hid) });
           }
         });
         allHomework = Array.from(map.values()).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
@@ -7179,15 +7219,12 @@
     insights: "AI Academy Insights",
     exp: "Expenditure Management",
     msgs: "Messages",
-    ai: "AI Assistant",
     access: "Access Control",
     schedules: "Schedule Manager",
     homework: "Homework Manager",
-    elibrary: "E-Library & Recorded Lectures Manager",
     attendance: "Attendance Manager",
     productivity: "Operations Productivity Center",
     chessable: "Chessable Profiles",
-    "parent-ai": "Ask TOM AI",
     "coach-dash": "Coach Portal",
     "coach-students": "My Students",
     "coach-batches": "My Batches",
@@ -7195,7 +7232,6 @@
     "coach-events": "My Events",
     "coach-attendance": "My Attendance",
     "coach-homework": "My Homework",
-    "coach-elibrary": "Coach E-Library Hub",
     "coach-studypgn": "Study Lab & Topics",
     "studypgn": "Study PGN & Analytics",
   };
@@ -7211,17 +7247,15 @@
       "exp",
       "msgs",
       "events",
-      "ai",
       "access",
       "schedules",
       "productivity",
       "chessable",
       "attendance",
       "homework",
-      "elibrary",
       "studypgn",
     ];
-    const coachAccessiblePages = ["coach-dash", "coach-students", "coach-batches", "coach-schedule", "coach-events", "coach-attendance", "coach-homework", "coach-elibrary", "coach-studypgn", "elibrary", "studypgn"];
+    const coachAccessiblePages = ["coach-dash", "coach-students", "coach-batches", "coach-schedule", "coach-events", "coach-attendance", "coach-homework", "coach-studypgn", "studypgn"];
     if (adminPages.includes(p) && role !== "admin" && role !== "master" && !coachAccessiblePages.includes(p)) {
       toast("Access denied", "error");
       setPage(role === "parent" ? "child" : "coach-dash");
@@ -7243,8 +7277,6 @@
     if (role === "parent") {
       const hwPage = $("page-homework");
       if (hwPage) hwPage.style.setProperty("display", "none", "important");
-      const elibPage = $("page-elibrary");
-      if (elibPage) elibPage.style.setProperty("display", "none", "important");
     }
     document
       .querySelectorAll(".nav-item")
@@ -7268,14 +7300,6 @@
       const dateEl = $("att-date");
       if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split("T")[0];
       window.renderAttendanceList();
-    }
-    if (p === "elibrary" || p === "coach-elibrary") {
-      if (window.loadElibraryData) {
-        window.loadElibraryData().then(() => {
-          if (p === "elibrary" && typeof window.renderAdminElibraryPage === "function") window.renderAdminElibraryPage();
-          if (p === "coach-elibrary" && typeof window.renderCoachElibraryPage === "function") window.renderCoachElibraryPage();
-        });
-      }
     }
     if (p === "studypgn" || p === "coach-studypgn") {
       if (typeof window.renderStudyPgnMonitor === "function") {
@@ -7393,7 +7417,6 @@ setTimeout(function () {
       }
       if (p === "bills") renderBills();
       if (p === "child") renderChild();
-      if (p === "parent-ai" && window.setAIModule) window.setAIModule("parent");
 
       if (p === "msgs") renderMsgs();
       if (p === "exp" && window.initExpPage) window.initExpPage();
@@ -14105,10 +14128,25 @@ Best regards,
 
     document.querySelectorAll(".nav-item").forEach((ni) => ni.classList.remove("active"));
     const targetId = tab === "overview" ? "nav-child" : "nav-parent-" + tab;
-    const targetNav = document.getElementById(targetId);
-    if (targetNav) targetNav.classList.add("active");
+    const setActive = () => {
+      const targetNav = document.getElementById(targetId);
+      if (targetNav) targetNav.classList.add("active");
+    };
+    setActive();
+    requestAnimationFrame(() => requestAnimationFrame(setActive));
+    setTimeout(setActive, 0);
+    setTimeout(setActive, 150);
+
+    const tabBar = document.getElementById("child-portal-tabs");
+    if (tabBar) {
+      if (tab === "overview" || tab === "schedule") {
+        tabBar.classList.add("force-show");
+      } else {
+        tabBar.classList.remove("force-show");
+      }
+    }
     if ($("p-title")) {
-      const titles = { overview: "My Child", schedule: "Class Schedule", attendance: "Attendance Logs", homework: "Homework", growth: "Skill & ELO Growth", learning: "Chess Study Hub", events: "Upcoming Events", reports: "Academy Reports", billing: "Tuition & Invoices", productivity: "Daily Tasks", chess: "Chess Performance" };
+      const titles = { overview: "My Child", schedule: "Class Schedule", attendance: "Attendance and Homework", homework: "Homework", growth: "Skill & ELO Growth", learning: "Chess Study Hub", events: "Events", reports: "Academy Reports", billing: "Billing", productivity: "Daily Tasks", chess: "Chess Performance" };
       $("p-title").textContent = titles[tab] || "My Child";
     }
   };

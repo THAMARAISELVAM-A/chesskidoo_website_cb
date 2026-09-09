@@ -147,21 +147,12 @@
       </div>
     </div>
   <div class="nav-group">
+    <!-- Admin -->
     <div class="nav-item admin-only" id="nav-dash" onclick="setPage('dash')"><span class="ico">📊</span> Dashboard</div>
-    <div class="nav-item coach-only" id="nav-coach-dash" onclick="setPage('coach-dash')"><span class="ico">🏠</span> My Portal</div>
-    <div class="nav-item coach-only" id="nav-coach-students" onclick="setPage('coach-students')"><span class="ico">👨‍🎓</span> My Students</div>
-    <div class="nav-item coach-only" id="nav-coach-batches" onclick="setPage('coach-batches')"><span class="ico">👥</span> My Batches</div>
-    <div class="nav-item coach-only" id="nav-coach-schedule" onclick="setPage('coach-schedule')"><span class="ico">📅</span> Schedule</div>
-    <div class="nav-item coach-only" id="nav-coach-events" onclick="setPage('coach-events')"><span class="ico">🏆</span> Events</div>
-    <div class="nav-item coach-only" id="nav-coach-attendance" onclick="setPage('coach-attendance')"><span class="ico">📋</span> Attendance</div>
-    <div class="nav-item coach-only" id="nav-coach-homework" onclick="setPage('coach-attendance')"><span class="ico">📚</span> Homework</div>
-    <div class="nav-item coach-only" id="nav-coach-elibrary" onclick="setPage('coach-elibrary')"><span class="ico">📖</span> E-Library Hub</div>
-    <div class="nav-item coach-only" id="nav-coach-studypgn" onclick="setPage('coach-studypgn')"><span class="ico">♟️</span> Study Lab &amp; Topics</div>
     <div class="nav-item admin-only" id="nav-stud" onclick="setPage('stud')"><span class="ico">👨‍🎓</span> Students</div>
     <div class="nav-item admin-only" id="nav-coach-mgmt" onclick="setPage('coach-mgmt')"><span class="ico">👨‍🏫</span> Coaches</div>
-    <div class="nav-item admin-only" id="nav-elibrary" onclick="setPage('elibrary')"><span class="ico">📖</span> E-Library Manager</div>
     <div class="nav-item admin-only" id="nav-studypgn" onclick="setPage('studypgn')"><span class="ico">♟️</span> Study Lab &amp; Analytics</div>
-    
+
     <!-- Academy Manager Group -->
      <div class="nav-item admin-only" onclick="toggleAcademyManager()" style="justify-content: space-between;">
        <span><span class="ico">🏫</span> Academy Operations</span>
@@ -173,9 +164,9 @@
          <div class="nav-item admin-only" id="nav-events" onclick="setPage('events');" style="font-size: 13px; padding: 10px 14px;"><span class="ico">🏆</span> Event Manager</div>
          <div class="nav-item admin-only" id="nav-attendance" onclick="setPage('attendance');" style="font-size: 13px; padding: 10px 14px;"><span class="ico">📋</span> Attendance Manager</div>
          <div class="nav-item admin-only" id="nav-homework" onclick="setPage('homework');" style="font-size: 13px; padding: 10px 14px;"><span class="ico">📚</span> Homework Manager</div>
-      </div>
+       </div>
 
-    <!-- ── External academy tools ──
+    <!-- ── External academy tools �──
          Separate Vercel apps, so these are real anchors rather than setPage()
          routes. Invoice Generator is finance-side and stays admin-only;
          Report Card carries .coach-accessible so it also survives the
@@ -193,24 +184,33 @@
       <span class="ico">📋</span> Report Card <span style="margin-left:auto; font-size:10px; opacity:.5;">↗</span>
     </a>
 
-    <!-- Parent Portal Links -->
-    <div class="nav-item parent-only" id="nav-child" onclick="goChildTab('overview')"><span class="ico">📈</span> My Child Profile</div>
-    <div class="nav-item parent-only" id="nav-parent-schedule" onclick="goChildTab('schedule')"><span class="ico">🗓️</span> Class Schedule</div>
-    <div class="nav-item parent-only" id="nav-parent-growth" onclick="goChildTab('growth')"><span class="ico">📊</span> Skill & ELO Growth</div>
-    <div class="nav-item parent-only" id="nav-parent-elibrary" onclick="goChildTab('elibrary')"><span class="ico">📖</span> E-Library & Recordings</div>
-    <div class="nav-item parent-only" id="nav-parent-events" onclick="goChildTab('events')"><span class="ico">🎫</span> Upcoming Events</div>
-    <div class="nav-item parent-only" id="nav-parent-attendance" onclick="goChildTab('attendance')"><span class="ico">🗓️</span> Attendance Logs</div>
-    <div class="nav-item parent-only" id="nav-parent-homework" onclick="goChildTab('homework')"><span class="ico">📝</span> Homework</div>
-    <div class="nav-item parent-only" id="nav-parent-billing" onclick="goChildTab('billing')"><span class="ico">💰</span> Tuition & Invoices</div>
-    <div class="nav-item parent-only" id="nav-parent-reports" onclick="goChildTab('reports')"><span class="ico">📄</span> Academy Reports</div>
-    <div class="nav-item parent-only" id="nav-parent-ai" onclick="setPage('parent-ai')"><span class="ico">🤖</span> Ask TOM AI</div>
-    <div class="nav-item" id="nav-fame" onclick="setPage('fame')"><span class="ico">🏆</span> Wall of Fame</div>
     <div class="nav-item admin-only" id="nav-bills" onclick="setPage('bills')"><span class="ico">💳</span> Payments</div>
     <div class="nav-item admin-only" id="nav-exp" onclick="setPage('exp')"><span class="ico">💸</span> Expenditures</div>
     <div class="nav-item admin-only" id="nav-access" onclick="setPage('access')"><span class="ico">🔐</span> Access Control</div>
     <div class="nav-item admin-only" id="nav-msgs" onclick="setPage('msgs')"><span class="ico">💬</span> Messages <span id="msg-badge" class="badge badge-level" style="display:none;margin-left:8px">0</span></div>
-    <div class="nav-item admin-only" id="nav-ai" onclick="setPage('ai')"><span class="ico">🤖</span> TOM AI</div>
-  </div>
+
+    <!-- Coach -->
+    <div class="nav-item coach-only" id="nav-coach-dash" onclick="setPage('coach-dash')"><span class="ico">🏠</span> My Portal</div>
+    <div class="nav-item coach-only" id="nav-coach-students" onclick="setPage('coach-students')"><span class="ico">👨‍🎓</span> My Students</div>
+    <div class="nav-item coach-only" id="nav-coach-batches" onclick="setPage('coach-batches')"><span class="ico">👥</span> My Batches</div>
+    <div class="nav-item coach-only" id="nav-coach-schedule" onclick="setPage('coach-schedule')"><span class="ico">📅</span> Schedule</div>
+    <div class="nav-item coach-only" id="nav-coach-events" onclick="setPage('coach-events')"><span class="ico">🏆</span> Events</div>
+    <div class="nav-item coach-only" id="nav-coach-attendance" onclick="setPage('coach-attendance')"><span class="ico">📋</span> Attendance</div>
+    <div class="nav-item coach-only" id="nav-coach-homework" onclick="setPage('coach-attendance')"><span class="ico">📚</span> Homework</div>
+    <div class="nav-item coach-only" id="nav-coach-studypgn" onclick="setPage('coach-studypgn')"><span class="ico">♟️</span> Study Lab &amp; Topics</div>
+
+     <!-- Parent -->
+     <div class="nav-item parent-only" id="nav-child" onclick="goChildTab('overview')"><span class="ico">📈</span> My Child Profile</div>
+     <div class="nav-item parent-only" id="nav-parent-attendance" onclick="goChildTab('attendance')"><span class="ico">🗓️</span> Attendance and Homework</div>
+     <div class="nav-item parent-only" id="nav-parent-studypgn" onclick="goChildTab('studypgn')"><span class="ico">♟️</span> Study PGN</div>
+     <div class="nav-item parent-only" id="nav-parent-events" onclick="goChildTab('events')"><span class="ico">🎫</span> Events</div>
+     <div class="nav-item parent-only" id="nav-parent-reports" onclick="goChildTab('reports')"><span class="ico">📄</span> Reports</div>
+     <div class="nav-item parent-only" id="nav-parent-billing" onclick="goChildTab('billing')"><span class="ico">💰</span> Billing</div>
+     <div class="nav-item parent-only" id="nav-parent-productivity" onclick="goChildTab('productivity')"><span class="ico">📝</span> Daily Tasks</div>
+
+     <!-- Shared -->
+     <div class="nav-item admin-only coach-only" id="nav-fame" onclick="setPage('fame')"><span class="ico">🏆</span> Wall of Fame</div>
+   </div>
   <div style="padding:16px;border-top:1px solid var(--border)">
     <div class="nav-item" onclick="toggleTheme()"><span class="ico">🌗</span> Switch Theme</div>
     <div style="font-size:10px;color:var(--ivory3);text-align:center;margin-top:12px;opacity:0.6;letter-spacing:1px;" id="ui-version">Portal v5.5 (Cached)</div>
@@ -956,138 +956,6 @@
       </div>
     </div>
 
-    <!-- E-Library & Study Materials Manager (Admin) -->
-    <div id="page-elibrary" class="page admin-only">
-      <div class="coach-shell">
-        <div class="coach-section-block">
-          <div class="coach-section-row" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-            <div>
-              <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(218,163,62,0.12); border:1px solid rgba(218,163,62,0.3); border-radius:99px; padding:4px 14px; font-size:11px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">
-                <span>📚 Academic Study Hub</span>
-              </div>
-              <h2 class="coach-section-title" style="margin:0 0 6px;">📖 E-Library & Recorded Lectures Manager</h2>
-              <p style="color:var(--ivory-dim); font-size:14px; margin:0; max-width:720px;">Upload study guides, opening vaults, tactics calculation sheets, and manage granular access permissions per student or batch.</p>
-            </div>
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button class="btn btn-gold" onclick="window.openAddElibraryModal()" style="display:inline-flex; align-items:center; gap:8px;">
-                <span class="ico">➕</span> Add New Material / Video
-              </button>
-              <button class="btn btn-outline" onclick="window.openGrantAccessModal()" style="display:inline-flex; align-items:center; gap:8px; border-color:rgba(218,163,62,0.4); color:var(--gold);">
-                <span class="ico">👤</span> Assign to Specific Students
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- KPI Summary Cards -->
-        <div id="elib-admin-kpi-row" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:16px; margin-bottom:24px;">
-          <div class="card" style="padding:16px 20px; background:var(--surface, #1e293b); border:1px solid var(--border); border-radius:14px;">
-            <div style="font-size:12px; color:var(--ivory-dim); margin-bottom:6px;">📚 Total Materials</div>
-            <div id="elib-stat-total" style="font-size:24px; font-weight:800; color:#fff;">0</div>
-          </div>
-          <div class="card" style="padding:16px 20px; background:var(--surface, #1e293b); border:1px solid var(--border); border-radius:14px;">
-            <div style="font-size:12px; color:var(--ivory-dim); margin-bottom:6px;">🎥 Video Lessons</div>
-            <div id="elib-stat-videos" style="font-size:24px; font-weight:800; color:#38bdf8;">0</div>
-          </div>
-          <div class="card" style="padding:16px 20px; background:var(--surface, #1e293b); border:1px solid var(--border); border-radius:14px;">
-            <div style="font-size:12px; color:var(--ivory-dim); margin-bottom:6px;">🔒 Student Exclusive</div>
-            <div id="elib-stat-restricted" style="font-size:24px; font-weight:800; color:#eab308;">0</div>
-          </div>
-          <div class="card" style="padding:16px 20px; background:var(--surface, #1e293b); border:1px solid var(--border); border-radius:14px;">
-            <div style="font-size:12px; color:var(--ivory-dim); margin-bottom:6px;">👥 Batch Restricted</div>
-            <div id="elib-stat-batches" style="font-size:24px; font-weight:800; color:#a855f7;">0</div>
-          </div>
-        </div>
-
-        <!-- Filter & Search Bar -->
-        <div class="coach-section-block" style="margin-bottom:20px; padding:18px 20px; background:var(--surface, #1e293b); border-radius:14px; border:1px solid var(--border);">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
-            <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              <button class="btn btn-outline btn-sm elib-filter-pill active" onclick="window.filterElibrary('all', this)">🎯 All Items</button>
-              <button class="btn btn-outline btn-sm elib-filter-pill" onclick="window.filterElibrary('recordings', this)">🎥 Recorded Classes</button>
-              <button class="btn btn-outline btn-sm elib-filter-pill" onclick="window.filterElibrary('openings', this)">♟️ Openings</button>
-              <button class="btn btn-outline btn-sm elib-filter-pill" onclick="window.filterElibrary('tactics', this)">⚡ Tactics</button>
-              <button class="btn btn-outline btn-sm elib-filter-pill" onclick="window.filterElibrary('endgames', this)">👑 Endgames</button>
-              <button class="btn btn-outline btn-sm elib-filter-pill" onclick="window.filterElibrary('masterclasses', this)">📖 Masterclasses</button>
-            </div>
-            
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-              <select id="elib-filter-access" onchange="window.filterElibraryAccess(this.value)" class="input-field" style="max-width:180px; margin:0; padding:7px 10px; font-size:13px;">
-                <option value="all">🌐 All Access Types</option>
-                <option value="public">🌐 All Students (Open)</option>
-                <option value="batch">👥 Batch Specific</option>
-                <option value="students">🔒 Student Exclusive</option>
-              </select>
-              <select id="elib-filter-level" onchange="window.filterElibraryLevel(this.value)" class="input-field" style="max-width:160px; margin:0; padding:7px 10px; font-size:13px;">
-                <option value="all">All Skill Levels</option>
-                <option value="Beginner">Beginner</option>
-                <option value="Intermediate">Intermediate</option>
-                <option value="Advanced">Advanced</option>
-                <option value="Master">Master</option>
-              </select>
-              <input type="text" placeholder="🔍 Search materials..." oninput="window.searchElibrary(this.value)" class="input-field" style="max-width:200px; margin:0; padding:7px 12px; font-size:13px;">
-            </div>
-          </div>
-        </div>
-
-        <div id="admin-elibrary-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:22px;">
-          <div class="loading-state"><span class="spinner"></span> Loading E-Library...</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- E-Library Hub (Coach) -->
-    <div id="page-coach-elibrary" class="page coach-only">
-      <div class="coach-shell">
-        <div class="coach-section-block">
-          <div class="coach-section-row" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
-            <div>
-              <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(218,163,62,0.12); border:1px solid rgba(218,163,62,0.3); border-radius:99px; padding:4px 14px; font-size:11px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">
-                <span>♟️ Coach Academic Hub</span>
-              </div>
-              <h2 class="coach-section-title" style="margin:0 0 6px;">📖 Coach E-Library & Class Recordings Hub</h2>
-              <p style="color:var(--ivory-dim); font-size:14px; margin:0;">Share class recordings, opening lines, tactics sheets, and endgame studies with your enrolled students.</p>
-            </div>
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button class="btn btn-gold" onclick="window.openAddElibraryModal()" style="display:inline-flex; align-items:center; gap:8px;">
-                <span class="ico">➕</span> Upload Material / Video
-              </button>
-              <button class="btn btn-outline" onclick="window.openGrantAccessModal()" style="display:inline-flex; align-items:center; gap:8px; border-color:rgba(218,163,62,0.4); color:var(--gold);">
-                <span class="ico">👤</span> Assign to Students
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Filter Bar -->
-        <div class="coach-section-block" style="margin-bottom:20px; padding:18px 20px; background:var(--surface, #1e293b); border-radius:14px; border:1px solid var(--border);">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
-            <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              <button class="btn btn-outline btn-sm elib-filter-pill active" onclick="window.filterElibrary('all', this)">🎯 All Items</button>
-              <button class="btn btn-outline btn-sm elib-filter-pill" onclick="window.filterElibrary('recordings', this)">🎥 Class Recordings</button>
-              <button class="btn btn-outline btn-sm elib-filter-pill" onclick="window.filterElibrary('openings', this)">♟️ Openings</button>
-              <button class="btn btn-outline btn-sm elib-filter-pill" onclick="window.filterElibrary('tactics', this)">⚡ Tactics</button>
-              <button class="btn btn-outline btn-sm elib-filter-pill" onclick="window.filterElibrary('endgames', this)">👑 Endgames</button>
-              <button class="btn btn-outline btn-sm elib-filter-pill" onclick="window.filterElibrary('masterclasses', this)">📖 Masterclasses</button>
-            </div>
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-              <select id="coach-elib-filter-access" onchange="window.filterElibraryAccess(this.value)" class="input-field" style="max-width:180px; margin:0; padding:7px 10px; font-size:13px;">
-                <option value="all">🌐 All Access Types</option>
-                <option value="public">🌐 All Students (Open)</option>
-                <option value="batch">👥 Batch Specific</option>
-                <option value="students">🔒 Student Exclusive</option>
-              </select>
-              <input type="text" placeholder="🔍 Search library..." oninput="window.searchElibrary(this.value)" class="input-field" style="max-width:220px; margin:0; padding:7px 12px; font-size:13px;">
-            </div>
-          </div>
-        </div>
-
-        <div id="coach-elibrary-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:22px;">
-          <div class="loading-state"><span class="spinner"></span> Loading E-Library...</div>
-        </div>
-      </div>
-    </div>
-
     <!-- Study Lab & Analytics Page (Admin) -->
     <div id="page-studypgn" class="page admin-only">
       <div class="coach-shell">
@@ -1409,50 +1277,47 @@
             <button class="btn btn-gold btn-sm" onclick="setPage('stud')" style="display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-amber-sm);"><span style="font-size: 11px;">🔙</span> Back to Students</button>
             <button onclick="setPage('stud')" title="Exit Preview Mode" style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.08); color: var(--gold); cursor: pointer; font-size: 18px; line-height: 1; transition: all 0.2s; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.15); outline: none; padding: 0;" onmouseover="this.style.background='rgba(59, 130, 246, 0.2)'; this.style.borderColor='var(--gold)';" onmouseout="this.style.background='rgba(59, 130, 246, 0.08)'; this.style.borderColor='rgba(59, 130, 246, 0.3)';">✕</button>
           </div>
-        </div>
+          </div>
 
-        <div class="profile-hdr">
-          <div class="profile-info">
-            <div id="p-av-wrap"></div>
-            <div class="profile-details">
-              <h1 id="c-name">—</h1>
-              <div class="profile-meta" style="display:flex; flex-wrap:wrap; gap:16px; margin-top:8px;">
-                <span><b>Level:</b> <span id="c-level" class="text-gold">—</span></span>
-                <span><b>Coach:</b> <span id="c-coach">—</span></span>
-                <span><b>Parent:</b> <span id="c-parent-name">—</span></span>
-                <span><b>Phone:</b> <span id="c-parent-phone" style="font-family: monospace;">—</span></span>
-                <span><b>Email:</b> <span id="c-parent-email" style="font-family: monospace;">—</span></span>
+          <div class="profile-hdr" style="margin-bottom:18px;">
+            <div class="profile-info">
+              <div id="p-av-wrap"></div>
+              <div class="profile-details">
+                <h1 id="c-name">—</h1>
+                <div class="profile-meta" style="display:flex; flex-wrap:wrap; gap:16px; margin-top:8px;">
+                  <span><b>Level:</b> <span id="c-level" class="text-gold">—</span></span>
+                  <span><b>Coach:</b> <span id="c-coach">—</span></span>
+                  <span><b>Parent:</b> <span id="c-parent-name">—</span></span>
+                  <span><b>Phone:</b> <span id="c-parent-phone" style="font-family: monospace;">—</span></span>
+                  <span><b>Email:</b> <span id="c-parent-email" style="font-family: monospace;">—</span></span>
+                </div>
+              <div class="profile-meta" style="display:flex; flex-wrap:wrap; gap:16px; margin-top:8px;" id="c-chess-links-container">
+                <!-- Populated by JS if usernames exist -->
               </div>
-        <div class="profile-meta" style="display:flex; flex-wrap:wrap; gap:16px; margin-top:8px;" id="c-chess-links-container">
-          <!-- Populated by JS if usernames exist -->
-        </div>
-        <div class="profile-meta" id="c-engagement-flag" style="margin-top:10px; font-size:12px; color:var(--ivory-dim);"></div>
-      </div>
-    </div>
-    <div class="profile-actions">
+              <div class="profile-meta" id="c-engagement-flag" style="margin-top:10px; font-size:12px; color:var(--ivory-dim);"></div>
+            </div>
+          </div>
+          <div class="profile-actions">
             <button class="btn btn-outline" onclick="openStudentEditPortalModal()" style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 13px;">⚙️</span> Edit Details</button>
             <button class="btn btn-outline" onclick="window.openStudentChangePasswordModal && window.openStudentChangePasswordModal()" style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 13px;">🔑</span> Change Password</button>
             <button class="btn btn-outline" onclick="openContactModal()">✉️ Message Coach</button>
             <button class="btn btn-outline" onclick="openModal('fb-modal')">📝 Feedback</button>
-          </div>
-        </div>
+           </div>
 
-        <!-- Parent Portal Tabs -->
-        <div class="tabs-nav">
-          <button class="tab-link active" onclick="setChildTab('overview', this)">Overview</button>
-          <button class="tab-link" onclick="setChildTab('schedule', this)">Schedule</button>
-          <button class="tab-link" onclick="setChildTab('attendance', this)">📅 Attendance &amp; Homework</button>
-          <button class="tab-link" onclick="setChildTab('elibrary', this)">📖 E-Library</button>
-          <button class="tab-link" onclick="setChildTab('studypgn', this)">♟️ Study PGN &amp; Tactics</button>
-          <button class="tab-link" onclick="setChildTab('growth', this)">Growth</button>
-          <button class="tab-link" onclick="setChildTab('events', this)">Events</button>
-          <button class="tab-link" onclick="setChildTab('reports', this)">Reports</button>
-          <button class="tab-link" onclick="setChildTab('billing', this)">Billing & Receipts</button>
-          <button class="tab-link" onclick="setChildTab('productivity', this)">Daily Tasks</button>
-        </div>
+            <div class="tabs-nav" id="child-portal-tabs">
+             <button class="tab-link active" onclick="setChildTab('overview', this)">Overview</button>
+             <button class="tab-link" onclick="setChildTab('schedule', this)">Schedule</button>
+              <button class="tab-link" onclick="setChildTab('attendance', this)">📅 Attendance &amp; Homework</button>
+              <button class="tab-link" onclick="setChildTab('studypgn', this)">♟️ Study PGN &amp; Tactics</button>
+             <button class="tab-link" onclick="setChildTab('growth', this)">Growth</button>
+             <button class="tab-link" onclick="setChildTab('events', this)">Events</button>
+             <button class="tab-link" onclick="setChildTab('reports', this)">Reports</button>
+             <button class="tab-link" onclick="setChildTab('billing', this)">Billing & Receipts</button>
+             <button class="tab-link" onclick="setChildTab('productivity', this)">Daily Tasks</button>
+           </div>
 
-        <div id="child-tab-overview" class="child-tab-content active">
-          <!-- Gamified Academy XP & Milestone Journey Hub -->
+           <div id="child-tab-overview" class="child-tab-content active">
+             <!-- Gamified Academy XP & Milestone Journey Hub -->
           <div class="card" style="background:linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.95)); border:1px solid rgba(218, 163, 62, 0.35); border-radius:14px; padding:20px; margin-bottom:24px; box-shadow:0 10px 25px rgba(0,0,0,0.4);">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:16px;">
               <div>
@@ -1794,21 +1659,6 @@
             </div>
           </div>
 
-          <!-- 2. SESSION TRACKING DATA SHEET (Google Sheet Design) -->
-          <div style="margin-bottom: 30px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
-              <h2 style="font-family:var(--font-head); margin:0; font-size:22px; color:var(--gold); display:flex; align-items:center; gap:10px;">
-                <span style="font-size:24px">📊</span> Coach Session &amp; Attendance Data Sheet
-              </h2>
-              <button class="btn btn-outline btn-sm" onclick="window.print()" style="display:flex; align-items:center; gap:6px;">
-                🖨️ Print Sheet
-              </button>
-            </div>
-            <div id="child-session-sheet-container">
-              <!-- Rendered dynamically by window.renderSessionSheet -->
-            </div>
-          </div>
-
           <!-- 3. ASSIGNED HOMEWORK & PRACTICE MATERIALS -->
           <div style="margin-bottom: 20px;">
             <div class="card" style="padding:22px;">
@@ -1892,53 +1742,9 @@
               <h3 style="margin-bottom:16px;color:#EA580C;display:flex;align-items:center;gap:8px;"><span class="ico">🎓</span> Chessable XP Progression</h3>
               <div style="height:250px"><canvas id="chartChessableProgress"></canvas></div>
             </div>
-            <div class="card" style="grid-column:1/-1;">
-              <h3 style="margin-bottom:16px;color:var(--gold)">Attendance Overview</h3>
-              <div class="growth-split">
-                <div>
-                  <div id="attendance-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
-                  <div class="heatmap-legend" style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--ivory-dim)">
-                    <span style="display:flex;align-items:center;gap:4px"><i style="display:inline-block;width:10px;height:10px;background:var(--success);border-radius:2px"></i> Present</span>
-                    <span style="display:flex;align-items:center;gap:4px"><i style="display:inline-block;width:10px;height:10px;background:var(--danger);border-radius:2px"></i> Absent</span>
-                    <span style="display:flex;align-items:center;gap:4px"><i style="display:inline-block;width:10px;height:10px;background:var(--bg3);border-radius:2px"></i> No Class</span>
-                  </div>
-                </div>
-                <div style="min-width:0;">
-                  <div id="attendance-heatmap" class="heatmap-container" style="max-width:680px;margin-top:0;"></div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
-
-
-        <!-- Dedicated Student E-Library Hub -->
-        <div id="child-tab-elibrary" class="child-tab-content">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px; flex-wrap: wrap; gap:16px; border-bottom:1px solid var(--border); padding-bottom:16px;">
-            <div>
-              <h3 style="color:var(--gold); margin:0 0 4px; font-family:var(--font-head); font-size:20px;">📖 ChessKidoo E-Library & Class Recordings</h3>
-              <p style="margin:0; font-size:13px; color:var(--ivory-dim);">Watch recorded class lectures, download tactics sheets, and review grandmaster opening repertoires.</p>
-            </div>
-            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-              <input type="text" placeholder="🔍 Search library..." oninput="window.searchElibrary(this.value)" class="input-field" style="max-width:220px; margin:0; padding:8px 12px; font-size:13px;">
-            </div>
-          </div>
-
-          <!-- Category Filter Pills -->
-          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:24px;">
-            <button class="btn btn-outline btn-sm elib-filter-pill active" onclick="window.filterElibrary('all', this)">🎯 All Materials</button>
-            <button class="btn btn-outline btn-sm elib-filter-pill" onclick="window.filterElibrary('recordings', this)">🎥 Recorded Classes</button>
-            <button class="btn btn-outline btn-sm elib-filter-pill" onclick="window.filterElibrary('openings', this)">♟️ Openings</button>
-            <button class="btn btn-outline btn-sm elib-filter-pill" onclick="window.filterElibrary('tactics', this)">⚡ Tactics</button>
-            <button class="btn btn-outline btn-sm elib-filter-pill" onclick="window.filterElibrary('endgames', this)">👑 Endgames</button>
-            <button class="btn btn-outline btn-sm elib-filter-pill" onclick="window.filterElibrary('masterclasses', this)">📖 Masterclasses</button>
-          </div>
-
-          <div id="child-elibrary-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:20px;">
-            <div class="loading-state"><span class="spinner"></span> Loading E-Library...</div>
-          </div>
-        </div>
 
         <!-- Dedicated Student Study PGN & Tactics Hub -->
         <div id="child-tab-studypgn" class="child-tab-content">
@@ -2188,6 +1994,7 @@
             <div class="tabs-nav" style="margin:0; background:rgba(0,0,0,0.2); padding:3px; border-radius:8px; border:1px solid var(--border); display:flex; gap:2px;">
               <button class="tab-link active" id="btn-child-events-academy" onclick="setChildEventsSubTab('academy')" style="padding:4px 10px; font-size:11px; border-radius:6px; border:none; cursor:pointer;">Academy Events</button>
               <button class="tab-link" id="btn-child-events-finder" onclick="setChildEventsSubTab('finder')" style="padding:4px 10px; font-size:11px; border-radius:6px; border:none; cursor:pointer;">🏆 Tournament Finder</button>
+              <button class="tab-link" id="btn-child-events-fame" onclick="setChildEventsSubTab('fame')" style="padding:4px 10px; font-size:11px; border-radius:6px; border:none; cursor:pointer;">🏆 Wall of Fame</button>
             </div>
           </div>
 
@@ -2198,6 +2005,11 @@
 
           <!-- Tournament Finder Sub-View -->
           <div id="child-tf-list-view" class="child-events-sub-view" style="display:none;"></div>
+
+          <!-- Wall of Fame Sub-View -->
+          <div id="child-fame-list-view" class="child-events-sub-view" style="display:none;">
+            <div id="child-fame-grid"></div>
+          </div>
         </div>
 
 
@@ -3160,233 +2972,6 @@
       </div>
     </div>
 
-    <!-- TOM AI Command Center -->
-    <div id="page-ai" class="page">
-      <!-- TOM AI Command Center Header -->
-      <div class="tom-command-header">
-        <div class="tom-header-content">
-          <div class="tom-brand-row">
-            <div class="tom-avatar">🤖</div>
-            <div>
-              <h2 class="tom-title">TOM AI <span class="tom-subtitle">Training Operations Manager</span></h2>
-              <p class="tom-status"><span class="tom-online-dot"></span>Connected to Live Database • <span id="tom-last-sync">Syncing...</span></p>
-            </div>
-          </div>
-        </div>
-        <div class="tom-neural-bg"></div>
-      </div>
-
-      <!-- TOM KPI Cards -->
-      <div class="tom-kpi-grid">
-        <div class="tom-kpi-card" onclick="setPage('stud')">
-          <div class="tom-kpi-icon" style="background:rgba(90,159,255,0.12);color:var(--accent)">👥</div>
-          <div class="tom-kpi-value" id="tom-active-students">—</div>
-          <div class="tom-kpi-label">Active Students</div>
-        </div>
-        <div class="tom-kpi-card">
-          <div class="tom-kpi-icon" style="background:rgba(82,196,26,0.12);color:var(--success)">📊</div>
-          <div class="tom-kpi-value" id="tom-attendance-rate">—</div>
-          <div class="tom-kpi-label">Attendance Rate</div>
-        </div>
-        <div class="tom-kpi-card">
-          <div class="tom-kpi-icon" style="background:rgba(255,77,79,0.12);color:var(--danger)">⚠️</div>
-          <div class="tom-kpi-value" id="tom-weak-students">—</div>
-          <div class="tom-kpi-label">Weak Students</div>
-        </div>
-        <div class="tom-kpi-card" onclick="setPage('coach-mgmt')">
-          <div class="tom-kpi-icon" style="background:rgba(59, 130, 246,0.12);color:var(--gold)">🎯</div>
-          <div class="tom-kpi-value" id="tom-coach-perf">—</div>
-          <div class="tom-kpi-label">Coach Performance</div>
-        </div>
-        <div class="tom-kpi-card" onclick="setPage('events')">
-          <div class="tom-kpi-icon" style="background:rgba(23,162,184,0.12);color:var(--info)">📅</div>
-          <div class="tom-kpi-value" id="tom-upcoming-classes">—</div>
-          <div class="tom-kpi-label">Upcoming Events</div>
-        </div>
-        <div class="tom-kpi-card" onclick="setPage('bills')">
-          <div class="tom-kpi-icon" style="background:rgba(255,193,7,0.12);color:var(--warning)">💳</div>
-          <div class="tom-kpi-value" id="tom-pending-payments">—</div>
-          <div class="tom-kpi-label">Pending Payments</div>
-        </div>
-        <div class="tom-kpi-card">
-          <div class="tom-kpi-icon" style="background:rgba(82,196,26,0.12);color:var(--emerald)">🏆</div>
-          <div class="tom-kpi-value" id="tom-tournament-ready">—</div>
-          <div class="tom-kpi-label">Tournament Ready</div>
-        </div>
-        <div class="tom-kpi-card" onclick="setPage('insights')">
-          <div class="tom-kpi-icon" style="background:rgba(59, 130, 246,0.12);color:var(--gold)">💡</div>
-          <div class="tom-kpi-value" id="tom-ai-recommendations">—</div>
-          <div class="tom-kpi-label">AI Recommendations</div>
-        </div>
-      </div>
-
-      <!-- AI Workspace -->
-      <div class="ai-ws">
-        <!-- Sidebar -->
-        <div class="ai-ws-sidebar">
-          <div class="ai-ws-brand">
-            <span>🤖</span> TOM AI
-          </div>
-          
-          <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--ivory-dim);margin-bottom:12px;font-weight:600">AI Agent Modules</div>
-          <div class="ai-ws-menu" id="ai-modules">
-            <button class="ai-ws-btn admin-only active" onclick="setAIModule('global')">⚡ Global Insights</button>
-            <button class="ai-ws-btn admin-only" onclick="setAIModule('finance')">💰 Financial Analysis</button>
-            <button class="ai-ws-btn admin-only" onclick="setAIModule('coach')">🧑🏫 Coach Performance</button>
-            <button class="ai-ws-btn admin-only" onclick="setAIModule('student-intel')">🎓 Student Intelligence</button>
-            <button class="ai-ws-btn admin-only" onclick="setAIModule('tournament')">🏆 Tournament Intelligence</button>
-            <button class="ai-ws-btn parent-only" onclick="setAIModule('parent')" style="display:none">👶 My Child</button>
-          </div>
-
-          <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border)">
-            <div style="font-size:10px;color:var(--ivory3);text-align:center;opacity:0.6;letter-spacing:1px;">TOM AI v1.0 • Live</div>
-          </div>
-        </div>
-        
-        <!-- Main Chat Area -->
-        <div class="ai-ws-main">
-          <div class="ai-ws-header">
-            <div>
-              <h2 id="tom-module-title">Global Insights</h2>
-              <p id="tom-module-desc">Real-time analytics and predictive capabilities powered by live academy data.</p>
-            </div>
-            <div class="tom-agent-badge" id="tom-agent-badge">⚡ Global Agent</div>
-          </div>
-          
-          <div class="ai-ws-chat" id="ai-workspace-msgs">
-            <div class="ai-ws-msg bot">
-              <div class="ai-ws-avatar">🤖</div>
-              <div class="ai-ws-bubble">
-                <strong>TOM AI Online</strong> — I'm connected to your live academy database. I analyze real student ratings, attendance records, payment data, and coach performance in real-time. Ask me anything specific and I'll give you precise, data-driven answers.
-              </div>
-            </div>
-          </div>
-          
-          <div class="ai-ws-input-area">
-            <!-- Image preview bar -->
-            <div class="tom-img-preview-bar" id="ai-img-preview-bar" style="display:none; padding:8px 12px; background:rgba(0,0,0,0.3); border-radius:10px; margin-bottom:8px; align-items:center; gap:10px;">
-              <div class="tom-img-preview-thumb-box" style="position:relative; width:48px; height:48px; border-radius:6px; overflow:hidden; border:1.5px solid var(--gold);">
-                <img id="ai-img-preview-thumb" src="" style="width:100%; height:100%; object-fit:cover;" alt="Preview">
-                <button type="button" onclick="window.removeLmsAiImage('admin')" style="position:absolute; top:2px; right:2px; width:16px; height:16px; background:rgba(0,0,0,0.8); color:#fff; border:none; border-radius:50%; font-size:10px; cursor:pointer;">✕</button>
-              </div>
-              <span style="font-size:12px; color:var(--ivory-dim);" id="ai-img-preview-label">📷 Chess Diagram Attached</span>
-            </div>
-
-            <div class="ai-ws-input-box" style="display:flex; gap:8px; align-items:center;">
-              <button type="button" class="btn btn-outline" onclick="document.getElementById('ai-img-file-admin').click()" title="Attach Chessboard / Homework Image" style="padding:8px 12px; font-size:16px; border-color:rgba(218,163,62,0.3); color:var(--gold); border-radius:10px; flex-shrink:0;">📷</button>
-              <input type="file" id="ai-img-file-admin" accept="image/*" style="display:none;" onchange="window.handleLmsImageUpload(this, 'admin')">
-              <input type="text" id="ai-query" placeholder="Ask TOM about students, revenue, coaches, or upload a chess diagram..." onkeydown="if(event.key==='Enter') sendAIQuery()">
-              <button class="ai-ws-send" onclick="sendAIQuery()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
-              </button>
-            </div>
-            <div class="ai-ws-suggest">
-              <button class="ai-ws-pill" onclick="setAISuggestion('Who are the weak students needing attention?')">⚠️ Weak students?</button>
-              <button class="ai-ws-pill admin-only" onclick="setAISuggestion('Give me a complete financial summary')">💰 Financial summary</button>
-              <button class="ai-ws-pill admin-only" onclick="setAISuggestion('Which students are tournament ready?')">🏆 Tournament ready?</button>
-              <button class="ai-ws-pill admin-only" onclick="setAISuggestion('Academy health report')">📊 Health report</button>
-              <button class="ai-ws-pill admin-only" onclick="setAISuggestion('Coach performance comparison')">🧑🏫 Coach comparison</button>
-              <button class="ai-ws-pill parent-only" onclick="setAISuggestion('How is my child progressing?')">📈 My progress?</button>
-              <button class="ai-ws-pill admin-only" onclick="openFinOpsReport()" style="border-color:var(--info); color:var(--info);">🛡️ AI Guardian FinOps</button>
-              <button class="ai-ws-pill parent-only" onclick="setAISuggestion('What is my child attendance?')">📅 Attendance?</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TOM AI Parent Copilot Page -->
-    <div id="page-parent-ai" class="page parent-only">
-      <!-- Header -->
-      <div class="tom-command-header">
-        <div class="tom-header-content">
-          <div class="tom-brand-row">
-            <div class="tom-avatar">🤖</div>
-            <div>
-              <h2 class="tom-title">TOM AI <span class="tom-subtitle">Parent Assistant</span></h2>
-              <p class="tom-status"><span class="tom-online-dot"></span>Connected to Academy Database • <span>Restricted Mode</span></p>
-            </div>
-          </div>
-        </div>
-        <div class="tom-neural-bg"></div>
-      </div>
-
-      <!-- Parent-Specific Child KPI Cards -->
-      <div class="tom-kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-        <div class="tom-kpi-card" onclick="setPage('child'); setChildTab('overview');" style="cursor:pointer">
-          <div class="tom-kpi-icon" style="background:rgba(59, 130, 246,0.12);color:var(--gold)">📈</div>
-          <div class="tom-kpi-value" id="tp-elo">—</div>
-          <div class="tom-kpi-label">Current ELO</div>
-        </div>
-        <div class="tom-kpi-card" onclick="setPage('child'); setChildTab('attendance');" style="cursor:pointer">
-          <div class="tom-kpi-icon" style="background:rgba(82,196,26,0.12);color:var(--success)">🗓️</div>
-          <div class="tom-kpi-value" id="tp-attendance">—</div>
-          <div class="tom-kpi-label">Attendance Rate</div>
-        </div>
-        <div class="tom-kpi-card" onclick="setPage('child'); setChildTab('billing');" style="cursor:pointer">
-          <div class="tom-kpi-icon" style="background:rgba(255,77,79,0.12);color:var(--danger)">💳</div>
-          <div class="tom-kpi-value" id="tp-payment">—</div>
-          <div class="tom-kpi-label">Payment Status</div>
-        </div>
-        <div class="tom-kpi-card" onclick="setPage('child'); setChildTab('overview');" style="cursor:pointer">
-          <div class="tom-kpi-icon" style="background:rgba(90,159,255,0.12);color:var(--accent)">👨‍🏫</div>
-          <div class="tom-kpi-value" id="tp-coach">—</div>
-          <div class="tom-kpi-label">Primary Coach</div>
-        </div>
-      </div>
-
-      <!-- Chat Workspace -->
-      <div class="ai-ws">
-        <!-- Main Chat Area -->
-        <div class="ai-ws-main" style="border-radius:12px; border:1px solid var(--border)">
-          <div class="ai-ws-header">
-            <div>
-              <h2>Ask TOM AI</h2>
-              <p>Ask about ELO progression, schedule details, or general chess knowledge.</p>
-            </div>
-            <div class="tom-agent-badge">👶 Parent Copilot</div>
-          </div>
-          
-          <div class="ai-ws-chat" id="parent-ai-workspace-msgs">
-            <div class="ai-ws-msg bot">
-              <div class="ai-ws-avatar">🤖</div>
-              <div class="ai-ws-bubble">
-                Hello! I am TOM AI, your personal ChessKidoo Assistant. I can help you with updates on your child's progress, class timings, and general chess training concepts. What would you like to know today?
-              </div>
-            </div>
-          </div>
-          
-          <div class="ai-ws-input-area">
-            <!-- Image preview bar -->
-            <div class="tom-img-preview-bar" id="parent-ai-img-preview-bar" style="display:none; padding:8px 12px; background:rgba(0,0,0,0.3); border-radius:10px; margin-bottom:8px; align-items:center; gap:10px;">
-              <div class="tom-img-preview-thumb-box" style="position:relative; width:48px; height:48px; border-radius:6px; overflow:hidden; border:1.5px solid var(--gold);">
-                <img id="parent-ai-img-preview-thumb" src="" style="width:100%; height:100%; object-fit:cover;" alt="Preview">
-                <button type="button" onclick="window.removeLmsAiImage('parent')" style="position:absolute; top:2px; right:2px; width:16px; height:16px; background:rgba(0,0,0,0.8); color:#fff; border:none; border-radius:50%; font-size:10px; cursor:pointer;">✕</button>
-              </div>
-              <span style="font-size:12px; color:var(--ivory-dim);" id="parent-ai-img-preview-label">📷 Chess Diagram Attached</span>
-            </div>
-
-            <div class="ai-ws-input-box" style="display:flex; gap:8px; align-items:center;">
-              <button type="button" class="btn btn-outline" onclick="document.getElementById('ai-img-file-parent').click()" title="Attach Chessboard / Homework Image" style="padding:8px 12px; font-size:16px; border-color:rgba(218,163,62,0.3); color:var(--gold); border-radius:10px; flex-shrink:0;">📷</button>
-              <input type="file" id="ai-img-file-parent" accept="image/*" style="display:none;" onchange="window.handleLmsImageUpload(this, 'parent')">
-              <input type="text" id="parent-ai-query" placeholder="Ask about ELO, openings, or upload a homework/puzzle image..." onkeydown="if(event.key==='Enter') sendParentAIQuery()">
-              <button class="ai-ws-send" onclick="sendParentAIQuery()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
-              </button>
-            </div>
-            <div class="ai-ws-suggest">
-              <button class="ai-ws-pill" onclick="setParentAISuggestion('Suggest a beginner opening for white')">♟️ Opening for White</button>
-              <button class="ai-ws-pill" onclick="setParentAISuggestion('Explain the rule of castling in chess')">🏰 Castling rule</button>
-              <button class="ai-ws-pill" onclick="setParentAISuggestion('How can my child reach 1500 ELO?')">📈 Reaching 1500 ELO</button>
-              <button class="ai-ws-pill" onclick="setParentAISuggestion('When is the next class schedule?')">📅 Next class</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
 
 <!-- Toast -->
 <div id="toast-container"></div>
@@ -3597,6 +3182,7 @@
       <div id="homework-edit-files-wrap" style="display:none; font-size:12px; color:var(--ivory-dim);">
         <label style="display:block; margin-bottom:4px; font-weight:600; color:var(--ivory);">Attached Materials / Files</label>
         <div id="homework-edit-files-list" style="display:flex; flex-direction:column; gap:4px;"></div>
+        <input type="file" id="homework-edit-file-input" multiple style="margin-top:8px; font-size:12px; color:var(--ivory);">
       </div>
       <div>
         <label style="display:block; font-size:12px; color:var(--ivory-dim); margin-bottom:6px;">Title</label>
