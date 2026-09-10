@@ -1,0 +1,758 @@
+/* assets/css/gm-camp.css - Grandmaster Offline Camp 2026 Styles */
+
+/* ==========================================================================
+   1. TOP STICKY ANNOUNCEMENT BAR
+   ========================================================================== */
+.camp-announcement-bar {
+  background: linear-gradient(90deg, #0b1329 0%, #1e1b4b 35%, #180d2b 70%, #0b1329 100%);
+  color: #ffffff;
+  padding: 10px 16px;
+  position: relative;
+  z-index: 1001;
+  border-bottom: 1px solid rgba(245, 158, 11, 0.45);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  font-family: var(--font-body, 'Inter', sans-serif);
+}
+
+.camp-bar-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.camp-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+}
+
+.camp-pulse-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.6);
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.camp-pulse-dot {
+  width: 7px;
+  height: 7px;
+  background: #ef4444;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #ef4444;
+  animation: campDotPulse 1.5s infinite;
+}
+
+@keyframes campDotPulse {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 12px #f87171; }
+  100% { transform: scale(0.9); opacity: 0.8; }
+}
+
+.camp-bar-text {
+  font-size: 0.88rem;
+  color: #f1f5f9;
+  line-height: 1.4;
+}
+
+.camp-bar-text strong {
+  color: #fbbf24;
+  font-weight: 700;
+}
+
+.camp-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.camp-bar-btn {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  color: #ffffff !important;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  text-decoration: none !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 10px rgba(217, 119, 6, 0.4);
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+}
+
+.camp-bar-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.6);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.camp-bar-details-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.camp-bar-details-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.camp-bar-close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+
+.camp-bar-close:hover {
+  color: #ffffff;
+}
+
+/* Header Nav Pill for GM Camp */
+.nav-camp-badge-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.camp-nav-pill {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(245, 158, 11, 0.22));
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: #fbbf24 !important;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  letter-spacing: 0.02em;
+  transition: all 0.25s ease;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.15);
+  animation: campNavGlow 2.5s infinite alternate;
+}
+
+.camp-nav-pill:hover {
+  background: linear-gradient(135deg, #ef4444, #d97706);
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+}
+
+@keyframes campNavGlow {
+  0% { border-color: rgba(245, 158, 11, 0.4); box-shadow: 0 0 6px rgba(245, 158, 11, 0.1); }
+  100% { border-color: rgba(239, 68, 68, 0.7); box-shadow: 0 0 14px rgba(239, 68, 68, 0.35); }
+}
+
+/* ==========================================================================
+   2. GRANDMASTER OFFLINE CAMP SECTION (#gm-camp)
+   ========================================================================== */
+.gm-camp-section {
+  position: relative;
+  background: radial-gradient(circle at 90% 10%, rgba(217, 119, 6, 0.12) 0%, transparent 50%),
+              radial-gradient(circle at 10% 80%, rgba(239, 68, 68, 0.08) 0%, transparent 50%),
+              linear-gradient(180deg, #090e1a 0%, #0d1627 50%, #070c16 100%);
+  color: #f8fafc;
+  padding: 80px 20px;
+  overflow: hidden;
+  border-top: 1px solid rgba(245, 158, 11, 0.25);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.25);
+  scroll-margin-top: 100px;
+}
+
+.gm-camp-bg-shapes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.gm-camp-bg-piece {
+  position: absolute;
+  font-size: 14rem;
+  color: rgba(255, 255, 255, 0.018);
+  user-select: none;
+}
+
+.gm-camp-bg-piece.piece-1 { top: -20px; left: -40px; }
+.gm-camp-bg-piece.piece-2 { bottom: -40px; right: -20px; }
+
+.gm-camp-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.gm-camp-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.gm-camp-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(245, 158, 11, 0.22));
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #fbbf24;
+  font-size: 0.84rem;
+  font-weight: 800;
+  padding: 6px 18px;
+  border-radius: 9999px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.gm-camp-title {
+  font-family: var(--font-display, 'Poppins', sans-serif);
+  font-size: clamp(2rem, 4.5vw, 3.2rem);
+  font-weight: 900;
+  line-height: 1.15;
+  color: #ffffff;
+  margin: 0 0 14px 0;
+}
+
+.gm-camp-title .text-gold {
+  background: linear-gradient(135deg, #fde68a 0%, #f59e0b 50%, #d97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gm-camp-title .text-red {
+  background: linear-gradient(135deg, #fca5a5 0%, #ef4444 50%, #dc2626 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gm-camp-subtitle {
+  font-size: 1.05rem;
+  color: #cbd5e1;
+  max-width: 720px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* 2-Column Grid */
+.gm-camp-grid {
+  display: grid;
+  grid-template-columns: 440px 1fr;
+  gap: 40px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .gm-camp-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+}
+
+/* Left: Poster Box */
+.gm-camp-poster-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4), 0 0 30px rgba(217, 119, 6, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.gm-camp-poster-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 54px rgba(0, 0, 0, 0.5), 0 0 40px rgba(217, 119, 6, 0.25);
+  border-color: rgba(245, 158, 11, 0.6);
+}
+
+.gm-camp-poster-wrap {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #020617;
+  aspect-ratio: 485 / 1024;
+  max-height: 640px;
+}
+
+.gm-camp-poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+.gm-camp-poster-wrap:hover .gm-camp-poster-img {
+  transform: scale(1.02);
+}
+
+.gm-camp-poster-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(2, 6, 23, 0.9) 0%, rgba(2, 6, 23, 0.2) 40%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 20px;
+  opacity: 0.95;
+  transition: opacity 0.3s;
+}
+
+.gm-camp-poster-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fde68a;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.gm-camp-poster-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.gm-camp-badge-chip {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Right: Camp Content & Registration Details */
+.gm-camp-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Coach Spotlight Header Box */
+.gm-coach-spotlight {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 18px;
+  padding: 24px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.gm-coach-spotlight::before {
+  content: "♔";
+  position: absolute;
+  right: -10px;
+  bottom: -20px;
+  font-size: 8rem;
+  color: rgba(245, 158, 11, 0.04);
+  pointer-events: none;
+}
+
+.gm-coach-avatar-box {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 3px solid #f59e0b;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.35);
+  background: #0f172a;
+}
+
+.gm-coach-avatar-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.gm-coach-meta h4 {
+  font-family: var(--font-display, 'Poppins', sans-serif);
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gm-coach-tag {
+  background: #d97706;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.gm-coach-slogan {
+  font-size: 0.88rem;
+  color: #fbbf24;
+  font-weight: 600;
+  margin: 0 0 10px 0;
+  letter-spacing: 0.02em;
+}
+
+.gm-coach-accolades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gm-accolade-pill {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Key Camp Specs Grid */
+.gm-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .gm-specs-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gm-spec-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.gm-spec-card:hover {
+  border-color: rgba(245, 158, 11, 0.4);
+  transform: translateY(-2px);
+  background: rgba(30, 41, 59, 0.5);
+}
+
+.gm-spec-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.1));
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.gm-spec-content h5 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 3px 0;
+}
+
+.gm-spec-content p {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* 5 Pillars Bar */
+.gm-pillars-card {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 16px 20px;
+}
+
+.gm-pillars-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+
+.gm-pillars-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.gm-pillar-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Urgency Card & Action Buttons */
+.gm-registration-box {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(217, 119, 6, 0.15) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.gm-urgency-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.gm-urgency-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: #fca5a5;
+  font-size: 0.92rem;
+}
+
+.gm-urgency-chip {
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.gm-form-link-note {
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.gm-form-link-note strong {
+  color: #fbbf24;
+}
+
+.gm-action-btns {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.gm-register-btn-main {
+  flex: 1 1 260px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+  color: #ffffff !important;
+  font-family: var(--font-display, 'Poppins', sans-serif);
+  font-size: 1.05rem;
+  font-weight: 800;
+  padding: 14px 28px;
+  border-radius: 12px;
+  text-decoration: none !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 6px 24px rgba(217, 119, 6, 0.45);
+  transition: all 0.25s ease;
+  border: 1px solid rgba(254, 240, 138, 0.5);
+  text-align: center;
+}
+
+.gm-register-btn-main:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 32px rgba(245, 158, 11, 0.65);
+  background: linear-gradient(135deg, #fbbf24 0%, #ea580c 100%);
+}
+
+.gm-wa-btn {
+  flex: 0 1 auto;
+  background: rgba(37, 211, 102, 0.15);
+  border: 1px solid rgba(37, 211, 102, 0.45);
+  color: #4ade80 !important;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 14px 22px;
+  border-radius: 12px;
+  text-decoration: none !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+}
+
+.gm-wa-btn:hover {
+  background: #25d366;
+  color: #ffffff !important;
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+  transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   3. POSTER LIGHTBOX MODAL
+   ========================================================================== */
+.camp-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(2, 6, 23, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.camp-modal.active {
+  display: flex;
+}
+
+.camp-modal-dialog {
+  position: relative;
+  max-width: 520px;
+  width: 100%;
+  max-height: 94vh;
+  display: flex;
+  flex-direction: column;
+  background: #0f172a;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+}
+
+.camp-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: #1e293b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.camp-modal-header h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fbbf24;
+  margin: 0;
+}
+
+.camp-modal-close-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+
+.camp-modal-close-btn:hover {
+  color: #ffffff;
+}
+
+.camp-modal-body {
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.camp-modal-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+}
+
+.camp-modal-footer {
+  padding: 12px 18px;
+  background: #1e293b;
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.camp-modal-footer a {
+  flex: 1;
+  text-align: center;
+}

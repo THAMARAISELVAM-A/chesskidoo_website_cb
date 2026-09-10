@@ -89,6 +89,7 @@
   <link rel="stylesheet" href="assets/css/theme-contrast-fix.css?v=20260728k">
   <link rel="stylesheet" href="assets/css/mobile-optimize-2026.css?v=20260817b">
   <link rel="stylesheet" href="assets/css/world-map.css?v=20260728k">
+  <link rel="stylesheet" href="assets/css/gm-camp.css?v=20260908">
   <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
   <!-- Backend: Supabase JS SDK -->
@@ -166,6 +167,25 @@
     </div>
   </div>
 
+  <!-- Top Sticky Camp Announcement Bar -->
+  <div id="campAnnouncementBar" class="camp-announcement-bar">
+    <div class="camp-bar-inner">
+      <div class="camp-bar-left">
+        <span class="camp-pulse-tag"><span class="camp-pulse-dot"></span> LIVE CAMP REGISTRATION</span>
+        <span class="camp-bar-text">
+          <strong>Sept - Oct 2026 Offline Chess Camp in Erode</strong> with Champion Coach <strong>Ramkumar GM</strong>
+        </span>
+      </div>
+      <div class="camp-bar-actions">
+        <a href="https://forms.gle/fxxkEjB3ep99LRKL6" target="_blank" rel="noopener noreferrer" class="camp-bar-btn">
+          Register via Google Form ➔
+        </a>
+        <button class="camp-bar-details-btn" onclick="CK.navigate('gm-camp')">Camp Details</button>
+        <button class="camp-bar-close" onclick="document.getElementById('campAnnouncementBar').style.display='none'" aria-label="Close notice">✕</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Global Header -->
   <header class="site-header" id="header">
     <div class="header-inner">
@@ -176,6 +196,7 @@
         <span class="logo-text">Chess<span>Kidoo</span></span>
       </a>
       <nav class="nav-links" id="navLinks">
+
         <button class="nav-link" data-section="home" data-translate="home" onclick="CK.navigate('home')">Home</button>
         <button class="nav-link" data-section="features" data-translate="features"
           onclick="CK.navigate('features')">Features</button>
@@ -342,11 +363,138 @@
           <div class="trust-item">⭐ 4.9/5 Parent Rating</div>
           <div class="trust-item">🏆 12+ Championships Won</div>
           <div class="trust-item">🎯 India's #1 Student Tracking System</div>
-          <div class="trust-item">♜ FIDE-Rated Coaches</div>
           <div class="trust-item">🧩 AI-Powered Puzzle Engine</div>
           <div class="trust-item">📊 Real-Time Progress Analytics</div>
         </div>
       </div>
+
+      <!-- ======================== GRANDMASTER OFFLINE CHESS CAMP SECTION ======================== -->
+      <section id="gm-camp" class="gm-camp-section" tabindex="-1">
+        <div class="gm-camp-bg-shapes">
+          <span class="gm-camp-bg-piece piece-1">♔</span>
+          <span class="gm-camp-bg-piece piece-2">♞</span>
+        </div>
+        <div class="gm-camp-container">
+          <div class="gm-camp-header" data-aos="fade-up">
+            <p class="gm-camp-subtitle">
+              Build your chess journey with the best! Learn, play, and grow with <strong>Grandmaster Mentorship</strong> &amp; personalized training in proud association with <strong>Hindusthan Chess Cell</strong>.
+            </p>
+          </div>
+
+          <div class="gm-camp-grid">
+            <!-- Left: Poster Display Card with Zoom trigger -->
+            <div class="gm-camp-poster-card" data-aos="fade-right">
+              <div class="gm-camp-poster-wrap" onclick="CK.openCampPosterModal()" title="Click to view full camp poster">
+                <img src="assets/img/camp-erode-ramkumar-gm.png" alt="Sept - Oct 2026 Offline Chess Camp in Erode with Coach Ramkumar GM" class="gm-camp-poster-img">
+                <div class="gm-camp-poster-overlay">
+                  <div class="gm-camp-poster-hint">
+                    🔍 Click to View Full Official Poster
+                  </div>
+                </div>
+              </div>
+              <div class="gm-camp-poster-badges">
+                <span class="gm-camp-badge-chip">📍 Thindal, Erode</span>
+                <span class="gm-camp-badge-chip">🗓️ Sept – Oct 2026</span>
+                <span class="gm-camp-badge-chip" style="border-color: rgba(239, 68, 68, 0.4); color: #fca5a5;">🔥 Limited Seats</span>
+              </div>
+            </div>
+
+            <!-- Right: Details, Coach Accolades, & Registration -->
+            <div class="gm-camp-info-card" data-aos="fade-left">
+              <!-- Coach Spotlight -->
+              <div class="gm-coach-spotlight">
+                <div class="gm-coach-avatar-box">
+                  <img src="assets/img/coach-ramkumar-gm.png" alt="Coach Ramkumar GM">
+                </div>
+                <div class="gm-coach-meta">
+                  <h4>
+                    Ramkumar GM <span class="gm-coach-tag">👑 Champion Coach</span>
+                  </h4>
+                  <div class="gm-coach-slogan">Inspiring Minds · Building Champions</div>
+                  <div class="gm-coach-accolades">
+                    <span class="gm-accolade-pill">🥈 U14 National Silver Medalist</span>
+                    <span class="gm-accolade-pill">🏆 Anna University South Zone</span>
+                    <span class="gm-accolade-pill">🛡️ KSR College Elite Sponsorship</span>
+                    <span class="gm-accolade-pill">⭐ U-19 Also Achieved</span>
+                    <span class="gm-accolade-pill">♟️ MCA FIDE Runner Up</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Camp Key Details Grid -->
+              <div class="gm-specs-grid">
+                <div class="gm-spec-card">
+                  <div class="gm-spec-icon">🎯</div>
+                  <div class="gm-spec-content">
+                    <h5>1480+ ELO &amp; Open to All Levels</h5>
+                    <p>Designed for all rating levels from enthusiastic beginners to tournament players.</p>
+                  </div>
+                </div>
+
+                <div class="gm-spec-card">
+                  <div class="gm-spec-icon">♟️</div>
+                  <div class="gm-spec-content">
+                    <h5>Multi-Level Training</h5>
+                    <p>Structured curriculum customized for beginner, intermediate, and advanced batches.</p>
+                  </div>
+                </div>
+
+                <div class="gm-spec-card">
+                  <div class="gm-spec-icon">👑</div>
+                  <div class="gm-spec-content">
+                    <h5>99th GM Guidance</h5>
+                    <p>Special mentorship, deep tactical calculation, endgame precision &amp; opening repertoire.</p>
+                  </div>
+                </div>
+
+                <div class="gm-spec-card">
+                  <div class="gm-spec-icon">📍</div>
+                  <div class="gm-spec-content">
+                    <h5>Thindal, Erode (Near CBE)</h5>
+                    <p>Convenient offline venue in Erode in proud association with <strong>Hindusthan Chess Cell</strong>.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 5 Core Pillars -->
+              <div class="gm-pillars-card">
+                <div class="gm-pillars-title">Core Learning Pillars of the Camp</div>
+                <div class="gm-pillars-list">
+                  <span class="gm-pillar-item">👨‍🏫 Expert Coaching</span>
+                  <span class="gm-pillar-item">🎯 Personalized Training</span>
+                  <span class="gm-pillar-item">🏆 Tournament Preparation</span>
+                  <span class="gm-pillar-item">🧩 Skill Development</span>
+                  <span class="gm-pillar-item">📚 Lifetime Learning</span>
+                </div>
+              </div>
+
+              <!-- Registration Box with Google Form CTA -->
+              <div class="gm-registration-box">
+                <div class="gm-urgency-header">
+                  <div class="gm-urgency-left">
+                    <span>⚠️ LIMITED SEATS AVAILABLE</span>
+                  </div>
+                  <span class="gm-urgency-chip">Filling Fast</span>
+                </div>
+                <div class="gm-form-link-note">
+                  Registrations are processed directly through the official Google Form on a first-come, first-served basis. Secure your child's seat with <strong>Coach Ramkumar GM</strong> now!
+                </div>
+                <div class="gm-action-btns">
+                  <a href="https://forms.gle/fxxkEjB3ep99LRKL6" target="_blank" rel="noopener noreferrer" class="gm-register-btn-main">
+                    📝 Register for Camp (Google Form) ➔
+                  </a>
+                  <a href="https://wa.me/919514266505?text=Hi%20ChessKidoo%2C%20I%20want%20to%20know%20more%20and%20register%20for%20the%20Sept-Oct%20GM%20Ramkumar%20Offline%20Camp%20in%20Erode" target="_blank" rel="noopener noreferrer" class="gm-wa-btn" aria-label="WhatsApp Inquiry">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#25D366" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12.004 2C6.48 2 2 6.48 2 12.004c0 1.83.496 3.614 1.436 5.197L2 22l4.928-1.292a9.946 9.946 0 005.076 1.3c5.524 0 10.004-4.48 10.004-10.004C22.008 6.48 17.528 2 12.004 2zm0 1.636c4.618 0 8.368 3.75 8.368 8.368 0 4.618-3.75 8.368-8.368 8.368a8.32 8.32 0 01-4.256-1.162l-.305-.181-3.16.828.844-3.08-.2-.317a8.33 8.33 0 01-1.29-4.456c0-4.618 3.75-8.368 8.368-8.368zm-3.61 3.655a.612.612 0 00-.441.206c-.15.163-.572.56-.572 1.365s.585 1.583.667 1.696c.081.112 1.152 1.76 2.793 2.47.39.168.694.27.931.345.393.125.75.107 1.032.065.315-.047.969-.396 1.105-.778.136-.381.136-.708.095-.778-.041-.07-.15-.112-.314-.194-.163-.082-.968-.478-1.118-.533-.15-.054-.259-.082-.368.082-.109.164-.423.533-.518.642-.095.109-.19.123-.354.041a4.464 4.464 0 01-1.31-.81 4.92 4.92 0 01-.908-1.13c-.095-.164-.01-.253.072-.335.075-.075.164-.19.246-.286.082-.095.109-.163.163-.272.055-.109.027-.205-.013-.287-.041-.082-.368-.887-.505-1.217-.133-.32-.27-.276-.368-.281-.095-.005-.204-.005-.314-.005z" />
+                    </svg>
+                    WhatsApp Inquiries
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <!-- Features Section -->
       <section id="features" class="section-padding">
@@ -1122,147 +1270,10 @@
             </p>
           </div>
 
-          <!-- Official Announcements Banner -->
-          <div class="ck-notice-board" data-aos="fade-up">
-            <div class="ck-notice-board-header">
-              <span class="ck-notice-badge">📢 OFFICIAL ANNOUNCEMENTS &amp; NOTICES</span>
-              <span class="ck-notice-date">Updated Today</span>
-            </div>
-            <div class="ck-notice-grid">
-              <div class="ck-notice-card">
-                <span class="ck-notice-icon">🏆</span>
-                <div class="ck-notice-detail">
-                  <h5>ChessKidoo All-India Junior Rapid GP 2026 Registration Open</h5>
-                  <p>Open for all students aged 6–18. Cash prizes worth ₹25,000 + FIDE-certified trophies for top performers.</p>
-                </div>
-              </div>
-              <div class="ck-notice-card">
-                <span class="ck-notice-icon">🌍</span>
-                <div class="ck-notice-detail">
-                  <h5>NRI &amp; International Timezone Batches Expanded</h5>
-                  <p>New evening slots added for USA (EST/PST), UK (GMT), UAE (GST), and Singapore (SGT) students.</p>
-                </div>
-              </div>
-              <div class="ck-notice-card">
-                <span class="ck-notice-icon">🎓</span>
-                <div class="ck-notice-detail">
-                  <h5>Special GM Endgames Masterclass on August 28</h5>
-                  <p>Exclusive interactive session with FIDE Masters on tactical endgame patterns for Intermediate &amp; Advanced students.</p>
-                </div>
-              </div>
-            </div>
+          <!-- Upcoming Events / Camp Showcase in Tournament Grid Format -->
+          <div class="ck-tournament-grid" style="grid-template-columns: 1fr; max-width: 960px; margin: 30px auto 0;">
+            <p style="color:#94a3b8; text-align:center; padding: 20px;">Stay tuned for upcoming tournaments and events. Announcements will appear here.</p>
           </div>
-
-          <!-- Upcoming Tournaments Grid -->
-          <div class="ck-tournament-grid">
-            <!-- Tournament Card 1 -->
-            <div class="ck-t-card" data-aos="fade-up">
-              <div class="ck-t-header">
-                <span class="ck-t-badge fide-badge">⭐ FIDE Rated Standard</span>
-                <span class="ck-t-status open">Registration Open</span>
-              </div>
-              <h3 class="ck-t-title">ChessKidoo All-India Junior Rapid GP 2026</h3>
-              <p class="ck-t-sub">5 Rounds Swiss System · Official Certificate &amp; Cash Prizes</p>
-
-              <div class="ck-t-details">
-                <div class="ck-t-item">
-                  <span class="ck-t-label">📅 Date &amp; Time</span>
-                  <span class="ck-t-val">Sunday, Aug 30, 2026 · 10:00 AM IST</span>
-                </div>
-                <div class="ck-t-item">
-                  <span class="ck-t-label">📍 Venue / Mode</span>
-                  <span class="ck-t-val">💻 Online (ChessKidoo Arena &amp; Lichess)</span>
-                </div>
-                <div class="ck-t-item">
-                  <span class="ck-t-label">🏆 Prize Pool</span>
-                  <span class="ck-t-val">₹25,000 Cash + Top 10 Trophies</span>
-                </div>
-                 <div class="ck-t-item">
-                   <span class="ck-t-label">👥 Categories</span>
-                   <span class="ck-t-val">Under-9, Under-13, Open Junior</span>
-                 </div>
-               </div>
-
-               <!-- Category Tags -->
-               <div class="ck-t-categories">
-                 <span class="ck-t-cat ck-cat-beginner">🌱 Beginner</span>
-                 <span class="ck-t-cat ck-cat-intermediate">🌿 Intermediate</span>
-                 <span class="ck-t-cat ck-cat-advanced">🌳 Advanced</span>
-               </div>
-             </div>
-
-             <!-- Tournament Card 2 -->
-            <div class="ck-t-card" data-aos="fade-up" data-aos-delay="100">
-              <div class="ck-t-header">
-                <span class="ck-t-badge offline-badge">🏫 Offline Centre · Erode</span>
-                <span class="ck-t-status open">Seats Filling Fast</span>
-              </div>
-              <h3 class="ck-t-title">Tamil Nadu State Level Children's Championship</h3>
-              <p class="ck-t-sub">Co-hosted with Erode District Chess Association</p>
-
-              <div class="ck-t-details">
-                <div class="ck-t-item">
-                  <span class="ck-t-label">📅 Date &amp; Time</span>
-                  <span class="ck-t-val">Sept 12–14, 2026 · 09:00 AM IST</span>
-                </div>
-                <div class="ck-t-item">
-                  <span class="ck-t-label">📍 Venue / Mode</span>
-                  <span class="ck-t-val">🏫 ChessKidoo Centre, K K Nagar, Erode</span>
-                </div>
-                <div class="ck-t-item">
-                  <span class="ck-t-label">🏆 Prize Pool</span>
-                  <span class="ck-t-val">30 Trophies + State Rank Certificates</span>
-                </div>
-                 <div class="ck-t-item">
-                   <span class="ck-t-label">👥 Categories</span>
-                   <span class="ck-t-val">U-8, U-11, U-14, U-18 (Boys &amp; Girls)</span>
-                 </div>
-               </div>
-
-               <!-- Category Tags -->
-               <div class="ck-t-categories">
-                 <span class="ck-t-cat ck-cat-beginner">🌱 Beginner</span>
-                 <span class="ck-t-cat ck-cat-intermediate">🌿 Intermediate</span>
-                 <span class="ck-t-cat ck-cat-advanced">🌳 Advanced</span>
-               </div>
-             </div>
-
-             <!-- Tournament Card 3 -->
-            <div class="ck-t-card" data-aos="fade-up" data-aos-delay="200">
-              <div class="ck-t-header">
-                <span class="ck-t-badge weekly-badge">⚡ Weekly Arena</span>
-                <span class="ck-t-status free">Free for Students</span>
-              </div>
-              <h3 class="ck-t-title">ChessKidoo Sunday Blitz Arena #48</h3>
-              <p class="ck-t-sub">Fast-paced 3+0 Blitz Arena for sharpening tactical intuition</p>
-
-              <div class="ck-t-details">
-                <div class="ck-t-item">
-                  <span class="ck-t-label">📅 Date &amp; Time</span>
-                  <span class="ck-t-val">Every Sunday · 06:00 PM IST</span>
-                </div>
-                <div class="ck-t-item">
-                  <span class="ck-t-label">📍 Venue / Mode</span>
-                  <span class="ck-t-val">💻 Online Student Arena Portal</span>
-                </div>
-                <div class="ck-t-item">
-                  <span class="ck-t-label">🏆 Rewards</span>
-                  <span class="ck-t-val">Leaderboard Rating Points &amp; Badges</span>
-                </div>
-                 <div class="ck-t-item">
-                   <span class="ck-t-label">👥 Eligibility</span>
-                   <span class="ck-t-val">All Enrolled ChessKidoo Students</span>
-                 </div>
-               </div>
-
-               <!-- Category Tags -->
-               <div class="ck-t-categories">
-                 <span class="ck-t-cat ck-cat-beginner">🌱 Beginner</span>
-                 <span class="ck-t-cat ck-cat-intermediate">🌿 Intermediate</span>
-                 <span class="ck-t-cat ck-cat-advanced">🌳 Advanced</span>
-               </div>
-             </div>
-           </div>
         </div>
       </section>
 
@@ -5014,6 +5025,24 @@
         </div>
       </div>
     </div>
+
+  <!-- Camp Poster Lightbox Modal -->
+  <div id="campPosterModal" class="camp-modal" onclick="if(event.target === this) CK.closeCampPosterModal()">
+    <div class="camp-modal-dialog">
+      <div class="camp-modal-header">
+        <h4>👑 Coach Ramkumar GM · Sept-Oct Offline Camp in Erode</h4>
+        <button class="camp-modal-close-btn" onclick="CK.closeCampPosterModal()" aria-label="Close modal">✕</button>
+      </div>
+      <div class="camp-modal-body">
+        <img src="assets/img/camp-erode-ramkumar-gm.png" alt="Sept - Oct 2026 Offline Chess Camp in Erode with Coach Ramkumar GM">
+      </div>
+      <div class="camp-modal-footer">
+        <a href="https://forms.gle/fxxkEjB3ep99LRKL6" target="_blank" rel="noopener noreferrer" class="camp-bar-btn" style="width: 100%; justify-content: center; font-size: 0.95rem; padding: 10px 20px;">
+          📝 Register for Camp via Google Form ➔
+        </a>
+      </div>
+    </div>
+  </div>
 
 </body>
 
