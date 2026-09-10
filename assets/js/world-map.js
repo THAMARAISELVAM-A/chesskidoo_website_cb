@@ -37,7 +37,7 @@
 
   const COUNTRIES = [
     { id: 'in', name: 'India',          flag: '🇮🇳', city: 'Erode · Tamil Nadu', lon: 77.72,  lat: 11.34,  home: true, pos: 'top',
-      note: 'Head office plus three offline centres — online classes nationwide.' },
+      note: 'Head office plus four offline centres — online classes nationwide.' },
     { id: 'us', name: 'United States',  flag: '🇺🇸', city: 'New York / US Coasts', lon: -98.57, lat: 38.00, pos: 'bottom',
       note: 'Our furthest classroom — 13,500 km from Erode, with flexible time-zone slots.' },
     { id: 'ca', name: 'Canada',         flag: '🇨🇦', city: 'Toronto & Vancouver', lon: -106.34, lat: 56.13, pos: 'top',
@@ -53,11 +53,16 @@
   ];
 
   const CENTRES = [
-    { id: 'bhavani',    name: 'Bhavani',       flag: '🏫', tag: 'Head Office', lon: 77.6817, lat: 11.4453,
-      addr: 'K K Nagar, Kalingarayanpalayam, Erode 638316',
-      note: 'Head office — in-person coaching, admissions and academy operations.' },
+    { id: 'bhavani',    name: 'Bhavani (Laxmi Nagar)', flag: '🏫', tag: 'Head Office', lon: 77.6817, lat: 11.4453,
+      addr: 'Laxmi Nagar, K K Nagar, Kalingarayanpalayam, Bhavani, Erode 638316',
+      note: 'Head office — in-person coaching, admissions and academy operations.',
+      mapUrl: 'https://maps.app.goo.gl/DzQGp2NTkXnEJtBeA' },
+    { id: 'thindal',    name: 'Thindal (PILA School)', flag: '🏫', tag: 'Centre', lon: 77.6835, lat: 11.3120,
+      addr: 'PILA School (Pravesh International Learning Academy), Thindal, Erode',
+      note: 'In-person coaching centre & academy batches.',
+      mapUrl: 'https://maps.app.goo.gl/fZB8LgxRP8ftFseX9' },
     { id: 'erode',      name: 'Erode Central', flag: '🏫', tag: 'Centre',      lon: 77.7172, lat: 11.3410,
-      addr: 'Erode, Tamil Nadu',
+      addr: 'Erode Central, Tamil Nadu',
       note: 'In-person coaching and weekend batches.' },
     { id: 'perundurai', name: 'Perundurai',    flag: '🏫', tag: 'Centre',      lon: 77.5878, lat: 11.2758,
       addr: 'Perundurai, Tamil Nadu',
@@ -65,7 +70,7 @@
   ];
 
   // Drawn between centres in the zoomed view, labelled with real distances.
-  const LINKS = [['bhavani', 'erode'], ['erode', 'perundurai'], ['bhavani', 'perundurai']];
+  const LINKS = [['bhavani', 'erode'], ['erode', 'thindal'], ['thindal', 'perundurai'], ['bhavani', 'thindal']];
 
   /* ── Geometry helpers ───────────────────────────────────────────────── */
 
@@ -386,7 +391,7 @@
       '<div class="ckw-panel-meta">' + (m.addr || m.city) + '</div>' +
       '<p class="ckw-panel-note">' + m.note + '</p>' +
       (m.home
-        ? '<div class="ckw-panel-dist">Head office &middot; 3 offline centres</div>'
+        ? '<div class="ckw-panel-dist">Head office &middot; 4 offline centres</div>'
         : isCentre
           ? '<div class="ckw-panel-dist">' +
               (m.tag === 'Head Office'
@@ -395,7 +400,14 @@
             '</div>'
           : '<div class="ckw-panel-dist">' +
               Math.round(km(m, HOME)).toLocaleString('en-IN') + ' km from Erode</div>') +
-      '<button class="ckw-panel-cta" onclick="CK.openDemoModal()">Book a Free Demo</button>';
+      (m.mapUrl
+        ? '<div style="display:flex;gap:8px;margin-top:auto;flex-wrap:wrap;">' +
+            '<a href="' + m.mapUrl + '" target="_blank" rel="noopener" class="ckw-panel-cta" style="flex:1;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.2);">' +
+              '📍 View on Google Maps ↗' +
+            '</a>' +
+            '<button class="ckw-panel-cta" style="flex:1;" onclick="CK.openDemoModal()">Book Free Demo</button>' +
+          '</div>'
+        : '<button class="ckw-panel-cta" onclick="CK.openDemoModal()">Book a Free Demo</button>');
   }
 
   function defaultPanel() {
