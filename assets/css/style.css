@@ -1211,31 +1211,110 @@ body.loaded #preloader { opacity: 0; visibility: hidden; pointer-events: none; }
   transform: scale(1.2);
 }
 
-/* REPLACED BUTTON: "Check Ur Level" – same style as original AI button */
+/* PREMIUM "Check Ur Level" CTA — large, glowing, two-line pill button */
 .check-level-btn {
-  background: linear-gradient(110deg, #10B981, #059669);
-  color: white;
-  border: none;
-  border-radius: 28px;
-  padding: 9px 20px;
-  font-size: 13px;
-  font-weight: 700;
+  position: relative;
+  background: linear-gradient(135deg, #059669 0%, #10B981 40%, #34D399 100%);
+  color: #fff;
+  border: 2px solid rgba(52, 211, 153, 0.5);
+  border-radius: 50px;
+  padding: 10px 22px 10px 14px;
+  font-family: inherit;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+  transition: all 0.3s cubic-bezier(.4,0,.2,1);
+  box-shadow:
+    0 0 18px rgba(16, 185, 129, 0.35),
+    0 4px 14px rgba(5, 150, 105, 0.3),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+  animation: clbGlow 2.5s ease-in-out infinite;
+  overflow: visible;
+  z-index: 1;
+  min-width: 200px;
 }
+
+/* Glow pulse animation */
+@keyframes clbGlow {
+  0%, 100% { box-shadow: 0 0 18px rgba(16,185,129,0.35), 0 4px 14px rgba(5,150,105,0.3), inset 0 1px 0 rgba(255,255,255,0.15); }
+  50% { box-shadow: 0 0 28px rgba(16,185,129,0.55), 0 6px 20px rgba(5,150,105,0.45), inset 0 1px 0 rgba(255,255,255,0.2); }
+}
+
+/* Outer pulse ring */
+.check-level-btn::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 54px;
+  border: 2px solid rgba(52, 211, 153, 0.3);
+  animation: clbRing 2.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes clbRing {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0; transform: scale(1.06); }
+}
+
 .check-level-btn:hover {
-  transform: translateY(-2px);
-  background: #059669;
-  box-shadow: 0 8px 20px rgba(5, 150, 105, 0.4);
+  transform: translateY(-3px) scale(1.04);
+  background: linear-gradient(135deg, #047857 0%, #059669 40%, #10B981 100%);
+  box-shadow:
+    0 0 32px rgba(16,185,129,0.6),
+    0 8px 24px rgba(5,150,105,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.2);
+  border-color: rgba(52, 211, 153, 0.7);
 }
 .check-level-btn:active {
-  transform: translateY(1px);
+  transform: translateY(0) scale(0.98);
 }
+
+/* Chess piece icon container */
+.clb-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 30%, rgba(255, 255, 255, 0.35), rgba(0, 0, 0, 0.18));
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25), inset 0 1px 1px rgba(255,255,255,0.45);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+}
+
+.clb-icon svg {
+  display: block;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.45));
+}
+
+/* Single-line text */
+.clb-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+/* Chevron arrow */
+.clb-arrow {
+  font-size: 26px;
+  font-weight: 800;
+  color: #a7f3d0;
+  opacity: 0.9;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+  margin-left: auto;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  line-height: 1;
+}
+.check-level-btn:hover .clb-arrow {
+  transform: translateX(4px);
+  opacity: 1;
+}
+
 
 @media (max-width: 680px) {
   .board-section {

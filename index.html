@@ -332,7 +332,69 @@
                   </div>
                   <button class="check-level-btn" id="checkLevelBtn"
                     onclick="CK.showPage('arena-page'); setTimeout(() => CK.arena.init(), 100);">
-                    <span>⚡</span> Check Ur Level
+                    <span class="clb-icon">
+                      <svg viewBox="0 0 52 52" width="38" height="38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                          <!-- White piece gradient -->
+                          <linearGradient id="whitePieceGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#FFFFFF" />
+                            <stop offset="60%" stop-color="#F1F5F9" />
+                            <stop offset="100%" stop-color="#CBD5E1" />
+                          </linearGradient>
+                          <!-- Dark/Gold opponent piece gradient -->
+                          <linearGradient id="darkPieceGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#FCD34D" />
+                            <stop offset="40%" stop-color="#F59E0B" />
+                            <stop offset="100%" stop-color="#B45309" />
+                          </linearGradient>
+                          <filter id="clashGlow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feGaussianBlur stdDeviation="1.5" result="blur"/>
+                            <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                          </filter>
+                        </defs>
+
+                        <!-- LEFT: White Pawn (angled slightly right towards clash) -->
+                        <g transform="translate(4, 9)">
+                          <!-- Pawn head -->
+                          <circle cx="12" cy="7" r="4.5" fill="url(#whitePieceGrad)" stroke="#64748B" stroke-width="0.8"/>
+                          <!-- Pawn collar -->
+                          <ellipse cx="12" cy="12.5" rx="4" ry="1.2" fill="#E2E8F0" stroke="#64748B" stroke-width="0.7"/>
+                          <!-- Pawn body -->
+                          <path d="M9.5 13.5c.3 3.5-.5 6.5-2.2 9.5h9.4c-1.7-3-2.5-6-2.2-9.5H9.5z" fill="url(#whitePieceGrad)" stroke="#64748B" stroke-width="0.8"/>
+                          <!-- Base ring -->
+                          <rect x="6.5" y="23" width="11" height="2" rx="1" fill="#E2E8F0" stroke="#64748B" stroke-width="0.7"/>
+                          <!-- Base -->
+                          <path d="M5 25.5h14v2.5c0 .6-.5 1-1 1H6c-.5 0-1-.4-1-1v-2.5z" fill="#CBD5E1" stroke="#64748B" stroke-width="0.8"/>
+                        </g>
+
+                        <!-- RIGHT: Golden/Dark Rook (angled slightly left towards clash) -->
+                        <g transform="translate(25, 6)">
+                          <!-- Rook crenels/battlements -->
+                          <path d="M5 6.5h2.2v3h2.6v-3h2.4v3h2.6v-3H17v4.5c0 .5-.4.8-.8.8H5.8c-.4 0-.8-.3-.8-.8V6.5z" fill="url(#darkPieceGrad)" stroke="#78350F" stroke-width="0.8"/>
+                          <!-- Rook collar ring -->
+                          <rect x="4.5" y="12" width="13" height="2" rx="0.8" fill="#FBBF24" stroke="#78350F" stroke-width="0.7"/>
+                          <!-- Rook waist -->
+                          <path d="M6.5 14h9l-1 10h-7l-1-10z" fill="url(#darkPieceGrad)" stroke="#78350F" stroke-width="0.8"/>
+                          <!-- Rook base ring -->
+                          <rect x="4" y="24" width="14" height="2.2" rx="1" fill="#FBBF24" stroke="#78350F" stroke-width="0.7"/>
+                          <!-- Rook base -->
+                          <path d="M3 26.5h16v3c0 .6-.6 1-1.2 1H4.2c-.6 0-1.2-.4-1.2-1v-3z" fill="#B45309" stroke="#78350F" stroke-width="0.8"/>
+                        </g>
+
+                        <!-- CENTER: Clash Sparks / Energy Burst -->
+                        <g filter="url(#clashGlow)">
+                          <!-- Central spark -->
+                          <path d="M26 14l1.2 4.2L31 20l-3.8 1.8L26 26l-1.2-4.2L21 20l3.8-1.8L26 14z" fill="#FFFFFF"/>
+                          <!-- Mini sparks -->
+                          <circle cx="26" cy="11" r="1" fill="#FDE047"/>
+                          <circle cx="26" cy="29" r="1.1" fill="#FDE047"/>
+                          <circle cx="22" cy="14" r="0.8" fill="#FFFFFF"/>
+                          <circle cx="30" cy="26" r="0.8" fill="#FFFFFF"/>
+                        </g>
+                      </svg>
+                    </span>
+                    <span class="clb-title">Play vs AI</span>
+                    <span class="clb-arrow">›</span>
                   </button>
                 </div>
               </div>
