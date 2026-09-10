@@ -399,6 +399,8 @@
     window.currentStudent = student;
   }
 
+  window.setCurrentStudent = setCurrentStudent;
+
   // ── Notification Management ──
   let shownNotificationIds = JSON.parse(
     localStorage.getItem("shown_notifications") || "[]",
@@ -583,6 +585,28 @@
       }
     }
   }
+
+  window.setCoachPortalTab = function (tabId, btn) {
+    const tabBar = document.querySelector("#page-coach-dash .tabs-nav");
+    if (tabBar) {
+      tabBar.querySelectorAll(".tab-link").forEach((l) => l.classList.remove("active"));
+      if (btn) btn.classList.add("active");
+    }
+
+    document.querySelectorAll("#page-coach-dash .child-tab-content").forEach((c) => {
+      c.classList.remove("active");
+      c.style.display = "none";
+    });
+
+    const target = document.getElementById("coach-tab-" + tabId);
+    if (target) {
+      target.classList.add("active");
+      target.style.display = "block";
+    }
+
+    if (tabId === "students" && window.renderCoachStudents) window.renderCoachStudents();
+    if (tabId === "batches" && window.renderCoachBatches) window.renderCoachBatches();
+  };
 
   // Populates the parent-portal Attendance tab (was previously never rendered).
   function renderChildAttendance() {
@@ -7255,7 +7279,7 @@
       "homework",
       "studypgn",
     ];
-    const coachAccessiblePages = ["coach-dash", "coach-students", "coach-batches", "coach-schedule", "coach-events", "coach-attendance", "coach-homework", "coach-studypgn", "studypgn"];
+    const coachAccessiblePages = ["coach-dash", "coach-students", "coach-batches", "coach-schedule", "coach-events", "coach-attendance", "coach-homework", "coach-studypgn", "studypgn", "productivity"];
     if (adminPages.includes(p) && role !== "admin" && role !== "master" && !coachAccessiblePages.includes(p)) {
       toast("Access denied", "error");
       setPage(role === "parent" ? "child" : "coach-dash");
@@ -14132,10 +14156,25 @@ Best regards,
       const targetNav = document.getElementById(targetId);
       if (targetNav) targetNav.classList.add("active");
     };
+    const clearActive = () => {
+      document.querySelectorAll(".nav-item").forEach((ni) => ni.classList.remove("active"));
+      setActive();
+    };
     setActive();
     requestAnimationFrame(() => requestAnimationFrame(setActive));
     setTimeout(setActive, 0);
     setTimeout(setActive, 150);
+    setTimeout(clearActive, 300);
+    setTimeout(clearActive, 450);
+    if (tab === "studypgn") {
+      setTimeout(clearActive, 600);
+      setTimeout(clearActive, 800);
+      setTimeout(clearActive, 1000);
+      setTimeout(clearActive, 1500);
+      setTimeout(clearActive, 2000);
+      setTimeout(clearActive, 3000);
+      setTimeout(clearActive, 5000);
+    }
 
     const tabBar = document.getElementById("child-portal-tabs");
     if (tabBar) {
@@ -14143,6 +14182,19 @@ Best regards,
         tabBar.classList.add("force-show");
       } else {
         tabBar.classList.remove("force-show");
+      }
+    }
+
+    if (tab === "studypgn") {
+      const studyPgnNav = document.getElementById("nav-parent-studypgn");
+      if (studyPgnNav) {
+        const observer = new MutationObserver(() => {
+          if (!studyPgnNav.classList.contains("active")) {
+            studyPgnNav.classList.add("active");
+          }
+        });
+        observer.observe(studyPgnNav, { attributes: true, attributeFilter: ["class"] });
+        setTimeout(() => observer.disconnect(), 3000);
       }
     }
     if ($("p-title")) {
@@ -14154,19 +14206,39 @@ Best regards,
   function openStudentEditPortalModal() {
     if (!currentStudent) return;
     const s = currentStudent;
+    const isCoach = window.role === "coach";
+    const readonly = isCoach ? "readonly" : "";
+    const notReadonly = isCoach ? "" : "readonly";
+
     if ($("spe-name")) $("spe-name").value = getStudentName(s);
+    if ($("spe-name")) $("spe-name").setAttribute("readonly", isCoach ? "readonly" : "");
     if ($("spe-parent-name")) $("spe-parent-name").value = s.parent_name || "";
+    if ($("spe-parent-name")) $("spe-parent-name").setAttribute("readonly", isCoach ? "readonly" : "");
     if ($("spe-phone")) $("spe-phone").value = getStudentPhone(s);
+    if ($("spe-phone")) $("spe-phone").setAttribute("readonly", isCoach ? "readonly" : "");
     if ($("spe-email")) $("spe-email").value = getStudentEmail(s);
+    if ($("spe-email")) $("spe-email").setAttribute("readonly", isCoach ? "readonly" : "");
     if ($("spe-lichess")) $("spe-lichess").value = s.lichess_username || "";
+    if ($("spe-lichess")) $("spe-lichess").setAttribute("readonly", isCoach ? "readonly" : "");
     if ($("spe-chesscom")) $("spe-chesscom").value = s.chesscom_username || "";
+    if ($("spe-chesscom")) $("spe-chesscom").setAttribute("readonly", isCoach ? "readonly" : "");
     if ($("spe-chessable")) $("spe-chessable").value = s.chessable_username || "";
+    if ($("spe-chessable")) $("spe-chessable").setAttribute("readonly", isCoach ? "readonly" : "");
+
     const skills = s.skill_breakdown || s.skills || {};
     if ($("spe-skill-opening")) $("spe-skill-opening").value = skills.opening != null ? skills.opening : "";
     if ($("spe-skill-middlegame")) $("spe-skill-middlegame").value = skills.middlegame != null ? skills.middlegame : "";
     if ($("spe-skill-endgame")) $("spe-skill-endgame").value = skills.endgame != null ? skills.endgame : "";
     if ($("spe-skill-tactics")) $("spe-skill-tactics").value = skills.tactics != null ? skills.tactics : "";
     if ($("spe-skill-positional")) $("spe-skill-positional").value = skills.positional != null ? skills.positional : "";
+
+    if (isCoach) {
+      ["spe-skill-opening", "spe-skill-middlegame", "spe-skill-endgame", "spe-skill-tactics", "spe-skill-positional"].forEach(id => {
+        const el = $(id);
+        if (el) el.removeAttribute("readonly");
+      });
+    }
+
     openModal("student-portal-edit-modal");
   }
 

@@ -154,7 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
           <td style="font-weight:500; color:var(--ivory)">${window.escapeHtml ? window.escapeHtml(name) : name}</td>
           <td style="font-family:monospace; font-size:12px;">${phone}</td>
           <td style="display:flex; gap:6px; flex-wrap:wrap;">
-            <button class="btn btn-outline btn-sm" onclick="if(window.viewStudent)window.viewStudent('${s.id}')">View</button>
             <button class="btn btn-gold btn-sm" onclick="if(window.openStudentSkillBreakdown)window.openStudentSkillBreakdown('${s.id}')">📊 Skills</button>
           </td>
         </tr>
@@ -177,12 +176,21 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.renderCoachBatches = function () {
-    if (window.role !== 'coach' && !window.__adminImpersonatingCoach) return;
+    if (window.role !== 'coach' && !window.__adminImpersonatingCoach) {
+      console.log('[Batches] Not coach role, skipping');
+      return;
+    }
     const coachId = window.currentCoachId || window.userId || getCurrentCoachIdFromStorage();
-    if (!coachId) return;
+    if (!coachId) {
+      console.log('[Batches] No coachId found');
+      return;
+    }
 
-    const grid = document.getElementById('coach-batches-grid');
-    if (!grid) return;
+    const tbody = document.getElementById('coach-batches-tbody');
+    if (!tbody) {
+      console.log('[Batches] tbody not found');
+      return;
+    }
 
     const searchTerm = (document.getElementById('coach-batch-search-input')?.value || '').toLowerCase();
     const myBatches = (window.allBatches || [])
@@ -190,12 +198,14 @@ document.addEventListener('DOMContentLoaded', () => {
       .filter(b => !searchTerm || (b.name || '').toLowerCase().includes(searchTerm))
       .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
+    console.log('[Batches] coachId:', coachId, 'total batches:', (window.allBatches || []).length, 'myBatches:', myBatches.length);
+
     if (myBatches.length === 0) {
-      grid.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--ivory-dim);">No batches found.</div>';
+      tbody.innerHTML = '<tr><td colspan="7" class="coach-loading-cell">No batches found.</td></tr>';
       return;
     }
 
-    grid.innerHTML = myBatches.map(b => {
+    tbody.innerHTML = myBatches.map((b, idx) => {
       const days = b.days || b.schedule_days || 'TBD';
       const time = b.time_slot || b.time || 'TBD';
       const studentCount = Array.isArray(b.student_ids) ? b.student_ids.length : 0;
@@ -203,41 +213,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const esc = window.escapeHtml || function(x){return x};
 
       return `
-        <div class="card" style="padding: 24px; position: relative; display: flex; flex-direction: column; gap: 16px;">
-          <div>
-            <h3 style="color: var(--gold); font-size: 18px; margin: 0 0 6px 0; max-width: 85%;">${esc(b.name)}</h3>
-            <span class="badge badge-info">${esc(b.level || 'Beginner')}</span>
-          </div>
-          
-          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="ico" style="opacity: 0.6">🕒</span>
-              <span style="color: var(--ivory-dim)">${esc(days)} • ${esc(time)}</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="ico" style="opacity: 0.6">👥</span>
-              <span style="color: var(--ivory-dim)">${studentCount} Students enrolled</span>
-            </div>
-            ${link ? `
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="ico" style="opacity: 0.6">🎥</span>
-              <a href="${esc(link)}" target="_blank" rel="noopener" style="color: var(--gold); text-decoration: none; font-size: 13px;">Join Class</a>
-            </div>
-            ` : ''}
-          </div>
-          
-          <div style="display: flex; gap: 8px; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); flex-wrap: wrap;">
+        <tr>
+          <td style="color:var(--ivory-dim)">${idx + 1}</td>
+          <td style="font-weight:500; color:var(--ivory)">${esc(b.name)}</td>
+          <td style="font-size:12px; color:var(--ivory-dim);">${esc(days)} • ${esc(time)}</td>
+          <td style="font-family:monospace; font-size:12px;">${studentCount}</td>
+          <td style="display:flex; gap:6px; flex-wrap:wrap;">
+            ${link ? `<a href="${esc(link)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="text-decoration:none;">🎥 Join</a>` : ''}
             <button class="btn btn-outline btn-sm" onclick="window.openViewBatchModal('${b.id}')">👥 View</button>
             <button class="btn btn-outline btn-sm" onclick="window.openCoachCreateBatchModal('${b.id}')">✏️ Edit</button>
-            ${link ? `
-              <button class="btn btn-outline btn-sm" onclick="window.coachShareBatchLink('${b.id}')" title="Share class link with students via WhatsApp">📲 Share</button>
-              <button class="btn btn-outline btn-sm" onclick="window.coachSetBatchLink('${b.id}')">✏️ Link</button>
-              <button class="btn btn-outline btn-sm" onclick="window.coachDeleteBatchLink('${b.id}')">🗑️</button>
-            ` : `
-              <button class="btn btn-outline btn-sm" onclick="window.coachSetBatchLink('${b.id}')">🔗 Set Link</button>
-            `}
-          </div>
-        </div>
+          </td>
+        </tr>
       `;
     }).join('');
   };
@@ -595,39 +581,99 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('coach-events-content');
     if (!container) return;
 
-    if (!window.eventsData || window.eventsData.length === 0) {
-      container.innerHTML = '<div class="coach-loading-cell">No events scheduled.</div>';
-      return;
-    }
+    const rawEvents = window.eventsData || [];
+    const visibleEvents = rawEvents.filter(e => e.status !== 'archived' && e.archived !== true);
 
-    const visibleEvents = window.eventsData.filter(e => {
-      return e.status !== 'archived' && e.archived !== true;
-    });
-
-    if (visibleEvents.length === 0) {
-      container.innerHTML = '<div class="coach-loading-cell">No upcoming events.</div>';
-      return;
-    }
-
-    container.innerHTML = visibleEvents.map(e => {
-      const evDate = new Date(e.date || e.event_date);
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
-      const isPast = evDate < now;
-      const statusClass = isPast ? 'badge badge-info' : 'badge badge-success';
-      const statusText = isPast ? 'Completed' : 'Upcoming';
-      const dateStr = e.date ? new Date(e.date).toLocaleDateString() : 'TBD';
-      const location = e.location || 'TBD';
-      return `
-        <div style="display:flex; justify-content:space-between; align-items:center; padding: 12px 0; border-bottom: 1px solid var(--border);">
-          <div>
-            <div style="font-weight:600; color:var(--ivory);">${window.escapeHtml ? window.escapeHtml(e.title) : e.title}</div>
-            <div style="font-size:12px; color:var(--ivory-dim); margin-top:2px;">${dateStr} · ${window.escapeHtml ? window.escapeHtml(location) : location}</div>
+    container.innerHTML = `
+      <div class="coach-shell" style="padding:0;">
+        <div class="coach-section-block" style="margin-bottom:20px; background:var(--surface, #1e293b); border:1px solid var(--border); border-radius:14px; padding:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+            <div>
+              <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(218,163,62,0.15); border:1px solid rgba(218,163,62,0.3); border-radius:99px; padding:4px 12px; font-size:11px; font-weight:700; color:var(--gold); text-transform:uppercase; margin-bottom:8px;">
+                <span>🏆 Events Hub</span>
+              </div>
+              <h2 style="margin:0 0 6px; color:#fff; font-size:22px; font-weight:800;">Academy Events &amp; Wall of Fame</h2>
+              <p style="margin:0; color:var(--ivory-dim); font-size:13.5px;">Manage events and view top performers.</p>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="btn btn-gold" onclick="window.openEventModal && window.openEventModal()" style="font-weight:700;">➕ Add Event</button>
+            </div>
           </div>
-          <span class="${statusClass}">${statusText}</span>
         </div>
-      `;
-    }).join('');
+
+        <div class="tabs-nav" style="margin-bottom:20px; background:rgba(0,0,0,0.2); padding:3px; border-radius:8px; border:1px solid var(--border); display:flex; gap:2px;">
+          <button class="tab-link active" id="btn-coach-events-list" onclick="window.setCoachEventsTab('list', this)" style="padding:6px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer;">Events List</button>
+          <button class="tab-link" id="btn-coach-events-fame" onclick="window.setCoachEventsTab('fame', this)" style="padding:6px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer;">🏆 Wall of Fame</button>
+        </div>
+
+        <div id="coach-events-list-view" style="display:block;">
+          ${visibleEvents.length === 0 ? '<div class="coach-loading-cell">No upcoming events.</div>' : visibleEvents.map(e => {
+            const evDate = new Date(e.date || e.event_date);
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const isPast = evDate < now;
+            const statusClass = isPast ? 'badge badge-info' : 'badge badge-success';
+            const statusText = isPast ? 'Completed' : 'Upcoming';
+            const dateStr = e.date ? new Date(e.date).toLocaleDateString() : 'TBD';
+            const location = e.location || 'TBD';
+            return `
+              <div style="display:flex; justify-content:space-between; align-items:center; padding: 12px 0; border-bottom: 1px solid var(--border);">
+                <div>
+                  <div style="font-weight:600; color:var(--ivory);">${window.escapeHtml ? window.escapeHtml(e.title) : e.title}</div>
+                  <div style="font-size:12px; color:var(--ivory-dim); margin-top:2px;">${dateStr} · ${window.escapeHtml ? window.escapeHtml(location) : location}</div>
+                </div>
+                <span class="${statusClass}">${statusText}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        <div id="coach-events-fame-view" style="display:none;">
+          <div id="coach-fame-grid"></div>
+        </div>
+      </div>
+    `;
+
+    window.setCoachEventsTab = function (tabName, btn) {
+      document.querySelectorAll('#coach-events-content .tab-link').forEach(l => l.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      const listView = document.getElementById('coach-events-list-view');
+      const fameView = document.getElementById('coach-events-fame-view');
+      if (listView) listView.style.display = tabName === 'list' ? 'block' : 'none';
+      if (fameView) fameView.style.display = tabName === 'fame' ? 'block' : 'none';
+
+      if (tabName === 'fame') {
+        const fameGrid = document.getElementById('coach-fame-grid');
+        if (fameGrid && !fameGrid.innerHTML.trim()) {
+          const topPlayers = [...(window.allStudents || [])]
+            .filter((s) => (s.status || 'active').toLowerCase() !== 'archived' && (s.rating || 0) > 800)
+            .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+            .slice(0, 10);
+
+          let html = '<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">';
+          if (topPlayers.length === 0) {
+            html += '<div class="card" style="padding:24px; text-align:center; color:var(--ivory-dim);">No rated players yet</div>';
+          } else {
+            topPlayers.forEach((s, i) => {
+              const rankBadge = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i + 1);
+              html += `
+                <div class="card" style="padding:16px; display:flex; align-items:center; gap:14px; border-left:4px solid ${i === 0 ? 'var(--gold)' : 'var(--border)'};">
+                  <div style="font-size:28px;">${rankBadge}</div>
+                  <div style="flex:1; min-width:0;">
+                    <div style="font-weight:700; color:var(--ivory); font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${window.escapeHtml ? window.escapeHtml(s.name || s.student_name || 'Student') : (s.name || s.student_name || 'Student')}</div>
+                    <div style="font-size:12px; color:var(--ivory-dim); margin-top:2px;">Level: ${window.escapeHtml ? window.escapeHtml(s.level || 'Beginner') : (s.level || 'Beginner')}</div>
+                  </div>
+                  <div style="font-weight:800; color:var(--gold); font-size:16px;">${s.rating || 0}</div>
+                </div>
+              `;
+            });
+          }
+          html += '</div>';
+          fameGrid.innerHTML = html;
+        }
+      }
+    };
   };
 
   window.renderCoachAttendance = function () {

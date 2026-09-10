@@ -173,43 +173,42 @@
          `body.coach-mode .admin-only:not(.coach-accessible)` hide rule and
          appears for coaches too. -->
     <div class="nav-section-label admin-only coach-accessible" style="padding:14px 14px 6px; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ivory-dim); opacity:.65;">Tools</div>
-    <a class="nav-item admin-only" id="nav-invoice-generator"
-       href="https://invoice-generator-chesskidoo.vercel.app/" target="_blank" rel="noopener noreferrer"
-       style="text-decoration:none; color:inherit;">
-      <span class="ico">🧾</span> Invoice Generator <span style="margin-left:auto; font-size:10px; opacity:.5;">↗</span>
-    </a>
-    <a class="nav-item admin-only coach-accessible" id="nav-report-card"
-       href="https://report-card-for-chesskidoo.vercel.app/" target="_blank" rel="noopener noreferrer"
-       style="text-decoration:none; color:inherit;">
-      <span class="ico">📋</span> Report Card <span style="margin-left:auto; font-size:10px; opacity:.5;">↗</span>
-    </a>
+     <a class="nav-item admin-only" id="nav-invoice-generator"
+        href="https://invoice-generator-chesskidoo.vercel.app/" target="_blank" rel="noopener noreferrer"
+        style="text-decoration:none; color:inherit;">
+       <span class="ico">🧾</span> Invoice Generator <span style="margin-left:auto; font-size:10px; opacity:.5;">↗</span>
+     </a>
 
     <div class="nav-item admin-only" id="nav-bills" onclick="setPage('bills')"><span class="ico">💳</span> Payments</div>
     <div class="nav-item admin-only" id="nav-exp" onclick="setPage('exp')"><span class="ico">💸</span> Expenditures</div>
     <div class="nav-item admin-only" id="nav-access" onclick="setPage('access')"><span class="ico">🔐</span> Access Control</div>
     <div class="nav-item admin-only" id="nav-msgs" onclick="setPage('msgs')"><span class="ico">💬</span> Messages <span id="msg-badge" class="badge badge-level" style="display:none;margin-left:8px">0</span></div>
 
-    <!-- Coach -->
-    <div class="nav-item coach-only" id="nav-coach-dash" onclick="setPage('coach-dash')"><span class="ico">🏠</span> My Portal</div>
-    <div class="nav-item coach-only" id="nav-coach-students" onclick="setPage('coach-students')"><span class="ico">👨‍🎓</span> My Students</div>
-    <div class="nav-item coach-only" id="nav-coach-batches" onclick="setPage('coach-batches')"><span class="ico">👥</span> My Batches</div>
-    <div class="nav-item coach-only" id="nav-coach-schedule" onclick="setPage('coach-schedule')"><span class="ico">📅</span> Schedule</div>
-    <div class="nav-item coach-only" id="nav-coach-events" onclick="setPage('coach-events')"><span class="ico">🏆</span> Events</div>
-    <div class="nav-item coach-only" id="nav-coach-attendance" onclick="setPage('coach-attendance')"><span class="ico">📋</span> Attendance</div>
-    <div class="nav-item coach-only" id="nav-coach-homework" onclick="setPage('coach-attendance')"><span class="ico">📚</span> Homework</div>
-    <div class="nav-item coach-only" id="nav-coach-studypgn" onclick="setPage('coach-studypgn')"><span class="ico">♟️</span> Study Lab &amp; Topics</div>
+      <!-- Coach -->
+      <div class="nav-item coach-only" id="nav-coach-dash" onclick="setPage('coach-dash')"><span class="ico">🏠</span> My Portal</div>
+      <div class="nav-item coach-only" id="nav-coach-schedule" onclick="setPage('coach-schedule')"><span class="ico">📅</span> Schedule</div>
+      <div class="nav-item coach-only" id="nav-coach-attendance" onclick="setPage('coach-attendance')"><span class="ico">📋</span> Attendance</div>
+      <div class="nav-item coach-only" id="nav-coach-studypgn" onclick="setPage('coach-studypgn')"><span class="ico">♟️</span> Study Lab &amp; Topics</div>
+      <div class="nav-item coach-only" id="nav-coach-events" onclick="setPage('coach-events')"><span class="ico">🏆</span> Events</div>
+      <div class="nav-item coach-only" id="nav-coach-productivity" onclick="setPage('productivity')"><span class="ico">📝</span> Daily Tasks</div>
+      <a class="nav-item admin-only coach-accessible" id="nav-report-card"
+         href="https://report-card-for-chesskidoo.vercel.app/" target="_blank" rel="noopener noreferrer"
+         style="text-decoration:none; color:inherit;">
+        <span class="ico">📋</span> Report Card <span style="margin-left:auto; font-size:10px; opacity:.5;">↗</span>
+      </a>
 
-     <!-- Parent -->
-     <div class="nav-item parent-only" id="nav-child" onclick="goChildTab('overview')"><span class="ico">📈</span> My Child Profile</div>
-     <div class="nav-item parent-only" id="nav-parent-attendance" onclick="goChildTab('attendance')"><span class="ico">🗓️</span> Attendance and Homework</div>
-     <div class="nav-item parent-only" id="nav-parent-studypgn" onclick="goChildTab('studypgn')"><span class="ico">♟️</span> Study PGN</div>
-     <div class="nav-item parent-only" id="nav-parent-events" onclick="goChildTab('events')"><span class="ico">🎫</span> Events</div>
-     <div class="nav-item parent-only" id="nav-parent-reports" onclick="goChildTab('reports')"><span class="ico">📄</span> Reports</div>
-     <div class="nav-item parent-only" id="nav-parent-billing" onclick="goChildTab('billing')"><span class="ico">💰</span> Billing</div>
-     <div class="nav-item parent-only" id="nav-parent-productivity" onclick="goChildTab('productivity')"><span class="ico">📝</span> Daily Tasks</div>
+      <!-- Parent -->
+      <div class="nav-item parent-only" id="nav-child" onclick="goChildTab('overview')"><span class="ico">📈</span> My Child Profile</div>
+      <div class="nav-item parent-only" id="nav-parent-schedule" onclick="goChildTab('schedule')"><span class="ico">🗓️</span> Schedule</div>
+      <div class="nav-item parent-only" id="nav-parent-attendance" onclick="goChildTab('attendance')"><span class="ico">🗓️</span> Attendance and Homework</div>
+      <div class="nav-item parent-only" id="nav-parent-studypgn" onclick="goChildTab('studypgn')"><span class="ico">♟️</span> Study PGN</div>
+      <div class="nav-item parent-only" id="nav-parent-events" onclick="goChildTab('events')"><span class="ico">🎫</span> Events</div>
+      <div class="nav-item parent-only" id="nav-parent-reports" onclick="goChildTab('reports')"><span class="ico">📄</span> Reports</div>
+      <div class="nav-item parent-only" id="nav-parent-billing" onclick="goChildTab('billing')"><span class="ico">💰</span> Billing</div>
+      <div class="nav-item parent-only" id="nav-parent-productivity" onclick="goChildTab('productivity')"><span class="ico">📝</span> Daily Tasks</div>
 
      <!-- Shared -->
-     <div class="nav-item admin-only coach-only" id="nav-fame" onclick="setPage('fame')"><span class="ico">🏆</span> Wall of Fame</div>
+      <div class="nav-item admin-only" id="nav-fame" onclick="setPage('fame')"><span class="ico">🏆</span> Wall of Fame</div>
    </div>
   <div style="padding:16px;border-top:1px solid var(--border)">
     <div class="nav-item" onclick="toggleTheme()"><span class="ico">🌗</span> Switch Theme</div>
@@ -289,70 +288,64 @@
                </div>
              </div>
            </div>
-         </div>
+          </div>
 
-         <!-- Quick Navigation -->
-         <div class="coach-section-block">
-           <div class="coach-section-row">
-             <h2 class="coach-section-title">Quick Navigation</h2>
-           </div>
-           <div class="coach-dash-card">
-             <div class="coach-card-body">
-               <div class="coach-quick-actions">
-                 <button class="coach-action-btn primary" onclick="setPage('coach-students')">
-                   <span class="coach-action-icon">👥</span>
-                   <span class="coach-action-text">My Students</span>
-                 </button>
-                 <button class="coach-action-btn" onclick="setPage('coach-batches')">
-                   <span class="coach-action-icon">👥</span>
-                   <span class="coach-action-text">My Batches</span>
-                 </button>
-                 <button class="coach-action-btn" onclick="setPage('coach-schedule')">
-                   <span class="coach-action-icon">📅</span>
-                   <span class="coach-action-text">Schedule</span>
-                 </button>
-                 <button class="coach-action-btn" onclick="setPage('coach-events')">
-                   <span class="coach-action-icon">🏆</span>
-                   <span class="coach-action-text">Events</span>
-                 </button>
-                 <button class="coach-action-btn" onclick="setPage('coach-attendance')">
-                   <span class="coach-action-icon">📋</span>
-                   <span class="coach-action-text">Attendance</span>
-                 </button>
-                 <button class="coach-action-btn" onclick="setPage('coach-homework')">
-                   <span class="coach-action-icon">📚</span>
-                   <span class="coach-action-text">Homework</span>
-                 </button>
-               </div>
-             </div>
-           </div>
-         </div>
-       </div>
-     </div>
+          <!-- Coach Portal Tabs -->
+          <div class="tabs-nav" id="coach-portal-tabs" style="margin-bottom:20px;">
+            <button class="tab-link active" onclick="setCoachPortalTab('students', this)">My Students</button>
+            <button class="tab-link" onclick="setCoachPortalTab('batches', this)">My Batches</button>
+          </div>
 
-      <!-- Coach Workspace Pages -->
-      <div id="page-coach-students" class="page coach-only">
-        <div class="coach-shell">
-          <div class="coach-section-block">
-            <div class="coach-section-row">
-              <h2 class="coach-section-title">My Students</h2>
+          <div id="coach-tab-students" class="child-tab-content active">
+            <div class="coach-section-block">
+              <div class="coach-section-row">
+                <h2 class="coach-section-title">My Students</h2>
+              </div>
+              <div class="coach-dash-card">
+                <div class="coach-card-body">
+                  <div class="coach-table-wrap">
+                    <table class="coach-mini-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Student</th>
+                          <th>Phone</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="coach-students-tbody">
+                        <tr><td colspan="7" class="coach-loading-cell">Loading your students...</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="coach-dash-card">
-              <div class="coach-card-body">
-                <div class="coach-table-wrap">
-                  <table class="coach-mini-table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Student</th>
-                        <th>Phone</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="coach-students-tbody">
-                      <tr><td colspan="7" class="coach-loading-cell">Loading your students...</td></tr>
-                    </tbody>
-                  </table>
+          </div>
+
+          <div id="coach-tab-batches" class="child-tab-content" style="display:none;">
+            <div class="coach-section-block">
+              <div class="coach-section-row">
+                <h2 class="coach-section-title">My Batches</h2>
+              </div>
+              <div class="coach-dash-card">
+                <div class="coach-card-body">
+                  <div class="coach-table-wrap">
+                    <table class="coach-mini-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Batch Name</th>
+                          <th>Schedule</th>
+                          <th>Students</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="coach-batches-tbody">
+                        <tr><td colspan="7" class="coach-loading-cell">Loading your batches...</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -360,34 +353,8 @@
         </div>
       </div>
 
-        <div id="page-coach-batches" class="page coach-only">
-          <div class="coach-shell">
-            <div class="coach-section-block">
-              <div class="coach-section-row">
-                <h2 class="coach-section-title">My Batches</h2>
-                <button class="btn btn-gold btn-sm" onclick="window.openCoachCreateBatchModal()">
-                  <span class="ico">➕</span> Add Batch
-                </button>
-              </div>
-              <p style="color:var(--ivory-dim); font-size: 14px; max-width: 600px; line-height: 1.6; margin-bottom: 18px;">
-                Manage your batches, view enrolled students, and track class schedules.
-              </p>
-              <div class="card" style="padding: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-                <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
-                  <div class="search-box">
-                    <span class="ico" style="opacity:0.5; margin-left:12px;">🔍</span>
-                    <input type="text" id="coach-batch-search-input" placeholder="Search batches..." onkeyup="window.renderCoachBatches()" style="background:transparent; border:none; color:var(--ivory); outline:none; padding:8px; width:200px;">
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div id="coach-batches-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-top: 20px;">
-              <!-- Batches rendered as cards -->
-            </div>
-          </div>
-        </div>
-
-      <div id="page-coach-schedule" class="page coach-only">
+       <!-- Coach Workspace Pages -->
+       <div id="page-coach-schedule" class="page coach-only">
         <div class="coach-shell">
           <div class="coach-section-block">
             <div class="coach-section-row">
@@ -400,11 +367,11 @@
         </div>
       </div>
 
-        <div id="page-coach-events" class="page coach-only">
-          <div id="coach-events-content">
-            <div class="coach-loading-cell">Loading Tournament &amp; Event Hub...</div>
-          </div>
-        </div>
+         <div id="page-coach-events" class="page coach-only">
+           <div id="coach-events-content">
+             <div class="coach-loading-cell">Loading Tournament &amp; Event Hub...</div>
+           </div>
+         </div>
 
         <div id="page-coach-attendance" class="page coach-only">
          <div class="coach-shell">
@@ -1277,47 +1244,48 @@
             <button class="btn btn-gold btn-sm" onclick="setPage('stud')" style="display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-amber-sm);"><span style="font-size: 11px;">🔙</span> Back to Students</button>
             <button onclick="setPage('stud')" title="Exit Preview Mode" style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.08); color: var(--gold); cursor: pointer; font-size: 18px; line-height: 1; transition: all 0.2s; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.15); outline: none; padding: 0;" onmouseover="this.style.background='rgba(59, 130, 246, 0.2)'; this.style.borderColor='var(--gold)';" onmouseout="this.style.background='rgba(59, 130, 246, 0.08)'; this.style.borderColor='rgba(59, 130, 246, 0.3)';">✕</button>
           </div>
-          </div>
+           </div>
 
-          <div class="profile-hdr" style="margin-bottom:18px;">
-            <div class="profile-info">
-              <div id="p-av-wrap"></div>
-              <div class="profile-details">
-                <h1 id="c-name">—</h1>
-                <div class="profile-meta" style="display:flex; flex-wrap:wrap; gap:16px; margin-top:8px;">
-                  <span><b>Level:</b> <span id="c-level" class="text-gold">—</span></span>
-                  <span><b>Coach:</b> <span id="c-coach">—</span></span>
-                  <span><b>Parent:</b> <span id="c-parent-name">—</span></span>
-                  <span><b>Phone:</b> <span id="c-parent-phone" style="font-family: monospace;">—</span></span>
-                  <span><b>Email:</b> <span id="c-parent-email" style="font-family: monospace;">—</span></span>
+               <div class="tabs-nav" id="child-portal-tabs">
+               <button class="tab-link active" onclick="setChildTab('overview', this)">Overview</button>
+                <button class="tab-link" onclick="setChildTab('attendance', this)">📅 Attendance &amp; Homework</button>
+                <button class="tab-link" onclick="setChildTab('studypgn', this)">♟️ Study PGN &amp; Tactics</button>
+               <button class="tab-link" onclick="setChildTab('growth', this)">Growth</button>
+               <button class="tab-link" onclick="setChildTab('events', this)">Events</button>
+               <button class="tab-link" onclick="setChildTab('reports', this)">Reports</button>
+               <button class="tab-link" onclick="setChildTab('billing', this)">Billing & Receipts</button>
+               <button class="tab-link" onclick="setChildTab('productivity', this)">Daily Tasks</button>
+             </div>
+
+            <div id="child-tab-overview" class="child-tab-content active">
+              <div id="child-profile-section">
+            <div class="profile-hdr" style="margin-bottom:18px;">
+              <div class="profile-info">
+                <div id="p-av-wrap"></div>
+                <div class="profile-details">
+                  <h1 id="c-name">—</h1>
+                  <div class="profile-meta" style="display:flex; flex-wrap:wrap; gap:16px; margin-top:8px;">
+                    <span><b>Level:</b> <span id="c-level" class="text-gold">—</span></span>
+                    <span><b>Coach:</b> <span id="c-coach">—</span></span>
+                    <span><b>Parent:</b> <span id="c-parent-name">—</span></span>
+                    <span><b>Phone:</b> <span id="c-parent-phone" style="font-family: monospace;">—</span></span>
+                    <span><b>Email:</b> <span id="c-parent-email" style="font-family: monospace;">—</span></span>
+                  </div>
+                <div class="profile-meta" style="display:flex; flex-wrap:wrap; gap:16px; margin-top:8px;" id="c-chess-links-container">
+                  <!-- Populated by JS if usernames exist -->
                 </div>
-              <div class="profile-meta" style="display:flex; flex-wrap:wrap; gap:16px; margin-top:8px;" id="c-chess-links-container">
-                <!-- Populated by JS if usernames exist -->
+                <div class="profile-meta" id="c-engagement-flag" style="margin-top:10px; font-size:12px; color:var(--ivory-dim);"></div>
               </div>
-              <div class="profile-meta" id="c-engagement-flag" style="margin-top:10px; font-size:12px; color:var(--ivory-dim);"></div>
             </div>
-          </div>
-          <div class="profile-actions">
-            <button class="btn btn-outline" onclick="openStudentEditPortalModal()" style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 13px;">⚙️</span> Edit Details</button>
-            <button class="btn btn-outline" onclick="window.openStudentChangePasswordModal && window.openStudentChangePasswordModal()" style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 13px;">🔑</span> Change Password</button>
-            <button class="btn btn-outline" onclick="openContactModal()">✉️ Message Coach</button>
-            <button class="btn btn-outline" onclick="openModal('fb-modal')">📝 Feedback</button>
+            <div class="profile-actions">
+              <button class="btn btn-outline" onclick="openStudentEditPortalModal()" style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 13px;">⚙️</span> Edit Details</button>
+              <button class="btn btn-outline" onclick="window.openStudentChangePasswordModal && window.openStudentChangePasswordModal()" style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 13px;">🔑</span> Change Password</button>
+              <button class="btn btn-outline" onclick="openContactModal()">✉️ Message Coach</button>
+              <button class="btn btn-outline" onclick="openModal('fb-modal')">📝 Feedback</button>
+             </div>
            </div>
 
-            <div class="tabs-nav" id="child-portal-tabs">
-             <button class="tab-link active" onclick="setChildTab('overview', this)">Overview</button>
-             <button class="tab-link" onclick="setChildTab('schedule', this)">Schedule</button>
-              <button class="tab-link" onclick="setChildTab('attendance', this)">📅 Attendance &amp; Homework</button>
-              <button class="tab-link" onclick="setChildTab('studypgn', this)">♟️ Study PGN &amp; Tactics</button>
-             <button class="tab-link" onclick="setChildTab('growth', this)">Growth</button>
-             <button class="tab-link" onclick="setChildTab('events', this)">Events</button>
-             <button class="tab-link" onclick="setChildTab('reports', this)">Reports</button>
-             <button class="tab-link" onclick="setChildTab('billing', this)">Billing & Receipts</button>
-             <button class="tab-link" onclick="setChildTab('productivity', this)">Daily Tasks</button>
-           </div>
-
-           <div id="child-tab-overview" class="child-tab-content active">
-             <!-- Gamified Academy XP & Milestone Journey Hub -->
+              <!-- Gamified Academy XP & Milestone Journey Hub -->
           <div class="card" style="background:linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.95)); border:1px solid rgba(218, 163, 62, 0.35); border-radius:14px; padding:20px; margin-bottom:24px; box-shadow:0 10px 25px rgba(0,0,0,0.4);">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:16px;">
               <div>
@@ -1756,7 +1724,7 @@
              <!-- Sub Navigation Pills -->
             <div class="tabs-nav" style="margin:0; background:rgba(0,0,0,0.3); padding:4px; border-radius:10px; border:1px solid var(--border); display:flex; gap:4px; flex-wrap:wrap;">
                <button class="tab-link active" id="btn-studypgn-lab" onclick="window.setStudyPgnSubTab('lab', this)" style="padding:6px 14px; font-size:12px; border-radius:6px;">♟️ Master PGN Lab</button>
-               <button class="tab-link" id="btn-studypgn-tactics" onclick="window.setStudyPgnSubTab('tactics', this)" style="padding:6px 14px; font-size:12px; border-radius:6px;">🔥 Daily Tactics</button>
+               <button class="tab-link" id="btn-studypgn-tactics" onclick="window.setStudyPgnSubTab('tactics', this)" style="padding:6px 14px; font-size:12px; border-radius:6px;">🔥 Puzzles</button>
                <button class="tab-link" id="btn-studypgn-topics" onclick="window.setStudyPgnSubTab('topics', this)" style="padding:6px 14px; font-size:12px; border-radius:6px;">📋 Assigned Topics</button>
                <button class="tab-link" id="btn-studypgn-vault" onclick="window.setStudyPgnSubTab('vault', this)" style="padding:6px 14px; font-size:12px; border-radius:6px;">📖 Grandmaster Vault</button>
                <button class="tab-link" id="btn-studypgn-custom" onclick="window.setStudyPgnSubTab('custom', this)" style="padding:6px 14px; font-size:12px; border-radius:6px;">🛠️ Custom Board Setup</button>
@@ -2835,7 +2803,7 @@
     </div>
 
     <!-- Operations Productivity Center -->
-    <div id="page-productivity" class="page admin-only">
+    <div id="page-productivity" class="page admin-only coach-accessible">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px; flex-wrap: wrap; gap: 15px;">
         <h2 style="color:var(--gold); margin:0; font-family:var(--font-head); font-size: 26px; display: flex; align-items: center; gap: 10px;">
           <span>📝</span> Academy Productivity Center
@@ -4718,7 +4686,7 @@
            </div>
            <div class="modal-actions">
              <button class="btn btn-ghost" onclick="closeModals()">Close</button>
-             <button class="btn btn-gold" onclick="saveQuickClassSession()">➕ Add Resource &amp; Attendance</button>
+             <button class="btn btn-gold" onclick="saveQuickClassSession()"> Submit</button>
            </div>
          </div>
        </div>
