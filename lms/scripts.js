@@ -478,111 +478,129 @@
 
   // ── NEW ADVANCED LOGIC ──
   function setChildTab(tabId, btn) {
-    if (tabId === "learning" || tabId === "resources") tabId = "elibrary";
-    document
-      .querySelectorAll(".child-tab-content")
-      .forEach((c) => c.classList.remove("active"));
+    try {
+      if (tabId === "learning" || tabId === "resources") tabId = "elibrary";
+      if (!currentStudent) currentStudent = window.currentStudent;
 
-    // Sync the in-page tab bar highlight. When called from the sidebar nav
-    // (no btn), locate the matching tab-link by its onclick target.
-    const tabBar = document.querySelector("#page-child .tabs-nav");
-    if (tabBar) {
-      tabBar
-        .querySelectorAll(".tab-link")
-        .forEach((l) => l.classList.remove("active"));
-      if (btn) {
-        btn.classList.add("active");
-      } else {
-        const match = Array.from(tabBar.querySelectorAll(".tab-link")).find(
-          (l) => (l.getAttribute("onclick") || "").includes("'" + tabId + "'"),
-        );
-        if (match) match.classList.add("active");
-      }
-    }
+      // Remove active from all child tabs
+      document
+        .querySelectorAll("#page-child .child-tab-content")
+        .forEach((c) => c.classList.remove("active"));
 
-    const target = document.getElementById("child-tab-" + tabId);
-    if (target) target.classList.add("active");
-
-    if (tabId === "overview") {
-      renderChildBilling();
-      if (window.updateChildMilestoneStats && window.currentStudent) {
-        window.updateChildMilestoneStats(window.currentStudent);
-      }
-    }
-    if (tabId === "billing") renderChildBilling();
-    if (tabId === "attendance" || tabId === "homework") {
-      try {
-        const localAtt = JSON.parse(localStorage.getItem('ck_attendance_records') || '[]');
-        if (localAtt.length) {
-          window.allAttendance = localAtt;
-          allAttendance = localAtt;
+      // Sync the in-page tab bar highlight
+      const tabBar = document.querySelector("#page-child .tabs-nav");
+      if (tabBar) {
+        tabBar
+          .querySelectorAll(".tab-link")
+          .forEach((l) => l.classList.remove("active"));
+        if (btn) {
+          btn.classList.add("active");
+        } else {
+          const match = Array.from(tabBar.querySelectorAll(".tab-link")).find(
+            (l) => (l.getAttribute("onclick") || "").includes("'" + tabId + "'"),
+          );
+          if (match) match.classList.add("active");
         }
-      } catch (_) {}
-      if (window.renderChildAttendanceAndHomework) window.renderChildAttendanceAndHomework(); else renderChildAttendance();
-    }
-    if (tabId === "homework") {
-      if (window.loadHomeworkData) {
-        window.loadHomeworkData().then(() => {
-          if (typeof window.renderChildHomework === "function") window.renderChildHomework();
-        });
-      } else if (typeof window.renderChildHomework === "function") {
-        window.renderChildHomework();
       }
-    }
-    if (tabId === "elibrary") {
-      if (window.loadElibraryData) {
-        window.loadElibraryData().then(() => {
-          if (typeof window.renderChildElibrary === "function") window.renderChildElibrary();
-        });
-      } else if (typeof window.renderChildElibrary === "function") {
-        window.renderChildElibrary();
+
+      // Activate the target tab pane
+      const target = document.getElementById("child-tab-" + tabId);
+      if (target) {
+        target.classList.add("active");
+        target.style.removeProperty("display");
       }
-    }
-    if (tabId === "studypgn") {
-      if (window.StudyPGN) {
-        if (!window.StudyPGN.chess) window.StudyPGN.loadCuratedGame(0);
-        window.StudyPGN.renderBoard();
-        window.StudyPGN.renderMoveList();
-        window.StudyPGN.renderGameInfo();
-        window.StudyPGN.renderTacticsBoard();
-        window.StudyPGN.renderAssignedTopicsList();
+
+      // Render tab content with error handling
+      try {
+        if (tabId === "overview") {
+          renderChildBilling();
+          if (window.updateChildMilestoneStats && window.currentStudent) {
+            window.updateChildMilestoneStats(window.currentStudent);
+          }
+        } else if (tabId === "billing") {
+          renderChildBilling();
+        } else if (tabId === "attendance" || tabId === "homework") {
+          try {
+            const localAtt = JSON.parse(localStorage.getItem('ck_attendance_records') || '[]');
+            if (localAtt.length) {
+              window.allAttendance = localAtt;
+              allAttendance = localAtt;
+            }
+          } catch (_) {}
+          if (window.renderChildAttendanceAndHomework) window.renderChildAttendanceAndHomework(); else renderChildAttendance();
+        } else if (tabId === "homework") {
+          if (window.loadHomeworkData) {
+            window.loadHomeworkData().then(() => {
+              if (typeof window.renderChildHomework === "function") window.renderChildHomework();
+            });
+          } else if (typeof window.renderChildHomework === "function") {
+            window.renderChildHomework();
+          }
+        } else if (tabId === "elibrary") {
+          if (window.loadElibraryData) {
+            window.loadElibraryData().then(() => {
+              if (typeof window.renderChildElibrary === "function") window.renderChildElibrary();
+            });
+          } else if (typeof window.renderChildElibrary === "function") {
+            window.renderChildElibrary();
+          }
+        } else if (tabId === "studypgn") {
+          if (window.StudyPGN) {
+            if (!window.StudyPGN.chess) window.StudyPGN.loadCuratedGame(0);
+            window.StudyPGN.renderBoard();
+            window.StudyPGN.renderMoveList();
+            window.StudyPGN.renderGameInfo();
+            window.StudyPGN.renderTacticsBoard();
+          }
+        } else if (
+          tabId === "schedule" &&
+          typeof window.renderChildSchedule === "function" &&
+          (window.currentStudent || currentStudent)
+        ) {
+          const s = window.currentStudent || currentStudent;
+          const coach = (allCoaches || []).find(
+            (c) => String(c.id) === String(s.coach_id),
+          );
+          window.renderChildSchedule(
+            s,
+            coach ? getCoachName(coach) : "Not Assigned",
+          );
+        } else if (tabId === "growth") {
+          renderChildGrowth();
+        } else if (tabId === "learning") {
+          renderChildResources();
+        } else if (tabId === "events") {
+          if (window.setChildEventsSubTab) window.setChildEventsSubTab("fame");
+          else renderChildEvents();
+        } else if (tabId === "reports" && typeof window.renderChildReports === "function") {
+          window.renderChildReports();
+        } else if (
+          tabId === "productivity" &&
+          typeof window.renderChildProductivity === "function"
+        ) {
+          window.renderChildProductivity();
+        } else if (tabId === "chess") {
+          if (chartInstances.childElo) { chartInstances.childElo.destroy(); chartInstances.childElo = null; }
+          if (chartInstances.lichessElo) { chartInstances.lichessElo.destroy(); chartInstances.lichessElo = null; }
+          if (chartInstances.chesscomElo) { chartInstances.chesscomElo.destroy(); chartInstances.chesscomElo = null; }
+          if (chartInstances.chessableProgress) { chartInstances.chessableProgress.destroy(); chartInstances.chessableProgress = null; }
+          if (window.chessChartInstance) { window.chessChartInstance.destroy(); window.chessChartInstance = null; }
+          window.currentChessGames = [];
+          if (typeof window.renderChildChessPerformance === "function" && (window.currentStudent || currentStudent)) {
+            window.renderChildChessPerformance(window.currentStudent || currentStudent);
+          }
+        }
+      } catch (err) {
+        console.error("[setChildTab] Error rendering tab:", tabId, err);
+        // Ensure tab is still visible even if render fails
+        const target = document.getElementById("child-tab-" + tabId);
+        if (target) {
+          target.classList.add("active");
+          target.style.removeProperty("display");
+        }
       }
-    }
-    if (
-      tabId === "schedule" &&
-      typeof window.renderChildSchedule === "function" &&
-      currentStudent
-    ) {
-      const coach = (allCoaches || []).find(
-        (c) => String(c.id) === String(currentStudent.coach_id),
-      );
-      window.renderChildSchedule(
-        currentStudent,
-        coach ? getCoachName(coach) : "Not Assigned",
-      );
-    }
-    if (tabId === "growth") renderChildGrowth();
-    if (tabId === "learning") renderChildResources();
-    if (tabId === "events") {
-      renderChildEvents();
-      if (window.setChildEventsSubTab) window.setChildEventsSubTab("academy");
-    }
-    if (tabId === "reports" && typeof window.renderChildReports === "function") window.renderChildReports();
-    if (
-      tabId === "productivity" &&
-      typeof window.renderChildProductivity === "function"
-    )
-      window.renderChildProductivity();
-    if (tabId === "chess") {
-      if (chartInstances.childElo) { chartInstances.childElo.destroy(); chartInstances.childElo = null; }
-      if (chartInstances.lichessElo) { chartInstances.lichessElo.destroy(); chartInstances.lichessElo = null; }
-      if (chartInstances.chesscomElo) { chartInstances.chesscomElo.destroy(); chartInstances.chesscomElo = null; }
-      if (chartInstances.chessableProgress) { chartInstances.chessableProgress.destroy(); chartInstances.chessableProgress = null; }
-      if (window.chessChartInstance) { window.chessChartInstance.destroy(); window.chessChartInstance = null; }
-      window.currentChessGames = [];
-      if (typeof window.renderChildChessPerformance === "function" && currentStudent) {
-        window.renderChildChessPerformance(currentStudent);
-      }
+    } catch (err) {
+      console.error("[setChildTab] Critical error:", err);
     }
   }
 
@@ -781,17 +799,22 @@
     document
       .querySelectorAll("#child-tab-events .tab-link")
       .forEach((btn) => btn.classList.remove("active"));
-    document
-      .getElementById(`btn-child-events-${tabName}`)
-      .classList.add("active");
+    const activeBtn = document.getElementById(`btn-child-events-${tabName}`);
+    if (activeBtn) activeBtn.classList.add("active");
 
-    document.getElementById("child-ev-list-view").style.display = "none";
+    const eventView = document.getElementById("child-ev-list-view");
+    if (eventView) eventView.style.display = "none";
     document.getElementById("child-tf-list-view").style.display = "none";
     const fameView = document.getElementById("child-fame-list-view");
     if (fameView) fameView.style.display = "none";
 
     if (tabName === "academy") {
-      document.getElementById("child-ev-list-view").style.display = "block";
+      if (eventView) eventView.style.display = "block";
+      renderChildEvents();
+    } else if (tabName === "fame") {
+      if (fameView) fameView.style.display = "block";
+      if (eventView) eventView.style.display = "block";
+      if (window.renderChildFame) window.renderChildFame();
       renderChildEvents();
     } else if (tabName === "finder") {
       document.getElementById("child-tf-list-view").style.display = "block";
@@ -6498,7 +6521,7 @@
           } else if (activeCachedPage === "page-homework" && window.renderHomeworkPage) {
             window.renderHomeworkPage();
           }
-        } else if (role === "parent") {
+        } else if (role === "parent" || role === "student") {
           renderChild();
           renderEvents();
         }
@@ -6829,7 +6852,7 @@
             else if (active === "page-coach-events" && window.renderCoachEvents) window.renderCoachEvents();
             else if (active === "page-coach-attendance" && window.renderCoachAttendance) window.renderCoachAttendance();
             else if (active === "page-coach-homework" && window.renderCoachHomework) window.renderCoachHomework();
-          } else if (role === "parent") {
+          } else if (role === "parent" || role === "student") {
            renderChild();
             renderEvents();
           }
@@ -7282,7 +7305,7 @@
     const coachAccessiblePages = ["coach-dash", "coach-students", "coach-batches", "coach-schedule", "coach-events", "coach-attendance", "coach-homework", "coach-studypgn", "studypgn", "productivity"];
     if (adminPages.includes(p) && role !== "admin" && role !== "master" && !coachAccessiblePages.includes(p)) {
       toast("Access denied", "error");
-      setPage(role === "parent" ? "child" : "coach-dash");
+      setPage(role === "parent" || role === "student" ? "child" : "coach-dash");
       return;
     }
 
@@ -7642,7 +7665,7 @@ setTimeout(function () {
       $("report-month-select").value =
         `${window.reportYear}-${String(window.reportMonth + 1).padStart(2, "0")}`;
 
-    if (userRole === "parent") {
+    if (userRole === "parent" || userRole === "student") {
       setPage("child");
       const hwPage = $("page-homework");
       if (hwPage) hwPage.style.setProperty("display", "none", "important");
@@ -7657,7 +7680,7 @@ setTimeout(function () {
     loadAllData(true).then(() => {
       setupNotificationCounts();
       startNotificationPolling();
-      if (userRole === "parent" && studentId) {
+      if ((userRole === "parent" || userRole === "student") && studentId) {
         setCurrentStudent(
           allStudents.find((s) => String(s.id) === String(studentId)),
         );
@@ -13959,6 +13982,30 @@ Best regards,
     const loadingEl = $("child-loading");
     const contentEl = $("child-content");
     if (!currentStudent) {
+      currentStudent = window.currentStudent;
+    }
+    if (!currentStudent) {
+      try {
+        const auth = JSON.parse(
+          sessionStorage.getItem("chesskidoo_auth") ||
+          sessionStorage.getItem("twoknights_auth") ||
+          localStorage.getItem("chesskidoo_auth") ||
+          localStorage.getItem("twoknights_auth") ||
+          "{}",
+        );
+        const sid = auth.studentId || auth.student_id;
+        if (sid) {
+          const list = allStudents || window.allStudents || [];
+          const found = list.find((st) => String(st.id) === String(sid));
+          if (found) {
+            currentStudent = found;
+            window.currentStudent = found;
+            setCurrentStudent(found);
+          }
+        }
+      } catch (_) {}
+    }
+    if (!currentStudent) {
       if (loadingEl) loadingEl.style.display = "flex";
       return;
     }
@@ -14127,79 +14174,75 @@ Best regards,
 
     if (loadingEl) loadingEl.style.display = "none";
     if (contentEl) contentEl.style.display = "block";
-    // Honor a requested sub-tab from the sidebar nav, otherwise default to overview.
-    const intent = window.childTabIntent || "overview";
-    window.childTabIntent = null;
-    setChildTab(intent);
+    if (window.childTabIntent) {
+      const intent = window.childTabIntent;
+      window.childTabIntent = null;
+      setChildTab(intent);
+    } else {
+      const activeTab = document.querySelector("#page-child .child-tab-content.active");
+      if (!activeTab) {
+        setChildTab("overview");
+      }
+    }
   }
 
+// Navigate to the parent portal and open a specific sub-tab from the sidebar.
   // Navigate to the parent portal and open a specific sub-tab from the sidebar.
   window.goChildTab = function (tab) {
-    const childPage = document.getElementById("page-child");
-    const alreadyOnChild = childPage && childPage.classList.contains("active");
-    if (window.innerWidth <= 1024) {
-      const sb = document.getElementById("sidebar");
-      if (sb) sb.classList.remove("open");
-      const ov = document.getElementById("sidebar-overlay");
-      if (ov) ov.classList.remove("active");
-    }
-    if (alreadyOnChild && currentStudent) {
-      setChildTab(tab);
-    } else {
-      window.childTabIntent = tab;
-      setPage("child");
-    }
+    try {
+      const childPage = document.getElementById("page-child");
+      const alreadyOnChild = childPage && childPage.classList.contains("active");
+      if (window.innerWidth <= 1024) {
+        const sb = document.getElementById("sidebar");
+        if (sb) sb.classList.remove("open");
+        const ov = document.getElementById("sidebar-overlay");
+        if (ov) ov.classList.remove("active");
+      }
+      const student = window.currentStudent || currentStudent;
+      if (alreadyOnChild && student) {
+        try {
+          const tabBtn = document.querySelector(`#page-child .tabs-nav button[onclick*="setChildTab('${tab}')"]`);
+          setChildTab(tab, tabBtn);
+        } catch (err) {
+          console.error("[goChildTab] setChildTab failed:", err);
+        }
+      } else {
+        window.childTabIntent = tab;
+        setPage("child");
+      }
 
-    document.querySelectorAll(".nav-item").forEach((ni) => ni.classList.remove("active"));
-    const targetId = tab === "overview" ? "nav-child" : "nav-parent-" + tab;
-    const setActive = () => {
+      // Safety net: ensure the target tab pane is active and visible
+      const targetPane = document.getElementById("child-tab-" + tab);
+      if (targetPane) {
+        targetPane.classList.add("active");
+        targetPane.style.removeProperty("display");
+      }
+      // The left sidebar is the only primary navigation for parent/student mode.
+      // Keep the in-page tab bar hidden there while preserving admin preview tabs.
+
+      // Always update nav highlight
+      document.querySelectorAll(".nav-item").forEach((ni) => ni.classList.remove("active"));
+      const targetId = tab === "overview" ? "nav-child" : "nav-parent-" + tab;
       const targetNav = document.getElementById(targetId);
       if (targetNav) targetNav.classList.add("active");
-    };
-    const clearActive = () => {
+
+      if ($("p-title")) {
+        const titles = { overview: "My Child", schedule: "Class Schedule", attendance: "Attendance and Homework", studypgn: "Study PGN & Tactics", homework: "Homework", growth: "Skill & ELO Growth", learning: "Chess Study Hub", events: "Events", reports: "Academic Reports", billing: "Billing", productivity: "Daily Tasks", chess: "Chess Performance" };
+        $("p-title").textContent = titles[tab] || "My Child";
+      }
+    } catch (err) {
+      console.error("[goChildTab] Critical error:", err);
+      // Fallback: ensure target pane is visible
+      const targetPane = document.getElementById("child-tab-" + tab);
+      if (targetPane) {
+        targetPane.classList.add("active");
+        targetPane.style.removeProperty("display");
+      }
+      // Ensure nav highlight
       document.querySelectorAll(".nav-item").forEach((ni) => ni.classList.remove("active"));
-      setActive();
-    };
-    setActive();
-    requestAnimationFrame(() => requestAnimationFrame(setActive));
-    setTimeout(setActive, 0);
-    setTimeout(setActive, 150);
-    setTimeout(clearActive, 300);
-    setTimeout(clearActive, 450);
-    if (tab === "studypgn") {
-      setTimeout(clearActive, 600);
-      setTimeout(clearActive, 800);
-      setTimeout(clearActive, 1000);
-      setTimeout(clearActive, 1500);
-      setTimeout(clearActive, 2000);
-      setTimeout(clearActive, 3000);
-      setTimeout(clearActive, 5000);
-    }
-
-    const tabBar = document.getElementById("child-portal-tabs");
-    if (tabBar) {
-      if (tab === "overview" || tab === "schedule") {
-        tabBar.classList.add("force-show");
-      } else {
-        tabBar.classList.remove("force-show");
-      }
-    }
-
-    if (tab === "studypgn") {
-      const studyPgnNav = document.getElementById("nav-parent-studypgn");
-      if (studyPgnNav) {
-        const observer = new MutationObserver(() => {
-          if (!studyPgnNav.classList.contains("active")) {
-            studyPgnNav.classList.add("active");
-          }
-        });
-        observer.observe(studyPgnNav, { attributes: true, attributeFilter: ["class"] });
-        setTimeout(() => observer.disconnect(), 3000);
-      }
-    }
-    if ($("p-title")) {
-      const titles = { overview: "My Child", schedule: "Class Schedule", attendance: "Attendance and Homework", homework: "Homework", growth: "Skill & ELO Growth", learning: "Chess Study Hub", events: "Events", reports: "Academy Reports", billing: "Billing", productivity: "Daily Tasks", chess: "Chess Performance" };
-      $("p-title").textContent = titles[tab] || "My Child";
+      const targetId = tab === "overview" ? "nav-child" : "nav-parent-" + tab;
+      const targetNav = document.getElementById(targetId);
+      if (targetNav) targetNav.classList.add("active");
     }
   };
 

@@ -1424,13 +1424,14 @@
              </div>
           
           <!-- Contextual AI Insight block for Parent Dashboard -->
-          <div id="child-overview-ai-insight" class="ai-insight-box" style="margin-top:22px; display:none;">
-            <div class="ai-insight-title">🤖 TOM AI Academy Advisor</div>
-            <div class="ai-insight-text" id="child-overview-ai-insight-text"></div>
-          </div>
-        </div>
+           <div id="child-overview-ai-insight" class="ai-insight-box" style="margin-top:22px; display:none;">
+             <div class="ai-insight-title">🤖 TOM AI Academy Advisor</div>
+             <div class="ai-insight-text" id="child-overview-ai-insight-text"></div>
+           </div>
+         </div>
+       </div>
 
-        <!-- REPORTS TAB -->
+         <!-- REPORTS TAB -->
         <div id="child-tab-reports" class="child-tab-content">
           <div class="card" style="padding:24px; margin-bottom:20px;">
             <h3 style="margin-bottom:16px; color:var(--gold); border-bottom:1px solid var(--border); padding-bottom:10px;">📋 Generate Academy Reports</h3>
@@ -1646,7 +1647,7 @@
           </div>
         </div>
 
-        <div id="child-tab-homework" class="child-tab-content" style="display:none;"></div>
+         <div id="child-tab-homework" class="child-tab-content"></div>
 
         <div id="child-tab-growth" class="child-tab-content">
           <div class="dash-grid" style="margin-bottom:22px">
@@ -1725,7 +1726,6 @@
             <div class="tabs-nav" style="margin:0; background:rgba(0,0,0,0.3); padding:4px; border-radius:10px; border:1px solid var(--border); display:flex; gap:4px; flex-wrap:wrap;">
                <button class="tab-link active" id="btn-studypgn-lab" onclick="window.setStudyPgnSubTab('lab', this)" style="padding:6px 14px; font-size:12px; border-radius:6px;">♟️ Master PGN Lab</button>
                <button class="tab-link" id="btn-studypgn-tactics" onclick="window.setStudyPgnSubTab('tactics', this)" style="padding:6px 14px; font-size:12px; border-radius:6px;">🔥 Puzzles</button>
-               <button class="tab-link" id="btn-studypgn-topics" onclick="window.setStudyPgnSubTab('topics', this)" style="padding:6px 14px; font-size:12px; border-radius:6px;">📋 Assigned Topics</button>
                <button class="tab-link" id="btn-studypgn-vault" onclick="window.setStudyPgnSubTab('vault', this)" style="padding:6px 14px; font-size:12px; border-radius:6px;">📖 Grandmaster Vault</button>
                <button class="tab-link" id="btn-studypgn-custom" onclick="window.setStudyPgnSubTab('custom', this)" style="padding:6px 14px; font-size:12px; border-radius:6px;">🛠️ Custom Board Setup</button>
             </div>
@@ -1878,12 +1878,7 @@
             </div>
           </div>
 
-          <!-- SUB-VIEW 4: ASSIGNED TOPICS -->
-          <div id="studypgn-subview-topics" class="studypgn-subview" style="display:none;">
-            <div id="assigned-topics-grid" style="display:grid; gap:14px;"></div>
-          </div>
-
-           <!-- SUB-VIEW 5: CUSTOM BOARD SETUP & FEN BUILDER -->
+            <!-- SUB-VIEW 4: CUSTOM BOARD SETUP & FEN BUILDER -->
            <div id="studypgn-subview-custom" class="studypgn-subview" style="display:none;">
              <div style="display:grid; grid-template-columns: minmax(320px, 480px) 1fr; gap:24px; align-items:start;" class="studypgn-split-grid">
                <!-- Left: Interactive Custom Board -->
@@ -1957,27 +1952,38 @@
          </div>
 
         <div id="child-tab-events" class="child-tab-content">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; flex-wrap: wrap; gap:12px; border-bottom:1px solid var(--border); padding-bottom:12px;">
-            <h3 style="color:var(--gold); margin:0; font-family:var(--font-head); font-size:18px;">Events & Tournaments</h3>
-            <div class="tabs-nav" style="margin:0; background:rgba(0,0,0,0.2); padding:3px; border-radius:8px; border:1px solid var(--border); display:flex; gap:2px;">
-              <button class="tab-link active" id="btn-child-events-academy" onclick="setChildEventsSubTab('academy')" style="padding:4px 10px; font-size:11px; border-radius:6px; border:none; cursor:pointer;">Academy Events</button>
-              <button class="tab-link" id="btn-child-events-finder" onclick="setChildEventsSubTab('finder')" style="padding:4px 10px; font-size:11px; border-radius:6px; border:none; cursor:pointer;">🏆 Tournament Finder</button>
-              <button class="tab-link" id="btn-child-events-fame" onclick="setChildEventsSubTab('fame')" style="padding:4px 10px; font-size:11px; border-radius:6px; border:none; cursor:pointer;">🏆 Wall of Fame</button>
+          <div class="child-events-toolbar">
+            <div>
+              <h3 class="child-events-title">Wall of Fame</h3>
+              <p class="child-events-subtitle">Celebrating ChessKidoo champions, standout ratings, and academy victories.</p>
             </div>
+            <button class="btn btn-gold child-events-finder-btn" id="btn-child-events-finder" onclick="setChildEventsSubTab('finder')">🏆 Tournament Finder</button>
           </div>
 
-          <!-- Academy Events Sub-View -->
-          <div id="child-ev-list-view" class="child-events-sub-view">
-            <div id="child-events-grid" class="ev-grid"></div>
-          </div>
+          <!-- Wall of Fame is the default Events view. -->
+          <section class="child-events-section child-events-fame-section" aria-labelledby="child-events-fame-heading">
+            <div class="child-events-section-heading">
+              <h4 id="child-events-fame-heading">Wall of Fame</h4>
+              <span>Top-rated ChessKidoo players</span>
+            </div>
+            <div id="child-fame-list-view" class="child-events-sub-view" style="display:block;">
+              <div id="child-fame-grid"></div>
+            </div>
+          </section>
+
+          <!-- Upcoming event details appear below the Wall of Fame. -->
+          <section class="child-events-section child-events-upcoming-section" aria-labelledby="child-events-upcoming-heading">
+            <div class="child-events-section-heading">
+              <h4 id="child-events-upcoming-heading">Upcoming Events</h4>
+              <span>Academy tournaments and activities</span>
+            </div>
+            <div id="child-ev-list-view" class="child-events-sub-view" style="display:block;">
+              <div id="child-events-grid" class="ev-grid"></div>
+            </div>
+          </section>
 
           <!-- Tournament Finder Sub-View -->
           <div id="child-tf-list-view" class="child-events-sub-view" style="display:none;"></div>
-
-          <!-- Wall of Fame Sub-View -->
-          <div id="child-fame-list-view" class="child-events-sub-view" style="display:none;">
-            <div id="child-fame-grid"></div>
-          </div>
         </div>
 
 

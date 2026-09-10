@@ -53,6 +53,23 @@
     return '#';
   }
 
+  function linkifyText(text) {
+    if (!text) return '';
+    const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g;
+    let result = '';
+    let lastIndex = 0;
+    let match;
+    while ((match = urlRegex.exec(text)) !== null) {
+      result += escapeValue(text.slice(lastIndex, match.index));
+      const url = match[0];
+      const href = url.startsWith('www.') ? 'https://' + url : url;
+      result += `<a href="${safeUrl(href)}" target="_blank" rel="noopener" style="color:var(--gold); text-decoration:underline;">${escapeValue(url)}</a>`;
+      lastIndex = urlRegex.lastIndex;
+    }
+    result += escapeValue(text.slice(lastIndex));
+    return result;
+  }
+
   function monthKey(date) {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
   }
@@ -1617,7 +1634,7 @@ let homeworkSubmissionCache = [];
           <button class="btn btn-outline-danger btn-sm" onclick="deleteHomeworkAssignment('${assignment.id}')">🗑️ Delete</button>
         </div>` : ''}
       </div>
-      ${assignment.description ? `<div style="margin-top:12px; color:var(--ivory-dim); font-size:13px; line-height:1.65; white-space:pre-wrap;">${escapeValue(assignment.description)}</div>` : '<div style="margin-top:12px;color:var(--ivory-dim);font-size:13px;">No detailed instructions provided.</div>'}
+      ${assignment.description ? `<div style="margin-top:12px; color:var(--ivory-dim); font-size:13px; line-height:1.65; white-space:pre-wrap;">${linkifyText(assignment.description)}</div>` : '<div style="margin-top:12px;color:var(--ivory-dim);font-size:13px;">No detailed instructions provided.</div>'}
       ${(() => {
         let files = [];
         const parseList = (val) => {
