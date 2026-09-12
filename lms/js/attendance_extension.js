@@ -43,7 +43,7 @@ window.renderMonthlyMatrix = function() {
              
     for (let i = 1; i <= daysInMonth; i++) {
       const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-      const record = allAttendance.find(a => String(a.student_id) === String(s.id) && a.date === dateStr);
+      const record = allAttendance.find(a => String(a.student_id || a.studentId) === String(s.id) && a.date === dateStr);
       const status = record ? record.status : '';
       
       let cellContent = '';
@@ -606,16 +606,24 @@ window.renderAttendanceCalendar = function(studentOrId, containerEl, year, month
   // Get student attendance records
   const attList = window.allAttendance || [];
   const sId = String(s.id);
-  const myAttendance = attList.filter(a => String(a.student_id) === sId);
+  const myAttendance = attList.filter(a => String(a.student_id || a.studentId) === sId);
 
   // Get homework assignments for this student
   const hwList = window.allHomework || [];
   const myHomework = hwList.filter(h => {
     if (!h) return false;
-    if (h.student_id && String(h.student_id) === sId) return true;
-    if (h.batch_id && s.batch_id && String(h.batch_id) === String(s.batch_id)) return true;
-    if (h.target_type === 'all') return true;
-    return false;
+    if (typeof window.assignmentAppliesToStudent === 'function') {
+      if (!window.assignmentAppliesToStudent(h, sId, window.allStudents || [])) return false;
+    } else {
+      if (h.student_id && String(h.student_id) === sId) return true;
+      if (h.batch_id && s.batch_id && String(h.batch_id) === String(s.batch_id)) return true;
+      if (h.target_type === 'all') return true;
+      return false;
+    }
+    if (typeof window.isStudentEligibleForHomework === 'function') {
+      return window.isStudentEligibleForHomework(h, sId);
+    }
+    return true;
   });
 
   const firstDay = new Date(targetYear, targetMonth, 1).getDay(); // 0 is Sun
@@ -657,6 +665,10 @@ window.renderAttendanceCalendar = function(studentOrId, containerEl, year, month
       cellClass = 'cal-day-late';
       iconHtml = `<div style="width:28px;height:28px;border-radius:6px;background:#f1c40f;color:#222;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;margin:4px auto;">⏱</div>`;
       badgeStyle = 'background:rgba(241, 196, 15, 0.15); border: 1.5px solid #f1c40f;';
+    } else if (status === 'no class') {
+      cellClass = 'cal-day-neutral';
+      iconHtml = `<div style="width:28px;height:28px;border-radius:6px;background:#64748b;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;margin:4px auto;">—</div>`;
+      badgeStyle = 'background:rgba(100, 116, 139, 0.15); border: 1.5px solid #64748b;';
     } else {
       badgeStyle = 'background:var(--bg2); border: 1px solid var(--border);';
     }
@@ -693,6 +705,7 @@ window.renderAttendanceCalendar = function(studentOrId, containerEl, year, month
           <span style="display:inline-flex;align-items:center;gap:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#2ecc71;"></span> Present</span>
           <span style="display:inline-flex;align-items:center;gap:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#ff7675;"></span> Absent</span>
           <span style="display:inline-flex;align-items:center;gap:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#f1c40f;"></span> Late</span>
+          <span style="display:inline-flex;align-items:center;gap:5px;"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#64748b;"></span> No Class</span>
           <button class="btn btn-gold btn-sm" onclick="window.changeAttendanceCalendarMonth('${s.id}', 0, true)" style="margin-left:8px;">Today</button>
         </div>
       </div>
@@ -734,14 +747,28 @@ window.openAttendanceDayDetail = function(studentId, dateStr) {
   const s = (window.allStudents || []).find(st => String(st.id) === String(studentId));
   if (!s) return;
 
-  const att = (window.allAttendance || []).find(a => String(a.student_id) === String(studentId) && a.date === dateStr);
+  const att = (window.allAttendance || []).find(a => String(a.student_id || a.studentId) === String(studentId) && a.date === dateStr);
   const hw = (window.allHomework || []).filter(h => {
     const hDate = (h.due_date || h.created_at || '').slice(0, 10);
-    return hDate === dateStr;
+    if (hDate !== dateStr) return false;
+    if (typeof window.assignmentAppliesToStudent === 'function') {
+      if (!window.assignmentAppliesToStudent(h, String(studentId), window.allStudents || [])) return false;
+    } else {
+      if (h.student_id && String(h.student_id) === String(studentId)) return true;
+      if (h.batch_id && s.batch_id && String(h.batch_id) === String(s.batch_id)) return true;
+      if (h.target_type === 'all') return true;
+      return false;
+    }
+    if (typeof window.isStudentEligibleForHomework === 'function') {
+      return window.isStudentEligibleForHomework(h, String(studentId));
+    }
+    return true;
   });
 
   const parsed = att ? window.parseAttendanceNotes(att.notes || att.note || '') : null;
   const status = att ? att.status : 'No record';
+
+  const statusColor = status === 'present' ? '#2ecc71' : status === 'absent' ? '#ff7675' : status === 'no class' ? '#64748b' : 'var(--gold)';
 
   const modalHtml = `
     <div class="modal active" id="att-day-detail-modal" style="z-index:99999;display:flex;align-items:center;justify-content:center;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);">
@@ -752,7 +779,7 @@ window.openAttendanceDayDetail = function(studentId, dateStr) {
 
         <div style="margin-bottom:14px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);">
           <div style="font-size:12px;color:var(--ivory-dim);margin-bottom:4px;">Attendance Status</div>
-          <div style="font-size:15px;font-weight:700;text-transform:capitalize;color:${status === 'present' ? '#2ecc71' : status === 'absent' ? '#ff7675' : 'var(--gold)'};">${status}</div>
+          <div style="font-size:15px;font-weight:700;text-transform:capitalize;color:${statusColor};">${status}</div>
         </div>
 
         <div style="margin-bottom:14px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);">
@@ -804,7 +831,7 @@ window.renderSessionSheet = function(studentId, containerEl, filterMonth) {
   if (!s && window.currentStudent) s = window.currentStudent;
 
   const attList = window.allAttendance || [];
-  let myAtt = s ? attList.filter(a => String(a.student_id) === String(s.id)) : attList;
+    let myAtt = s ? attList.filter(a => String(a.student_id || a.studentId) === String(s.id)) : attList;
 
    // Ensure myAtt is an array
    if (!myAtt || myAtt.length === 0) {
@@ -832,14 +859,22 @@ window.renderSessionSheet = function(studentId, containerEl, filterMonth) {
 
    // Get matching homework for this student
    const hwList = window.allHomework || [];
-   const myHomework = hwList.filter(h => {
-     if (!s) return true;
-     const sId = String(s.id);
-     if (h.student_id && String(h.student_id) === sId) return true;
-     if (h.batch_id && s.batch_id && String(h.batch_id) === String(s.batch_id)) return true;
-     if (h.target_type === 'all') return true;
-     return false;
-   });
+    const myHomework = hwList.filter(h => {
+      if (!s) return true;
+      const sId = String(s.id);
+      if (typeof window.assignmentAppliesToStudent === 'function') {
+        if (!window.assignmentAppliesToStudent(h, sId, window.allStudents || [])) return false;
+      } else {
+        if (h.student_id && String(h.student_id) === sId) return true;
+        if (h.batch_id && s.batch_id && String(h.batch_id) === String(s.batch_id)) return true;
+        if (h.target_type === 'all') return true;
+        return false;
+      }
+      if (typeof window.isStudentEligibleForHomework === 'function') {
+        return window.isStudentEligibleForHomework(h, sId);
+      }
+      return true;
+    });
 
    let rowsHtml = '';
    const monthKeys = Object.keys(monthGroups);
@@ -863,38 +898,39 @@ window.renderSessionSheet = function(studentId, containerEl, filterMonth) {
          </tr>
        `;
 
-       monthGroups[mKey].forEach((record, idx) => {
-         const d = new Date(record.date);
-         const dateFormatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-         const dayFormatted = d.toLocaleDateString('en-US', { weekday: 'long' });
-         const parsed = window.parseAttendanceNotes(record.notes || record.note || '');
-         const status = (record.status || '').toLowerCase();
-         const isPresent = status === 'present' || status === 'late';
-         const presentCount = isPresent ? '1/1' : '0/1';
+        monthGroups[mKey].forEach((record, idx) => {
+          const d = new Date(record.date);
+          const dateFormatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+          const dayFormatted = d.toLocaleDateString('en-US', { weekday: 'long' });
+          const parsed = window.parseAttendanceNotes(record.notes || record.note || '');
+          const status = (record.status || '').toLowerCase();
+          const isPresent = status === 'present' || status === 'late';
+          const isNoClass = status === 'no class';
+          const presentCount = isPresent ? '1/1' : isNoClass ? '—' : '0/1';
 
-         // Check if there is explicit homework on this date
-         const dStr = record.date ? record.date.slice(0, 10) : '';
-         const hwOnDate = myHomework.filter(h => (h.due_date || h.created_at || '').slice(0, 10) === dStr);
-       const hwNotesDisplay = parsed.hw || (hwOnDate.length > 0 ? hwOnDate.map(h => h.title).join('; ') : '—');
-       const cwNotesDisplay = parsed.cw || parsed.topic || '—';
-       const generalNotesDisplay = parsed.general || '—';
+          // Check if there is explicit homework on this date
+          const dStr = record.date ? record.date.slice(0, 10) : '';
+          const hwOnDate = myHomework.filter(h => (h.due_date || h.created_at || '').slice(0, 10) === dStr);
+        const hwNotesDisplay = parsed.hw || (hwOnDate.length > 0 ? hwOnDate.map(h => h.title).join('; ') : '—');
+        const cwNotesDisplay = parsed.cw || parsed.topic || '—';
+        const generalNotesDisplay = parsed.general || '—';
 
-         const rowBg = idx % 2 === 0 ? 'background:rgba(255,255,255,0.02);' : 'background:rgba(255,255,255,0.05);';
+          const rowBg = idx % 2 === 0 ? 'background:rgba(255,255,255,0.02);' : 'background:rgba(255,255,255,0.05);';
 
-         rowsHtml += `
-           <tr style="${rowBg} border-bottom:1px solid var(--border); font-size:12px; color:var(--ivory);">
-             <td style="padding:9px 10px; border:1px solid var(--border); text-align:center; font-family:monospace; font-weight:600;">${dateFormatted}</td>
-             <td style="padding:9px 10px; border:1px solid var(--border); text-align:center;">${dayFormatted}</td>
-             <td style="padding:9px 10px; border:1px solid var(--border); font-weight:600; color:var(--gold);">${window.escapeHtml ? window.escapeHtml(cwNotesDisplay) : cwNotesDisplay}</td>
-             <td style="padding:9px 10px; border:1px solid var(--border); color:var(--emerald); font-weight:500;">${window.escapeHtml ? window.escapeHtml(hwNotesDisplay) : hwNotesDisplay}</td>
-             <td style="padding:9px 10px; border:1px solid var(--border); color:var(--ivory-dim); font-size:11px;">${window.escapeHtml ? window.escapeHtml(generalNotesDisplay) : generalNotesDisplay}</td>
-             <td style="padding:9px 10px; border:1px solid var(--border); text-align:center;">${window.escapeHtml ? window.escapeHtml(parsed.subject) : parsed.subject}</td>
-             <td style="padding:9px 10px; border:1px solid var(--border); text-align:center; font-weight:500;">${window.escapeHtml ? window.escapeHtml(studentNameStr) : studentNameStr}</td>
-             <td style="padding:9px 10px; border:1px solid var(--border); text-align:center; font-weight:700; color:${isPresent ? '#2ecc71' : '#ff7675'};">${presentCount} (${status})</td>
-             <td style="padding:9px 10px; border:1px solid var(--border); text-align:center;">${window.escapeHtml ? window.escapeHtml(parsed.duration) : parsed.duration}</td>
-           </tr>
-         `;
-       });
+          rowsHtml += `
+            <tr style="${rowBg} border-bottom:1px solid var(--border); font-size:12px; color:var(--ivory);">
+              <td style="padding:9px 10px; border:1px solid var(--border); text-align:center; font-family:monospace; font-weight:600;">${dateFormatted}</td>
+              <td style="padding:9px 10px; border:1px solid var(--border); text-align:center;">${dayFormatted}</td>
+              <td style="padding:9px 10px; border:1px solid var(--border); font-weight:600; color:var(--gold);">${window.escapeHtml ? window.escapeHtml(cwNotesDisplay) : cwNotesDisplay}</td>
+              <td style="padding:9px 10px; border:1px solid var(--border); color:var(--emerald); font-weight:500;">${window.escapeHtml ? window.escapeHtml(hwNotesDisplay) : hwNotesDisplay}</td>
+              <td style="padding:9px 10px; border:1px solid var(--border); color:var(--ivory-dim); font-size:11px;">${window.escapeHtml ? window.escapeHtml(generalNotesDisplay) : generalNotesDisplay}</td>
+              <td style="padding:9px 10px; border:1px solid var(--border); text-align:center;">${window.escapeHtml ? window.escapeHtml(parsed.subject) : parsed.subject}</td>
+              <td style="padding:9px 10px; border:1px solid var(--border); text-align:center; font-weight:500;">${window.escapeHtml ? window.escapeHtml(studentNameStr) : studentNameStr}</td>
+              <td style="padding:9px 10px; border:1px solid var(--border); text-align:center; font-weight:700; color:${isNoClass ? '#64748b' : isPresent ? '#2ecc71' : '#ff7675'};">${isNoClass ? 'No Class' : presentCount + ' (' + status + ')'}</td>
+              <td style="padding:9px 10px; border:1px solid var(--border); text-align:center;">${window.escapeHtml ? window.escapeHtml(parsed.duration) : parsed.duration}</td>
+            </tr>
+          `;
+        });
      });
    }
 
@@ -969,8 +1005,15 @@ window.renderChildAttendanceAndHomework = function() {
   if (!s) return;
 
   const attList = window.allAttendance || [];
-  const myAtt = attList
-    .filter((a) => String(a.student_id) === String(s.id))
+  try {
+    const localAtt = JSON.parse(localStorage.getItem('ck_attendance_records') || '[]');
+    if (localAtt.length) {
+      window.allAttendance = localAtt;
+    }
+  } catch (_) {}
+  const finalAttList = window.allAttendance || [];
+  const myAtt = finalAttList
+    .filter((a) => String(a.student_id || a.studentId) === String(s.id))
     .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
 
   const present = myAtt.filter((a) => ["present", "late"].includes((a.status || "").toLowerCase())).length;

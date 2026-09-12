@@ -330,7 +330,7 @@ window.generateReportPDF = async function() {
     }).filter(x => x !== null && x.gain > 0).sort((a, b) => b.gain - a.gain).slice(0, 3);
 
     const attendanceStats = targetStudents.map(s => {
-        const studAtt = monthAtt.filter(a => String(a.student_id) === String(s.id));
+        const studAtt = monthAtt.filter(a => String(a.student_id || a.studentId) === String(s.id));
         const present = studAtt.filter(a => a.status === 'present').length;
         const total = studAtt.length;
         const rate = total > 0 ? ((present / total) * 100).toFixed(0) : 0;

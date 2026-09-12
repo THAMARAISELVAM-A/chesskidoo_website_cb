@@ -11,6 +11,7 @@ window._lastSetPageTarget = null;
 
 function resolvePageFromHash(hash) {
   let raw = (hash || '').replace(/^#/, '');
+  if (raw === 'coach-homework') raw = 'coach-attendance';
   if (!raw) return null;
   // Accept both short names (#stud) and full DOM IDs (#page-stud).
   // Always return the short name that setPage() expects.
