@@ -396,7 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(ov);
   };
 
-  window.renderCoachSchedule = function (filterDay = 'all') {
+  window.renderCoachSchedule = function (filterDayOrView = 'all') {
     const container = document.getElementById('coach-schedule-content');
     if (!container) return;
 
@@ -409,8 +409,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const myStudents = (window.allStudents || []).filter(s => window.ckSameCoach ? window.ckSameCoach(s.coach_id, coachId) : String(s.coach_id) === String(coachId));
     const myBatches = (window.allBatches || []).filter(b => (window.ckSameCoach ? window.ckSameCoach(b.coach_id, coachId) : String(b.coach_id) === String(coachId)) && b.status !== 'archived');
 
+    const view = (filterDayOrView === 'weekly' || filterDayOrView === 'monthly') ? filterDayOrView : 'weekly';
+    const filterDay = view === 'weekly' ? (filterDayOrView === 'weekly' ? 'all' : filterDayOrView) : 'all';
+    console.log("[CoachSchedule] renderCoachSchedule view=", view, "filterDay=", filterDay, "coachId=", coachId, "myBatches=", myBatches.length, "myStudents=", myStudents.length);
+
     const DAYS_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const SHORT_DAYS = { 'mon': 'Monday', 'monday': 'Monday', 'tue': 'Tuesday', 'tuesday': 'Tuesday', 'wed': 'Wednesday', 'wednesday': 'Wednesday', 'thu': 'Thursday', 'thursday': 'Thursday', 'fri': 'Friday', 'friday': 'Friday', 'sat': 'Saturday', 'saturday': 'Saturday', 'sun': 'Sunday', 'sunday': 'Sunday' };
+
+    if (view === 'monthly') {
+      renderCoachMonthlySchedule(container, coachId, myBatches, myStudents);
+      return;
+    }
 
     // Aggregate sessions by day
     const scheduleByDay = {
@@ -528,6 +537,17 @@ document.addEventListener('DOMContentLoaded', () => {
               <a href="${sess.meetLink}" target="_blank" class="btn btn-gold btn-sm" style="flex:1; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-size:12px;">
                 📹 Join Class
               </a>
+              ${(() => {
+                const calLink = window.generateGoogleCalendarLink ? window.generateGoogleCalendarLink({
+                  title: sess.title,
+                  days: sess.type === 'batch' ? (window.allBatches || []).find(b => String(b.id) === String(sess.batchId))?.days || '' : '',
+                  timeStr: sess.time,
+                  coachName: (window.allCoaches || []).find(c => String(c.id) === String(coachId)) ? (window.getCoachName ? window.getCoachName((window.allCoaches || []).find(c => String(c.id) === String(coachId))) : 'Coach') : 'Coach',
+                  meetLink: sess.meetLink,
+                  description: 'Chess class - ' + sess.title
+                }) : '';
+                return calLink ? `<a href="${calLink}" target="_blank" class="btn btn-outline btn-sm" style="font-size:12px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:4px;">📅 Google Calendar</a>` : '';
+              })()}
               ${sess.type === 'batch' ? `
                 <button class="btn btn-outline btn-sm" onclick="window.openCoachCreateBatchModal('${sess.batchId}')" style="font-size:12px;" title="Edit batch schedule">
                   ✏️
@@ -577,6 +597,94 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   };
 
+  function renderCoachMonthlySchedule(container, coachId, myBatches, myStudents) {
+    const DAYS_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const monthInput = document.getElementById('coach-schedule-month');
+    let year, month;
+    if (monthInput && monthInput.value) {
+      const [y, m] = monthInput.value.split('-').map(Number);
+      year = y;
+      month = m - 1;
+    } else {
+      const now = new Date();
+      year = now.getFullYear();
+      month = now.getMonth();
+      if (monthInput) monthInput.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    }
+
+    const sessions = [];
+    myBatches.forEach(b => {
+      const daysStr = (b.days || b.schedule || '').toLowerCase();
+      const timeStr = b.time_slot || (b.schedule && b.schedule.includes('|') ? b.schedule.split('|')[1].trim() : 'TBD');
+      const bStudentIds = Array.isArray(b.student_ids) ? b.student_ids.map(String) : (window.parseStudentIds ? window.parseStudentIds(b.student_ids) : []);
+      const enrolledStudents = myStudents.filter(st => bStudentIds.includes(String(st.id)) || (st.batch_id && String(st.batch_id) === String(b.id)) || (st.batch && String(st.batch) === String(b.name)));
+      const studentNames = enrolledStudents.map(st => window.getStudentName ? window.getStudentName(st) : (st.name || 'Student')).filter(Boolean).sort((a, b) => (a || '').localeCompare(b || ''));
+
+      const targetDayIndices = [];
+      DAYS_ORDER.forEach((dayName, idx) => {
+        const dLow = dayName.toLowerCase();
+        if (daysStr.includes(dLow) || daysStr.includes(dLow.slice(0, 3))) {
+          targetDayIndices.push(idx);
+        }
+      });
+
+      const d = new Date(year, month, 1);
+      while (d.getMonth() === month) {
+        if (targetDayIndices.includes(d.getDay())) {
+          sessions.push({
+            dayName: d.toLocaleDateString('en-US', { weekday: 'long' }),
+            dateStr: d.toISOString().split('T')[0],
+            displayDate: d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
+            timeStr: timeStr,
+            studentNames: studentNames.join(', '),
+            batchName: b.name,
+            meetLink: b.meet_link || '',
+            title: b.name + ' - Chess Class'
+          });
+        }
+        d.setDate(d.getDate() + 1);
+      }
+    });
+
+    sessions.sort((a, b) => a.dateStr.localeCompare(b.dateStr));
+
+    const rows = sessions.map((s, i) => {
+      return `<tr>
+        <td style="text-align:center; font-weight:600; width:40px;">${i + 1}</td>
+        <td style="font-size:12px; color:var(--ivory2);">${window.escapeHtml ? window.escapeHtml(s.dayName) : s.dayName}</td>
+        <td style="font-size:12px; color:var(--ivory);">${window.escapeHtml ? window.escapeHtml(s.displayDate) : s.displayDate}</td>
+        <td style="font-size:12px; font-family:var(--font-mono, monospace); color:var(--gold);">${window.escapeHtml ? window.escapeHtml(s.timeStr) : s.timeStr}</td>
+        <td style="font-size:12px; color:var(--ivory); max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${window.escapeHtml ? window.escapeHtml(s.studentNames) : s.studentNames}">${window.escapeHtml ? window.escapeHtml(s.studentNames) : s.studentNames}</td>
+      </tr>`;
+    }).join('');
+
+    const monthLabel = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    container.innerHTML = `
+      <div style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+          <span style="font-size:13px; color:var(--ivory-dim);">Showing schedule for</span>
+          <strong style="color:var(--gold); margin-left:6px;">${monthLabel}</strong>
+          <span style="font-size:12px; color:var(--ivory-dim); margin-left:8px;">${sessions.length} session${sessions.length !== 1 ? 's' : ''}</span>
+        </div>
+      </div>
+      <div class="table-wrap" style="overflow-x:auto; border:1px solid var(--border); border-radius:10px;">
+        <table class="coach-mini-table" style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr style="background:rgba(0,0,0,0.2);">
+              <th style="width:40px;">#</th>
+              <th>Day</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Student Names</th>
+            </tr>
+          </thead>
+          <tbody>${rows || '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--ivory-dim);">No sessions scheduled for ' + monthLabel + '.</td></tr>'}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
   window.renderCoachEvents = function () {
     const container = document.getElementById('coach-events-content');
     if (!container) return;
@@ -584,96 +692,136 @@ document.addEventListener('DOMContentLoaded', () => {
     const rawEvents = window.eventsData || [];
     const visibleEvents = rawEvents.filter(e => e.status !== 'archived' && e.archived !== true);
 
-    container.innerHTML = `
-      <div class="coach-shell" style="padding:0;">
-        <div class="coach-section-block" style="margin-bottom:20px; background:var(--surface, #1e293b); border:1px solid var(--border); border-radius:14px; padding:20px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
-            <div>
-              <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(218,163,62,0.15); border:1px solid rgba(218,163,62,0.3); border-radius:99px; padding:4px 12px; font-size:11px; font-weight:700; color:var(--gold); text-transform:uppercase; margin-bottom:8px;">
-                <span>🏆 Events Hub</span>
-              </div>
-              <h2 style="margin:0 0 6px; color:#fff; font-size:22px; font-weight:800;">Academy Events &amp; Wall of Fame</h2>
-              <p style="margin:0; color:var(--ivory-dim); font-size:13.5px;">Manage events and view top performers.</p>
-            </div>
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button class="btn btn-gold" onclick="window.openEventModal && window.openEventModal()" style="font-weight:700;">➕ Add Event</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="tabs-nav" style="margin-bottom:20px; background:rgba(0,0,0,0.2); padding:3px; border-radius:8px; border:1px solid var(--border); display:flex; gap:2px;">
-          <button class="tab-link active" id="btn-coach-events-list" onclick="window.setCoachEventsTab('list', this)" style="padding:6px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer;">Events List</button>
-          <button class="tab-link" id="btn-coach-events-fame" onclick="window.setCoachEventsTab('fame', this)" style="padding:6px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer;">🏆 Wall of Fame</button>
-        </div>
-
-        <div id="coach-events-list-view" style="display:block;">
-          ${visibleEvents.length === 0 ? '<div class="coach-loading-cell">No upcoming events.</div>' : visibleEvents.map(e => {
-            const evDate = new Date(e.date || e.event_date);
-            const now = new Date();
-            now.setHours(0, 0, 0, 0);
-            const isPast = evDate < now;
-            const statusClass = isPast ? 'badge badge-info' : 'badge badge-success';
-            const statusText = isPast ? 'Completed' : 'Upcoming';
-            const dateStr = e.date ? new Date(e.date).toLocaleDateString() : 'TBD';
-            const location = e.location || 'TBD';
-            return `
-              <div style="display:flex; justify-content:space-between; align-items:center; padding: 12px 0; border-bottom: 1px solid var(--border);">
-                <div>
-                  <div style="font-weight:600; color:var(--ivory);">${window.escapeHtml ? window.escapeHtml(e.title) : e.title}</div>
-                  <div style="font-size:12px; color:var(--ivory-dim); margin-top:2px;">${dateStr} · ${window.escapeHtml ? window.escapeHtml(location) : location}</div>
-                </div>
-                <span class="${statusClass}">${statusText}</span>
-              </div>
-            `;
-          }).join('')}
-        </div>
-
-        <div id="coach-events-fame-view" style="display:none;">
-          <div id="coach-fame-grid"></div>
-        </div>
-      </div>
-    `;
-
     window.setCoachEventsTab = function (tabName, btn) {
-      document.querySelectorAll('#coach-events-content .tab-link').forEach(l => l.classList.remove('active'));
-      if (btn) btn.classList.add('active');
+      document.querySelectorAll('#coach-events-portal-tabs .tab-link').forEach(l => l.classList.remove('active'));
+      const tabMap = { academy: 'btn-coach-events-academy', finder: 'btn-coach-events-finder' };
+      const targetBtn = btn || (tabMap[tabName] ? document.getElementById(tabMap[tabName]) : null);
+      if (targetBtn) targetBtn.classList.add('active');
 
-      const listView = document.getElementById('coach-events-list-view');
       const fameView = document.getElementById('coach-events-fame-view');
-      if (listView) listView.style.display = tabName === 'list' ? 'block' : 'none';
-      if (fameView) fameView.style.display = tabName === 'fame' ? 'block' : 'none';
+      const listView = document.getElementById('coach-events-list-view');
+      const finderView = document.getElementById('coach-events-finder-view');
 
-      if (tabName === 'fame') {
-        const fameGrid = document.getElementById('coach-fame-grid');
-        if (fameGrid && !fameGrid.innerHTML.trim()) {
-          const topPlayers = [...(window.allStudents || [])]
-            .filter((s) => (s.status || 'active').toLowerCase() !== 'archived' && (s.rating || 0) > 800)
-            .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-            .slice(0, 10);
-
-          let html = '<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">';
-          if (topPlayers.length === 0) {
-            html += '<div class="card" style="padding:24px; text-align:center; color:var(--ivory-dim);">No rated players yet</div>';
-          } else {
-            topPlayers.forEach((s, i) => {
-              const rankBadge = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i + 1);
-              html += `
-                <div class="card" style="padding:16px; display:flex; align-items:center; gap:14px; border-left:4px solid ${i === 0 ? 'var(--gold)' : 'var(--border)'};">
-                  <div style="font-size:28px;">${rankBadge}</div>
-                  <div style="flex:1; min-width:0;">
-                    <div style="font-weight:700; color:var(--ivory); font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${window.escapeHtml ? window.escapeHtml(s.name || s.student_name || 'Student') : (s.name || s.student_name || 'Student')}</div>
-                    <div style="font-size:12px; color:var(--ivory-dim); margin-top:2px;">Level: ${window.escapeHtml ? window.escapeHtml(s.level || 'Beginner') : (s.level || 'Beginner')}</div>
-                  </div>
-                  <div style="font-weight:800; color:var(--gold); font-size:16px;">${s.rating || 0}</div>
-                </div>
-              `;
-            });
-          }
-          html += '</div>';
-          fameGrid.innerHTML = html;
+      if (tabName === 'finder') {
+        if (listView) listView.style.display = 'none';
+        if (finderView) {
+          finderView.style.display = 'block';
+          finderView.innerHTML = '<div class="card" style="padding:24px; text-align:center; color:var(--ivory-dim);">⏳ Loading tournament data...</div>';
         }
+        if (window.loadTournaments) {
+          window.loadTournaments()
+            .then(() => {
+              if (window.renderTournamentFinderUI && finderView) {
+                try {
+                  window.renderTournamentFinderUI(finderView, false);
+                } catch (renderErr) {
+                  console.error('Failed to render tournament finder:', renderErr);
+                  if (finderView) {
+                    finderView.innerHTML = '<div class="card" style="padding:24px; text-align:center; color:var(--ivory-dim);">Failed to render tournament finder. Please try again.</div>';
+                  }
+                }
+              }
+            })
+            .catch(err => {
+              console.error('Failed to load tournaments:', err);
+              if (finderView) {
+                finderView.innerHTML = '<div class="card" style="padding:24px; text-align:center; color:var(--ivory-dim);">Failed to load tournaments. Please try again.</div>';
+              }
+            });
+        } else {
+          if (finderView) {
+            finderView.innerHTML = '<div class="card" style="padding:24px; text-align:center; color:var(--ivory-dim);">Tournament finder is not available.</div>';
+          }
+        }
+      } else {
+        if (fameView) fameView.style.display = 'block';
+        if (listView) listView.style.display = 'block';
+        if (finderView) finderView.style.display = 'none';
       }
     };
+
+    if (window.setCoachEventsTab) {
+      window.setCoachEventsTab('academy');
+    }
+
+    const fameGrid = document.getElementById('coach-fame-grid');
+    if (fameGrid && !fameGrid.innerHTML.trim()) {
+      const topPlayers = [...(window.allStudents || [])]
+        .filter((s) => (s.status || 'active').toLowerCase() !== 'archived' && (s.rating || 0) > 800)
+        .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+        .slice(0, 10);
+
+      let html = '<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">';
+      if (topPlayers.length === 0) {
+        html += '<div class="card" style="padding:24px; text-align:center; color:var(--ivory-dim);">No rated players yet</div>';
+      } else {
+        topPlayers.forEach((s, i) => {
+          const rankBadge = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i + 1);
+          html += `
+            <div class="card" style="padding:16px; display:flex; align-items:center; gap:14px; border-left:4px solid ${i === 0 ? 'var(--gold)' : 'var(--border)'};">
+              <div style="font-size:28px;">${rankBadge}</div>
+              <div style="flex:1; min-width:0;">
+                <div style="font-weight:700; color:var(--ivory); font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${window.escapeHtml ? window.escapeHtml(s.name || s.student_name || 'Student') : (s.name || s.student_name || 'Student')}</div>
+                <div style="font-size:12px; color:var(--ivory-dim); margin-top:2px;">Level: ${window.escapeHtml ? window.escapeHtml(s.level || 'Beginner') : (s.level || 'Beginner')}</div>
+              </div>
+              <div style="font-weight:800; color:var(--gold); font-size:16px;">${s.rating || 0}</div>
+            </div>
+          `;
+        });
+      }
+      html += '</div>';
+      fameGrid.innerHTML = html;
+    }
+
+    const upcomingEvents = visibleEvents.filter(e => {
+      const evDate = new Date(e.event_date || e.date);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      return evDate >= now;
+    }).sort((a, b) => new Date(a.event_date || a.date) - new Date(b.event_date || b.date));
+
+    const listView = document.getElementById('coach-events-list-view');
+    const grid = document.getElementById('coach-events-grid');
+    if (listView && grid) {
+      if (upcomingEvents.length > 0) {
+        grid.innerHTML = upcomingEvents.map(e => {
+          const esc = window.escapeHtml || ((s) => s);
+          const dateStr = e.event_date ? new Date(e.event_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'TBD';
+          const timeStr = e.event_time ? new Date('1970-01-01T' + e.event_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
+          const location = e.location || 'TBD';
+          const fee = e.fee ? '₹' + Number(e.fee).toLocaleString() : 'Free';
+          const typeLabel = e.type || 'Event';
+          const desc = e.description ? String(e.description).substring(0, 120) + (String(e.description).length > 120 ? '...' : '') : '';
+          return `
+            <div class="ev-card">
+              ${e.img_url ? `<img src="${esc(e.img_url)}" class="ev-poster" alt="${esc(e.title)}">` : ''}
+              <div class="ev-header">
+                <span class="ev-type-badge">${esc(typeLabel)}</span>
+                <span class="ev-date-badge">${esc(dateStr)}</span>
+              </div>
+              <div class="ev-body">
+                <div class="ev-title">${esc(e.title)}</div>
+                <div class="ev-meta">
+                  <span class="ev-meta-item ev-time">⏰ ${esc(timeStr || 'TBD')}</span>
+                  <span class="ev-meta-item ev-loc">${esc(location)}</span>
+                  <span class="ev-meta-item ev-prize">${esc(fee)}</span>
+                </div>
+                ${desc ? `<div class="ev-desc">${esc(desc)}</div>` : ''}
+                <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                  ${e.registration_url ? `<a href="${esc(e.registration_url)}" target="_blank" class="btn btn-outline btn-sm" style="flex:1; text-align:center; text-decoration:none; padding:6px 10px; font-size:11px; border-color:rgba(218,163,62,0.4); color:var(--gold);">🏆 Join Tournament</a>` : ''}
+                  ${e.map_url ? `<a href="${esc(e.map_url)}" target="_blank" class="btn btn-outline btn-sm" style="flex:1; text-align:center; text-decoration:none; padding:6px 10px; font-size:11px; border-color:rgba(218,163,62,0.4); color:var(--gold);">🗺️ View Map</a>` : ''}
+                </div>
+              </div>
+              <div class="ev-footer">
+                <span class="badge badge-success" style="padding:6px 12px; font-size:11px; font-weight:700;">Upcoming</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><span class="empty-icon">📅</span><p>No events found</p></div>';
+      }
+    }
   };
 
   window.renderCoachAttendance = function () {
@@ -703,17 +851,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const presentCount = recent.filter(a => (a.status || '').toLowerCase() === 'present').length;
     const absentCount = recent.filter(a => (a.status || '').toLowerCase() === 'absent').length;
+    const noClassCount = recent.filter(a => (a.status || '').toLowerCase() === 'no class').length;
 
     if (recent.length === 0) {
       container.innerHTML = '<div class="coach-loading-cell">No attendance records found. <button class="btn btn-outline-grey btn-sm" onclick="refreshCoachAttendance()">Refresh</button></div>';
       return;
     }
 
-    container.innerHTML = '<div class="coach-attendance-summary" style="margin-bottom:14px;"><div class="coach-attendance-item present"><span class="attendance-count">' + presentCount + '</span><span class="attendance-label">Present</span></div><div class="coach-attendance-item absent"><span class="attendance-count">' + absentCount + '</span><span class="attendance-label">Absent</span></div></div><div class="coach-table-wrap"><table class="coach-mini-table"><thead><tr><th>Date</th><th>Student</th><th>Status</th><th>Marked By</th></tr></thead><tbody>' + recent.map(a => {
+    container.innerHTML = '<div class="coach-attendance-summary" style="margin-bottom:14px;"><div class="coach-attendance-item present"><span class="attendance-count">' + presentCount + '</span><span class="attendance-label">Present</span></div><div class="coach-attendance-item absent"><span class="attendance-count">' + absentCount + '</span><span class="attendance-label">Absent</span></div><div class="coach-attendance-item" style="background:rgba(100,116,139,0.1);border:1px solid rgba(100,116,139,0.3);"><span class="attendance-count">' + noClassCount + '</span><span class="attendance-label">No Class</span></div></div><div class="coach-table-wrap"><table class="coach-mini-table"><thead><tr><th>Date</th><th>Student</th><th>Status</th><th>Marked By</th></tr></thead><tbody>' + recent.map(a => {
       const student = myStudents.find(s => String(s.id) === String(a.studentId || a.student_id));
       const name = student ? (window.getStudentName ? window.getStudentName(student) : student.name) : 'Unknown';
-      const sc = (a.status || '').toLowerCase() === 'present' ? 'badge badge-success' : (a.status || '').toLowerCase() === 'absent' ? 'badge badge-danger' : 'badge badge-level';
-      const markedBy = a.coachName || a.coach_name || a.coachId || a.coach_id || 'Unknown';
+      const st = (a.status || '').toLowerCase();
+      const sc = st === 'present' ? 'badge badge-success' : st === 'absent' ? 'badge badge-danger' : st === 'no class' ? 'badge badge-info' : 'badge badge-level';
+      const markedBy = a.coachName || a.coach_name || a.coachId || a.coach_id || 'System';
       return '<tr><td style="color:var(--ivory-dim)">' + (a.date ? new Date(a.date).toLocaleDateString() : 'TBD') + '</td><td style="color:var(--ivory)">' + (window.escapeHtml ? window.escapeHtml(name) : name) + '</td><td><span class="' + sc + '">' + (a.status || '—') + '</span></td><td style="color:var(--ivory-dim);font-size:11px;">' + (window.escapeHtml ? window.escapeHtml(markedBy) : markedBy) + '</td></tr>';
     }).join('') + '</tbody></table></div>';
   };
@@ -1243,29 +1393,52 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
-    const totalPages = Math.max(1, Math.ceil(assignments.length / window.coachAssignPageSize));
-    const start = (page - 1) * window.coachAssignPageSize;
-    const pageItems = assignments.slice(start, start + window.coachAssignPageSize);
+    const grouped = new Map();
+    assignments.forEach(h => {
+      const key = [
+        h.title || '',
+        h.description || '',
+        h.due_date || '',
+        h.target_type || '',
+        h.coach_id || '',
+        h.status || 'active'
+      ].join('|');
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key).push(h);
+    });
 
-    if (assignments.length === 0) {
+    const deduped = Array.from(grouped.entries()).map(([key, items]) => {
+      const first = items[0];
+      const targetNames = new Set();
+      items.forEach(h => {
+        if (h.target_type === 'student') {
+          const s = myStudents.find(st => String(st.id) === String(h.student_id));
+          if (s) targetNames.add(window.getStudentName ? window.getStudentName(s) : s.name);
+        } else if (h.target_type === 'batch') {
+          const b = (window.allBatches || []).find(batch => String(batch.id) === String(h.batch_id));
+          if (b) targetNames.add(b.name || 'Batch');
+        } else if (h.target_type === 'all') {
+          targetNames.add('All Students');
+        }
+      });
+      return {
+        ...first,
+        _targets: Array.from(targetNames).sort((a, b) => (a || '').localeCompare(b || '')),
+        _count: items.length
+      };
+    }).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+    const totalPages = Math.max(1, Math.ceil(deduped.length / window.coachAssignPageSize));
+    const start = (page - 1) * window.coachAssignPageSize;
+    const pageItems = deduped.slice(start, start + window.coachAssignPageSize);
+
+    if (deduped.length === 0) {
       tbody.innerHTML = '<tr><td colspan="5" class="coach-loading-cell">No assignments found.</td></tr>';
     } else if (pageItems.length === 0) {
       tbody.innerHTML = '<tr><td colspan="5" class="coach-loading-cell">No assignments on this page.</td></tr>';
     } else {
       tbody.innerHTML = pageItems.map(h => {
-        const studentTarget = h.target_type === 'student'
-          ? myStudents.find(s => String(s.id) === String(h.student_id))
-          : null;
-        const batchTarget = h.target_type === 'batch'
-          ? (window.allBatches || []).find(b => String(b.id) === String(h.batch_id))
-          : null;
-        const target = studentTarget
-          ? (window.getStudentName ? window.getStudentName(studentTarget) : studentTarget.name)
-          : batchTarget?.name
-          ? batchTarget.name
-          : h.target_type === 'all'
-          ? 'All Students'
-          : 'Batch';
+        const target = h._targets.length > 0 ? h._targets.join(', ') : '—';
         const due = h.due_date ? new Date(h.due_date).toLocaleDateString() : 'No due date';
         const status = h.status ? h.status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Active';
         const statusClass = h.status === 'completed' ? 'badge badge-success' : h.status === 'archived' ? 'badge badge-grey' : 'badge badge-warning';
@@ -1273,7 +1446,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const canDone = h.status !== 'completed';
         const canDelete = h.status !== 'archived';
         return `<tr>
-          <td style="font-weight:500; color:var(--ivory); max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${window.escapeHtml ? window.escapeHtml(h.title || '') : (h.title || '')}">${window.escapeHtml ? window.escapeHtml(h.title || '') : (h.title || '')}</td>
+          <td style="font-weight:500; color:var(--ivory); max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${window.escapeHtml ? window.escapeHtml(h.title || '') : (h.title || '')}">${window.escapeHtml ? window.escapeHtml(h.title || '') : (h.title || '')}${h._count > 1 ? ` <span style="font-size:10px;color:var(--ivory-dim);">(${h._count} students)</span>` : ''}</td>
           <td style="font-size:12px; color:var(--ivory-dim);">${window.escapeHtml ? window.escapeHtml(target) : target}</td>
           <td style="font-size:12px; color:var(--ivory-dim);">${due}</td>
           <td><span class="${statusClass}">${status}</span></td>

@@ -197,6 +197,7 @@
   window.reportMonth = _initNow.getMonth(); // 0-11 (Local time zone month)
   window.reportYear = _initNow.getFullYear();
   window.isEditing = false;
+  window.coachScheduleView = 'weekly';
 
   let currentStudent = null;
   let role = null;
@@ -570,7 +571,7 @@
         } else if (tabId === "learning") {
           renderChildResources();
         } else if (tabId === "events") {
-          if (window.setChildEventsSubTab) window.setChildEventsSubTab("fame");
+          if (window.setChildEventsSubTab) window.setChildEventsSubTab("academy");
           else renderChildEvents();
         } else if (tabId === "reports" && typeof window.renderChildReports === "function") {
           window.renderChildReports();
@@ -654,12 +655,15 @@
     const absent = myAtt.filter(
       (a) => (a.status || "").toLowerCase() === "absent",
     ).length;
+    const noClass = myAtt.filter(
+      (a) => (a.status || "").toLowerCase() === "no class",
+    ).length;
     const total = myAtt.length;
     const rate = total > 0 ? Math.round((present / total) * 100) : 0;
 
     if ($("c-att-total")) $("c-att-total").textContent = total;
     if ($("c-att-present")) $("c-att-present").textContent = present;
-    if ($("c-att-absent")) $("c-att-absent").textContent = absent;
+    if ($("c-att-absent")) $("c-att-absent").textContent = absent + noClass;
     if ($("c-att-rate")) $("c-att-rate").textContent = rate + "%";
 
     const body = $("child-att-body");
@@ -671,14 +675,12 @@
         body.innerHTML = myAtt
           .map((a) => {
             const st = (a.status || "").toLowerCase();
-            const badge =
-              st === "present"
-                ? '<span class="badge badge-success">Present</span>'
-                : st === "late"
-                  ? '<span class="badge badge-warning" style="background:var(--gold); color:#111;">Late</span>'
-                  : st === "absent"
-                    ? '<span class="badge badge-danger">Absent</span>'
-                    : `<span class="badge">${escapeHtml(a.status || "—")}</span>`;
+            let badge;
+            if (st === "present") badge = '<span class="badge badge-success">Present</span>';
+            else if (st === "late") badge = '<span class="badge badge-warning" style="background:var(--gold); color:#111;">Late</span>';
+            else if (st === "absent") badge = '<span class="badge badge-danger">Absent</span>';
+            else if (st === "no class") badge = '<span class="badge badge-info" style="background:#64748b; color:#fff; border-color:#64748b;">No Class</span>';
+            else badge = `<span class="badge">${escapeHtml(a.status || "—")}</span>`;
             const dateStr = a.date
               ? new Date(a.date).toLocaleDateString("en-IN", {
                   day: "2-digit",
@@ -686,7 +688,6 @@
                   year: "numeric",
                 })
               : "—";
-            // Split the three note sections into their own columns.
             const p = window.parseAttendanceNotes
               ? window.parseAttendanceNotes(a.notes || a.note || "")
               : { cw: "", hw: "", general: "" };
@@ -752,7 +753,7 @@
 
     if (upcoming.length === 0) {
       grid.innerHTML =
-        '<div class="empty-state"><span class="empty-icon">📅</span><p>No upcoming events scheduled</p></div>';
+        '<div class="empty-state"><span class="empty-icon">📅</span><p>No events found</p></div>';
       return;
     }
 
@@ -797,42 +798,53 @@
 
   window.setChildEventsSubTab = function (tabName) {
     document
-      .querySelectorAll("#child-tab-events .tab-link")
+      .querySelectorAll("#child-events-portal-tabs .tab-link")
       .forEach((btn) => btn.classList.remove("active"));
     const activeBtn = document.getElementById(`btn-child-events-${tabName}`);
     if (activeBtn) activeBtn.classList.add("active");
 
-    const eventView = document.getElementById("child-ev-list-view");
-    if (eventView) eventView.style.display = "none";
-    document.getElementById("child-tf-list-view").style.display = "none";
     const fameView = document.getElementById("child-fame-list-view");
-    if (fameView) fameView.style.display = "none";
+    const eventView = document.getElementById("child-ev-list-view");
+    const tfView = document.getElementById("child-tf-list-view");
 
-    if (tabName === "academy") {
-      if (eventView) eventView.style.display = "block";
-      renderChildEvents();
-    } else if (tabName === "fame") {
+    if (tabName === "finder") {
       if (fameView) fameView.style.display = "block";
-      if (eventView) eventView.style.display = "block";
-      if (window.renderChildFame) window.renderChildFame();
-      renderChildEvents();
-    } else if (tabName === "finder") {
-      document.getElementById("child-tf-list-view").style.display = "block";
-      const tfView = document.getElementById("child-tf-list-view");
-      if (tfView && !tfView.innerHTML.trim()) {
-        tfView.innerHTML = `
-          <div class="card" style="text-align:center; padding: 40px;">
-            <h3 style="color:var(--gold); margin-bottom:10px;">🏆 Global Tournament Finder</h3>
-            <p style="color:var(--ivory-dim); max-width:500px; margin:0 auto 20px;">
-              Find FIDE, USCF, and local tournaments based on your child's rating and location.
-            </p>
-            <button class="btn btn-gold" onclick="alert('Tournament finder integration coming soon!')">Find Tournaments</button>
-          </div>
-        `;
+      if (eventView) eventView.style.display = "none";
+      if (tfView) {
+        tfView.style.display = "block";
+        tfView.innerHTML = '<div class="card" style="padding:24px; text-align:center; color:var(--ivory-dim);">⏳ Loading tournament data...</div>';
       }
-    } else if (tabName === "fame") {
+      if (window.loadTournaments) {
+        window.loadTournaments()
+          .then(() => {
+            if (window.renderTournamentFinderUI && tfView) {
+              try {
+                window.renderTournamentFinderUI(tfView, true);
+              } catch (renderErr) {
+                console.error('Failed to render tournament finder:', renderErr);
+                if (tfView) {
+                  tfView.innerHTML = '<div class="card" style="padding:24px; text-align:center; color:var(--ivory-dim);">Failed to render tournament finder. Please try again.</div>';
+                }
+              }
+            }
+          })
+          .catch(err => {
+            console.error('Failed to load tournaments:', err);
+            if (tfView) {
+              tfView.innerHTML = '<div class="card" style="padding:24px; text-align:center; color:var(--ivory-dim);">Failed to load tournaments. Please try again.</div>';
+            }
+          });
+      } else {
+        if (tfView) {
+          tfView.innerHTML = '<div class="card" style="padding:24px; text-align:center; color:var(--ivory-dim);">Tournament finder is not available.</div>';
+        }
+      }
+    } else {
       if (fameView) fameView.style.display = "block";
+      if (eventView) eventView.style.display = "block";
+      if (tfView) tfView.style.display = "none";
       if (window.renderChildFame) window.renderChildFame();
+      renderChildEvents();
     }
   };
 
@@ -3026,18 +3038,51 @@
         '<option value="">-- Select Batch --</option>' +
         batches.map((b) => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.name || b.batchName || b.id)}</option>`).join("");
     }
-    ["qcs-classlink", "qcs-reflink", "qcs-title", "qcs-notes", "qcs-due", "qcs-file"].forEach((id) => {
+    ["qcs-classlink", "qcs-title", "qcs-notes", "qcs-due", "qcs-file"].forEach((id) => {
       const el = $(id);
       if (!el) return;
       if (el.type === "file") el.value = "";
       else el.value = "";
     });
+    const container = $("qcs-reflinks-container");
+    if (container) {
+      container.innerHTML = '<div class="qcs-reflink-row" style="display:flex;gap:8px;margin-bottom:8px;align-items:center;"><input type="url" id="qcs-reflink-0" class="input-field qcs-reflink-input" placeholder="https://lichess.org/study/…" style="flex:1;"><button type="button" class="btn btn-outline btn-sm qcs-reflink-remove" onclick="removeQcsRefLink(this)" style="display:none;">✕</button></div>';
+    }
     const filePreview = $("qcs-file-preview");
     if (filePreview) filePreview.textContent = "No files selected";
     setupQcsFileDropzone();
     const sl = $("qcs-student-list");
     if (sl) sl.innerHTML = '<div class="empty-state" style="padding:14px">Select a batch to load students</div>';
     if (typeof openModal === "function") openModal("quick-class-session-modal");
+  };
+
+  window.addQcsRefLink = function () {
+    const container = $("qcs-reflinks-container");
+    if (!container) return;
+    const count = container.querySelectorAll(".qcs-reflink-row").length;
+    const row = document.createElement("div");
+    row.className = "qcs-reflink-row";
+    row.style.cssText = "display:flex;gap:8px;margin-bottom:8px;align-items:center;";
+    row.innerHTML = `<input type="url" id="qcs-reflink-${count}" class="input-field qcs-reflink-input" placeholder="https://lichess.org/study/…" style="flex:1;"><button type="button" class="btn btn-outline btn-sm qcs-reflink-remove" onclick="removeQcsRefLink(this)">✕</button>`;
+    container.appendChild(row);
+    const firstRow = container.querySelector(".qcs-reflink-row");
+    if (firstRow) {
+      const removeBtn = firstRow.querySelector(".qcs-reflink-remove");
+      if (removeBtn && container.querySelectorAll(".qcs-reflink-row").length > 1) removeBtn.style.display = "";
+    }
+  };
+
+  window.removeQcsRefLink = function (btn) {
+    const row = btn.closest(".qcs-reflink-row");
+    if (!row) return;
+    row.remove();
+    const container = $("qcs-reflinks-container");
+    if (container) {
+      const removeBtns = container.querySelectorAll(".qcs-reflink-remove");
+      if (removeBtns.length <= 1) {
+        removeBtns.forEach(b => b.style.display = "none");
+      }
+    }
   };
 
   window.CK_QCS_loadStudents = async function () {
@@ -3142,6 +3187,10 @@
     const cw = notes ? notes.value.trim() : "";
     const hw = finalTitle;
     const link = classLink && classLink.value.trim() ? classLink.value.trim() : "";
+    const refLinks = Array.from(document.querySelectorAll(".qcs-reflink-input"))
+      .map((input) => input.value.trim())
+      .filter(Boolean);
+    const refLinksStr = refLinks.length ? "\nReference Links:\n" + refLinks.map((l) => "- " + l).join("\n") : "";
     const noteStr =
       typeof window.formatAttendanceNotesForSave === "function"
         ? window.formatAttendanceNotesForSave(cw, hw, link ? "Link: " + link : "")
@@ -3169,7 +3218,7 @@
       hDesc.value =
         (notes && notes.value ? notes.value : "") +
         (classLink && classLink.value ? "\nClass Link: " + classLink.value : "") +
-        (refLink && refLink.value ? "\nReference: " + refLink.value : "");
+        refLinksStr;
     const hDue = $("hw-due-date");
     if (hDue) hDue.value = due && due.value ? due.value : today;
     const hwFile = $("hw-file-input");
@@ -4149,6 +4198,112 @@
   }
   window.isStudentScheduledOnDate = isStudentScheduledOnDate;
 
+  function isCoachScheduledOnDate(coachId, dateStr) {
+    if (!coachId || !dateStr) return false;
+    const targetDate = dateStr ? new Date(dateStr + "T12:00:00Z") : new Date();
+    const day = targetDate.getUTCDay();
+    const dayName = targetDate.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" }).toUpperCase();
+    const shortDay = dayName.slice(0, 3);
+    const batches = (window.allBatches || []).filter(b => window.ckSameCoach ? window.ckSameCoach(b.coach_id, coachId) : String(b.coach_id) === String(coachId));
+    return batches.some(b => {
+      const days = (b.days || "").toUpperCase();
+      if (!days) return true;
+      if (days.includes("WEEKEND")) return (day === 0 || day === 6);
+      if (days.includes("WEEKDAY")) return (day >= 1 && day <= 5);
+      if (days.includes("DAILY")) return true;
+      return days.includes(dayName) || days.includes(shortDay) ||
+        (days.includes("MON") && day === 1) || (days.includes("TUE") && day === 2) ||
+        (days.includes("WED") && day === 3) || (days.includes("THU") && day === 4) ||
+        (days.includes("FRI") && day === 5) || (days.includes("SAT") && day === 6) ||
+        (days.includes("SUN") && day === 0);
+    });
+  }
+
+  async function autoMarkCoachAttendance() {
+    if (!window.allCoaches || !window.allStudents || !window.allBatches) return;
+    const today = new Date().toISOString().split("T")[0];
+    const attList = window.allAttendance || [];
+    const coachAttKey = "ck_coach_attendance_records";
+    let coachAttRecords = [];
+    try {
+      coachAttRecords = JSON.parse(localStorage.getItem(coachAttKey) || "[]");
+    } catch (e) { coachAttRecords = []; }
+
+    const updates = [];
+    const studentUpdates = [];
+
+    window.allCoaches.forEach(coach => {
+      if ((coach.status || "active").toLowerCase() === "archived") return;
+      const coachId = String(coach.id);
+      const batches = (window.allBatches || []).filter(b => window.ckSameCoach ? window.ckSameCoach(b.coach_id, coachId) : String(b.coach_id) === String(coachId));
+      if (!batches.length) return;
+
+      const studentIds = new Set();
+      batches.forEach(b => {
+        const rawIds = Array.isArray(b.student_ids) ? b.student_ids.map(String) : (window.parseStudentIds ? window.parseStudentIds(b.student_ids) : []);
+        rawIds.forEach(id => studentIds.add(String(id)));
+      });
+
+      const startDate = new Date(today);
+      startDate.setDate(startDate.getDate() - 30);
+      for (let d = new Date(today); d >= startDate; d.setDate(d.getDate() - 1)) {
+        const dateStr = d.toISOString().split("T")[0];
+        if (!isCoachScheduledOnDate(coachId, dateStr)) continue;
+
+        const hasCoachRecord = coachAttRecords.some(r => String(r.coach_id) === coachId && r.date === dateStr);
+        if (hasCoachRecord) continue;
+
+        const hasStudentRecord = attList.some(a => studentIds.has(String(a.student_id || a.studentId)) && a.date === dateStr);
+        if (!hasStudentRecord) {
+          studentIds.forEach(sid => {
+            studentUpdates.push({
+              student_id: sid,
+              studentId: sid,
+              status: "No Class",
+              date: dateStr,
+              notes: "Auto-marked: coach did not submit attendance"
+            });
+          });
+        }
+
+        coachAttRecords.push({
+          coach_id: coachId,
+          date: dateStr,
+          status: "absent",
+          reason: "No attendance submitted",
+          auto_marked: true,
+          marked_at: new Date().toISOString()
+        });
+      }
+    });
+
+    if (coachAttRecords.length > 0 || studentUpdates.length > 0) {
+      try {
+        localStorage.setItem(coachAttKey, JSON.stringify(coachAttRecords));
+      } catch (e) {}
+
+      if (studentUpdates.length > 0) {
+        studentUpdates.forEach(rec => {
+          const idx = attList.findIndex(a => String(a.studentId || a.student_id) === String(rec.studentId || rec.student_id) && a.date === rec.date);
+          if (idx !== -1) {
+            attList[idx] = { ...attList[idx], ...rec };
+          } else {
+            attList.unshift(rec);
+          }
+        });
+        window.allAttendance = attList;
+        try {
+          const storedAtt = JSON.parse(localStorage.getItem("ck_attendance_records") || "[]");
+          studentUpdates.forEach(rec => {
+            const idx = storedAtt.findIndex(a => String(a.studentId || a.student_id) === String(rec.studentId || rec.student_id) && a.date === rec.date);
+            if (idx !== -1) storedAtt[idx] = { ...storedAtt[idx], ...rec };
+            else storedAtt.unshift(rec);
+          });
+          localStorage.setItem("ck_attendance_records", JSON.stringify(storedAtt));
+        } catch (e) {}
+      }
+    }
+  }
   function isStudentScheduledToday(s) {
     if (!s || (s.status || "active").toLowerCase() !== "active") return false;
     const now = new Date();
@@ -6855,6 +7010,10 @@
           } else if (role === "parent" || role === "student") {
            renderChild();
             renderEvents();
+          }
+
+          if (window.autoMarkCoachAttendance) {
+            try { await window.autoMarkCoachAttendance(); } catch (_) {}
           }
 
         setLoading("data", false);
@@ -10427,12 +10586,14 @@ due_date: (function () {
   // Dynamic database-backed batch and schedule builder replaces the legacy hardcoded matrix.
 
   function buildCoachBatches(coachId) {
+    console.log("[CoachSchedule] buildCoachBatches coachId=", coachId, "allBatchesLen=", (window.allBatches || []).length, "allStudentsLen=", (window.allStudents || []).length);
     if (!window.allBatches) return [];
     
     // Find all active batches belonging to this coach
     const batches = window.allBatches.filter(
       (b) => (window.ckSameCoach ? window.ckSameCoach(b.coach_id, coachId) : String(b.coach_id) === String(coachId)) && b.status !== "archived"
     );
+    console.log("[CoachSchedule] filtered batches count=", batches.length, batches.map(b => ({ id: b.id, name: b.name, coach_id: b.coach_id, days: b.days, time_slot: b.time_slot, student_ids: b.student_ids })));
 
     return batches.map((b) => {
       // Resolve student names from student_ids list, student.batch_id and student.batch
@@ -10464,6 +10625,127 @@ due_date: (function () {
       .sort((a, b) => a.coach.localeCompare(b.coach));
   }
   window.buildDynamicSchedule = buildDynamicSchedule;
+
+  function parseTimeToDate(timeStr, dateStr) {
+    const normalized = (!timeStr || timeStr === "TBD") ? "5:00 PM" : String(timeStr);
+    const match = normalized.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (!match) return null;
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const ampm = match[3] ? match[3].toUpperCase() : null;
+    if (ampm === "PM" && hours < 12) hours += 12;
+    if (ampm === "AM" && hours === 12) hours = 0;
+    if (!ampm && hours >= 12) hours = hours === 12 ? 12 : hours;
+    const d = new Date(dateStr + "T00:00:00");
+    d.setHours(hours, minutes, 0, 0);
+    return d;
+  }
+
+  function generateGoogleCalendarLink(options) {
+    const {
+      title = "ChessKidoo Class",
+      days = "",
+      timeStr = "",
+      coachName = "",
+      meetLink = "",
+      location = "",
+      description = "",
+      specificDate = ""
+    } = options || {};
+
+    let startDt;
+    if (specificDate) {
+      startDt = parseTimeToDate(timeStr, specificDate);
+    } else {
+      const today = new Date();
+      const nextClass = getNextClassDate(days, today);
+      startDt = parseTimeToDate(timeStr, nextClass || today.toISOString().split("T")[0]);
+    }
+    if (!startDt) return null;
+
+    const endMatch = String(timeStr).match(/-\s*(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    let endDt = new Date(startDt);
+    if (endMatch) {
+      let eh = parseInt(endMatch[1], 10);
+      const em = parseInt(endMatch[2], 10);
+      const eampm = endMatch[3] ? endMatch[3].toUpperCase() : null;
+      if (eampm === "PM" && eh < 12) eh += 12;
+      if (eampm === "AM" && eh === 12) eh = 0;
+      endDt.setHours(eh, em, 0, 0);
+    } else {
+      endDt.setHours(startDt.getHours() + 1, startDt.getMinutes(), 0, 0);
+    }
+
+    const fmt = (d) => {
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
+    };
+
+    const start = fmt(startDt);
+    const end = fmt(endDt);
+
+    const daysMap = {
+      monday: "MO", tuesday: "TU", wednesday: "WE", thursday: "TH",
+      friday: "FR", saturday: "SA", sunday: "SU"
+    };
+    const dayList = String(days).toLowerCase().replace(/&/g, ",").split(",").map(d => d.trim()).filter(Boolean);
+    const byDay = dayList.map(d => daysMap[d]).filter(Boolean).join(",");
+
+    const loc = location || meetLink || "ChessKidoo Academy";
+    const desc = description || `Coach: ${coachName}\nTime: ${timeStr}\n${meetLink ? "Join: " + meetLink : ""}`;
+
+    const safeTitle = encodeURIComponent(title);
+    const safeDetails = encodeURIComponent(desc);
+    const safeLocation = encodeURIComponent(loc);
+    const safeDates = encodeURIComponent(`${start}/${end}`);
+
+    let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${safeTitle}&dates=${safeDates}&details=${safeDetails}&location=${safeLocation}`;
+    if (!specificDate && byDay) url += `&recur=RRULE:FREQ=WEEKLY;BYDAY=${encodeURIComponent(byDay)}`;
+    return url;
+  }
+
+  function buildFallbackCalendarLink(title, days, timeStr, coachName, meetLink) {
+    const startDate = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    const startStr = `${startDate.getFullYear()}${pad(startDate.getMonth() + 1)}${pad(startDate.getDate())}T${pad(startDate.getHours())}${pad(startDate.getMinutes())}00Z`;
+    const endDate = new Date(startDate);
+    endDate.setHours(endDate.getHours() + 1);
+    const endStr = `${endDate.getFullYear()}${pad(endDate.getMonth() + 1)}${pad(endDate.getDate())}T${pad(endDate.getHours())}${pad(endDate.getMinutes())}00Z`;
+    const daysMap = { monday: "MO", tuesday: "TU", wednesday: "WE", thursday: "TH", friday: "FR", saturday: "SA", sunday: "SU" };
+    const dayList = String(days || "").toLowerCase().replace(/&/g, ",").split(",").map(d => d.trim()).filter(Boolean);
+    const byDay = dayList.map(d => daysMap[d]).filter(Boolean).join(",");
+    const loc = meetLink || "ChessKidoo Academy";
+    const desc = `Coach: ${coachName || "TBD"}\nTime: ${timeStr || "TBD"}\n${meetLink ? "Join: " + meetLink : ""}`;
+    const safeTitle = encodeURIComponent(title || "ChessKidoo Class");
+    const safeDesc = encodeURIComponent(desc);
+    const safeLoc = encodeURIComponent(loc);
+    let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${safeTitle}&dates=${startStr}/${endStr}&details=${safeDesc}&location=${safeLoc}`;
+    if (byDay) url += `&recur=RRULE:FREQ=WEEKLY;BYDAY=${byDay}`;
+    return url;
+  }
+
+  function getNextClassDate(days, baseDate) {
+    const base = typeof baseDate === "string" ? baseDate : new Date().toISOString().split("T")[0];
+    if (!days) return base;
+    const dayNames = String(days).toLowerCase().split(/[&,]+/).map(d => d.trim()).filter(Boolean);
+    if (!dayNames.length) return base;
+    const fullDayMap = { mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6, sun: 0 };
+    const targetDays = dayNames.map(d => fullDayMap[d.slice(0, 3)]).filter(n => !isNaN(n));
+    if (!targetDays.length) return base;
+    const d = new Date(base + "T12:00:00Z");
+    for (let i = 0; i < 14; i++) {
+      const check = new Date(d);
+      check.setUTCDate(check.getUTCDate() + i);
+      if (targetDays.includes(check.getUTCDay())) {
+        return check.toISOString().split("T")[0];
+      }
+    }
+    return base;
+  }
+
+  window.generateGoogleCalendarLink = generateGoogleCalendarLink;
+  window.buildFallbackCalendarLink = buildFallbackCalendarLink;
+  window.getNextClassDate = getNextClassDate;
 
   function viewCoachSchedule(id) {
     const c = allCoaches.find((x) => String(x.id) === String(id));
@@ -10560,6 +10842,291 @@ due_date: (function () {
     }
     container.innerHTML = html;
     openModal("coach-schedule-modal");
+  }
+
+  function parseScheduleDays(scheduleStr) {
+    if (!scheduleStr) return [];
+    const parts = String(scheduleStr).split("|");
+    const daysPart = parts[0] || "";
+    const dayNames = daysPart
+      .toLowerCase()
+      .split(/[&,]+/)
+      .map((d) => d.trim())
+      .filter(Boolean);
+    const fullDayMap = { mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6, sun: 0 };
+    let targetDays = dayNames
+      .map((d) => fullDayMap[d.slice(0, 3)])
+      .filter((n) => !isNaN(n));
+
+    if (dayNames.some((d) => d.includes("weekend"))) {
+      if (!targetDays.includes(5)) targetDays.push(5);
+      if (!targetDays.includes(6)) targetDays.push(6);
+    }
+    if (dayNames.some((d) => d.includes("weekday"))) {
+      for (let i = 1; i <= 5; i++) {
+        if (!targetDays.includes(i)) targetDays.push(i);
+      }
+    }
+    return targetDays;
+  }
+
+  function parseScheduleTime(scheduleStr) {
+    if (!scheduleStr) return "TBD";
+    const parts = String(scheduleStr).split("|");
+    return parts[1] ? parts[1].trim() : "TBD";
+  }
+
+  window.setCoachScheduleView = function(view) {
+    view = view || 'weekly';
+    const monthlyTab = document.getElementById('coach-schedule-tab-monthly');
+    const weeklyTab = document.getElementById('coach-schedule-tab-weekly');
+    const monthInput = document.getElementById('coach-schedule-month');
+    console.log("[CoachSchedule] setCoachScheduleView view=", view, "monthInput=", !!monthInput, "monthInput.value=", monthInput?.value);
+    if (view === 'weekly') {
+      if (monthlyTab) { monthlyTab.classList.remove('active'); monthlyTab.style.background = 'transparent'; monthlyTab.style.color = 'var(--ivory)'; }
+      if (weeklyTab) { weeklyTab.classList.add('active'); weeklyTab.style.background = 'linear-gradient(135deg,var(--gold) 0%,#b8860b 100%)'; weeklyTab.style.color = '#000'; }
+      if (monthInput) monthInput.style.display = 'none';
+    } else {
+      if (weeklyTab) { weeklyTab.classList.remove('active'); weeklyTab.style.background = 'transparent'; weeklyTab.style.color = 'var(--ivory)'; }
+      if (monthlyTab) { monthlyTab.classList.add('active'); monthlyTab.style.background = 'linear-gradient(135deg,var(--gold) 0%,#b8860b 100%)'; monthlyTab.style.color = '#000'; }
+      if (monthInput) monthInput.style.display = 'inline-block';
+    }
+    if (window.renderCoachSchedule) window.renderCoachSchedule(view);
+  };
+
+  window.renderCoachSchedule = function(view) {
+    view = view || window.coachScheduleView || 'weekly';
+    window.coachScheduleView = view;
+    console.log("[CoachSchedule] renderCoachSchedule view=", view, "coachId=", (window.currentCoachId || window.userId), "allBatches=", (window.allBatches || []).length);
+
+    const container = $("coach-schedule-content");
+    if (!container) {
+      console.warn("[CoachSchedule] coach-schedule-content missing");
+      return;
+    }
+
+    const coachId = window.currentCoachId || window.userId;
+    if (!coachId) {
+      container.innerHTML = '<div class="coach-loading-cell">Coach ID not found. Please re-login.</div>';
+      return;
+    }
+
+    const monthInput = $("coach-schedule-month");
+    if (monthInput && !monthInput.value) {
+      const now = new Date();
+      monthInput.value = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+    }
+
+    const batches = buildCoachBatches(coachId);
+    console.log("[CoachSchedule] buildCoachBatches count=", batches.length, batches.map(b => b.name));
+    if (!batches.length) {
+      container.innerHTML = '<div class="coach-loading-cell">No batches assigned yet. Contact admin to assign batches.</div>';
+      return;
+    }
+
+    const coachObj = (allCoaches || []).find((c) => String(c.id) === String(coachId));
+    const coachName = coachObj ? (getCoachName(coachObj) || "Coach") : "Coach";
+
+    if (view === 'weekly') {
+      renderWeeklyScheduleTable(container, batches, coachId, coachName);
+    } else {
+      renderMonthlyScheduleTable(container, batches, coachId, coachName, monthInput);
+    }
+  };
+
+  function renderWeeklyScheduleTable(container, batches, coachId, coachName) {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
+
+    const weekDays = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      weekDays.push(d);
+    }
+
+    const allSessions = [];
+    const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+    weekDays.forEach((d) => {
+      const dayName = d.toLocaleDateString("en-US", { weekday: "long" });
+      const dateStr = d.toISOString().split("T")[0];
+      const displayDate = d.toLocaleDateString("en-US", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+
+      batches.forEach((b) => {
+        const targetDays = parseScheduleDays(b.schedule);
+        const timeStr = parseScheduleTime(b.schedule);
+        if (!targetDays.length || !targetDays.includes(d.getDay())) return;
+
+        allSessions.push({
+          dayName: dayName,
+          dateStr: dateStr,
+          displayDate: displayDate,
+          timeStr: timeStr,
+          studentNames: (b.students || []).join(", "),
+          batchName: b.name,
+          title: b.name + " - Chess Class",
+          meetLink: "",
+        });
+      });
+    });
+
+    allSessions.sort((a, b) => {
+      const cmp = DAY_ORDER.indexOf(a.dayName) - DAY_ORDER.indexOf(b.dayName);
+      return cmp !== 0 ? cmp : (a.timeStr || '').localeCompare(b.timeStr || '');
+    });
+
+    const weekStart = new Date(monday);
+    const weekEnd = new Date(monday);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    const weekLabel = weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " - " + weekEnd.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+    const rows = allSessions
+      .map((s, i) => {
+        const calLink =
+          window.generateGoogleCalendarLink && s.timeStr
+            ? window.generateGoogleCalendarLink({
+                title: s.title || "ChessKidoo Class",
+                timeStr: s.timeStr,
+                coachName: coachName,
+                meetLink: s.meetLink || "",
+                description:
+                  "Batch: " + s.batchName + "\nStudents: " + s.studentNames + "\nTiming: " + s.timeStr,
+                specificDate: s.dateStr || "",
+              })
+            : null;
+
+        const actionCell = calLink
+          ? `<td><a href="${calLink}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="font-size:11px; padding:4px 10px; white-space:nowrap;" onclick="window.toast && window.toast('Opening Google Calendar...', 'info');">Add to GCal</a></td>`
+          : '<td><span style="color:var(--ivory-dim); font-size:11px;">N/A</span></td>';
+
+        return `<tr>
+          <td style="text-align:center; font-weight:600; width:40px;">${i + 1}</td>
+          <td style="font-size:12px; color:var(--ivory2);">${escapeHtml(s.dayName || "")}</td>
+          <td style="font-size:12px; color:var(--ivory);">${escapeHtml(s.displayDate || s.dateStr || "")}</td>
+          <td style="font-size:12px; font-family:var(--font-mono, monospace); color:var(--gold);">${escapeHtml(s.timeStr || "TBD")}</td>
+          <td style="font-size:12px; color:var(--ivory); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(s.studentNames || "")}">${escapeHtml(s.studentNames || "")}</td>
+          ${actionCell}
+        </tr>`;
+      })
+      .join("");
+
+    container.innerHTML = `
+      <div style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+          <span style="font-size:13px; color:var(--ivory-dim);">This Week</span>
+          <strong style="color:var(--gold); margin-left:6px;">${escapeHtml(weekLabel)}</strong>
+          <span style="font-size:12px; color:var(--ivory-dim); margin-left:8px;">${allSessions.length} session${allSessions.length !== 1 ? "s" : ""}</span>
+        </div>
+      </div>
+      <div class="table-wrap" style="overflow-x:auto; border:1px solid var(--border); border-radius:10px;">
+        <table class="coach-mini-table" style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr style="background:rgba(0,0,0,0.2);">
+              <th style="width:40px;">#</th>
+              <th>Day</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Student Names</th>
+              <th style="width:100px;">Action</th>
+            </tr>
+          </thead>
+          <tbody>${rows || `<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--ivory-dim);">No sessions scheduled for this week.</td></tr>`}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderMonthlyScheduleTable(container, batches, coachId, coachName, monthInput) {
+    console.log("[CoachSchedule] renderMonthlyScheduleTable batches=", batches.length, batches.map(b => ({ name: b.name, schedule: b.schedule })));
+    let year, month;
+    if (monthInput && monthInput.value) {
+      const [y, m] = monthInput.value.split("-").map(Number);
+      year = y;
+      month = m - 1;
+    } else {
+      const now = new Date();
+      year = now.getFullYear();
+      month = now.getMonth();
+    }
+
+    const allSessions = [];
+    batches.forEach((b) => {
+      const targetDays = parseScheduleDays(b.schedule);
+      const timeStr = parseScheduleTime(b.schedule);
+      if (!targetDays.length) return;
+
+      const d = new Date(year, month, 1);
+      while (d.getMonth() === month) {
+        if (targetDays.includes(d.getDay())) {
+          allSessions.push({
+            dayName: d.toLocaleDateString("en-US", { weekday: "long" }),
+            dateStr: d.toISOString().split("T")[0],
+            displayDate: d.toLocaleDateString("en-US", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            }),
+            timeStr: timeStr,
+            studentNames: (b.students || []).join(", "),
+            batchName: b.name,
+            coachName: "",
+            meetLink: "",
+            title: b.name + " - Chess Class",
+          });
+        }
+        d.setDate(d.getDate() + 1);
+      }
+    });
+
+    allSessions.sort((a, b) => a.dateStr.localeCompare(b.dateStr));
+
+    const rows = allSessions
+      .map((s, i) => {
+        return `<tr>
+          <td style="text-align:center; font-weight:600; width:40px;">${i + 1}</td>
+          <td style="font-size:12px; color:var(--ivory2);">${escapeHtml(s.dayName || "")}</td>
+          <td style="font-size:12px; color:var(--ivory);">${escapeHtml(s.displayDate || s.dateStr || "")}</td>
+          <td style="font-size:12px; font-family:var(--font-mono, monospace); color:var(--gold);">${escapeHtml(s.timeStr || "TBD")}</td>
+          <td style="font-size:12px; color:var(--ivory); max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(s.studentNames || "")}">${escapeHtml(s.studentNames || "")}</td>
+        </tr>`;
+      })
+      .join("");
+
+    const monthLabel = new Date(year, month, 1).toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+
+    container.innerHTML = `
+      <div style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+          <span style="font-size:13px; color:var(--ivory-dim);">Showing schedule for</span>
+          <strong style="color:var(--gold); margin-left:6px;">${escapeHtml(monthLabel)}</strong>
+          <span style="font-size:12px; color:var(--ivory-dim); margin-left:8px;">${allSessions.length} session${allSessions.length !== 1 ? "s" : ""}</span>
+        </div>
+      </div>
+      <div class="table-wrap" style="overflow-x:auto; border:1px solid var(--border); border-radius:10px;">
+        <table class="coach-mini-table" style="width:100%; border-collapse:collapse;">
+          <thead>
+            <tr style="background:rgba(0,0,0,0.2);">
+              <th style="width:40px;">#</th>
+              <th>Day</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Student Names</th>
+            </tr>
+          </thead>
+          <tbody>${rows || `<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--ivory-dim);">No sessions scheduled for ${escapeHtml(monthLabel)}.</td></tr>`}</tbody>
+        </table>
+      </div>
+    `;
   }
 
   function openCoachModal(id = null) {
@@ -13981,6 +14548,7 @@ Best regards,
   function renderChild() {
     const loadingEl = $("child-loading");
     const contentEl = $("child-content");
+    console.log("[renderChild] called currentStudent=", !!currentStudent, "window.currentStudent=", !!window.currentStudent, "allStudentsLen=", (allStudents || []).length, "allBatchesLen=", (window.allBatches || []).length);
     if (!currentStudent) {
       currentStudent = window.currentStudent;
     }
@@ -14126,6 +14694,7 @@ Best regards,
 
     // Schedule tab
     if (typeof window.renderChildSchedule === "function") {
+      console.log("[renderChild] calling renderChildSchedule s=", s?.id, s?.name, "coachName=", coachName);
       window.renderChildSchedule(s, coachName);
     }
 

@@ -323,26 +323,31 @@
   };
 
   window.setChildEventsSubTab = async function (tab) {
-    document.querySelectorAll('.child-events-sub-view').forEach(el => el.style.display = 'none');
-    
+    const fameView = document.getElementById('child-fame-list-view');
+    const acaGrid = document.getElementById('child-ev-list-view');
+    const finderDiv = document.getElementById('child-tf-list-view');
+
     const btnAcademy = document.getElementById('btn-child-events-academy');
     const btnFinder = document.getElementById('btn-child-events-finder');
 
     if (btnAcademy) btnAcademy.classList.remove('active');
     if (btnFinder) btnFinder.classList.remove('active');
 
-    if (tab === 'academy') {
-      if (btnAcademy) btnAcademy.classList.add('active');
-      const acaGrid = document.getElementById('child-ev-list-view');
-      if (acaGrid) acaGrid.style.display = 'block';
-    } else if (tab === 'finder') {
+    if (tab === 'finder') {
       if (btnFinder) btnFinder.classList.add('active');
-      const finderDiv = document.getElementById('child-tf-list-view');
+      if (acaGrid) acaGrid.style.display = 'none';
       if (finderDiv) {
         finderDiv.style.display = 'block';
         await loadTournaments();
         renderTournamentFinderUI(finderDiv, true);
       }
+    } else {
+      if (btnAcademy) btnAcademy.classList.add('active');
+      if (fameView) fameView.style.display = 'block';
+      if (acaGrid) acaGrid.style.display = 'block';
+      if (finderDiv) finderDiv.style.display = 'none';
+      if (window.renderChildFame) window.renderChildFame();
+      renderChildEvents();
     }
   };
 

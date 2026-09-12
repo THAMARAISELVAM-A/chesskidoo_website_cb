@@ -1528,6 +1528,325 @@ textarea:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--gold
   .coach-stats-grid { grid-template-columns: 1fr; }
 }
 
+/* ── COACH PORTAL CATCHY ACTION BUTTONS (My Students & My Batches) ── */
+#coach-portal-tabs.tabs-nav {
+  display: inline-flex;
+  width: auto;
+  min-width: 320px;
+  max-width: 540px;
+  background: linear-gradient(135deg, rgba(20, 27, 45, 0.92) 0%, rgba(13, 18, 32, 0.98) 100%);
+  border: 1px solid rgba(218, 163, 62, 0.32);
+  border-bottom: 1px solid rgba(218, 163, 62, 0.32) !important;
+  border-radius: 16px;
+  padding: 6px;
+  gap: 10px;
+  margin: 10px 0 24px 0;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  position: relative;
+}
+
+#coach-portal-tabs .tab-link {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 22px;
+  font-family: var(--font-head, 'Poppins', sans-serif);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--ivory2, #cbd5e1);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 12px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  text-decoration: none;
+}
+
+#coach-portal-tabs .tab-link .coach-tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.25s ease;
+  flex-shrink: 0;
+}
+
+#coach-portal-tabs .tab-link .coach-tab-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+
+#coach-portal-tabs .tab-link:hover {
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(218, 163, 62, 0.16) 0%, rgba(218, 163, 62, 0.06) 100%);
+  border-color: rgba(218, 163, 62, 0.45);
+  border-bottom-color: rgba(218, 163, 62, 0.45) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), 0 0 16px rgba(218, 163, 62, 0.2);
+}
+
+#coach-portal-tabs .tab-link:hover .coach-tab-icon {
+  transform: scale(1.12);
+  background: rgba(218, 163, 62, 0.2);
+  border-color: rgba(218, 163, 62, 0.5);
+}
+
+#coach-portal-tabs .tab-link.active {
+  color: #0b0f19 !important;
+  background: linear-gradient(135deg, #fce082 0%, #e8b84b 35%, #d49727 70%, #b87b14 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5) !important;
+  font-weight: 800;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(218, 163, 62, 0.45), 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.6) !important;
+}
+
+#coach-portal-tabs .tab-link.active .coach-tab-icon {
+  background: rgba(11, 15, 25, 0.15);
+  border-color: rgba(11, 15, 25, 0.2);
+  transform: scale(1.12);
+}
+
+#coach-portal-tabs .tab-link:active {
+  transform: scale(0.98);
+}
+
+#coach-portal-tabs .tab-link .coach-tab-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  margin-left: 4px;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+#coach-portal-tabs .tab-link.active .coach-tab-pill {
+  background: rgba(11, 15, 25, 0.85);
+  color: #fce082;
+  border-color: rgba(11, 15, 25, 0.3);
+}
+
+@media (max-width: 640px) {
+  #coach-portal-tabs.tabs-nav {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  #coach-portal-tabs .tab-link {
+    padding: 10px 12px;
+    font-size: 13px;
+    gap: 6px;
+  }
+  #coach-portal-tabs .tab-link .coach-tab-pill {
+    display: none;
+  }
+}
+
+/* Child Events Portal-Style Tabs */
+#child-events-portal-tabs .tab-link .coach-tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.25s ease;
+  flex-shrink: 0;
+}
+
+#child-events-portal-tabs .tab-link .coach-tab-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+
+#child-events-portal-tabs .tab-link:hover {
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(218, 163, 62, 0.16) 0%, rgba(218, 163, 62, 0.06) 100%);
+  border-color: rgba(218, 163, 62, 0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), 0 0 16px rgba(218, 163, 62, 0.2);
+}
+
+#child-events-portal-tabs .tab-link:hover .coach-tab-icon {
+  transform: scale(1.12);
+  background: rgba(218, 163, 62, 0.2);
+  border-color: rgba(218, 163, 62, 0.5);
+}
+
+#child-events-portal-tabs .tab-link.active {
+  color: #0b0f19 !important;
+  background: linear-gradient(135deg, #fce082 0%, #e8b84b 35%, #d49727 70%, #b87b14 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  font-weight: 800;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(218, 163, 62, 0.45), 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.6) !important;
+}
+
+#child-events-portal-tabs .tab-link.active .coach-tab-icon {
+  background: rgba(11, 15, 25, 0.15);
+  border-color: rgba(11, 15, 25, 0.2);
+  transform: scale(1.12);
+}
+
+#child-events-portal-tabs .tab-link:active {
+  transform: scale(0.98);
+}
+
+#child-events-portal-tabs .tab-link .coach-tab-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  margin-left: 4px;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+#child-events-portal-tabs .tab-link.active .coach-tab-pill {
+  background: rgba(11, 15, 25, 0.85);
+  color: #fce082;
+  border-color: rgba(11, 15, 25, 0.3);
+}
+
+@media (max-width: 640px) {
+  #child-events-portal-tabs.tabs-nav {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  #child-events-portal-tabs .tab-link {
+    padding: 10px 12px;
+    font-size: 13px;
+    gap: 6px;
+  }
+  #child-events-portal-tabs .tab-link .coach-tab-pill {
+    display: none;
+  }
+}
+
+/* Coach Events Portal-Style Tabs */
+#coach-events-portal-tabs .tab-link .coach-tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.25s ease;
+  flex-shrink: 0;
+}
+
+#coach-events-portal-tabs .tab-link .coach-tab-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+
+#coach-events-portal-tabs .tab-link:hover {
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(218, 163, 62, 0.16) 0%, rgba(218, 163, 62, 0.06) 100%);
+  border-color: rgba(218, 163, 62, 0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), 0 0 16px rgba(218, 163, 62, 0.2);
+}
+
+#coach-events-portal-tabs .tab-link:hover .coach-tab-icon {
+  transform: scale(1.12);
+  background: rgba(218, 163, 62, 0.2);
+  border-color: rgba(218, 163, 62, 0.5);
+}
+
+#coach-events-portal-tabs .tab-link.active {
+  color: #0b0f19 !important;
+  background: linear-gradient(135deg, #fce082 0%, #e8b84b 35%, #d49727 70%, #b87b14 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  font-weight: 800;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(218, 163, 62, 0.45), 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.6) !important;
+}
+
+#coach-events-portal-tabs .tab-link.active .coach-tab-icon {
+  background: rgba(11, 15, 25, 0.15);
+  border-color: rgba(11, 15, 25, 0.2);
+  transform: scale(1.12);
+}
+
+#coach-events-portal-tabs .tab-link:active {
+  transform: scale(0.98);
+}
+
+#coach-events-portal-tabs .tab-link .coach-tab-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  margin-left: 4px;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+#coach-events-portal-tabs .tab-link.active .coach-tab-pill {
+  background: rgba(11, 15, 25, 0.85);
+  color: #fce082;
+  border-color: rgba(11, 15, 25, 0.3);
+}
+
+@media (max-width: 640px) {
+  #coach-events-portal-tabs.tabs-nav {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  #coach-events-portal-tabs .tab-link {
+    padding: 10px 12px;
+    font-size: 13px;
+    gap: 6px;
+  }
+  #coach-events-portal-tabs .tab-link .coach-tab-pill {
+    display: none;
+  }
+}
+
 /* Header */
 .coach-header-section {
   position: relative;

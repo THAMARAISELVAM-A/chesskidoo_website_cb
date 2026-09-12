@@ -70,6 +70,31 @@
     return result;
   }
 
+  function extractReferenceLinks(description) {
+    if (!description) return [];
+    const lines = description.split('\n');
+    const links = [];
+    let collecting = false;
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.toLowerCase().startsWith('reference links:')) {
+        collecting = true;
+        continue;
+      }
+      if (collecting) {
+        if (trimmed.startsWith('- ')) {
+          const url = trimmed.slice(2).trim();
+          if (url) links.push(url);
+        } else if (trimmed === '') {
+          continue;
+        } else {
+          break;
+        }
+      }
+    }
+    return links;
+  }
+
   function monthKey(date) {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
   }
@@ -138,6 +163,25 @@
       }
     }
     return false;
+  }
+
+  function isStudentEligibleForHomework(assignment, studentId) {
+    if (!assignment || !studentId) return false;
+    const sid = String(studentId);
+    const dueDate = assignment.due_date;
+    if (!dueDate) return true;
+
+    const attList = window.allAttendance || [];
+    const dayRecord = attList.find(a => {
+      const recordStudentId = String(a.student_id || a.studentId || '');
+      return recordStudentId === sid && a.date === dueDate;
+    });
+
+    if (!dayRecord) return true;
+
+    const status = (dayRecord.status || '').toLowerCase();
+    if (status === 'no class') return false;
+    return status === 'present' || status === 'late';
   }
 
   function assignmentAppliesToBatch(assignment, batchId, students = [], batches = []) {
@@ -1634,7 +1678,30 @@ let homeworkSubmissionCache = [];
           <button class="btn btn-outline-danger btn-sm" onclick="deleteHomeworkAssignment('${assignment.id}')">🗑️ Delete</button>
         </div>` : ''}
       </div>
-      ${assignment.description ? `<div style="margin-top:12px; color:var(--ivory-dim); font-size:13px; line-height:1.65; white-space:pre-wrap;">${linkifyText(assignment.description)}</div>` : '<div style="margin-top:12px;color:var(--ivory-dim);font-size:13px;">No detailed instructions provided.</div>'}
+      ${(() => {
+        const rawDesc = assignment.description || '';
+        const refLinks = extractReferenceLinks(rawDesc);
+        const cleanDesc = rawDesc.replace(/\n?Reference Links:\n(?:- .+\n?)+/g, '').trim();
+        const hasRefLinks = refLinks.length > 0;
+        return `
+          ${cleanDesc ? `<div style="margin-top:12px; color:var(--ivory-dim); font-size:13px; line-height:1.65; white-space:pre-wrap;">${linkifyText(cleanDesc)}</div>` : '<div style="margin-top:12px;color:var(--ivory-dim);font-size:13px;">No detailed instructions provided.</div>'}
+          ${hasRefLinks ? `
+            <div style="margin-top:14px; padding:10px 12px; background:rgba(59,130,246,0.04); border:1px solid rgba(59,130,246,0.2); border-radius:8px;">
+              <strong style="font-size:12px; color:#60a5fa; display:flex; align-items:center; gap:4px;">🔗 Reference Links (${refLinks.length}):</strong>
+              <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;">
+                ${refLinks.map((url, i) => {
+                  let name = `Reference ${i + 1}`;
+                  if (typeof url === 'string' && url.startsWith('http')) {
+                    const part = url.split('/').pop().split('?')[0];
+                    if (part && part.length < 35) name = decodeURIComponent(part);
+                  }
+                  return `<a href="${safeUrl(url)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="font-size:11px; padding:4px 10px; color:#60a5fa; border-color:rgba(59,130,246,0.3); text-decoration:none;">🔗 ${escapeValue(name)}</a>`;
+                }).join('')}
+              </div>
+            </div>
+          ` : ''}
+        `;
+      })()}
       ${(() => {
         let files = [];
         const parseList = (val) => {
@@ -2096,7 +2163,10 @@ let homeworkSubmissionCache = [];
       });
     }
 
-    const items = sortHomework(homeworkList.filter((assignment) => assignmentAppliesToStudent(assignment, student.id, window.allStudents || [])));
+    const items = sortHomework(homeworkList.filter((assignment) => {
+      if (!assignmentAppliesToStudent(assignment, student.id, window.allStudents || [])) return false;
+      return isStudentEligibleForHomework(assignment, student.id);
+    }));
     if (!items.length) {
       list.innerHTML = '<div class="empty-state"><span class="empty-icon">📝</span><p>No homework assigned right now.</p></div>';
       return;
@@ -2117,9 +2187,10 @@ let homeworkSubmissionCache = [];
       return;
     }
 
-    const studentAssignments = sortHomework((window.allHomework || []).filter((assignment) => 
-      assignmentAppliesToStudent(assignment, studentId, window.allStudents || [])
-    ));
+    const studentAssignments = sortHomework((window.allHomework || []).filter((assignment) => {
+      if (!assignmentAppliesToStudent(assignment, studentId, window.allStudents || [])) return false;
+      return isStudentEligibleForHomework(assignment, studentId);
+    }));
 
     if (!studentAssignments.length) {
       list.innerHTML = '<div class="empty-state"><span class="empty-icon">📝</span><p>No homework assigned to this student.</p></div>';
@@ -2186,6 +2257,7 @@ let homeworkSubmissionCache = [];
 
   window.assignmentAppliesToStudent = assignmentAppliesToStudent;
   window.assignmentAppliesToBatch = assignmentAppliesToBatch;
+  window.isStudentEligibleForHomework = isStudentEligibleForHomework;
   window.updateHomeworkTargetFields = updateHomeworkTargetFields;
   window.openHomeworkAssignmentModal = openHomeworkAssignmentModal;
   window.updatePastHomeworkHistory = updatePastHomeworkHistory;

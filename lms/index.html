@@ -200,7 +200,7 @@
       <!-- Parent -->
       <div class="nav-item parent-only" id="nav-child" onclick="goChildTab('overview')"><span class="ico">📈</span> My Child Profile</div>
       <div class="nav-item parent-only" id="nav-parent-schedule" onclick="goChildTab('schedule')"><span class="ico">🗓️</span> Schedule</div>
-      <div class="nav-item parent-only" id="nav-parent-attendance" onclick="goChildTab('attendance')"><span class="ico">🗓️</span> Attendance and Homework</div>
+       <div class="nav-item parent-only" id="nav-parent-attendance" onclick="goChildTab('attendance')"><span class="ico">📋</span> Attendance and Homework</div>
       <div class="nav-item parent-only" id="nav-parent-studypgn" onclick="goChildTab('studypgn')"><span class="ico">♟️</span> Study PGN</div>
       <div class="nav-item parent-only" id="nav-parent-events" onclick="goChildTab('events')"><span class="ico">🎫</span> Events</div>
       <div class="nav-item parent-only" id="nav-parent-reports" onclick="goChildTab('reports')"><span class="ico">📄</span> Reports</div>
@@ -290,10 +290,18 @@
            </div>
           </div>
 
-          <!-- Coach Portal Tabs -->
-          <div class="tabs-nav" id="coach-portal-tabs" style="margin-bottom:20px;">
-            <button class="tab-link active" onclick="setCoachPortalTab('students', this)">My Students</button>
-            <button class="tab-link" onclick="setCoachPortalTab('batches', this)">My Batches</button>
+          <!-- Coach Portal Tabs / Catchy Action Buttons -->
+          <div class="tabs-nav" id="coach-portal-tabs">
+            <button type="button" class="tab-link active" id="coach-btn-tab-students" onclick="setCoachPortalTab('students', this)" title="View and manage enrolled students">
+              <span class="coach-tab-icon">👥</span>
+              <span class="coach-tab-title">My Students</span>
+              <span class="coach-tab-pill">Roster</span>
+            </button>
+            <button type="button" class="tab-link" id="coach-btn-tab-batches" onclick="setCoachPortalTab('batches', this)" title="View and manage assigned batches">
+              <span class="coach-tab-icon">🏫</span>
+              <span class="coach-tab-title">My Batches</span>
+              <span class="coach-tab-pill">Batches</span>
+            </button>
           </div>
 
           <div id="coach-tab-students" class="child-tab-content active">
@@ -354,24 +362,73 @@
       </div>
 
        <!-- Coach Workspace Pages -->
-       <div id="page-coach-schedule" class="page coach-only">
-        <div class="coach-shell">
-          <div class="coach-section-block">
-            <div class="coach-section-row">
-              <h2 class="coach-section-title">Schedule</h2>
-            </div>
-            <div id="coach-schedule-content">
-              <div class="coach-loading-cell">Loading schedule...</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-         <div id="page-coach-events" class="page coach-only">
-           <div id="coach-events-content">
-             <div class="coach-loading-cell">Loading Tournament &amp; Event Hub...</div>
+        <div id="page-coach-schedule" class="page coach-only">
+         <div class="coach-shell">
+           <div class="coach-section-block">
+               <div class="coach-section-row">
+                 <h2 class="coach-section-title">Schedule</h2>
+                 <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                   <div class="tabs-nav" id="coach-schedule-tabs" style="background:rgba(0,0,0,0.2); padding:3px; border-radius:8px; border:1px solid var(--border); display:inline-flex; gap:2px;">
+                     <button type="button" class="tab-link active" id="coach-schedule-tab-weekly" onclick="window.setCoachScheduleView && window.setCoachScheduleView('weekly')" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:700;">📆 Weekly</button>
+                     <button type="button" class="tab-link" id="coach-schedule-tab-monthly" onclick="window.setCoachScheduleView && window.setCoachScheduleView('monthly')" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:700;">📅 Monthly</button>
+                   </div>
+                   <input type="month" id="coach-schedule-month" onchange="window.renderCoachSchedule && window.renderCoachSchedule()" min="2026-01" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; width:140px; display:none;">
+                 </div>
+               </div>
+             <div id="coach-schedule-content">
+               <div class="coach-loading-cell">Loading schedule...</div>
+             </div>
            </div>
          </div>
+       </div>
+
+           <div id="page-coach-events" class="page coach-only">
+             <div id="coach-events-content" class="coach-shell" style="padding:0;">
+               <div class="child-events-toolbar">
+                 <div>
+                   <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(218,163,62,0.15); border:1px solid rgba(218,163,62,0.3); border-radius:99px; padding:4px 12px; font-size:11px; font-weight:700; color:var(--gold); text-transform:uppercase; margin-bottom:8px;">
+                     <span>🏆 Events Hub</span>
+                   </div>
+                   <h3 class="child-events-title">Academy Events &amp; Wall of Fame</h3>
+                   <p class="child-events-subtitle">Celebrating ChessKidoo champions, standout ratings, academy victories, and upcoming events.</p>
+                 </div>
+                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                   <button class="btn btn-gold" onclick="window.openEventModal && window.openEventModal()" style="font-weight:700;">➕ Add Event</button>
+                 </div>
+               </div>
+
+                <!-- Wall of Fame (always visible) -->
+                <section class="child-events-section child-events-fame-section" aria-labelledby="child-events-fame-heading" style="margin-bottom:24px;">
+                  <div id="coach-events-fame-view" class="child-events-sub-view" style="display:block;">
+                    <div id="coach-fame-grid"></div>
+                  </div>
+                </section>
+
+               <!-- Catchy Portal-Style Action Cards -->
+               <div id="coach-events-portal-tabs" class="tabs-nav" style="margin-bottom:20px; background:rgba(0,0,0,0.2); padding:3px; border-radius:8px; border:1px solid var(--border); display:flex; gap:2px; flex-wrap:wrap;">
+                 <button type="button" class="tab-link active" id="btn-coach-events-academy" onclick="window.setCoachEventsTab('academy', this)" title="View upcoming academy events" style="display:inline-flex; align-items:center; gap:8px; padding:8px 16px; font-size:13px; border-radius:6px; border:none; cursor:pointer;">
+                   <span class="coach-tab-icon" style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:8px; font-size:15px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);">📅</span>
+                   <span class="coach-tab-title" style="font-weight:700;">Upcoming Events</span>
+                   <span class="coach-tab-pill" style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; padding:3px 8px; border-radius:999px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); margin-left:4px;">Events</span>
+                 </button>
+                 <button type="button" class="tab-link" id="btn-coach-events-finder" onclick="window.setCoachEventsTab('finder', this)" title="Find tournaments" style="display:inline-flex; align-items:center; gap:8px; padding:8px 16px; font-size:13px; border-radius:6px; border:none; cursor:pointer; background:linear-gradient(135deg, rgba(59,130,246,0.2), rgba(168,85,247,0.2)); border:1px solid rgba(59,130,246,0.4); color:#60a5fa; font-weight:700;">
+                   <span class="coach-tab-icon" style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:8px; font-size:15px; background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3);">🔍</span>
+                   <span class="coach-tab-title" style="font-weight:700;">Tournament Finder</span>
+                   <span class="coach-tab-pill" style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; padding:3px 8px; border-radius:999px; background:rgba(59,130,246,0.2); border:1px solid rgba(59,130,246,0.35); margin-left:4px; color:#60a5fa;">Explore</span>
+                 </button>
+               </div>
+
+               <!-- Upcoming Events -->
+               <section class="child-events-section child-events-upcoming-section" aria-labelledby="child-events-upcoming-heading" style="margin-bottom:24px;">
+                 <div id="coach-events-list-view" class="child-events-sub-view" style="display:block;">
+                   <div id="coach-events-grid" class="ev-grid"></div>
+                 </div>
+               </section>
+
+               <!-- Tournament Finder -->
+               <div id="coach-events-finder-view" class="child-events-sub-view" style="display:none;"></div>
+             </div>
+           </div>
 
         <div id="page-coach-attendance" class="page coach-only">
          <div class="coach-shell">
@@ -1954,35 +2011,43 @@
         <div id="child-tab-events" class="child-tab-content">
           <div class="child-events-toolbar">
             <div>
-              <h3 class="child-events-title">Wall of Fame</h3>
-              <p class="child-events-subtitle">Celebrating ChessKidoo champions, standout ratings, and academy victories.</p>
+              <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(218,163,62,0.15); border:1px solid rgba(218,163,62,0.3); border-radius:99px; padding:4px 12px; font-size:11px; font-weight:700; color:var(--gold); text-transform:uppercase; margin-bottom:8px;">
+                <span>🏆 Events Hub</span>
+              </div>
+              <h3 class="child-events-title">Academy Events &amp; Wall of Fame</h3>
+              <p class="child-events-subtitle">Celebrating ChessKidoo champions, standout ratings, academy victories, and upcoming events.</p>
             </div>
-            <button class="btn btn-gold child-events-finder-btn" id="btn-child-events-finder" onclick="setChildEventsSubTab('finder')">🏆 Tournament Finder</button>
           </div>
 
-          <!-- Wall of Fame is the default Events view. -->
-          <section class="child-events-section child-events-fame-section" aria-labelledby="child-events-fame-heading">
-            <div class="child-events-section-heading">
-              <h4 id="child-events-fame-heading">Wall of Fame</h4>
-              <span>Top-rated ChessKidoo players</span>
-            </div>
+          <!-- Wall of Fame (always visible) -->
+          <section class="child-events-section child-events-fame-section" aria-labelledby="child-events-fame-heading" style="margin-bottom:24px;">
             <div id="child-fame-list-view" class="child-events-sub-view" style="display:block;">
               <div id="child-fame-grid"></div>
             </div>
           </section>
 
-          <!-- Upcoming event details appear below the Wall of Fame. -->
-          <section class="child-events-section child-events-upcoming-section" aria-labelledby="child-events-upcoming-heading">
-            <div class="child-events-section-heading">
-              <h4 id="child-events-upcoming-heading">Upcoming Events</h4>
-              <span>Academy tournaments and activities</span>
-            </div>
+          <!-- Catchy Portal-Style Action Cards -->
+          <div id="child-events-portal-tabs" class="tabs-nav" style="margin-bottom:20px; background:rgba(0,0,0,0.2); padding:3px; border-radius:8px; border:1px solid var(--border); display:flex; gap:2px; flex-wrap:wrap;">
+            <button type="button" class="tab-link active" id="btn-child-events-academy" onclick="setChildEventsSubTab('academy', this)" title="View upcoming academy events" style="display:inline-flex; align-items:center; gap:8px; padding:8px 16px; font-size:13px; border-radius:6px; border:none; cursor:pointer;">
+              <span class="coach-tab-icon" style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:8px; font-size:15px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);">📅</span>
+              <span class="coach-tab-title" style="font-weight:700;">Upcoming Events</span>
+              <span class="coach-tab-pill" style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; padding:3px 8px; border-radius:999px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); margin-left:4px;">Events</span>
+            </button>
+            <button type="button" class="tab-link" id="btn-child-events-finder" onclick="setChildEventsSubTab('finder', this)" title="Find tournaments" style="display:inline-flex; align-items:center; gap:8px; padding:8px 16px; font-size:13px; border-radius:6px; border:none; cursor:pointer; background:linear-gradient(135deg, rgba(59,130,246,0.2), rgba(168,85,247,0.2)); border:1px solid rgba(59,130,246,0.4); color:#60a5fa; font-weight:700;">
+              <span class="coach-tab-icon" style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:8px; font-size:15px; background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3);">🔍</span>
+              <span class="coach-tab-title" style="font-weight:700;">Tournament Finder</span>
+              <span class="coach-tab-pill" style="font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; padding:3px 8px; border-radius:999px; background:rgba(59,130,246,0.2); border:1px solid rgba(59,130,246,0.35); margin-left:4px; color:#60a5fa;">Explore</span>
+            </button>
+          </div>
+
+          <!-- Upcoming Events -->
+          <section class="child-events-section child-events-upcoming-section" aria-labelledby="child-events-upcoming-heading" style="margin-bottom:24px;">
             <div id="child-ev-list-view" class="child-events-sub-view" style="display:block;">
               <div id="child-events-grid" class="ev-grid"></div>
             </div>
           </section>
 
-          <!-- Tournament Finder Sub-View -->
+          <!-- Tournament Finder -->
           <div id="child-tf-list-view" class="child-events-sub-view" style="display:none;"></div>
         </div>
 
@@ -2020,6 +2085,32 @@
                 <div class="card" style="padding:40px; text-align:center; color:var(--ivory-dim); width:100%;">
                   <span style="font-size:36px; display:block; margin-bottom:12px;">📅</span>
                   No active schedule found. Please contact the administrator.
+                </div>
+              </div>
+            </div>
+
+            <div class="tabs-nav" id="child-schedule-tabs" style="background:rgba(0,0,0,0.2); padding:3px; border-radius:8px; border:1px solid var(--border); display:inline-flex; gap:2px; margin-bottom:16px;">
+              <button type="button" class="tab-link active" id="child-schedule-tab-weekly" onclick="window.setChildScheduleView && window.setChildScheduleView('weekly')" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:700;">📆 Weekly</button>
+              <button type="button" class="tab-link" id="child-schedule-tab-monthly" onclick="window.setChildScheduleView && window.setChildScheduleView('monthly')" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:700;">📅 Monthly</button>
+            </div>
+
+            <div id="child-schedule-weekly-panel">
+              <div id="child-weekly-schedule-container">
+                <div class="card" style="padding:24px; text-align:center; color:var(--ivory-dim);">
+                  <span style="font-size:24px; display:block; margin-bottom:8px;">📆</span>
+                  Select a schedule to view weekly sessions.
+                </div>
+              </div>
+            </div>
+            <div id="child-schedule-monthly-panel" style="display:none;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                <span style="font-size:12px; color:var(--ivory-dim);">Month-wise session list</span>
+                <input type="month" id="child-schedule-month" onchange="window.renderChildMonthlySchedule && window.renderChildMonthlySchedule(window.currentStudent)" style="padding:8px 12px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px; font-size:13px; font-family:inherit;">
+              </div>
+              <div id="child-monthly-schedule-container">
+                <div class="card" style="padding:24px; text-align:center; color:var(--ivory-dim);">
+                  <span style="font-size:24px; display:block; margin-bottom:8px;">📅</span>
+                  Select a schedule to view monthly sessions.
                 </div>
               </div>
             </div>
@@ -2832,54 +2923,33 @@
       <!-- Main Layout Grid -->
       <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap:20px; margin-bottom:24px;">
         
-        <!-- Checklist & Notes Card -->
+        <!-- LEFT: Academy Checklist -->
+        <div class="card" style="border: 1px solid var(--border); background:var(--bg2); padding: 20px; flex: 1;">
+          <h3 style="margin: 0 0 16px 0; color:var(--gold); font-size:16px; display:flex; align-items:center; gap:8px;">
+            <span>✅</span> Academy Checklist
+          </h3>
+          
+          <!-- Quick Add Task Form -->
+          <div style="display:flex; gap:8px; margin-bottom:16px;">
+            <input type="text" id="todo-input" placeholder="Add new task (e.g. Call parent, verify invoice)..." style="flex:1; padding:8px 12px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px;">
+            <select id="todo-priority" style="padding:8px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; width:90px;">
+              <option value="high">🔴 High</option>
+              <option value="medium" selected>🟡 Medium</option>
+              <option value="low">🟢 Low</option>
+            </select>
+            <button class="btn btn-gold" onclick="addAdminTodo()" style="padding:0 14px; font-size:12px; font-weight:700;">Add</button>
+          </div>
+
+          <!-- Task List Viewport -->
+          <div id="todo-list-container" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; margin-bottom:10px;">
+            <!-- Dynamically populated checklist -->
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Notepad + Scheduled Meetings -->
         <div style="display:flex; flex-direction:column; gap:20px;">
-          <!-- Task Checklist -->
-          <div class="card" style="border: 1px solid var(--border); background:var(--bg2); padding: 20px; flex: 1;">
-            <h3 style="margin: 0 0 16px 0; color:var(--gold); font-size:16px; display:flex; align-items:center; gap:8px;">
-              <span>✅</span> Academy Checklist
-            </h3>
-            
-            <!-- Quick Add Task Form -->
-            <div style="display:flex; gap:8px; margin-bottom:16px;">
-              <input type="text" id="todo-input" placeholder="Add new task (e.g. Call parent, verify invoice)..." style="flex:1; padding:8px 12px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px;">
-              <select id="todo-priority" style="padding:8px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; width:90px;">
-                <option value="high">🔴 High</option>
-                <option value="medium" selected>🟡 Medium</option>
-                <option value="low">🟢 Low</option>
-              </select>
-              <button class="btn btn-gold" onclick="addAdminTodo()" style="padding:0 14px; font-size:12px; font-weight:700;">Add</button>
-            </div>
-
-            <!-- Task List Viewport -->
-            <div id="todo-list-container" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; margin-bottom:10px;">
-              <!-- Dynamically populated checklist -->
-            </div>
-          </div>
-
-          <!-- Fee Collection Account (configurable, used in reminder messages) -->
-          <div class="card" style="border: 1px solid var(--border); background:var(--bg2); padding: 20px;">
-            <h3 style="margin: 0 0 12px 0; color:var(--gold); font-size:16px; display:flex; align-items:center; gap:8px;">
-              <span>💳</span> Fee Collection Account
-            </h3>
-            <p style="font-size:11px; color:var(--ivory-dim); line-height:1.4; margin-bottom:12px;">
-              Shown to parents in every fee reminder (UPI / GPay / PhonePe). Update here — no code change needed.
-            </p>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-              <div>
-                <label style="font-size:10px; color:var(--ivory-dim); text-transform:uppercase; display:block; margin-bottom:4px;">UPI / Phone Number</label>
-                <input type="text" id="pay-payee-number" placeholder="9514266505" style="width:100%; padding:8px 12px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:13px;">
-              </div>
-              <div>
-                <label style="font-size:10px; color:var(--ivory-dim); text-transform:uppercase; display:block; margin-bottom:4px;">Payee Name</label>
-                <input type="text" id="pay-payee-name" placeholder="Ranjith" style="width:100%; padding:8px 12px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:13px;">
-              </div>
-            </div>
-            <button class="btn btn-gold" onclick="window.savePaymentPayee()" style="margin-top:12px; padding:8px 16px; font-size:12px; font-weight:700;">💾 Save Collection Account</button>
-            <div id="pay-payee-preview" style="margin-top:10px; font-size:11px; color:var(--ivory-dim);"></div>
-          </div>
-
-          <!-- Academy operational details & Note pad -->
+          
+          <!-- Quick Notepad -->
           <div class="card" style="border: 1px solid var(--border); background:var(--bg2); padding: 20px;">
             <h3 style="margin: 0 0 12px 0; color:var(--gold); font-size:16px; display:flex; align-items:center; gap:8px;">
               <span>📌</span> Quick Notepad & Store Details
@@ -2887,62 +2957,23 @@
             <p style="font-size:11px; color:var(--ivory-dim); line-height:1.4; margin-bottom:10px;">
               Store temporary operational details, coach assignments, passwords reminders, or general memos. Saved automatically.
             </p>
-            <textarea id="productivity-notepad" oninput="saveProductivityNotes()" placeholder="Type academy credentials, contact links, or quick checklists here..." style="width:100%; height:140px; padding:12px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px; font-size:12px; line-height:1.6; resize:none; font-family:monospace;"></textarea>
+            <textarea id="productivity-notepad" oninput="saveProductivityNotes()" placeholder="Type academy credentials, contact links, or quick checklists here..." style="width:100%; height:120px; padding:12px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px; font-size:12px; line-height:1.6; resize:none; font-family:monospace;"></textarea>
           </div>
+
+          <!-- Scheduled Meetings -->
+          <div class="card" style="border: 1px solid var(--border); background:var(--bg2); padding: 20px; flex: 1;">
+            <h3 style="margin: 0 0 12px 0; color:var(--gold); font-size:16px; display:flex; align-items:center; gap:8px;">
+              <span>📹</span> Scheduled Coaching Meetings
+            </h3>
+            <p style="font-size:11px; color:var(--ivory-dim); margin-bottom:10px;">
+              Upcoming extra 1-on-1 calls, game reviews, or demo sessions scheduled by the admin for your batch.
+            </p>
+            <div id="meet-list-container" style="max-height:160px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+              <!-- Dynamically populated calls matching coach/student ID -->
+            </div>
+          </div>
+
         </div>
-
-        <!-- Meeting Scheduler & Calendar list -->
-        <div class="card" style="border: 1px solid var(--border); background:var(--bg2); padding: 20px; display:flex; flex-direction:column;">
-          <h3 style="margin: 0 0 16px 0; color:var(--gold); font-size:16px; display:flex; align-items:center; gap:8px;">
-            <span>📅</span> Schedule GMeet / Zoom Calls
-          </h3>
-          
-          <!-- Schedule Call Form -->
-          <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); padding:16px; border-radius:8px; margin-bottom:16px; display:flex; flex-direction:column; gap:12px;">
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-              <div>
-                <label style="font-size:10px; color:var(--ivory-dim); text-transform:uppercase; display:block; margin-bottom:4px;">Platform</label>
-                <select id="meet-platform" onchange="autoFillMeetLink(this.value)" style="width:100%; padding:8px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px;">
-                  <option value="gmeet">🎬 Google Meet</option>
-                  <option value="zoom">📹 Zoom Call</option>
-                </select>
-              </div>
-              <div>
-                <label style="font-size:10px; color:var(--ivory-dim); text-transform:uppercase; display:block; margin-bottom:4px;">Date & Time</label>
-                <input type="datetime-local" id="meet-time" style="width:100%; padding:7px 8px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; color-scheme:dark;">
-              </div>
-            </div>
-
-            <div>
-              <label style="font-size:10px; color:var(--ivory-dim); text-transform:uppercase; display:block; margin-bottom:4px;">Meeting Title</label>
-              <input type="text" id="meet-title" placeholder="e.g. Intermediate Batch Demo Class" style="width:100%; padding:8px 12px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px;">
-            </div>
-
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-              <div>
-                <label style="font-size:10px; color:var(--ivory-dim); text-transform:uppercase; display:block; margin-bottom:4px;">Attendee (Coach/Student)</label>
-                <select id="meet-attendee" style="width:100%; padding:8px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px;">
-                  <option value="">General / Boardroom Meet</option>
-                </select>
-              </div>
-              <div>
-                <label style="font-size:10px; color:var(--ivory-dim); text-transform:uppercase; display:block; margin-bottom:4px;">Meeting URL Link</label>
-                <input type="text" id="meet-link" placeholder="https://meet.google.com/abc-defg-hij" style="width:100%; padding:8px 12px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px;">
-              </div>
-            </div>
-
-            <button class="btn btn-gold" onclick="addScheduledMeeting()" style="padding:10px; font-size:12px; font-weight:700; width:100%;">🗓️ Schedule and Save Call</button>
-          </div>
-
-          <!-- Upcoming Scheduled Calls List -->
-          <div style="flex:1;">
-            <div style="font-size:11px; text-transform:uppercase; color:var(--gold); letter-spacing:1px; margin-bottom:10px; font-weight:700;">Upcoming Call Schedules</div>
-            <div id="meet-list-container" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
-              <!-- Dynamically populated scheduled calls -->
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
 
@@ -4671,10 +4702,16 @@
                <label class="label" for="qcs-classlink">Class Link (Google Meet / Zoom)</label>
                <input type="url" id="qcs-classlink" class="input-field" placeholder="https://meet.google.com/…">
              </div>
-             <div class="form-group" style="grid-column:1/-1;">
-               <label class="label" for="qcs-reflink">Reference Link (Lichess / YouTube)</label>
-               <input type="url" id="qcs-reflink" class="input-field" placeholder="https://lichess.org/study/…">
-             </div>
+              <div class="form-group" style="grid-column:1/-1;">
+                <label class="label">Reference Links (Lichess / YouTube / etc.)</label>
+                <div id="qcs-reflinks-container">
+                  <div class="qcs-reflink-row" style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+                    <input type="url" id="qcs-reflink-0" class="input-field qcs-reflink-input" placeholder="https://lichess.org/study/…" style="flex:1;">
+                    <button type="button" class="btn btn-outline btn-sm qcs-reflink-remove" onclick="removeQcsRefLink(this)" style="display:none;">✕</button>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-outline btn-sm" onclick="addQcsRefLink()" style="margin-top:8px;">+ Add another link</button>
+              </div>
              <div class="form-group">
                <label class="label" for="qcs-level">Level</label>
                <select id="qcs-level" class="input-field">
