@@ -2,6 +2,9 @@
   const $ = (id) => document.getElementById(id);
   let homeworkSelectedIds = new Set();
   let homeworkCalendarMonth = new Date();
+  let editingHomeworkFiles = [];
+  let editingHomeworkRemovedIds = new Set();
+  let editingHomeworkNewFiles = [];
 
   function studentName(student) {
     return window.getStudentName ? window.getStudentName(student) : (student && (student.name || student.full_name || student.id)) || 'Student';
@@ -50,6 +53,48 @@
     return '#';
   }
 
+  function linkifyText(text) {
+    if (!text) return '';
+    const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g;
+    let result = '';
+    let lastIndex = 0;
+    let match;
+    while ((match = urlRegex.exec(text)) !== null) {
+      result += escapeValue(text.slice(lastIndex, match.index));
+      const url = match[0];
+      const href = url.startsWith('www.') ? 'https://' + url : url;
+      result += `<a href="${safeUrl(href)}" target="_blank" rel="noopener" style="color:var(--gold); text-decoration:underline;">${escapeValue(url)}</a>`;
+      lastIndex = urlRegex.lastIndex;
+    }
+    result += escapeValue(text.slice(lastIndex));
+    return result;
+  }
+
+  function extractReferenceLinks(description) {
+    if (!description) return [];
+    const lines = description.split('\n');
+    const links = [];
+    let collecting = false;
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.toLowerCase().startsWith('reference links:')) {
+        collecting = true;
+        continue;
+      }
+      if (collecting) {
+        if (trimmed.startsWith('- ')) {
+          const url = trimmed.slice(2).trim();
+          if (url) links.push(url);
+        } else if (trimmed === '') {
+          continue;
+        } else {
+          break;
+        }
+      }
+    }
+    return links;
+  }
+
   function monthKey(date) {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
   }
@@ -83,6 +128,17 @@
     if (!assignment || !studentId) return false;
     const sid = String(studentId);
     const targetType = (assignment.target_type || 'all').toLowerCase();
+
+    let presentIds = assignment.present_student_ids;
+    if (typeof presentIds === 'string') {
+      try {
+        presentIds = JSON.parse(presentIds);
+      } catch (_) {}
+    }
+    if (Array.isArray(presentIds) && presentIds.length) {
+      return presentIds.some((id) => String(id) === sid);
+    }
+
     if (targetType === 'all' || !assignment.target_type) return true;
 
     if (targetType === 'student') {
@@ -107,6 +163,25 @@
       }
     }
     return false;
+  }
+
+  function isStudentEligibleForHomework(assignment, studentId) {
+    if (!assignment || !studentId) return false;
+    const sid = String(studentId);
+    const dueDate = assignment.due_date;
+    if (!dueDate) return true;
+
+    const attList = window.allAttendance || [];
+    const dayRecord = attList.find(a => {
+      const recordStudentId = String(a.student_id || a.studentId || '');
+      return recordStudentId === sid && a.date === dueDate;
+    });
+
+    if (!dayRecord) return true;
+
+    const status = (dayRecord.status || '').toLowerCase();
+    if (status === 'no class') return false;
+    return status === 'present' || status === 'late';
   }
 
   function assignmentAppliesToBatch(assignment, batchId, students = [], batches = []) {
@@ -202,6 +277,11 @@
   // older responses) derive it locally instead of rendering a misleading 0.
   function recipientCount(assignment) {
     if (typeof assignment.recipient_count === 'number') return assignment.recipient_count;
+    let presentIds = assignment.present_student_ids;
+    if (typeof presentIds === 'string') {
+      try { presentIds = JSON.parse(presentIds); } catch (_) {}
+    }
+    if (Array.isArray(presentIds) && presentIds.length) return presentIds.length;
     const students = window.allStudents || [];
     if (assignment.target_type === 'student') return 1;
     if (assignment.target_type === 'batch') {
@@ -453,6 +533,7 @@ let homeworkSubmissionCache = [];
     if ($('hw-due-date')) $('hw-due-date').value = '';
     if ($('hw-file-input')) $('hw-file-input').value = '';
     if ($('hw-file-preview')) $('hw-file-preview').innerHTML = '';
+    setupHomeworkFileDropzone();
     if ($('hw-past-search')) $('hw-past-search').value = '';
     updatePastHomeworkHistory();
     window.openModal && window.openModal('homework-assignment-modal');
@@ -598,6 +679,39 @@ let homeworkSubmissionCache = [];
     previewEl.innerHTML = html;
   };
 
+  function setupHomeworkFileDropzone() {
+    const input = $('hw-file-input');
+    const dropzone = $('hw-file-drop');
+    if (!input || !dropzone || dropzone.dataset.bound === 'true') return;
+
+    const applyFiles = (fileList) => {
+      const files = Array.from(fileList || []);
+      if (!files.length) return;
+      const dataTransfer = new DataTransfer();
+      files.forEach(file => dataTransfer.items.add(file));
+      input.files = dataTransfer.files;
+      window.handleHomeworkFileSelectPreview(input, 'hw-file-preview');
+    };
+
+    input.addEventListener('change', () => window.handleHomeworkFileSelectPreview(input, 'hw-file-preview'));
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, event => {
+        event.preventDefault();
+        event.stopPropagation();
+        dropzone.classList.add('drag-over');
+      });
+    });
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, event => {
+        event.preventDefault();
+        event.stopPropagation();
+        dropzone.classList.remove('drag-over');
+      });
+    });
+    dropzone.addEventListener('drop', event => applyFiles(event.dataTransfer.files));
+    dropzone.dataset.bound = 'true';
+  }
+
   function isImageFile(file) {
     if (!file) return false;
     const mime = (file.type || '').toLowerCase();
@@ -694,33 +808,61 @@ let homeworkSubmissionCache = [];
     });
   }
 
-  async function saveHomeworkAssignment() {
-    const targetType = $('hw-target-type') ? $('hw-target-type').value : 'student';
-    const title = $('hw-title') ? $('hw-title').value.trim() : '';
-    const description = $('hw-description') ? $('hw-description').value.trim() : '';
-    const dueDate = $('hw-due-date') ? $('hw-due-date').value : '';
-    const studentId = $('hw-student-select') ? $('hw-student-select').value : '';
-    const batchId = $('hw-batch-select') ? $('hw-batch-select').value : '';
+  async function saveHomeworkAssignment(options = {}) {
+    const quiet = options.suppressUi === true;
+    const targetType = options.targetType || ($('hw-target-type') ? $('hw-target-type').value : 'student');
+    const title = options.title || ($('hw-title') ? $('hw-title').value.trim() : '');
+    const description = options.description || ($('hw-description') ? $('hw-description').value.trim() : '');
+    const dueDate = options.dueDate || ($('hw-due-date') ? $('hw-due-date').value : '');
+    const studentId = options.studentId || ($('hw-student-select') ? $('hw-student-select').value : '');
+    const batchId = options.batchId || ($('hw-batch-select') ? $('hw-batch-select').value : '');
+    const presentStudentIds = options.presentStudentIds || [];
     const fileInput = $('hw-file-input');
 
-    if (!title) return window.toast ? window.toast('Homework title is required', 'error') : null;
-    if (targetType === 'student' && !studentId) return window.toast ? window.toast('Select a student', 'error') : null;
-    if (targetType === 'batch' && !batchId) return window.toast ? window.toast('Select a batch', 'error') : null;
+    if (!title) {
+      if (!quiet && window.toast) window.toast('Homework title is required', 'error');
+      return { success: false, error: 'Homework title is required' };
+    }
+    if (targetType === 'student' && !studentId) {
+      if (!quiet && window.toast) window.toast('Select a student', 'error');
+      return { success: false, error: 'Select a student' };
+    }
+    if (targetType === 'batch' && !batchId) {
+      if (!quiet && window.toast) window.toast('Select a batch', 'error');
+      return { success: false, error: 'Select a batch' };
+    }
 
     let attachmentUrls = [];
-    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+    if (options.files && options.files.length > 0) {
+      if (options.files[0] instanceof File) {
+        try {
+          const uploadPromises = Array.from(options.files).map((f) => uploadHomeworkFile(f));
+          const uploaded = await Promise.all(uploadPromises);
+          attachmentUrls = uploaded.filter((url) => url !== null);
+        } catch (e) {
+          console.warn('[Homework] File upload warning:', e);
+        }
+      } else {
+        attachmentUrls = options.files;
+      }
+    } else if (fileInput && fileInput.files && fileInput.files.length > 0) {
       try {
-        const uploadPromises = Array.from(fileInput.files).map(f => uploadHomeworkFile(f));
+        const uploadPromises = Array.from(fileInput.files).map((f) => uploadHomeworkFile(f));
         const uploaded = await Promise.all(uploadPromises);
-        attachmentUrls = uploaded.filter(url => url !== null);
+        attachmentUrls = uploaded.filter((url) => url !== null);
       } catch (e) {
         console.warn('[Homework] File upload warning:', e);
       }
     }
 
+    if (options.requireFiles === true && attachmentUrls.length === 0) {
+      if (!quiet && window.toast) window.toast('The PDF upload failed. Please select the PDF again.', 'error');
+      return { success: false, error: 'The PDF upload failed' };
+    }
+
     const hwId = generateUuid();
     const files = attachmentUrls.length > 0 ? attachmentUrls : [];
-    const coachId = window.currentCoachId || window.userId || (window.currentUser && window.currentUser.id) || null;
+    const coachId = options.coachId || window.currentCoachId || window.userId || (window.currentUser && window.currentUser.id) || null;
 
     const payload = {
       id: hwId,
@@ -736,7 +878,8 @@ let homeworkSubmissionCache = [];
       questions_files: files,
       status: 'active',
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      present_student_ids: presentStudentIds.length ? presentStudentIds : null
     };
 
     let saved = false;
@@ -759,7 +902,8 @@ let homeworkSubmissionCache = [];
             questions_files: payload.questions_files,
             status: payload.status,
             created_at: payload.created_at,
-            updated_at: payload.updated_at
+            updated_at: payload.updated_at,
+            present_student_ids: payload.present_student_ids
           })
           .select()
           .single();
@@ -793,6 +937,11 @@ let homeworkSubmissionCache = [];
       }
     }
 
+    if (!saved) {
+      if (!quiet && window.toast) window.toast('Failed to save homework assignment. Please try again.', 'error');
+      return { success: false, error: 'Failed to save homework assignment' };
+    }
+
     // Update local storage persistence
     try {
       const stored = JSON.parse(localStorage.getItem('ck_homework_assignments') || '[]');
@@ -813,12 +962,15 @@ let homeworkSubmissionCache = [];
       : targetType === 'batch'
         ? `Batch: ${(window.allBatches || []).find(b => String(b.id) === String(batchId))?.name || 'Batch #' + batchId}`
         : 'All Active Students';
-    if (window.toast) window.toast(`✅ Homework "${title}" assigned successfully to ${targetLabel}!`, 'success');
-    window.closeModals && window.closeModals();
+    if (!quiet && window.toast) window.toast(`✅ Homework "${title}" assigned successfully to ${targetLabel}!`, 'success');
+    if (!quiet) window.closeModals && window.closeModals();
 
-    if (window.loadHomeworkData) await window.loadHomeworkData(true).catch(() => {});
-    else if (window.loadAllData) await window.loadAllData(true).catch(() => {});
-    refreshHomeworkViews();
+    if (!quiet) {
+      if (window.loadHomeworkData) await window.loadHomeworkData(true).catch(() => {});
+      else if (window.loadAllData) await window.loadAllData(true).catch(() => {});
+      refreshHomeworkViews();
+    }
+    return { success: true, assignment: payload };
   }
 
   async function updateHomeworkStatus(id, status) {
@@ -938,6 +1090,11 @@ let homeworkSubmissionCache = [];
     homeworkSelectedIds.delete(id);
     window.allHomework = (window.allHomework || []).filter(h => String(h.id) !== String(id));
 
+    if (typeof dataCache !== 'undefined') {
+      dataCache.homework = (dataCache.homework || []).filter(h => String(h.id) !== String(id));
+      dataCache.timestamp = Date.now();
+    }
+
     if (window.toast) window.toast('Homework assignment deleted successfully', 'success');
     if (window.loadHomeworkData) await window.loadHomeworkData(true).catch(() => {});
     else if (window.loadAllData) await window.loadAllData(true).catch(() => {});
@@ -993,21 +1150,28 @@ let homeworkSubmissionCache = [];
     }
 
     const files = (Array.isArray(hw.questions_files) && hw.questions_files.length ? hw.questions_files : (Array.isArray(hw.attachment_urls) ? hw.attachment_urls : []));
+    editingHomeworkFiles = Array.isArray(files) ? [...files] : [];
+    editingHomeworkRemovedIds = new Set();
+    editingHomeworkNewFiles = [];
     if (filesWrapEl && filesListEl) {
-      if (files.length > 0) {
+      if (editingHomeworkFiles.length > 0) {
         filesWrapEl.style.display = 'block';
-        filesListEl.innerHTML = files.map((f, i) => {
-          const url = typeof f === 'string' ? f : (f.url || '');
-          const name = typeof f === 'string' ? (f.split('/').pop() || `Attachment ${i + 1}`) : (f.name || `Attachment ${i + 1}`);
-          return `<div style="display:flex; align-items:center; gap:6px; background:var(--bg2); padding:4px 8px; border-radius:4px;">
-            <span>📎</span>
-            <a href="${escapeValue(url)}" target="_blank" rel="noopener" style="color:var(--gold); text-decoration:none; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:480px;">${escapeValue(name)}</a>
-          </div>`;
-        }).join('');
+        renderEditFileList();
       } else {
         filesWrapEl.style.display = 'none';
         filesListEl.innerHTML = '';
       }
+    }
+
+    const fileInput = document.getElementById('homework-edit-file-input');
+    if (fileInput) {
+      fileInput.value = '';
+      fileInput.onchange = () => {
+        if (!fileInput.files || !fileInput.files.length) return;
+        Array.from(fileInput.files).forEach((f) => editingHomeworkNewFiles.push(f));
+        fileInput.value = '';
+        renderEditFileList();
+      };
     }
 
     // Set up save button handler
@@ -1030,6 +1194,34 @@ let homeworkSubmissionCache = [];
     }
   };
 
+  function renderEditFileList() {
+    const filesListEl = document.getElementById('homework-edit-files-list');
+    if (!filesListEl) return;
+    const kept = editingHomeworkFiles.filter((f, idx) => {
+      const key = typeof f === 'string' ? f : (f.url || f.name || String(idx));
+      return !editingHomeworkRemovedIds.has(key);
+    });
+    if (!kept.length && !editingHomeworkNewFiles.length) {
+      filesListEl.innerHTML = '';
+      return;
+    }
+    filesListEl.innerHTML = kept.map((f, i) => {
+      const url = typeof f === 'string' ? f : (f.url || '');
+      const name = typeof f === 'string' ? (f.split('/').pop() || `Attachment ${i + 1}`) : (f.name || `Attachment ${i + 1}`);
+      const key = typeof f === 'string' ? f : (f.url || f.name || String(i));
+      return `<div style="display:flex; align-items:center; gap:6px; background:var(--bg2); padding:4px 8px; border-radius:4px;">
+        <span>📎</span>
+        <a href="${escapeValue(url)}" target="_blank" rel="noopener" style="color:var(--gold); text-decoration:none; font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:480px;">${escapeValue(name)}</a>
+        <button type="button" onclick="removeEditHomeworkFile('${escapeValue(key).replace(/'/g, "\\'")}')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  window.removeEditHomeworkFile = function (key) {
+    editingHomeworkRemovedIds.add(key);
+    renderEditFileList();
+  };
+
   async function saveHomeworkEdit(id) {
     const hw = (window.allHomework || []).find(h => String(h.id) === String(id));
     if (!hw) return;
@@ -1046,12 +1238,31 @@ let homeworkSubmissionCache = [];
       return window.toast ? window.toast('Title is required.', 'error') : null;
     }
 
+    let newFiles = [...editingHomeworkFiles];
+    const kept = newFiles.filter((f, idx) => {
+      const key = typeof f === 'string' ? f : (f.url || f.name || String(idx));
+      return !editingHomeworkRemovedIds.has(key);
+    });
+    let uploadedUrls = [];
+    if (editingHomeworkNewFiles.length) {
+      try {
+        const uploadPromises = Array.from(editingHomeworkNewFiles).map((f) => uploadHomeworkFile(f));
+        const uploaded = await Promise.all(uploadPromises);
+        uploadedUrls = uploaded.filter((url) => url !== null);
+      } catch (e) {
+        console.warn('[Homework] File upload warning:', e);
+      }
+    }
+    const finalFiles = [...kept, ...uploadedUrls];
+
     const updatedPayload = {
       ...hw,
       title: newTitle,
       description: newDesc,
       due_date: newDueDate || hw.due_date,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      attachment_urls: finalFiles,
+      questions_files: finalFiles
     };
 
     let updated = false;
@@ -1064,7 +1275,9 @@ let homeworkSubmissionCache = [];
           title: updatedPayload.title,
           description: updatedPayload.description,
           due_date: updatedPayload.due_date,
-          updated_at: updatedPayload.updated_at
+          updated_at: updatedPayload.updated_at,
+          attachment_urls: updatedPayload.attachment_urls,
+          questions_files: updatedPayload.questions_files
         }),
         silent: true
       });
@@ -1087,7 +1300,9 @@ let homeworkSubmissionCache = [];
             title: updatedPayload.title,
             description: updatedPayload.description,
             due_date: updatedPayload.due_date,
-            updated_at: updatedPayload.updated_at
+            updated_at: updatedPayload.updated_at,
+            attachment_urls: updatedPayload.attachment_urls,
+            questions_files: updatedPayload.questions_files
           })
           .eq('id', id);
         if (!error) {
@@ -1112,6 +1327,12 @@ let homeworkSubmissionCache = [];
 
     const idx = (window.allHomework || []).findIndex(h => String(h.id) === String(id));
     if (idx !== -1) window.allHomework[idx] = updatedPayload;
+
+    if (typeof dataCache !== 'undefined') {
+      const cacheIdx = (dataCache.homework || []).findIndex(h => String(h.id) === String(id));
+      if (cacheIdx !== -1) dataCache.homework[cacheIdx] = updatedPayload;
+      dataCache.timestamp = Date.now();
+    }
 
     if (window.toast) window.toast('Homework updated successfully', 'success');
     if (typeof window.closeModal === 'function') window.closeModal('homework-edit-modal');
@@ -1353,12 +1574,59 @@ let homeworkSubmissionCache = [];
       ${canSubmit ? `<div style="display:grid;gap:8px;margin-top:12px;">
         <textarea id="homework-submission-text-${assignment.id}" class="input-field" placeholder="Type your completed homework response or practice notes..." style="min-height:90px;">${escapeValue(currentText)}</textarea>
         <input id="homework-submission-url-${assignment.id}" class="input-field" placeholder="Optional submission link (Google Drive, Dropbox, etc.)" value="${escapeValue(currentUrl)}">
-        <div style="font-size:11px; font-weight:700; color:var(--gold); margin-top:4px;">Attach Solution Files <span style="font-size:10px; font-weight:normal; color:var(--ivory-dim);">(Max 5 files, up to 15 MB each: .pgn, .pdf, .png, .jpg)</span></div>
-        <input type="file" id="homework-submission-files-${assignment.id}" class="input-field" accept=".pdf,.ppt,.pptx,.doc,.docx,.png,.jpg,.jpeg,.gif,.pgn,.txt,.md,.zip" multiple style="font-size:12px; color:var(--ivory-dim);" onchange="window.handleHomeworkFileSelectPreview(this, 'homework-submission-preview-${assignment.id}')">
-        <div id="homework-submission-preview-${assignment.id}" style="margin-top:6px; display:flex; flex-wrap:wrap; gap:8px;"></div>
+        <button type="button" class="btn btn-outline-grey btn-sm homework-attach-toggle" onclick="toggleHomeworkSubmissionUpload('${assignment.id}')">📎 Attach Solution Files</button>
+        <div id="homework-submission-upload-${assignment.id}" style="display:none;">
+          <div style="font-size:11px; font-weight:700; color:var(--gold); margin-top:4px;">Attach Solution Files <span style="font-size:10px; font-weight:normal; color:var(--ivory-dim);">(Max 5 files, up to 15 MB each: .pgn, .pdf, .png, .jpg)</span></div>
+          <div class="upload-zone homework-submission-dropzone" id="homework-submission-drop-${assignment.id}">
+            <span>Drop solution files here</span>
+            <label class="btn btn-outline-grey btn-sm homework-submission-picker" for="homework-submission-files-${assignment.id}">Choose Files</label>
+            <input type="file" id="homework-submission-files-${assignment.id}" accept=".pdf,.ppt,.pptx,.doc,.docx,.png,.jpg,.jpeg,.gif,.pgn,.txt,.md,.zip" multiple onchange="window.handleHomeworkFileSelectPreview(this, 'homework-submission-preview-${assignment.id}')">
+          </div>
+          <div id="homework-submission-preview-${assignment.id}" style="margin-top:6px; display:flex; flex-wrap:wrap; gap:8px;"></div>
+        </div>
         <button class="btn btn-gold btn-sm" onclick="submitHomeworkForChild('${assignment.id}')">${submissionActionLabel(status)}</button>
       </div>` : ''}
     </div>`;
+  }
+
+  window.toggleHomeworkSubmissionUpload = function (assignmentId) {
+    const panel = $(`homework-submission-upload-${assignmentId}`);
+    if (!panel) return;
+    const isHidden = panel.style.display === 'none';
+    panel.style.display = isHidden ? 'block' : 'none';
+    if (isHidden) setupHomeworkSubmissionDropzone(assignmentId);
+  };
+
+  function setupHomeworkSubmissionDropzone(assignmentId) {
+    const input = $(`homework-submission-files-${assignmentId}`);
+    const dropzone = $(`homework-submission-drop-${assignmentId}`);
+    if (!input || !dropzone || dropzone.dataset.bound === 'true') return;
+
+    const applyFiles = (fileList) => {
+      const files = Array.from(fileList || []);
+      if (!files.length) return;
+      if (files.length > 5) {
+        window.toast?.('Maximum 5 solution files can be uploaded.', 'error');
+        return;
+      }
+      const dataTransfer = new DataTransfer();
+      files.forEach(file => dataTransfer.items.add(file));
+      input.files = dataTransfer.files;
+      window.handleHomeworkFileSelectPreview(input, `homework-submission-preview-${assignmentId}`);
+    };
+
+    ['dragenter', 'dragover'].forEach(eventName => dropzone.addEventListener(eventName, event => {
+      event.preventDefault();
+      event.stopPropagation();
+      dropzone.classList.add('drag-over');
+    }));
+    ['dragleave', 'drop'].forEach(eventName => dropzone.addEventListener(eventName, event => {
+      event.preventDefault();
+      event.stopPropagation();
+      dropzone.classList.remove('drag-over');
+    }));
+    dropzone.addEventListener('drop', event => applyFiles(event.dataTransfer.files));
+    dropzone.dataset.bound = 'true';
   }
 
   function renderHomeworkCard(assignment, options = {}) {
@@ -1368,6 +1636,25 @@ let homeworkSubmissionCache = [];
     const dueClass = assignment.due_date && new Date(`${assignment.due_date}T23:59:59`) < new Date() && assignment.status !== 'completed' ? 'var(--danger)' : 'var(--ivory-dim)';
     const checkbox = selectable ? `<input type="checkbox" data-homework-id="${assignment.id}" ${selected ? 'checked' : ''} onchange="toggleHomeworkSelection('${assignment.id}', this.checked)" style="accent-color:var(--gold);">` : '';
     const coachName = coachNameForHomework(assignment);
+
+    let presentStudentsHtml = '';
+    {
+      let presentIds = assignment.present_student_ids;
+      if (typeof presentIds === 'string') {
+        try { presentIds = JSON.parse(presentIds); } catch (_) {}
+      }
+      if (Array.isArray(presentIds) && presentIds.length) {
+        const names = presentIds
+          .map((id) => {
+            const s = (window.allStudents || []).find((st) => String(st.id) === String(id));
+            return s ? (window.getStudentName ? window.getStudentName(s) : (s.name || s.full_name || 'Student')) : null;
+          })
+          .filter(Boolean);
+        if (names.length) {
+          presentStudentsHtml = `<div style="font-size:12px; color:var(--ivory-dim); line-height:1.6; margin-top:4px;"><strong>Assigned to:</strong> ${names.join(', ')}</div>`;
+        }
+      }
+    }
 
     return `<div class="card" style="padding:16px; border-left: 4px solid ${assignment.status === 'completed' ? 'var(--emerald)' : 'var(--gold)'};">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
@@ -1381,6 +1668,7 @@ let homeworkSubmissionCache = [];
             <div style="font-size:12px; color:${dueClass}; line-height:1.6;">
               <strong>Due:</strong> ${formatDate(assignment.due_date)} · <strong>Coach:</strong> ${escapeValue(coachName)} · <strong>Assignee:</strong> ${escapeValue(assigneeLabel(assignment))} · <strong>Recipients:</strong> ${recipientCount(assignment)}
             </div>
+            ${presentStudentsHtml}
           </div>
         </div>
         ${showActions ? `<div style="display:flex; gap:6px; flex-wrap:wrap;">
@@ -1390,7 +1678,30 @@ let homeworkSubmissionCache = [];
           <button class="btn btn-outline-danger btn-sm" onclick="deleteHomeworkAssignment('${assignment.id}')">🗑️ Delete</button>
         </div>` : ''}
       </div>
-      ${assignment.description ? `<div style="margin-top:12px; color:var(--ivory-dim); font-size:13px; line-height:1.65; white-space:pre-wrap;">${escapeValue(assignment.description)}</div>` : '<div style="margin-top:12px;color:var(--ivory-dim);font-size:13px;">No detailed instructions provided.</div>'}
+      ${(() => {
+        const rawDesc = assignment.description || '';
+        const refLinks = extractReferenceLinks(rawDesc);
+        const cleanDesc = rawDesc.replace(/\n?Reference Links:\n(?:- .+\n?)+/g, '').trim();
+        const hasRefLinks = refLinks.length > 0;
+        return `
+          ${cleanDesc ? `<div style="margin-top:12px; color:var(--ivory-dim); font-size:13px; line-height:1.65; white-space:pre-wrap;">${linkifyText(cleanDesc)}</div>` : '<div style="margin-top:12px;color:var(--ivory-dim);font-size:13px;">No detailed instructions provided.</div>'}
+          ${hasRefLinks ? `
+            <div style="margin-top:14px; padding:10px 12px; background:rgba(59,130,246,0.04); border:1px solid rgba(59,130,246,0.2); border-radius:8px;">
+              <strong style="font-size:12px; color:#60a5fa; display:flex; align-items:center; gap:4px;">🔗 Reference Links (${refLinks.length}):</strong>
+              <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;">
+                ${refLinks.map((url, i) => {
+                  let name = `Reference ${i + 1}`;
+                  if (typeof url === 'string' && url.startsWith('http')) {
+                    const part = url.split('/').pop().split('?')[0];
+                    if (part && part.length < 35) name = decodeURIComponent(part);
+                  }
+                  return `<a href="${safeUrl(url)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="font-size:11px; padding:4px 10px; color:#60a5fa; border-color:rgba(59,130,246,0.3); text-decoration:none;">🔗 ${escapeValue(name)}</a>`;
+                }).join('')}
+              </div>
+            </div>
+          ` : ''}
+        `;
+      })()}
       ${(() => {
         let files = [];
         const parseList = (val) => {
@@ -1474,10 +1785,10 @@ let homeworkSubmissionCache = [];
     renderHomeworkCalendar();
   }
 
-  function renderHomeworkCalendarGrid(items) {
-    const grid = $('homework-calendar-grid');
+  function renderHomeworkCalendarGrid(items, gridId = 'homework-calendar-grid', monthValue = '') {
+    const grid = $(gridId);
     if (!grid) return;
-    const month = $('homework-month-filter') ? $('homework-month-filter').value : monthKey(homeworkCalendarMonth);
+    const month = monthValue || ($('homework-month-filter') ? $('homework-month-filter').value : monthKey(homeworkCalendarMonth));
     const [year, monthNumber] = (month || monthKey(homeworkCalendarMonth)).split('-').map(Number);
     const first = new Date(year, monthNumber - 1, 1);
     const daysInMonth = new Date(year, monthNumber, 0).getDate();
@@ -1520,8 +1831,8 @@ let homeworkSubmissionCache = [];
     grid.innerHTML = html;
   }
 
-  function renderHomeworkCalendarList(items) {
-    const list = $('homework-calendar-list');
+  function renderHomeworkCalendarList(items, listId = 'homework-calendar-list') {
+    const list = $(listId);
     if (!list) return;
     if (!items.length) {
       list.innerHTML = '<div class="empty-state"><span class="empty-icon">📝</span><p>No homework matches the selected filters.</p></div>';
@@ -1566,6 +1877,69 @@ let homeworkSubmissionCache = [];
       }
     }
   }
+
+  function renderHomeworkCalendarForTarget(items, config) {
+    const month = $(config.monthId);
+    if (month && !month.value) month.value = monthKey(new Date());
+    const monthValue = month ? month.value : monthKey(new Date());
+    renderHomeworkCalendarGrid(items, config.gridId, monthValue);
+    renderHomeworkCalendarList(items, config.listId);
+    const grid = $(config.gridId);
+    const list = $(config.listId);
+    const viewMode = config.viewMode || 'calendar';
+    if (grid) grid.style.display = viewMode === 'calendar' ? 'grid' : 'none';
+    if (list) list.style.display = viewMode === 'list' ? 'grid' : 'none';
+    const calendarButton = $(config.calendarButtonId);
+    const listButton = $(config.listButtonId);
+    if (calendarButton) {
+      calendarButton.style.background = viewMode === 'calendar' ? 'var(--gold)' : 'transparent';
+      calendarButton.style.color = viewMode === 'calendar' ? '#111' : 'var(--ivory)';
+    }
+    if (listButton) {
+      listButton.style.background = viewMode === 'list' ? 'var(--gold)' : 'transparent';
+      listButton.style.color = viewMode === 'list' ? '#111' : 'var(--ivory)';
+    }
+  }
+
+  window.renderCoachAttendanceHomeworkCalendar = function () {
+    const coachId = window.currentCoachId || window.userId;
+    const coachBatches = (window.allBatches || []).filter(batch =>
+      window.ckSameCoach ? window.ckSameCoach(batch.coach_id, coachId) : String(batch.coach_id) === String(coachId)
+    );
+    const batchIds = new Set(coachBatches.map(batch => String(batch.id)));
+    const studentIds = new Set();
+    coachBatches.forEach(batch => getBatchStudentIds(batch, window.allStudents || []).forEach(id => studentIds.add(String(id))));
+    (window.allStudents || []).forEach(student => {
+      if (window.ckSameCoach && window.ckSameCoach(student.coach_id, coachId)) studentIds.add(String(student.id));
+    });
+
+    const monthInput = $('coach-attendance-homework-month');
+    const monthValue = monthInput && monthInput.value ? monthInput.value : monthKey(new Date());
+    if (monthInput && !monthInput.value) monthInput.value = monthValue;
+    const [year, monthNumber] = monthValue.split('-').map(Number);
+    const items = sortHomework((window.allHomework || []).filter(assignment => {
+      const targetType = String(assignment.target_type || '').toLowerCase();
+      const appliesToStudent = targetType === 'student' && studentIds.has(String(assignment.student_id));
+      const appliesToBatch = targetType === 'batch' && batchIds.has(String(assignment.batch_id));
+      if (!appliesToStudent && !appliesToBatch) return false;
+      if (!assignment.due_date) return true;
+      const due = parseDateKey(assignment.due_date);
+      return !!due && due.getFullYear() === year && due.getMonth() === monthNumber - 1;
+    }));
+    renderHomeworkCalendarForTarget(items, {
+      monthId: 'coach-attendance-homework-month',
+      gridId: 'coach-attendance-homework-grid',
+      listId: 'coach-attendance-homework-list',
+      calendarButtonId: 'coach-attendance-homework-calendar',
+      listButtonId: 'coach-attendance-homework-list-view',
+      viewMode: window.coachAttendanceHomeworkView || 'calendar'
+    });
+  };
+
+  window.setCoachAttendanceHomeworkView = function (mode) {
+    window.coachAttendanceHomeworkView = mode === 'list' ? 'list' : 'calendar';
+    window.renderCoachAttendanceHomeworkCalendar?.();
+  };
 
   window.setHomeworkView = function (mode) {
     window.homeworkViewMode = mode;
@@ -1789,7 +2163,10 @@ let homeworkSubmissionCache = [];
       });
     }
 
-    const items = sortHomework(homeworkList.filter((assignment) => assignmentAppliesToStudent(assignment, student.id, window.allStudents || [])));
+    const items = sortHomework(homeworkList.filter((assignment) => {
+      if (!assignmentAppliesToStudent(assignment, student.id, window.allStudents || [])) return false;
+      return isStudentEligibleForHomework(assignment, student.id);
+    }));
     if (!items.length) {
       list.innerHTML = '<div class="empty-state"><span class="empty-icon">📝</span><p>No homework assigned right now.</p></div>';
       return;
@@ -1810,9 +2187,10 @@ let homeworkSubmissionCache = [];
       return;
     }
 
-    const studentAssignments = sortHomework((window.allHomework || []).filter((assignment) => 
-      assignmentAppliesToStudent(assignment, studentId, window.allStudents || [])
-    ));
+    const studentAssignments = sortHomework((window.allHomework || []).filter((assignment) => {
+      if (!assignmentAppliesToStudent(assignment, studentId, window.allStudents || [])) return false;
+      return isStudentEligibleForHomework(assignment, studentId);
+    }));
 
     if (!studentAssignments.length) {
       list.innerHTML = '<div class="empty-state"><span class="empty-icon">📝</span><p>No homework assigned to this student.</p></div>';
@@ -1877,6 +2255,9 @@ let homeworkSubmissionCache = [];
     list.innerHTML = html;
   }
 
+  window.assignmentAppliesToStudent = assignmentAppliesToStudent;
+  window.assignmentAppliesToBatch = assignmentAppliesToBatch;
+  window.isStudentEligibleForHomework = isStudentEligibleForHomework;
   window.updateHomeworkTargetFields = updateHomeworkTargetFields;
   window.openHomeworkAssignmentModal = openHomeworkAssignmentModal;
   window.updatePastHomeworkHistory = updatePastHomeworkHistory;

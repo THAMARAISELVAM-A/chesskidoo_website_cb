@@ -2009,7 +2009,7 @@
     const container = document.getElementById('tactics-board-container');
     if (!container) return;
     if (!StudyPGN.puzzleGame || !StudyPGN.currentPuzzle) {
-      StudyPGN.loadNextPuzzle();
+      StudyPGN.loadDailyPuzzle();
       return;
     }
 
@@ -3031,8 +3031,6 @@
       StudyPGN.renderTacticsBoard();
       StudyPGN.updateStreakUI();
       StudyPGN.populateTacticsDropdown();
-    } else if (subTab === 'topics') {
-      StudyPGN.renderAssignedTopicsList();
     } else if (subTab === 'custom') {
       StudyPGN.initCustomBoard();
     }

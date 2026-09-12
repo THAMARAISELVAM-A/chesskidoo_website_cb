@@ -161,20 +161,29 @@
   // Parses the embedded schedule tag from the notes column. Supports the new
   // sanitization-safe [SCHEDULE64:...] format and the legacy [SCHEDULE:{...}].
   window.extractScheduleJSON = function (notesString, student = null) {
+    console.log("[Schedule] extractScheduleJSON notesLen=", (notesString || "").length, "studentId=", student?.id, "studentDays=", student?.days, "allBatches=", (window.allBatches || []).length);
     if (notesString) {
       const m64 = notesString.match(/\[SCHEDULE64:([A-Za-z0-9+/=]+)\]/);
       if (m64 && m64[1]) {
         const decoded = decodeSchedulePayload(m64[1]);
-        if (decoded) return decoded;
+        if (decoded) {
+          console.log("[Schedule] extractScheduleJSON decoded from SCHEDULE64", decoded);
+          return decoded;
+        }
       }
       const match = notesString.match(/\[SCHEDULE:({.*?})\]/);
       if (match && match[1]) {
         try {
-          return JSON.parse(match[1]);
+          const parsed = JSON.parse(match[1]);
+          console.log("[Schedule] extractScheduleJSON decoded from legacy SCHEDULE", parsed);
+          return parsed;
         } catch (e) {
           console.warn("Failed to parse legacy schedule JSON", e);
         }
       }
+      console.log("[Schedule] extractScheduleJSON no schedule tag found in notes");
+    } else {
+      console.log("[Schedule] extractScheduleJSON notes empty for student", student?.id);
     }
 
     // FALLBACK: Check student's days column first, then live batch lookup
@@ -186,7 +195,7 @@
           .map((d) => d.trim())
           .filter(Boolean);
         const timeVal = student.session_time || student.batch_time || "TBD";
-        return {
+        const result = {
           regDays: dayArray.join(" & "),
           regTime: timeVal,
           regCoachName: student.coach_name || student.coaching_coach || "TBD",
@@ -195,6 +204,8 @@
             : "",
           isMatrixOverride: false,
         };
+        console.log("[Schedule] extractScheduleJSON fallback from student.days", result);
+        return result;
       }
       // Second try: Look up student's live batch schedule dynamically
       if (student.id && window.allBatches) {
@@ -204,12 +215,13 @@
             : (window.parseStudentIds ? window.parseStudentIds(b.student_ids) : []);
           return ids.includes(String(student.id)) || (student.batch_id && String(student.batch_id) === String(b.id)) || (student.batch && String(student.batch) === String(b.name));
         });
+        console.log("[Schedule] extractScheduleJSON batch lookup found=", !!myBatch, myBatch?.name, myBatch?.days, myBatch?.time_slot);
         if (myBatch) {
           const coaches = window.allCoaches || window.coaches || [];
           const c = coaches.find(
             (co) => String(co.id) === String(myBatch.coach_id) || (window.ckSameCoach && window.ckSameCoach(co.id, myBatch.coach_id)),
           );
-          return {
+          const result = {
             regDays: myBatch.days || "TBD",
             regTime: myBatch.time_slot || "TBD",
             regCoachName: c ? (c.name || c.full_name) : "TBD",
@@ -218,9 +230,12 @@
               "",
             isMatrixOverride: false,
           };
+          console.log("[Schedule] extractScheduleJSON fallback from batch", result);
+          return result;
         }
       }
     }
+    console.log("[Schedule] extractScheduleJSON returning null");
     return null;
   };
 
@@ -232,7 +247,263 @@
       .trim();
   };
 
-  window.loadStudentScheduleData = function (studentId) {
+  window.renderChildWeeklySchedule = function (student, schedData) {
+    const container = document.getElementById("child-weekly-schedule-container");
+    console.log("[Schedule] renderChildWeeklySchedule called student=", student?.id, "container=", !!container, "schedDataProvided=", !!schedData);
+    if (!container) return;
+    if (!student) {
+      student = window.currentStudent;
+    }
+    if (!student) {
+      console.warn("[Schedule] renderChildWeeklySchedule no student");
+      container.innerHTML = `<div class="empty-state" style="padding:24px;"><span class="empty-icon">📆</span><p>No student selected.</p></div>`;
+      return;
+    }
+
+    if (!schedData) {
+      schedData = window.extractScheduleJSON(student.notes, student);
+    }
+    console.log("[Schedule] weekly schedData=", !!schedData, "regDays=", schedData?.regDays, "allBatches=", (window.allBatches || []).length);
+    if (!schedData) {
+      container.innerHTML = `<div class="empty-state" style="padding:24px;"><span class="empty-icon">📆</span><p>No schedule found.</p></div>`;
+      return;
+    }
+
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
+
+    const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const fullDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    const regDaysLower = String(schedData.regDays || "").toLowerCase();
+    const timeStr = schedData.regTime || "TBD";
+    const coachName = schedData.regCoachName || "";
+    const meetLink = schedData.meetLink || "";
+    const title = (student.name || "Student") + " - Chess Class";
+
+    let weekGridHtml = '<div style="display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:8px; margin-top:16px;">';
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const dateStr = d.toISOString().split("T")[0];
+      const displayDate = d.toLocaleDateString("en-US", { day: "numeric", month: "short" });
+      const isScheduled = regDaysLower.includes(fullDays[i].toLowerCase()) || regDaysLower.includes(days[i].toLowerCase());
+
+      let calLink = null;
+      if (isScheduled && timeStr !== "TBD" && window.generateGoogleCalendarLink) {
+        calLink = window.generateGoogleCalendarLink({
+          title: title,
+          timeStr: timeStr,
+          coachName: coachName,
+          meetLink: meetLink,
+          description: "Regular chess class with " + coachName + ". Timing: " + timeStr,
+          specificDate: dateStr,
+        });
+      }
+
+      const dayStyle = isScheduled
+        ? "background:linear-gradient(135deg, rgba(59,130,246,0.25), rgba(168,85,247,0.25)); border:1px solid rgba(59,130,246,0.4); color:#fff;"
+        : "background:rgba(255,255,255,0.03); border:1px solid var(--border); color:var(--ivory-dim); opacity:0.7;";
+
+      const actionHtml = isScheduled && calLink
+        ? `<a href="${calLink}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="font-size:10px; padding:3px 8px; white-space:nowrap; margin-top:4px;" onclick="window.toast && window.toast('Opening Google Calendar...', 'info');">+ GCal</a>`
+        : '<span style="font-size:10px; color:var(--ivory-dim);">—</span>';
+
+      const timeDisplay = isScheduled ? `<div style="font-size:10px; color:var(--gold); font-weight:700; margin-top:4px;">${escapeHtml(timeStr)}</div>` : "";
+
+      weekGridHtml += `
+        <div style="padding:10px; border-radius:8px; ${dayStyle} text-align:center;">
+          <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; opacity:0.8;">${days[i]}</div>
+          <div style="font-size:16px; font-weight:800; margin-top:2px;">${d.getDate()}</div>
+          <div style="font-size:10px; opacity:0.8;">${displayDate.split(" ")[0]}</div>
+          ${timeDisplay}
+          <div style="margin-top:4px;">${actionHtml}</div>
+        </div>
+      `;
+    };
+    weekGridHtml += "</div>";
+
+    container.innerHTML = `
+      <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <div>
+          <span style="font-size:13px; color:var(--gold); font-weight:700;">This Week</span>
+          <span style="font-size:12px; color:var(--ivory-dim); margin-left:8px;">${monday.toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${new Date(monday.getTime() + 6 * 86400000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+        </div>
+        ${meetLink ? `<a href="${meetLink}" target="_blank" rel="noopener" class="btn btn-gold btn-sm" style="font-weight:700;">Join Live Class 🎥</a>` : ""}
+      </div>
+      <div class="card" style="padding:16px; border:1px solid var(--border); border-radius:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+          <div>
+            <div style="font-size:12px; color:var(--ivory-dim); text-transform:uppercase; letter-spacing:0.5px;">Regular Class</div>
+            <div style="font-size:14px; color:var(--ivory); font-weight:700; margin-top:2px;">Days: ${escapeHtml(schedData.regDays || "TBD")}</div>
+            <div style="font-size:13px; color:var(--gold);">Timing: ${escapeHtml(timeStr)}</div>
+            <div style="font-size:12px; color:var(--ivory2);">Coach: ${escapeHtml(coachName || "TBD")}</div>
+          </div>
+        </div>
+        ${weekGridHtml}
+      </div>
+     `;
+   };
+
+   function getSessionDatesForMonth(daysStr, year, month) {
+     if (!daysStr) return [];
+     const dayNames = String(daysStr)
+       .toLowerCase()
+       .split(/[&,]+/)
+       .map((d) => d.trim())
+       .filter(Boolean);
+     const fullDayMap = { mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6, sun: 0 };
+     let targetDays = dayNames
+       .map((d) => fullDayMap[d.slice(0, 3)])
+       .filter((n) => !isNaN(n));
+
+     if (dayNames.some((d) => d.includes("weekend"))) {
+       if (!targetDays.includes(5)) targetDays.push(5);
+       if (!targetDays.includes(6)) targetDays.push(6);
+     }
+     if (dayNames.some((d) => d.includes("weekday"))) {
+       for (let i = 1; i <= 5; i++) {
+         if (!targetDays.includes(i)) targetDays.push(i);
+       }
+     }
+     if (!targetDays.length) return [];
+
+     const dates = [];
+     const d = new Date(year, month, 1);
+     while (d.getMonth() === month) {
+       if (targetDays.includes(d.getDay())) {
+         dates.push({
+           date: new Date(d),
+           dayName: d.toLocaleDateString("en-US", { weekday: "long" }),
+           dateStr: d.toISOString().split("T")[0],
+           displayDate: d.toLocaleDateString("en-US", {
+             day: "numeric",
+             month: "short",
+             year: "numeric",
+           }),
+         });
+       }
+       d.setDate(d.getDate() + 1);
+     }
+     return dates;
+   }
+
+   function buildMonthlyScheduleTable(sessions, options = {}) {
+     const { showStudentNames = false, title = "Monthly Schedule" } = options;
+
+     if (!sessions || sessions.length === 0) {
+       return `<div class="empty-state" style="padding:24px;"><span class="empty-icon">📅</span><p>No sessions scheduled for this month.</p></div>`;
+     }
+
+     const headerCells = showStudentNames
+       ? "<th>#</th><th>Day</th><th>Date</th><th>Time</th><th>Student Names</th>"
+       : "<th>#</th><th>Day</th><th>Date</th><th>Time</th>";
+
+     const rows = sessions
+       .map((s, i) => {
+         const studentCell = showStudentNames
+           ? `<td style="font-size:12px; color:var(--ivory); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(s.studentNames || "")}</td>`
+           : "";
+
+         return `<tr>
+           <td style="text-align:center; font-weight:600; width:40px;">${i + 1}</td>
+           <td style="font-size:12px; color:var(--ivory2);">${escapeHtml(s.dayName || "")}</td>
+           <td style="font-size:12px; color:var(--ivory);">${escapeHtml(s.displayDate || s.dateStr || "")}</td>
+           <td style="font-size:12px; font-family:var(--font-mono, monospace); color:var(--gold);">${escapeHtml(s.timeStr || "TBD")}</td>
+           ${studentCell}
+         </tr>`;
+       })
+       .join("");
+
+     return `<div style="margin-top:24px;">
+       <h3 style="color:var(--gold); font-size:16px; margin-bottom:12px; font-family:var(--font-head); letter-spacing:0.5px;">📅 ${escapeHtml(title)}</h3>
+       <div class="table-wrap" style="overflow-x:auto; border:1px solid var(--border); border-radius:10px;">
+         <table class="coach-mini-table" style="width:100%; border-collapse:collapse;">
+           <thead>
+             <tr style="background:rgba(0,0,0,0.2);">${headerCells}</tr>
+           </thead>
+           <tbody>${rows}</tbody>
+         </table>
+       </div>
+     </div>`;
+   }
+
+   window.renderChildMonthlySchedule = function (student) {
+     const container = document.getElementById("child-monthly-schedule-container");
+     if (!container) return;
+     if (!student) {
+       student = window.currentStudent;
+     }
+     if (!student) {
+       container.innerHTML = `<div class="empty-state" style="padding:24px;"><span class="empty-icon">📅</span><p>No student selected.</p></div>`;
+       return;
+     }
+
+     const monthInput = document.getElementById("child-schedule-month");
+     if (monthInput && !monthInput.value) {
+       const now = new Date();
+       monthInput.value = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+     }
+
+     const schedData = window.extractScheduleJSON(student.notes, student);
+     if (!schedData) {
+       container.innerHTML = `<div class="empty-state" style="padding:24px;"><span class="empty-icon">📅</span><p>No schedule found for this month.</p></div>`;
+       return;
+     }
+
+     let year, month;
+     if (monthInput && monthInput.value) {
+       const [y, m] = monthInput.value.split("-").map(Number);
+       year = y;
+       month = m - 1;
+     } else {
+       const now = new Date();
+       year = now.getFullYear();
+       month = now.getMonth();
+     }
+
+     const sessionDates = getSessionDatesForMonth(schedData.regDays || "", year, month);
+     const sessions = sessionDates.map((sd) => ({
+       ...sd,
+       timeStr: schedData.regTime || "TBD",
+       coachName: schedData.regCoachName || "",
+       meetLink: schedData.meetLink || "",
+       title: (student.name || "Student") + " - Chess Class",
+       studentNames: student.name || "",
+     }));
+
+     container.innerHTML = buildMonthlyScheduleTable(sessions, {
+       showStudentNames: false,
+       title: "Monthly Schedule - " + (student.name || "Student"),
+     });
+   };
+
+   window.setChildScheduleView = function (view) {
+     view = view || "weekly";
+     const monthlyPanel = document.getElementById("child-schedule-monthly-panel");
+     const weeklyPanel = document.getElementById("child-schedule-weekly-panel");
+     const monthlyTab = document.getElementById("child-schedule-tab-monthly");
+     const weeklyTab = document.getElementById("child-schedule-tab-weekly");
+
+     if (!monthlyPanel || !weeklyPanel) return;
+
+     if (view === "weekly") {
+       monthlyPanel.style.display = "none";
+       weeklyPanel.style.display = "block";
+       if (monthlyTab) { monthlyTab.classList.remove("active"); monthlyTab.style.background = "transparent"; monthlyTab.style.color = "var(--ivory)"; }
+       if (weeklyTab) { weeklyTab.classList.add("active"); weeklyTab.style.background = "linear-gradient(135deg,var(--gold) 0%,#b8860b 100%)"; weeklyTab.style.color = "#000"; }
+       if (window.renderChildWeeklySchedule) window.renderChildWeeklySchedule(window.currentStudent);
+     } else {
+       monthlyPanel.style.display = "block";
+       weeklyPanel.style.display = "none";
+       if (weeklyTab) { weeklyTab.classList.remove("active"); weeklyTab.style.background = "transparent"; weeklyTab.style.color = "var(--ivory)"; }
+       if (monthlyTab) { monthlyTab.classList.add("active"); monthlyTab.style.background = "linear-gradient(135deg,var(--gold) 0%,#b8860b 100%)"; monthlyTab.style.color = "#000"; }
+       if (window.renderChildMonthlySchedule) window.renderChildMonthlySchedule(window.currentStudent);
+     }
+   };
+
+   window.loadStudentScheduleData = function (studentId) {
     resetScheduleInputs();
     if (!studentId) {
       if (window.generateSchedulePreview) window.generateSchedulePreview();
@@ -360,10 +631,24 @@
     // Action Buttons
     let actionButtons = "";
     if (isChildView) {
+      let calLink = null;
+      if (window.generateGoogleCalendarLink) {
+        calLink = window.generateGoogleCalendarLink({
+          title: studentName + " - Chess Class",
+          days: regDays,
+          timeStr: regTime,
+          coachName: coachName,
+          meetLink: meetLink,
+          description: "Regular chess class with " + coachName
+        });
+      }
+       const ultimateFallback = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent(studentName + " - Chess Class") + "&dates=" + new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z/" + new Date(Date.now() + 3600000).toISOString().replace(/[-:]/g, "").split(".")[0] + "Z&details=" + encodeURIComponent("Coach: " + (coachName || "TBD") + "\nTime: " + (regTime || "TBD")) + "&location=" + encodeURIComponent(meetLink || "ChessKidoo Academy");
+       const finalCalLink = calLink || (window.buildFallbackCalendarLink ? window.buildFallbackCalendarLink(studentName + " - Chess Class", regDays, regTime, coachName, meetLink) : null) || ultimateFallback;
+       const calendarBtn = finalCalLink ? `<a href="${finalCalLink}" target="_blank" style="background:#1c2030; border:1px solid #2c3242; color:#ffffff; padding:10px 20px; border-radius:4px; text-decoration:none; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:6px;" onmouseover="this.style.background='#2c3242'" onmouseout="this.style.background='#1c2030'" onclick="console.log('GCal URL:', '${String(finalCalLink).replace(/'/g, "\\'")}'); window.toast && window.toast('Opening Google Calendar...', 'info');">Add to Google Calendar 📅</a>` : `<button disabled title="Schedule data incomplete" style="background:#1c2030; border:1px solid #2c3242; color:#ffffff; padding:10px 20px; border-radius:4px; font-weight:600; font-size:13px; cursor:not-allowed; opacity:0.7; display:inline-flex; align-items:center; gap:6px;">Add to Google Calendar 📅</button>`;
       actionButtons = `
                 <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; justify-content:center;">
                     ${meetLink ? `<a href="${meetLink}" target="_blank" style="background:${coachColor}; color:#ffffff; padding:10px 20px; border-radius:4px; text-decoration:none; font-weight:600; font-size:13px; box-shadow:0 4px 15px rgba(0,0,0,0.3); display:flex; align-items:center; gap:6px;">Join Class 🎥</a>` : ""}
-                    <button onclick="window.syncClassCalendar('${studentId}')" style="background:#1c2030; border:1px solid #2c3242; color:#ffffff; padding:10px 20px; border-radius:4px; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:6px;" onmouseover="this.style.background='#2c3242'" onmouseout="this.style.background='#1c2030'">Add to Calendar 📅</button>
+                    ${calendarBtn}
                     ${window.currentUser && window.currentUser.role === "admin" ? `<button onclick="window.editStudentSchedule('${studentId}')" style="background:#4f5d75; border:1px solid rgba(255,255,255,0.2); color:#fff; padding:10px 20px; border-radius:4px; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:6px;">Edit Schedule ✏️</button>` : ""}
                 </div>`;
     }
@@ -419,7 +704,18 @@
                   !isChildView && meetLink
                     ? `
                 <div style="margin-top:16px; text-align:center;">
-                    <a href="${meetLink}" target="_blank" style="display:inline-block; background:${coachColor}; color:#ffffff; padding:8px 20px; border-radius:4px; text-decoration:none; font-weight:600; font-size:12px;">Join Class 🎥</a>
+                    <a href="${meetLink}" target="_blank" style="display:inline-block; background:${coachColor}; color:#ffffff; padding:8px 20px; border-radius:4px; text-decoration:none; font-weight:600; font-size:12px; margin-right:8px;">Join Class 🎥</a>
+                    ${(() => {
+                      const calLink = window.generateGoogleCalendarLink ? window.generateGoogleCalendarLink({
+                        title: studentName + " - Chess Class",
+                        days: regDays,
+                        timeStr: regTime,
+                        coachName: coachName,
+                        meetLink: meetLink,
+                        description: "Regular chess class with " + coachName
+                      }) : '';
+                      return calLink ? `<a href="${calLink}" target="_blank" style="display:inline-block; background:#1c2030; border:1px solid #2c3242; color:#ffffff; padding:8px 20px; border-radius:4px; text-decoration:none; font-weight:600; font-size:12px;">Add to Google Calendar 📅</a>` : '';
+                    })()}
                 </div>`
                     : ""
                 }
@@ -823,11 +1119,87 @@
 
   window.renderChildSchedule = function (student, coachName) {
     const wrapper = document.getElementById("child-schedule-card-container");
-    if (!wrapper) return;
+    if (!wrapper) {
+      console.warn("[Schedule] child-schedule-card-container missing");
+      return;
+    }
+    if (!student) {
+      console.warn("[Schedule] renderChildSchedule called with no student");
+      return;
+    }
 
     const schedData = window.extractScheduleJSON(student.notes, student);
+    console.log("[Schedule] renderChildSchedule id=", student.id, "name=", student.name, "notesLen=", (student.notes || "").length, "schedData=", !!schedData, "allBatches=", (window.allBatches || []).length);
 
     if (!schedData) {
+      console.log("[Schedule] Using fallback batch data for student", student.id, "student.batch_id=", student.batch_id, "student.batch=", student.batch, "student.days=", student.days);
+      const studentBatches = (window.allBatches || []).filter((b) => {
+        const ids = Array.isArray(b.student_ids)
+          ? b.student_ids.map(String)
+          : (window.parseStudentIds ? window.parseStudentIds(b.student_ids) : []);
+        const match = ids.includes(String(student.id)) || (student.batch_id && String(student.batch_id) === String(b.id)) || (student.batch && String(student.batch) === String(b.name));
+        if (!match) {
+          console.log("[Schedule] batch no-match id=", b.id, "name=", b.name, "days=", b.days, "time_slot=", b.time_slot, "student_ids=", ids.slice(0, 5));
+        }
+        return match;
+      });
+      console.log("[Schedule] studentBatches fallback count", studentBatches.length, studentBatches.map(b => ({ id: b.id, name: b.name, days: b.days, time_slot: b.time_slot })));
+
+      if (studentBatches.length > 0) {
+        console.log("[Schedule] Fallback success, rendering card with batch", studentBatches[0].name, "days=", studentBatches[0].days, "time=", studentBatches[0].time_slot);
+        const firstBatch = studentBatches[0];
+        const coaches = window.allCoaches || window.coaches || [];
+        const batchCoach = coaches.find(
+          (co) => String(co.id) === String(firstBatch.coach_id) || (window.ckSameCoach && window.ckSameCoach(co.id, firstBatch.coach_id)),
+        );
+        const fallbackSchedData = {
+          regDays: firstBatch.days || "TBD",
+          regTime: firstBatch.time_slot || "TBD",
+          regCoachName: batchCoach ? (batchCoach.name || batchCoach.full_name) : (coachName || "TBD"),
+          meetLink:
+            (firstBatch.meet_link || "") ||
+            (String(firstBatch.notes || "").match(/https?:\/\/[^\s"'<>]+/)?.[0] || ""),
+          isMatrixOverride: false,
+        };
+
+        wrapper.innerHTML = buildScheduleCardHtml(
+          student.name,
+          fallbackSchedData,
+          fallbackSchedData.regCoachName,
+          true,
+          student.id,
+          studentBatches,
+        );
+
+        const bNameEl = document.getElementById("child-live-batch-name");
+        const bDaysEl = document.getElementById("child-live-days");
+        const bTimeEl = document.getElementById("child-live-time");
+        const bCoachEl = document.getElementById("child-live-coach");
+        const bBtnWrap = document.getElementById("child-live-meet-btn-wrapper");
+
+        if (bNameEl) bNameEl.textContent = firstBatch.name ? `${firstBatch.name} (Batch)` : `${student.name}'s Online Class`;
+        if (bDaysEl) bDaysEl.textContent = fallbackSchedData.regDays;
+        if (bTimeEl) bTimeEl.textContent = fallbackSchedData.regTime;
+        if (bCoachEl) bCoachEl.textContent = fallbackSchedData.regCoachName;
+        if (bBtnWrap) {
+          if (fallbackSchedData.meetLink) {
+            bBtnWrap.innerHTML = `<a href="${fallbackSchedData.meetLink}" target="_blank" rel="noopener" class="btn btn-gold btn-sm" style="font-weight:700; font-size:13px; padding:10px 18px; box-shadow:0 4px 15px rgba(212,175,55,0.4);">Join Live Class 🎥</a>`;
+          } else {
+            bBtnWrap.innerHTML = `<span style="font-size:12px; color:var(--ivory-dim); background:rgba(255,255,255,0.05); padding:6px 12px; border-radius:6px;">No live link set yet</span>`;
+          }
+        }
+
+        if (window.generateContextualInsight) {
+          window.generateContextualInsight("child_schedule", student.id);
+        }
+
+        if (window.setChildScheduleView) {
+          window.setChildScheduleView("weekly");
+        }
+
+        return;
+      }
+
       wrapper.innerHTML = `
             <div class="card" style="padding:40px; text-align:center; color:var(--ivory-dim); width:100%;">
               <span style="font-size:36px; display:block; margin-bottom:12px;">📅</span>
@@ -836,24 +1208,19 @@
       return;
     }
 
-    // Resolve the coach actually chosen for this schedule (falls back to the
-    // student's assigned coach / passed-in name).
     const resolvedCoachName =
       schedData.regCoachName ||
       resolveScheduleCoachName(schedData, student) ||
       coachName ||
       "TBD";
 
-    // Find student's batch
-    const studentBatches = (window.allBatches || []).filter(
-      (b) =>
-        Array.isArray(b.student_ids) &&
-        b.student_ids.map(String).includes(String(student.id)),
-    );
+    const studentBatches = (window.allBatches || []).filter((b) => {
+      const ids = Array.isArray(b.student_ids)
+        ? b.student_ids.map(String)
+        : (window.parseStudentIds ? window.parseStudentIds(b.student_ids) : []);
+      return ids.includes(String(student.id)) || (student.batch_id && String(student.batch_id) === String(b.id)) || (student.batch && String(student.batch) === String(b.name));
+    });
 
-    // If the schedule itself carries no meet link, fall back to the link the
-    // coach set on the student's batch — so a coach-shared GMeet link shows a
-    // Join Class button here without the admin re-editing every schedule.
     if (!schedData.meetLink && studentBatches.length) {
       for (const b of studentBatches) {
         const l =
@@ -875,7 +1242,6 @@
       studentBatches,
     );
 
-    // Update top live class meeting card in Schedule tab
     const bNameEl = document.getElementById("child-live-batch-name");
     const bDaysEl = document.getElementById("child-live-days");
     const bTimeEl = document.getElementById("child-live-time");
@@ -895,9 +1261,12 @@
       }
     }
 
-    // Trigger AI Insight update for Parent Portal Schedule
     if (window.generateContextualInsight) {
       window.generateContextualInsight("child_schedule", student.id);
+    }
+
+    if (window.setChildScheduleView) {
+      window.setChildScheduleView("weekly");
     }
   };
 
@@ -907,60 +1276,22 @@
     const schedData = window.extractScheduleJSON(student.notes);
     if (!schedData) return;
 
-    // Parse days
-    const daysMap = {
-      monday: "MO",
-      tuesday: "TU",
-      wednesday: "WE",
-      thursday: "TH",
-      friday: "FR",
-      saturday: "SA",
-      sunday: "SU",
-    };
-    const days = (schedData.regDays || "")
-      .toLowerCase()
-      .replace(/&/g, ",")
-      .split(",")
-      .map((d) => d.trim());
-    const byDayStr = days
-      .map((d) => daysMap[d])
-      .filter(Boolean)
-      .join(",");
+    const coachName = resolveScheduleCoachName(schedData, student) || "Coach";
+    const link = window.generateGoogleCalendarLink ? window.generateGoogleCalendarLink({
+      title: (student.name || "Student") + " - Chess Class",
+      days: schedData.regDays || "",
+      timeStr: schedData.regTime || "",
+      coachName: coachName,
+      meetLink: schedData.meetLink || "",
+      description: "Regular chess class with " + coachName + ". Timing: " + (schedData.regTime || "TBD")
+    }) : null;
 
-    // Default to current time as the class start timestamp
-    const d = new Date();
-    const startStr = d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-
-    let icsContent = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//ChessKidoo Chess Academy//Class Schedule//EN
-BEGIN:VEVENT
-UID:class-${student.id}@chesskidoo.com
-DTSTAMP:${startStr}
-DTSTART:${startStr}
-SUMMARY:ChessKidoo Class
-LOCATION:${schedData.meetLink ? schedData.meetLink : "Online / Academy"}
-DESCRIPTION:Regular chess class timing: ${schedData.regTime || "TBD"}. Coach: ${resolveScheduleCoachName(schedData, student)}
-`;
-
-    if (byDayStr) {
-      icsContent += `RRULE:FREQ=WEEKLY;BYDAY=${byDayStr}\n`;
+    if (link) {
+      window.open(link, "_blank");
+      if (window.toast) window.toast("Opening Google Calendar...", "success");
+    } else {
+      if (window.toast) window.toast("Unable to generate calendar link. Please check schedule.", "error");
     }
-
-    icsContent += `END:VEVENT\nEND:VCALENDAR`;
-
-    const blob = new Blob([icsContent], {
-      type: "text/calendar;charset=utf-8",
-    });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `chesskidoo_Classes_${student.name.replace(/[^a-zA-Z0-9]/g, "_")}.ics`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    if (window.toast)
-      window.toast("Class schedule calendar downloaded!", "success");
   };
 
   window.editStudentSchedule = function (studentId) {

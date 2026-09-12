@@ -480,7 +480,7 @@
 
     container.innerHTML = '';
     if (scheduledMeetings.length === 0) {
-      container.innerHTML = `<div style="text-align:center; padding:15px; color:var(--ivory-dim); font-size:11px;">No calls scheduled. Use the form above to add a Google Meet or Zoom class.</div>`;
+      container.innerHTML = `<div style="text-align:center; padding:15px; color:var(--ivory-dim); font-size:11px;">No calls scheduled. Use the scheduler below to add a Google Meet or Zoom class.</div>`;
       return;
     }
 

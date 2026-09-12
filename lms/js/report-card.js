@@ -45,7 +45,7 @@
     const level = student.level || 'Intermediate';
 
     // ── Calculate Real Attendance ──
-    const studentLogs = (window.allAttendance || []).filter(a => String(a.student_id) === String(student.id));
+    const studentLogs = (window.allAttendance || []).filter(a => String(a.student_id || a.studentId) === String(student.id));
     const presentCount = studentLogs.filter(a => a.status === 'present').length;
     const totalSessions = studentLogs.length;
     const attendancePct = totalSessions > 0 ? Math.round((presentCount / totalSessions) * 100) : (student.attendance_rate || 92);
