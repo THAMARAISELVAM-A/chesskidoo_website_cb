@@ -1923,13 +1923,18 @@
       0,
     );
 
-    if ($("cb-total-paid"))
-      $("cb-total-paid").textContent = formatStudentFee(s, totalPaidSum);
-    if ($("cb-total-paid-summary"))
-      $("cb-total-paid-summary").textContent = "₹" + (totalPaidSum > 0 ? totalPaidSum.toLocaleString() : "0");
-    if ($("cb-paid-count"))
-      $("cb-paid-count").textContent =
-        `${paidPayments.length} transactions completed`;
+    if (role === "parent" || role === "student") {
+      const totalPaidCard = $("cb-total-paid-card");
+      if (totalPaidCard) totalPaidCard.style.display = "none";
+    } else {
+      if ($("cb-total-paid"))
+        $("cb-total-paid").textContent = formatStudentFee(s, totalPaidSum);
+      if ($("cb-total-paid-summary"))
+        $("cb-total-paid-summary").textContent = "₹" + (totalPaidSum > 0 ? totalPaidSum.toLocaleString() : "0");
+      if ($("cb-paid-count"))
+        $("cb-paid-count").textContent =
+          `${paidPayments.length} transactions completed`;
+    }
 
     const isPaid = status === "Paid";
     const isPendingStudent = getStudentStatus(s) === "pending";
@@ -6693,67 +6698,69 @@
           setLoading("data", true);
         }
 
-        const res1 = await apiCall("/api/coaches");
+        const [res1, res2, res3, res4, res5, res6, res7, res8, res9, res10, res11] = await Promise.all([
+          apiCall("/api/coaches"),
+          apiCall("/api/students?limit=1000"),
+          apiCall("/api/attendance"),
+          apiCall("/api/payments?order=payment_date.desc&limit=1000"),
+          apiCall("/api/messages"),
+          apiCall("/api/rating_history"),
+          apiCall("/api/resources"),
+          apiCall("/api/achievements"),
+          apiCall("/api/events"),
+          apiCall("/api/batches"),
+          apiCall("/api/homework", { silent: true }),
+        ]);
         if (res1.ok) {
           const d = await res1.json();
           allCoaches = d.data || d;
           window.allCoaches = allCoaches;
         }
-        const res2 = await apiCall("/api/students?limit=1000");
         if (res2.ok) {
           const d = await res2.json();
           allStudents = d.data || d;
           window.allStudents = allStudents;
         }
-        const res3 = await apiCall("/api/attendance");
         if (res3.ok) {
           const d = await res3.json();
           allAttendance = d.data || d;
           window.allAttendance = allAttendance;
         }
-        const res4 = await apiCall("/api/payments?order=payment_date.desc&limit=1000");
         if (res4.ok) {
           const d = await res4.json();
           allPayments = d.data || d;
           window.allPayments = allPayments;
         }
-        const res5 = await apiCall("/api/messages");
         if (res5.ok) {
           const d = await res5.json();
           allMessages = d.data || d;
           window.allMessages = allMessages;
         }
-        const res6 = await apiCall("/api/rating_history");
         if (res6.ok) {
           const d = await res6.json();
           allRatingHistory = d.data || d;
           window.allRatingHistory = allRatingHistory;
         }
-        const res7 = await apiCall("/api/resources");
         if (res7.ok) {
           const d = await res7.json();
           allResources = d.data || d;
           window.allResources = allResources;
         }
-        const res8 = await apiCall("/api/achievements");
         if (res8.ok) {
           const d = await res8.json();
           achievementsData = d.data || d;
           window.achievementsData = achievementsData;
         }
-        const res9 = await apiCall("/api/events");
         if (res9.ok) {
           const d = await res9.json();
           eventsData = d.data || d;
           window.eventsData = eventsData;
         }
-        const res10 = await apiCall("/api/batches");
         if (res10.ok) {
           const d = await res10.json();
           allBatches = d.data || d;
           window.allBatches = allBatches;
         }
-        const res11 = await apiCall("/api/homework", { silent: true });
         if (res11.ok) {
           const d = await res11.json();
           allHomework = d.data || d || [];
@@ -6763,7 +6770,13 @@
         if (allStudents.length === 0 && window.supabaseClient) {
           try {
             console.log('[Sync] Edge API returned 0 students, querying Supabase directly...');
-            const { data: sbUsers } = await window.supabaseClient.from('users').select('*');
+            const [usersRes, batchesRes, attRes, hwRes] = await Promise.all([
+              window.supabaseClient.from('users').select('*'),
+              window.supabaseClient.from('batches').select('*'),
+              window.supabaseClient.from('attendance').select('*'),
+              window.supabaseClient.from('homework_assignments').select('*'),
+            ]);
+            const { data: sbUsers } = usersRes;
             if (sbUsers && sbUsers.length > 0) {
               allStudents = sbUsers.filter(u => !u.role || u.role.toLowerCase() === 'student');
               if (allCoaches.length === 0) {
@@ -6772,22 +6785,22 @@
               }
               window.allStudents = allStudents;
             }
+            const { data: sbBatches } = batchesRes;
             if (allBatches.length === 0) {
-              const { data: sbBatches } = await window.supabaseClient.from('batches').select('*');
               if (sbBatches && sbBatches.length > 0) {
                 allBatches = sbBatches;
                 window.allBatches = allBatches;
               }
             }
+            const { data: sbAtt } = attRes;
             if (allAttendance.length === 0) {
-              const { data: sbAtt } = await window.supabaseClient.from('attendance').select('*');
               if (sbAtt && sbAtt.length > 0) {
                 allAttendance = sbAtt;
                 window.allAttendance = allAttendance;
               }
             }
+            const { data: sbHw } = hwRes;
             if (allHomework.length === 0) {
-              const { data: sbHw } = await window.supabaseClient.from('homework_assignments').select('*');
               if (sbHw && sbHw.length > 0) {
                 allHomework = sbHw;
                 window.allHomework = allHomework;
@@ -7757,9 +7770,6 @@ setTimeout(function () {
     if (userRole === "admin" || userRole === "master") {
       initRealtimeNotifications();
     }
-    if (userRole === "parent") {
-      toast(`${displayName} logged in`, "info");
-    }
     const loginScreen = $("login-screen");
     if (loginScreen) loginScreen.style.display = "none";
 
@@ -8609,6 +8619,8 @@ setTimeout(function () {
 
     if ($("s-last-due"))
       $("s-last-due").textContent = "₹" + lastMonthDueAmount.toLocaleString();
+    if ($("s-curr-due"))
+      $("s-curr-due").textContent = "₹" + currMonthPending.toLocaleString();
     if ($("s-curr-pending"))
       $("s-curr-pending").textContent = "₹" + currMonthPending.toLocaleString();
     if ($("s-total-outstanding"))
@@ -9272,6 +9284,8 @@ setTimeout(function () {
         return;
       }
 
+      updateStudentSummaryCards(studs, targetMonth, targetYear);
+
       tbody.innerHTML = studs
         .map((s, i) => {
           try {
@@ -9613,6 +9627,63 @@ setTimeout(function () {
     } catch (e) {
       console.error("[UI] renderStudentTotalsRow failed:", e);
       return "";
+    }
+  }
+
+  function updateStudentSummaryCards(studs, targetMonth, targetYear) {
+    try {
+      const money = (n) => "\u20B9" + Math.round(n).toLocaleString("en-IN");
+      const set = (id, count, amount) => {
+        const el = $(id);
+        if (!el) return;
+        el.innerHTML = count + (amount !== undefined ? ` <span style="font-size:11px; font-weight:500; opacity:0.7;">(${money(amount)})</span>` : "");
+      };
+
+      let total = studs.length;
+      let totalAmount = 0;
+      let paidCount = 0, paidAmount = 0;
+      let pendingCount = 0, pendingAmount = 0;
+      let dueCount = 0, dueAmount = 0;
+      let overdueCount = 0, overdueAmount = 0;
+      let notBilledCount = 0, notBilledAmount = 0;
+
+      const allPay = window.allPayments || allPayments || [];
+      studs.forEach((s) => {
+        const st = getStudentPaymentStatus(s, targetMonth, targetYear);
+        const fee = Number(getStudentMonthlyFee(s)) || 0;
+        totalAmount += fee;
+        const sid = String(s.id || "").trim().toLowerCase();
+        const hasAnyPayment = allPay.some((p) => String(p.student_id || "").trim().toLowerCase() === sid);
+
+        if (st === "Paid") {
+          paidCount++;
+          paidAmount += studentPaidAmountForMonth(s, targetMonth, targetYear);
+        } else if (st === "Pending") {
+          pendingCount++;
+          pendingAmount += fee;
+        } else if (st === "Due") {
+          dueCount++;
+          dueAmount += fee;
+        } else if (st === "Overdue") {
+          overdueCount++;
+          overdueAmount += fee;
+        }
+
+        const enrollStatus = getStudentStatus(s);
+        if (enrollStatus === "active" && !hasAnyPayment) {
+          notBilledCount++;
+          notBilledAmount += fee;
+        }
+      });
+
+      set("stud-sum-total", total, totalAmount);
+      set("stud-sum-paid", paidCount, paidAmount);
+      set("stud-sum-pending", pendingCount, pendingAmount);
+      set("stud-sum-due", dueCount, dueAmount);
+      set("stud-sum-overdue", overdueCount, overdueAmount);
+      set("stud-sum-notbilled", notBilledCount, notBilledAmount);
+    } catch (e) {
+      console.error("[UI] updateStudentSummaryCards failed:", e);
     }
   }
 
@@ -10746,6 +10817,259 @@ due_date: (function () {
   window.generateGoogleCalendarLink = generateGoogleCalendarLink;
   window.buildFallbackCalendarLink = buildFallbackCalendarLink;
   window.getNextClassDate = getNextClassDate;
+
+  const COMMON_TIMEZONES = {
+    "Asia/Kolkata": "IST (India)",
+    "America/Toronto": "EST/EDT (Toronto)",
+    "America/New_York": "EST/EDT (New York)",
+    "America/Los_Angeles": "PST/PDT (Los Angeles)",
+    "Europe/London": "GMT/BST (London)",
+    "Europe/Paris": "CET/CEST (Paris)",
+    "Asia/Singapore": "SGT (Singapore)",
+    "Asia/Dubai": "GST (Dubai)",
+    "Australia/Sydney": "AEST/AEDT (Sydney)",
+  };
+
+  function parseTimeToComponents(timeStr) {
+    const normalized = (!timeStr || timeStr === "TBD") ? "5:00 PM" : String(timeStr);
+    let match = normalized.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (!match) {
+      match = normalized.match(/(\d{1,2})\s*[-–]\s*\d{1,2}\s*(AM|PM)/i);
+      if (match) {
+        const hours = parseInt(match[1], 10);
+        const ampm = match[2] ? match[2].toUpperCase() : null;
+        return {
+          hours: ampm === "PM" && hours < 12 ? hours + 12 : ampm === "AM" && hours === 12 ? 0 : hours,
+          minutes: 0,
+        };
+      }
+      match = normalized.match(/(\d{1,2})\s*(AM|PM)/i);
+      if (match) {
+        const hours = parseInt(match[1], 10);
+        const ampm = match[2] ? match[2].toUpperCase() : null;
+        return {
+          hours: ampm === "PM" && hours < 12 ? hours + 12 : ampm === "AM" && hours === 12 ? 0 : hours,
+          minutes: 0,
+        };
+      }
+      return null;
+    }
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const ampm = match[3] ? match[3].toUpperCase() : null;
+    if (ampm === "PM" && hours < 12) hours += 12;
+    if (ampm === "AM" && hours === 12) hours = 0;
+    return { hours, minutes };
+  }
+
+  function convertIstToTimezone(istHours, istMinutes, targetTimezone) {
+    const pad = (n) => String(n).padStart(2, '0');
+    const istDateStr = `2026-01-01T${pad(istHours)}:${pad(istMinutes)}:00+05:30`;
+    const reference = new Date(istDateStr);
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: targetTimezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const parts = formatter.formatToParts(reference);
+    const get = (type) => parts.find(p => p.type === type)?.value || '00';
+    return {
+      year: get('year'),
+      month: get('month'),
+      day: get('day'),
+      hours: get('hour'),
+      minutes: get('minute'),
+    };
+  }
+
+  function getVTimezoneBlock(tzId) {
+    const tzIdSafe = tzId.replace(/[^a-zA-Z0-9_]/g, '_');
+    const now = new Date();
+    const stdOffset = "+0530";
+    const dstOffset = "+0530";
+    const stdName = "IST";
+    const dstName = "IST";
+    return `BEGIN:VTIMEZONE
+TZID:${tzId}
+X-LIC-LOCATION:${tzId}
+BEGIN:STANDARD
+TZNAME:${stdName}
+TZOFFSETFROM:${stdOffset}
+TZOFFSETTO:${stdOffset}
+DTSTART:${now.getFullYear()}0101T000000
+END:STANDARD
+END:VTIMEZONE`;
+  }
+
+  window.generateScheduleICS = function (options) {
+    const {
+      title = "ChessKidoo Class",
+      days = [],
+      timeStr = "",
+      coachName = "",
+      meetLink = "",
+      description = "",
+      targetTimezone = "Asia/Kolkata",
+    } = options || {};
+
+    const startComponents = parseTimeToComponents(timeStr);
+    if (!startComponents) return null;
+
+    const endMatch = String(timeStr).match(/-\s*(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    let endHours = startComponents.hours;
+    let endMinutes = startComponents.minutes;
+    if (endMatch) {
+      endHours = parseInt(endMatch[1], 10);
+      endMinutes = parseInt(endMatch[2], 10);
+      const eampm = endMatch[3] ? endMatch[3].toUpperCase() : null;
+      if (eampm === "PM" && endHours < 12) endHours += 12;
+      if (eampm === "AM" && endHours === 12) endHours = 0;
+    } else {
+      endHours = (startComponents.hours + 1) % 24;
+    }
+
+    const startLocal = convertIstToTimezone(startComponents.hours, startComponents.minutes, targetTimezone);
+    const endLocal = convertIstToTimezone(endHours, endMinutes, targetTimezone);
+
+    const daysMap = { sunday: "SU", monday: "MO", tuesday: "TU", wednesday: "WE", thursday: "TH", friday: "FR", saturday: "SA" };
+    const dayList = String(days || "").toLowerCase().replace(/&/g, ",").split(",").map(d => d.trim()).filter(Boolean);
+    const byDay = dayList.map(d => daysMap[d]).filter(Boolean).join(",");
+
+    const pad = (n) => String(n).padStart(2, "0");
+    const dtStart = `${startLocal.year}${pad(startLocal.month)}${pad(startLocal.day)}T${pad(startLocal.hours)}${pad(startLocal.minutes)}00`;
+    const dtEnd = `${endLocal.year}${pad(endLocal.month)}${pad(endLocal.day)}T${pad(endLocal.hours)}${pad(endLocal.minutes)}00`;
+    const nowStamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+    const uid = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}@chesskidoo.com`;
+    const loc = meetLink || "ChessKidoo Academy";
+    const desc = description || `Coach: ${coachName}\nTime: ${timeStr}\nTimezone: ${targetTimezone}\n${meetLink ? "Join: " + meetLink : ""}`;
+
+    let ics = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//ChessKidoo Academy//Schedule//EN
+CALSCALE:GREGORIAN
+${getVTimezoneBlock(targetTimezone)}
+BEGIN:VEVENT
+UID:${uid}
+DTSTAMP:${nowStamp}
+DTSTART;TZID=${targetTimezone}:${dtStart}
+DTEND;TZID=${targetTimezone}:${dtEnd}
+SUMMARY:${title}
+LOCATION:${loc}
+DESCRIPTION:${desc.replace(/\n/g, '\\n')}
+`;
+
+    if (byDay) {
+      ics += `RRULE:FREQ=WEEKLY;BYDAY=${byDay}\n`;
+    }
+
+    ics += `END:VEVENT
+END:VCALENDAR`;
+
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_Schedule.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    if (window.toast) window.toast('Calendar (.ics) downloaded successfully!', 'success');
+    return true;
+  };
+
+  window.exportStudentScheduleICS = function () {
+    try {
+      const student = window.currentStudent || (window.allStudents || []).find((s) => String(s.id) === String(window.studentId));
+      if (!student) {
+        if (window.toast) window.toast('No student selected', 'error');
+        return;
+      }
+
+      const schedData = window.extractScheduleJSON ? window.extractScheduleJSON(student.notes, student) : null;
+      const timeStr = schedData?.regTime || student.session_time || student.class_time || student.batch_time || "";
+      const days = schedData?.regDays ? String(schedData.regDays).split(/[&,]+/).map(d => d.trim()).filter(Boolean) : [];
+      const coachName = schedData?.regCoachName || (window.allCoaches || []).find(c => String(c.id) === String(student.coach_id))?.name || "Coach";
+      const meetLink = schedData?.meetLink || "";
+      const title = (student.name || "Student") + " - Chess Class";
+
+      if (!days.length && !timeStr) {
+        if (window.toast) window.toast('No schedule found for this student', 'error');
+        return;
+      }
+
+      const tz = $("child-schedule-timezone")?.value || "Asia/Kolkata";
+
+      const result = window.generateScheduleICS({
+        title,
+        days,
+        timeStr: timeStr || "TBD",
+        coachName,
+        meetLink,
+        description: `Student: ${student.name}\\nCoach: ${coachName}\\nTime: ${timeStr}\\nTimezone: ${tz}`,
+        targetTimezone: tz,
+      });
+
+      if (!result) {
+        if (window.toast) window.toast('Failed to generate calendar file. Please check schedule time format.', 'error');
+      }
+    } catch (e) {
+      console.error('[ICS] Student export failed:', e);
+      if (window.toast) window.toast('Calendar export failed: ' + (e.message || 'Unknown error'), 'error');
+    }
+  };
+
+  window.exportCoachScheduleICS = function () {
+    try {
+      const coachId = window.currentCoachId || window.userId;
+      if (!coachId) {
+        if (window.toast) window.toast('Coach ID not found', 'error');
+        return;
+      }
+
+      const batches = (window.allBatches || []).filter((b) => {
+        const ids = Array.isArray(b.student_ids)
+          ? b.student_ids.map(String)
+          : (window.parseStudentIds ? window.parseStudentIds(b.student_ids) : []);
+        return String(b.coach_id) === String(coachId) || ids.length > 0;
+      });
+
+      if (!batches.length) {
+        if (window.toast) window.toast('No batches found for this coach', 'error');
+        return;
+      }
+
+      const coachObj = (window.allCoaches || []).find((c) => String(c.id) === String(coachId));
+      const coachName = coachObj ? (getCoachName(coachObj) || "Coach") : "Coach";
+      const tz = $("coach-schedule-timezone")?.value || "Asia/Kolkata";
+
+      batches.forEach((b) => {
+        const targetDays = parseScheduleDays(b.schedule);
+        const timeStr = parseScheduleTime(b.schedule);
+        if (!targetDays.length) return;
+
+        const dayNames = targetDays.map(d => ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][d]);
+        window.generateScheduleICS({
+          title: b.name + " - Chess Class",
+          days: dayNames,
+          timeStr: timeStr || "TBD",
+          coachName,
+          meetLink: b.meet_link || "",
+          description: `Batch: ${b.name}\\nCoach: ${coachName}\\nTime: ${timeStr}\\nTimezone: ${tz}`,
+          targetTimezone: tz,
+        });
+      });
+
+      if (window.toast) window.toast(`${batches.length} batch(es) exported to calendar!`, 'success');
+    } catch (e) {
+      console.error('[ICS] Coach export failed:', e);
+      if (window.toast) window.toast('Calendar export failed: ' + (e.message || 'Unknown error'), 'error');
+    }
+  };
 
   function viewCoachSchedule(id) {
     const c = allCoaches.find((x) => String(x.id) === String(id));
@@ -13315,16 +13639,30 @@ Best regards,
       .join("");
   }
 
-  window.toggleAllStudents = function (checked) {
+  window.toggleAllStudents = function () {
+    const total = document.querySelectorAll(".stud-check").length;
+    const checked = document.querySelectorAll(".stud-check:checked").length;
+    const shouldSelectAll = checked < total;
+
     document
       .querySelectorAll(".stud-check")
       .forEach((cb) => {
         if (!cb.disabled) {
-          cb.checked = checked;
-          if (checked) selectedStudentIds.add(String(cb.dataset.id));
+          cb.checked = shouldSelectAll;
+          if (shouldSelectAll) selectedStudentIds.add(String(cb.dataset.id));
           else selectedStudentIds.delete(String(cb.dataset.id));
         }
       });
+    updateStudentBulkCount();
+  };
+
+  window.clearStudentSelection = function () {
+    selectedStudentIds.clear();
+    document.querySelectorAll(".stud-check").forEach((cb) => {
+      cb.checked = false;
+    });
+    const all = $("stud-check-all");
+    if (all) all.checked = false;
     updateStudentBulkCount();
   };
 
@@ -13350,6 +13688,9 @@ Best regards,
     countEl.textContent = `${checked} selected`;
     const all = $("stud-check-all");
     if (all) all.checked = total > 0 && checked === total;
+
+    const clearBtn = $("clear-selection-btn");
+    if (clearBtn) clearBtn.style.display = checked > 0 ? "inline-flex" : "none";
   }
 
   // Returns the list of currently selected student IDs (persisted Set), only
@@ -18311,24 +18652,7 @@ window.deleteStudent = deleteStudent;
   if (document.getElementById("ui-version"))
     document.getElementById("ui-version").textContent =
       "Portal v5.8 (Clean Messages & Excel)";
-})();
-
-window.toggleAcademyManager = function() {
-  const group = document.getElementById('academy-manager-group');
-  const icon = document.getElementById('academy-mgr-icon');
-  if (group && icon) {
-    const isHidden = group.style.display === 'none' || group.style.display === '';
-    group.style.display = isHidden ? 'block' : 'none';
-    icon.textContent = isHidden ? '▲' : '▼';
-  }
-}
-
-window.closeAcademyManager = function() {
-  const group = document.getElementById('academy-manager-group');
-  const icon = document.getElementById('academy-mgr-icon');
-  if (group) group.style.display = 'none';
-  if (icon) icon.textContent = '▼';
-}
+    })();
 
 
 // ---- Homework Manager Tabs ----

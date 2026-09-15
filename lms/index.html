@@ -153,18 +153,11 @@
     <div class="nav-item admin-only" id="nav-coach-mgmt" onclick="setPage('coach-mgmt')"><span class="ico">👨‍🏫</span> Coaches</div>
     <div class="nav-item admin-only" id="nav-studypgn" onclick="setPage('studypgn')"><span class="ico">♟️</span> Study Lab &amp; Analytics</div>
 
-    <!-- Academy Manager Group -->
-     <div class="nav-item admin-only" onclick="toggleAcademyManager()" style="justify-content: space-between;">
-       <span><span class="ico">🏫</span> Academy Operations</span>
-       <span style="font-size:10px" id="academy-mgr-icon">▼</span>
-     </div>
- <div id="academy-manager-group" style="display:none; background:rgba(0,0,0,0.1); border-left: 2px solid var(--border); margin-left: 14px; padding-left: 4px; border-radius: 0 0 8px 0;">
-        <div class="nav-item admin-only" id="nav-batches" onclick="setPage('batches');" style="font-size: 13px; padding: 10px 14px;"><span class="ico">👥</span> Batch Manager</div>
-        <div class="nav-item admin-only" id="nav-schedules" onclick="setPage('schedules');" style="font-size: 13px; padding: 10px 14px;"><span class="ico">📅</span> Schedule Manager</div>
-         <div class="nav-item admin-only" id="nav-events" onclick="setPage('events');" style="font-size: 13px; padding: 10px 14px;"><span class="ico">🏆</span> Event Manager</div>
-         <div class="nav-item admin-only" id="nav-attendance" onclick="setPage('attendance');" style="font-size: 13px; padding: 10px 14px;"><span class="ico">📋</span> Attendance Manager</div>
-         <div class="nav-item admin-only" id="nav-homework" onclick="setPage('homework');" style="font-size: 13px; padding: 10px 14px;"><span class="ico">📚</span> Homework Manager</div>
-       </div>
+    <div class="nav-item admin-only" id="nav-batches" onclick="setPage('batches')"><span class="ico">👥</span> Batch Manager</div>
+    <div class="nav-item admin-only" id="nav-schedules" onclick="setPage('schedules')"><span class="ico">📅</span> Schedule Manager</div>
+    <div class="nav-item admin-only" id="nav-events" onclick="setPage('events')"><span class="ico">🏆</span> Event Manager</div>
+    <div class="nav-item admin-only" id="nav-attendance" onclick="setPage('attendance')"><span class="ico">📋</span> Attendance Manager</div>
+    <div class="nav-item admin-only" id="nav-homework" onclick="setPage('homework')"><span class="ico">📚</span> Homework Manager</div>
 
     <!-- ── External academy tools �──
          Separate Vercel apps, so these are real anchors rather than setPage()
@@ -368,11 +361,23 @@
                <div class="coach-section-row">
                  <h2 class="coach-section-title">Schedule</h2>
                  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                   <div class="tabs-nav" id="coach-schedule-tabs" style="background:rgba(0,0,0,0.2); padding:3px; border-radius:8px; border:1px solid var(--border); display:inline-flex; gap:2px;">
-                     <button type="button" class="tab-link active" id="coach-schedule-tab-weekly" onclick="window.setCoachScheduleView && window.setCoachScheduleView('weekly')" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:700;">📆 Weekly</button>
-                     <button type="button" class="tab-link" id="coach-schedule-tab-monthly" onclick="window.setCoachScheduleView && window.setCoachScheduleView('monthly')" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:700;">📅 Monthly</button>
-                   </div>
-                   <input type="month" id="coach-schedule-month" onchange="window.renderCoachSchedule && window.renderCoachSchedule()" min="2026-01" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; width:140px; display:none;">
+                    <div class="tabs-nav" id="coach-schedule-tabs" style="background:rgba(0,0,0,0.2); padding:3px; border-radius:8px; border:1px solid var(--border); display:inline-flex; gap:2px;">
+                      <button type="button" class="tab-link active" id="coach-schedule-tab-weekly" onclick="window.setCoachScheduleView && window.setCoachScheduleView('weekly')" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:700;">📆 Weekly</button>
+                      <button type="button" class="tab-link" id="coach-schedule-tab-monthly" onclick="window.setCoachScheduleView && window.setCoachScheduleView('monthly')" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:700;">📅 Monthly</button>
+                    </div>
+                    <input type="month" id="coach-schedule-month" onchange="window.renderCoachSchedule && window.renderCoachSchedule()" min="2026-01" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; width:140px; display:none;">
+                    <select id="coach-schedule-timezone" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; font-family:inherit;">
+                      <option value="Asia/Kolkata">IST (India)</option>
+                      <option value="America/Toronto">EST/EDT (Toronto)</option>
+                      <option value="America/New_York">EST/EDT (New York)</option>
+                      <option value="America/Los_Angeles">PST/PDT (Los Angeles)</option>
+                      <option value="Europe/London">GMT/BST (London)</option>
+                      <option value="Europe/Paris">CET/CEST (Paris)</option>
+                      <option value="Asia/Singapore">SGT (Singapore)</option>
+                      <option value="Asia/Dubai">GST (Dubai)</option>
+                      <option value="Australia/Sydney">AEST/AEDT (Sydney)</option>
+                    </select>
+                    <button class="btn btn-outline btn-sm" onclick="window.exportCoachScheduleICS && window.exportCoachScheduleICS()" style="padding:6px 12px; font-size:12px; height:32px;">📥 Export Calendar (.ics)</button>
                  </div>
                </div>
              <div id="coach-schedule-content">
@@ -523,11 +528,12 @@
 <div class="card"><div class="stat-label">Total Coach Cost</div><div class="stat-value" style="color: var(--ivory) !important;" id="s-total-cost">—</div></div>
          <div class="card card-clickable" onclick="setPage('exp')"><div class="stat-label">Net Profit/Loss</div><div class="stat-value" style="color: var(--ivory) !important;" id="s-profit">—</div></div>
       </div>
-<div class="dash-grid" style="margin-bottom:14px">
-          <div class="card card-clickable" onclick="setPage('bills')"><div class="stat-label">Last Month Due Amount</div><div class="stat-value" style="color: var(--ivory) !important; font-weight:800;" id="s-last-due">₹0</div></div>
-          <div class="card card-clickable" onclick="setPage('bills')"><div class="stat-label">Current Month Pending</div><div class="stat-value theme-adaptive-pending" id="s-curr-pending">₹0</div></div>
-          <div class="card card-clickable" onclick="setPage('bills')"><div class="stat-label">Total Pending</div><div class="stat-value" style="color: #0d9488 !important; font-weight:800;" id="s-total-outstanding">₹0</div></div>
-        </div>
+       <div class="dash-grid" style="margin-bottom:14px">
+         <div class="card card-clickable" onclick="setPage('bills')"><div class="stat-label">Last Month Due Amount</div><div class="stat-value" style="color: var(--ivory) !important; font-weight:800;" id="s-last-due">₹0</div></div>
+         <div class="card card-clickable" onclick="setPage('bills')"><div class="stat-label">Current Month Due</div><div class="stat-value" style="color: var(--gold) !important; font-weight:800;" id="s-curr-due">₹0</div></div>
+         <div class="card card-clickable" onclick="setPage('bills')"><div class="stat-label">Current Month Pending</div><div class="stat-value theme-adaptive-pending" id="s-curr-pending">₹0</div></div>
+         <div class="card card-clickable" onclick="setPage('bills')"><div class="stat-label">Total Pending</div><div class="stat-value" style="color: #0d9488 !important; font-weight:800;" id="s-total-outstanding">₹0</div></div>
+       </div>
        <div class="dash-grid" style="margin-bottom:20px">
          <div class="card"><div class="stat-label">Active Enrollments</div><div class="stat-value" style="color:var(--emerald)" id="s-active-enroll">—</div></div>
          <div class="card"><div class="stat-label">Group Sessions</div><div class="stat-value" id="s-group">—</div></div>
@@ -684,21 +690,48 @@
                    <button class="btn btn-gold btn-sm" onclick="exportStudentsToCSV()" style="padding:6px 12px; font-size:12px; height:32px;">Export CSV</button>
                  </div>
                </div>
+              </div>
+           </div>
+           <div id="student-summary-cards" class="dash-grid" style="margin-bottom:14px; display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:10px;">
+              <div class="card" style="border-left:3px solid var(--blue); padding:12px 14px;">
+                <div class="stat-label" style="font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--ivory-dim);">Total</div>
+                <div class="stat-value" style="font-size:20px; font-weight:800;" id="stud-sum-total">0 <span style="font-size:11px; font-weight:500; opacity:0.7;">(₹0)</span></div>
+              </div>
+             <div class="card" style="border-left:3px solid var(--emerald); padding:12px 14px;">
+               <div class="stat-label" style="font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--ivory-dim);">Paid</div>
+               <div class="stat-value text-success" style="font-size:20px; font-weight:800;" id="stud-sum-paid">0 <span style="font-size:11px; font-weight:500; opacity:0.7;">(₹0)</span></div>
              </div>
-          </div>
-          <div class="coach-section-block">
-            <!-- Bulk action bar: operates on the checkboxes in the registry -->
-            <div id="student-bulk-bar" style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center;">
-              <span id="student-bulk-count" style="font-size:12px; color:var(--ivory-dim); min-width:80px;">0 selected</span>
-               <button class="btn btn-gold btn-sm" onclick="window.bulkMarkPaid()" style="padding:6px 14px; font-size:12px;">✅ Mark Paid</button>
-               <button class="btn btn-outline-warning btn-sm" onclick="window.bulkMarkUnpaid()" style="padding:6px 14px; font-size:12px;">🔄 Mark Unpaid</button>
-              <button class="btn btn-danger btn-sm" onclick="window.bulkDeleteStudents()" style="padding:6px 14px; font-size:12px;">🗑️ Delete Selected</button>
-            </div>
+             <div class="card" style="border-left:3px solid var(--gold); padding:12px 14px;">
+               <div class="stat-label" style="font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--ivory-dim);">Pending</div>
+               <div class="stat-value" style="font-size:20px; font-weight:800; color:var(--gold);" id="stud-sum-pending">0 <span style="font-size:11px; font-weight:500; opacity:0.7;">(₹0)</span></div>
+             </div>
+             <div class="card" style="border-left:3px solid #f97316; padding:12px 14px;">
+               <div class="stat-label" style="font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--ivory-dim);">Due</div>
+               <div class="stat-value" style="font-size:20px; font-weight:800; color:#f97316;" id="stud-sum-due">0 <span style="font-size:11px; font-weight:500; opacity:0.7;">(₹0)</span></div>
+             </div>
+             <div class="card" style="border-left:3px solid var(--danger); padding:12px 14px;">
+               <div class="stat-label" style="font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--ivory-dim);">Overdue</div>
+               <div class="stat-value text-danger" style="font-size:20px; font-weight:800;" id="stud-sum-overdue">0 <span style="font-size:11px; font-weight:500; opacity:0.7;">(₹0)</span></div>
+             </div>
+             <div class="card" style="border-left:3px solid var(--ivory3); padding:12px 14px;">
+               <div class="stat-label" style="font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:var(--ivory-dim);">Not Billed</div>
+               <div class="stat-value" style="font-size:20px; font-weight:800; color:var(--ivory-dim);" id="stud-sum-notbilled">0</div>
+             </div>
+           </div>
+           <div class="coach-section-block">
+             <!-- Bulk action bar: operates on the checkboxes in the registry -->
+             <div id="student-bulk-bar" style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center;">
+               <span id="student-bulk-count" style="font-size:12px; color:var(--ivory-dim); min-width:80px;">0 selected</span>
+               <button id="clear-selection-btn" class="btn btn-outline btn-sm" onclick="window.clearStudentSelection()" style="padding:6px 12px; font-size:12px; height:32px; display:none;">Clear</button>
+                <button class="btn btn-gold btn-sm" onclick="window.bulkMarkPaid()" style="padding:6px 14px; font-size:12px;">✅ Mark Paid</button>
+                <button class="btn btn-outline-warning btn-sm" onclick="window.bulkMarkUnpaid()" style="padding:6px 14px; font-size:12px;">🔄 Mark Unpaid</button>
+               <button class="btn btn-danger btn-sm" onclick="window.bulkDeleteStudents()" style="padding:6px 14px; font-size:12px;">🗑️ Delete Selected</button>
+             </div>
             <div class="table-wrap">
              <table id="stud-table">
                <thead>
                  <tr id="stud-thead-row">
-                   <th style="width:40px"><input type="checkbox" id="stud-check-all" onclick="window.toggleAllStudents(this.checked)"></th>
+                    <th style="width:40px"><input type="checkbox" id="stud-check-all" onclick="window.toggleAllStudents()"></th>
                    <th style="width:50px">#</th>
                    <th>Student</th>
                    <th>Coach</th>
@@ -976,7 +1009,8 @@
     <!-- Event & Tournament Manager Page (Admin) -->
     <div id="page-events" class="page admin-only">
       <div id="admin-events-content">
-        <div class="loading-state"><span class="spinner"></span> Loading Tournament &amp; Event Hub...</div>
+        <div id="ev-loading" class="loading-state"><span class="spinner"></span> Loading Tournament &amp; Event Hub...</div>
+        <div id="ev-grid" class="ev-grid" style="display:none"></div>
       </div>
     </div>
 
@@ -1515,7 +1549,7 @@
 
           <!-- Premium Revenue & Financial Stats (4-Column Layout) -->
           <div class="dash-grid" style="margin-bottom: 24px; margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-            <div class="card" style="border-left: 4px solid var(--emerald); background: linear-gradient(145deg, var(--bg2), rgba(16, 185, 129, 0.04)); box-shadow: var(--shadow);">
+            <div class="card" id="cb-total-paid-card" style="border-left: 4px solid var(--emerald); background: linear-gradient(145deg, var(--bg2), rgba(16, 185, 129, 0.04)); box-shadow: var(--shadow);">
               <div class="stat-label" style="text-transform: uppercase; font-size: 10px; letter-spacing: 1px; color: var(--ivory-dim);">Total Amount Paid</div>
               <div class="stat-value text-success" id="cb-total-paid" style="font-size: 24px; font-weight: 800; margin: 6px 0 2px;">₹0</div>
               <div class="stat-desc" id="cb-paid-count" style="font-size: 11px; color: var(--ivory-dim); opacity: 0.75;">0 transactions completed</div>
@@ -2092,6 +2126,21 @@
             <div class="tabs-nav" id="child-schedule-tabs" style="background:rgba(0,0,0,0.2); padding:3px; border-radius:8px; border:1px solid var(--border); display:inline-flex; gap:2px; margin-bottom:16px;">
               <button type="button" class="tab-link active" id="child-schedule-tab-weekly" onclick="window.setChildScheduleView && window.setChildScheduleView('weekly')" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:700;">📆 Weekly</button>
               <button type="button" class="tab-link" id="child-schedule-tab-monthly" onclick="window.setChildScheduleView && window.setChildScheduleView('monthly')" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:700;">📅 Monthly</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
+              <span style="font-size:11px; color:var(--ivory-dim); text-transform:uppercase; letter-spacing:0.5px;">Timezone:</span>
+              <select id="child-schedule-timezone" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; font-family:inherit;">
+                <option value="Asia/Kolkata">IST (India)</option>
+                <option value="America/Toronto">EST/EDT (Toronto)</option>
+                <option value="America/New_York">EST/EDT (New York)</option>
+                <option value="America/Los_Angeles">PST/PDT (Los Angeles)</option>
+                <option value="Europe/London">GMT/BST (London)</option>
+                <option value="Europe/Paris">CET/CEST (Paris)</option>
+                <option value="Asia/Singapore">SGT (Singapore)</option>
+                <option value="Asia/Dubai">GST (Dubai)</option>
+                <option value="Australia/Sydney">AEST/AEDT (Sydney)</option>
+              </select>
+              <button class="btn btn-outline btn-sm" onclick="window.exportStudentScheduleICS && window.exportStudentScheduleICS()" style="padding:6px 12px; font-size:12px; height:32px;">📥 Export Calendar (.ics)</button>
             </div>
 
             <div id="child-schedule-weekly-panel">

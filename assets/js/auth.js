@@ -257,6 +257,7 @@
   /* ── Handle OAuth Callback (runs on page load) ── */
   CK._handleAuthCallback = async () => {
     if (!window.supabaseClient) return;
+    if (sessionStorage.getItem('ck_auth_toast_shown')) return;
     try {
       const { data: { session }, error } = await window.supabaseClient.auth.getSession();
       if (error || !session || !session.user) return;
@@ -302,6 +303,7 @@
       localStorage.setItem('ck_user', JSON.stringify(profile));
 
       const role = (profile.role || 'student').toLowerCase();
+      sessionStorage.setItem('ck_auth_toast_shown', '1');
       CK.showToast(`Welcome, ${profile.full_name || 'Champion'}! ♟`, 'success');
 
       setTimeout(() => {
