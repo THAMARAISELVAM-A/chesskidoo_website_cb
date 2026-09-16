@@ -365,20 +365,9 @@
                       <button type="button" class="tab-link active" id="coach-schedule-tab-weekly" onclick="window.setCoachScheduleView && window.setCoachScheduleView('weekly')" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:700;">📆 Weekly</button>
                       <button type="button" class="tab-link" id="coach-schedule-tab-monthly" onclick="window.setCoachScheduleView && window.setCoachScheduleView('monthly')" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:700;">📅 Monthly</button>
                     </div>
-                    <input type="month" id="coach-schedule-month" onchange="window.renderCoachSchedule && window.renderCoachSchedule()" min="2026-01" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; width:140px; display:none;">
-                    <select id="coach-schedule-timezone" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; font-family:inherit;">
-                      <option value="Asia/Kolkata">IST (India)</option>
-                      <option value="America/Toronto">EST/EDT (Toronto)</option>
-                      <option value="America/New_York">EST/EDT (New York)</option>
-                      <option value="America/Los_Angeles">PST/PDT (Los Angeles)</option>
-                      <option value="Europe/London">GMT/BST (London)</option>
-                      <option value="Europe/Paris">CET/CEST (Paris)</option>
-                      <option value="Asia/Singapore">SGT (Singapore)</option>
-                      <option value="Asia/Dubai">GST (Dubai)</option>
-                      <option value="Australia/Sydney">AEST/AEDT (Sydney)</option>
-                    </select>
-                    <button class="btn btn-outline btn-sm" onclick="window.exportCoachScheduleICS && window.exportCoachScheduleICS()" style="padding:6px 12px; font-size:12px; height:32px;">📥 Export Calendar (.ics)</button>
-                 </div>
+                      <input type="month" id="coach-schedule-month" onchange="window.renderCoachSchedule && window.renderCoachSchedule()" min="2026-01" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; width:140px; display:none;">
+                      <button class="btn btn-outline btn-sm" onclick="window.openCoachBatchSchedulePopup && window.openCoachBatchSchedulePopup()" style="padding:6px 12px; font-size:12px; height:32px;">📋 Batch Schedule</button>
+                  </div>
                </div>
              <div id="coach-schedule-content">
                <div class="coach-loading-cell">Loading schedule...</div>
@@ -2128,19 +2117,7 @@
               <button type="button" class="tab-link" id="child-schedule-tab-monthly" onclick="window.setChildScheduleView && window.setChildScheduleView('monthly')" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:700;">📅 Monthly</button>
             </div>
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
-              <span style="font-size:11px; color:var(--ivory-dim); text-transform:uppercase; letter-spacing:0.5px;">Timezone:</span>
-              <select id="child-schedule-timezone" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; font-family:inherit;">
-                <option value="Asia/Kolkata">IST (India)</option>
-                <option value="America/Toronto">EST/EDT (Toronto)</option>
-                <option value="America/New_York">EST/EDT (New York)</option>
-                <option value="America/Los_Angeles">PST/PDT (Los Angeles)</option>
-                <option value="Europe/London">GMT/BST (London)</option>
-                <option value="Europe/Paris">CET/CEST (Paris)</option>
-                <option value="Asia/Singapore">SGT (Singapore)</option>
-                <option value="Asia/Dubai">GST (Dubai)</option>
-                <option value="Australia/Sydney">AEST/AEDT (Sydney)</option>
-              </select>
-              <button class="btn btn-outline btn-sm" onclick="window.exportStudentScheduleICS && window.exportStudentScheduleICS()" style="padding:6px 12px; font-size:12px; height:32px;">📥 Export Calendar (.ics)</button>
+              <button class="btn btn-outline btn-sm" onclick="window.openStudentGoogleCalendar && window.openStudentGoogleCalendar()" style="padding:6px 12px; font-size:12px; height:32px;">📥 Add Monthly Schedule</button>
             </div>
 
             <div id="child-schedule-weekly-panel">
@@ -3268,6 +3245,16 @@
   </div>
 </div>
 
+<!-- Coach Batch-wise Schedule Modal -->
+<div class="modal" id="coach-batch-schedule-modal">
+  <div class="modal-box" style="max-width:780px; width:92%">
+    <div class="modal-title">Batch-wise Schedule</div>
+    <div class="modal-sub">View and manage all your batches</div>
+    <div id="batch-schedule-container" style="max-height:70vh; overflow-y:auto;"></div>
+    <div style="margin-top:22px"><button class="btn btn-outline-grey" style="width:100%" onclick="closeModals()">Close</button></div>
+  </div>
+</div>
+
 <!-- Student View Modal -->
 <div class="modal" id="student-view-modal">
   <div class="modal-box">
@@ -3935,11 +3922,23 @@
         <div class="modal-grid">
           <div class="form-group">
             <label>Days</label>
-            <input type="text" id="eb-days" placeholder="e.g. Mon & Wed">
+            <div style="display:flex; flex-wrap:wrap; gap:8px;" id="eb-days">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" value="Sun"> Sun</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" value="Mon"> Mon</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" value="Tue"> Tue</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" value="Wed"> Wed</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" value="Thu"> Thu</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" value="Fri"> Fri</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" value="Sat"> Sat</label>
+            </div>
           </div>
           <div class="form-group">
             <label>Time Slot</label>
-            <input type="text" id="eb-time" placeholder="e.g. 6:00 PM - 7:00 PM">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <input type="time" id="eb-time-from" value="17:00" style="flex:1;">
+              <span style="color:var(--ivory-dim);">to</span>
+              <input type="time" id="eb-time-to" value="18:00" style="flex:1;">
+            </div>
           </div>
         </div>
         <div class="form-group">
@@ -3947,8 +3946,8 @@
           <input type="text" id="eb-notes" placeholder="Optional notes...">
         </div>
         <div class="form-group" style="margin-top:10px;">
-          <label>Chessable URL</label>
-          <input type="url" id="eb-chessable" placeholder="https://www.chessable.com/course/...">
+          <label>Meeting Link</label>
+          <input type="url" id="eb-chessable" placeholder="https://meet.google.com/...">
         </div>
         
         <div class="form-group" style="margin-top:10px;">

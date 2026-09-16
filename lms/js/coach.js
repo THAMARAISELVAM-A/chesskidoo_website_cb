@@ -89,6 +89,8 @@ window.renderCoachDashboard = function() {
   const pendingHw = (window.homeworkSubmissionCache || [])
     .filter(s => s.status === 'submitted' && myStudents.some(st => String(st.id) === String(s.student_id)));
   if (statHw) statHw.textContent = pendingHw.length;
+
+  if (window.renderCoachStudents) window.renderCoachStudents();
 };
 
 function getCurrentCoachIdFromStorage() {
@@ -537,17 +539,6 @@ document.addEventListener('DOMContentLoaded', () => {
               <a href="${sess.meetLink}" target="_blank" class="btn btn-gold btn-sm" style="flex:1; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-size:12px;">
                 📹 Join Class
               </a>
-              ${(() => {
-                const calLink = window.generateGoogleCalendarLink ? window.generateGoogleCalendarLink({
-                  title: sess.title,
-                  days: sess.type === 'batch' ? (window.allBatches || []).find(b => String(b.id) === String(sess.batchId))?.days || '' : '',
-                  timeStr: sess.time,
-                  coachName: (window.allCoaches || []).find(c => String(c.id) === String(coachId)) ? (window.getCoachName ? window.getCoachName((window.allCoaches || []).find(c => String(c.id) === String(coachId))) : 'Coach') : 'Coach',
-                  meetLink: sess.meetLink,
-                  description: 'Chess class - ' + sess.title
-                }) : '';
-                return calLink ? `<a href="${calLink}" target="_blank" class="btn btn-outline btn-sm" style="font-size:12px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:4px;">📅 Google Calendar</a>` : '';
-              })()}
               ${sess.type === 'batch' ? `
                 <button class="btn btn-outline btn-sm" onclick="window.openCoachCreateBatchModal('${sess.batchId}')" style="font-size:12px;" title="Edit batch schedule">
                   ✏️
@@ -1675,18 +1666,51 @@ if (typeof window.setPage === 'function') {
       $('eb-name').value = editingBatch.name || '';
       $('eb-level').value = editingBatch.level || 'Beginner';
       $('eb-status').value = editingBatch.status || 'active';
-      $('eb-days').value = editingBatch.days || '';
-      $('eb-time').value = editingBatch.time_slot || '';
+      const daysContainer = $('eb-days');
+      if (daysContainer) {
+        const selectedDays = String(editingBatch.days || '')
+          .split(/[&,]+/)
+          .map((d) => d.trim())
+          .filter(Boolean);
+        daysContainer.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+          cb.checked = selectedDays.includes(cb.value);
+        });
+      }
+      const timeSlot = editingBatch.time_slot || '';
+      const timeMatch = timeSlot.match(/(.+?)\s*-\s*(.+)/);
+      if (timeMatch) {
+        const to24h = (str) => {
+          const m = str.trim().match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+          if (!m) return '';
+          let h = parseInt(m[1], 10);
+          const mins = m[2];
+          const ap = m[3].toUpperCase();
+          if (ap === 'PM' && h < 12) h += 12;
+          if (ap === 'AM' && h === 12) h = 0;
+          return `${String(h).padStart(2, '0')}:${mins}`;
+        };
+        if ($('eb-time-from')) $('eb-time-from').value = to24h(timeMatch[1]) || '';
+        if ($('eb-time-to')) $('eb-time-to').value = to24h(timeMatch[2]) || '';
+      } else {
+        if ($('eb-time-from')) $('eb-time-from').value = '';
+        if ($('eb-time-to')) $('eb-time-to').value = '';
+      }
       $('eb-notes').value = editingBatch.notes || '';
-      if ($('eb-chessable')) $('eb-chessable').value = editingBatch.chessable_url || '';
+      if ($('eb-chessable')) $('eb-chessable').value = editingBatch.meet_link || '';
       $('eb-modal-title').textContent = 'Edit Batch';
       existingStudentIds = Array.isArray(editingBatch.student_ids) ? editingBatch.student_ids.map(String) : [];
     } else {
       $('eb-name').value = '';
       $('eb-level').value = 'Beginner';
       $('eb-status').value = 'active';
-      $('eb-days').value = '';
-      $('eb-time').value = '';
+      const daysContainer = $('eb-days');
+      if (daysContainer) {
+        daysContainer.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+          cb.checked = false;
+        });
+      }
+      if ($('eb-time-from')) $('eb-time-from').value = '17:00';
+      if ($('eb-time-to')) $('eb-time-to').value = '18:00';
       $('eb-notes').value = '';
       if ($('eb-chessable')) $('eb-chessable').value = '';
       $('eb-modal-title').textContent = 'Create New Batch';
@@ -1737,18 +1761,111 @@ if (typeof window.setPage === 'function') {
         if (!sbErr) saved = true;
       }
 
-      if (saved) {
-        toast('Batch deleted', 'success');
-        window.allBatches = (window.allBatches || []).filter((b) => String(b.id) !== String(id));
-        if (typeof window.loadAllData === 'function') window.loadAllData(true);
-        window.renderCoachBatches();
-        window.renderCoachDashboard();
-      } else {
-        toast('Delete failed', 'error');
-      }
-    } catch (e) {
-      toast('Error: ' + (e.message || 'connection error'), 'error');
+    if (saved) {
+      toast('Batch deleted', 'success');
+      window.allBatches = (window.allBatches || []).filter((b) => String(b.id) !== String(id));
+      if (typeof window.loadAllData === 'function') window.loadAllData(true);
+      window.renderCoachBatches();
+      window.renderCoachDashboard();
+    } else {
+      toast('Delete failed', 'error');
     }
+  } catch (e) {
+    toast('Error: ' + (e.message || 'connection error'), 'error');
+  }
+  };
+
+  window.openCoachBatchSchedulePopup = function () {
+    if (window.role !== 'coach' && !window.__adminImpersonatingCoach) return;
+    const coachId = window.currentCoachId || window.userId || getCurrentCoachIdFromStorage();
+    if (!coachId) {
+      toast('Coach ID not found', 'error');
+      return;
+    }
+
+    const myBatches = (window.allBatches || []).filter(b => (window.ckSameCoach ? window.ckSameCoach(b.coach_id, coachId) : String(b.coach_id) === String(coachId)) && b.status !== 'archived');
+    const myStudents = (window.allStudents || []).filter(s => window.ckSameCoach ? window.ckSameCoach(s.coach_id, coachId) : String(s.coach_id) === String(coachId));
+    const coachObj = (window.allCoaches || []).find((c) => String(c.id) === String(coachId));
+    const coachName = coachObj ? (window.getCoachName ? window.getCoachName(coachObj) : (coachObj.name || 'Coach')) : 'Coach';
+
+    const container = document.getElementById('batch-schedule-container');
+    if (!container) return;
+
+    if (!myBatches.length) {
+      container.innerHTML = '<div style="padding:24px; text-align:center; color:var(--ivory-dim);">No batches found. Create a batch to see its schedule here.</div>';
+      openModal('coach-batch-schedule-modal');
+      return;
+    }
+
+    const DAYS_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+    container.innerHTML = myBatches.map(b => {
+      const daysStr = (b.days || b.schedule || '').toLowerCase();
+      const timeStr = b.time_slot || (b.schedule && b.schedule.includes('|') ? b.schedule.split('|')[1].trim() : 'TBD');
+      
+      const bStudentIds = Array.isArray(b.student_ids) ? b.student_ids.map(String) : (window.parseStudentIds ? window.parseStudentIds(b.student_ids) : []);
+      const enrolledStudents = myStudents.filter(st => bStudentIds.includes(String(st.id)) || (st.batch_id && String(st.batch_id) === String(b.id)) || (st.batch && String(st.batch) === String(b.name)));
+
+      const scheduleDays = DAYS_ORDER.filter(dayName => {
+        const dLow = dayName.toLowerCase();
+        return daysStr.includes(dLow) || daysStr.includes(dLow.slice(0, 3));
+      });
+
+      const calLink = window.generateGoogleCalendarLink ? window.generateGoogleCalendarLink({
+        title: b.name + ' - Chess Class',
+        days: scheduleDays.join(', '),
+        timeStr: timeStr,
+        coachName: coachName,
+        meetLink: b.meet_link || '',
+        description: `Batch: ${b.name}\nCoach: ${coachName}\nTime: ${timeStr}\nStudents: ${enrolledStudents.map(s => window.getStudentName ? window.getStudentName(s) : s.name).join(', ')}`
+      }) : '';
+
+      return `
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px; margin-bottom:14px; box-shadow:0 4px 16px rgba(0,0,0,0.2);">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+            <div>
+              <div style="font-size:18px; font-weight:800; color:var(--gold); margin-bottom:4px;">${window.escapeHtml ? window.escapeHtml(b.name) : b.name}</div>
+              <div style="font-size:12px; color:var(--ivory-dim);">Coach: ${window.escapeHtml ? window.escapeHtml(coachName) : coachName}</div>
+            </div>
+            <span style="background:rgba(218,163,62,0.15); color:var(--gold); font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px;">
+              ${b.level || 'Batch'}
+            </span>
+          </div>
+          
+          <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+            ${scheduleDays.map(day => `
+              <div style="background:var(--bg2); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:10px 12px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px;">
+                <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
+                  <span style="font-weight:700; color:var(--ivory); font-size:13px; text-transform:uppercase; letter-spacing:0.5px; white-space:nowrap;">${day.slice(0, 3)}</span>
+                  <span style="background:rgba(59,130,246,0.15); color:#60a5fa; font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px; font-family:var(--font-mono); white-space:nowrap;">
+                    ⏰ ${window.escapeHtml ? window.escapeHtml(timeStr) : timeStr}
+                  </span>
+                </div>
+                <a href="${b.meet_link || 'https://meet.google.com/new'}" target="_blank" class="btn btn-gold btn-sm" style="font-size:11px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:4px; padding:5px 10px;">
+                  📹 Join Class
+                </a>
+              </div>
+            `).join('')}
+          </div>
+
+          <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+            ${calLink ? `<a href="${calLink}" target="_blank" class="btn btn-outline btn-sm" style="font-size:12px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:4px; padding:6px 12px;">📅 Google Calendar</a>` : ''}
+          </div>
+
+          <div style="font-size:12px; color:var(--ivory-dim); margin-bottom:10px;">
+            <strong style="color:var(--ivory);">${enrolledStudents.length} Student${enrolledStudents.length === 1 ? '' : 's'}:</strong>
+            ${enrolledStudents.length ? enrolledStudents.map(s => `<span style="display:inline-block; background:rgba(255,255,255,0.04); padding:2px 8px; border-radius:4px; margin:2px 2px 0 0; font-size:11px;">👤 ${window.escapeHtml ? window.escapeHtml(window.getStudentName ? window.getStudentName(s) : (s.name || 'Student')) : (s.name || 'Student')}</span>`).join('') : '<span style="font-style:italic;">No students assigned yet</span>'}
+          </div>
+
+          <div style="display:flex; gap:8px; border-top:1px solid rgba(255,255,255,0.06); padding-top:10px;">
+            <button class="btn btn-outline btn-sm" onclick="window.openCoachCreateBatchModal('${b.id}'); closeModals();" style="font-size:12px; flex:1;">✏️ Edit</button>
+            <button class="btn btn-outline-danger btn-sm" onclick="window.deleteCoachBatch('${b.id}'); closeModals();" style="font-size:12px; flex:1;">🗑️ Delete</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    openModal('coach-batch-schedule-modal');
   };
 
   // ── Coach Study Lab Renderer ──────────────────────────────────────────────
