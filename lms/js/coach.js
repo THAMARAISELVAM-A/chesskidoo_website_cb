@@ -117,18 +117,29 @@ function getCurrentCoachIdFromStorage() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  initStudentPageObserver();
+});
+
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  initStudentPageObserver();
+}
+
+function initStudentPageObserver() {
+  if (window._studentPageObserverInitialized) return;
+  window._studentPageObserverInitialized = true;
+
   const observer = new MutationObserver(() => {
     const dash = document.getElementById('page-coach-dash');
     const stud = document.getElementById('page-stud');
     if (dash && dash.classList.contains('active') && window.renderCoachDashboard) {
       window.renderCoachDashboard();
     }
-    if (stud && stud.classList.contains('active') && window.renderStudents) {
+    if (stud && stud.classList.contains('active') && window.renderStudents && !window._renderingStudents) {
       window.renderStudents();
     }
   });
   observer.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
-});
+}
 
   window.renderCoachStudents = function () {
     if (window.role !== 'coach' && !window.__adminImpersonatingCoach) return;
@@ -411,8 +422,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const myStudents = (window.allStudents || []).filter(s => window.ckSameCoach ? window.ckSameCoach(s.coach_id, coachId) : String(s.coach_id) === String(coachId));
     const myBatches = (window.allBatches || []).filter(b => (window.ckSameCoach ? window.ckSameCoach(b.coach_id, coachId) : String(b.coach_id) === String(coachId)) && b.status !== 'archived');
 
-    const view = (filterDayOrView === 'weekly' || filterDayOrView === 'monthly') ? filterDayOrView : 'weekly';
+    const view = (filterDayOrView === 'weekly' || filterDayOrView === 'monthly') ? filterDayOrView : (window.coachScheduleView || 'weekly');
     const filterDay = view === 'weekly' ? (filterDayOrView === 'weekly' ? 'all' : filterDayOrView) : 'all';
+    window.coachScheduleView = view;
     console.log("[CoachSchedule] renderCoachSchedule view=", view, "filterDay=", filterDay, "coachId=", coachId, "myBatches=", myBatches.length, "myStudents=", myStudents.length);
 
     const DAYS_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -1678,22 +1690,36 @@ if (typeof window.setPage === 'function') {
       }
       const timeSlot = editingBatch.time_slot || '';
       const timeMatch = timeSlot.match(/(.+?)\s*-\s*(.+)/);
+      const setTimeDisplay = (prefix, str) => {
+        const m = str.trim().match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+        if (!m) return;
+        const h = parseInt(m[1], 10);
+        const mins = m[2];
+        const ap = m[3].toUpperCase();
+        const h12 = h % 12 || 12;
+        const display = document.getElementById(prefix + '-display');
+        if (display) display.textContent = h12 + ':' + mins + ' ' + ap;
+        const hInput = document.getElementById(prefix + '-hour');
+        if (hInput) hInput.value = String(h12);
+        const mInput = document.getElementById(prefix + '-minute');
+        if (mInput) mInput.value = mins;
+        const aInput = document.getElementById(prefix + '-ampm');
+        if (aInput) aInput.value = ap;
+      };
       if (timeMatch) {
-        const to24h = (str) => {
-          const m = str.trim().match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-          if (!m) return '';
-          let h = parseInt(m[1], 10);
-          const mins = m[2];
-          const ap = m[3].toUpperCase();
-          if (ap === 'PM' && h < 12) h += 12;
-          if (ap === 'AM' && h === 12) h = 0;
-          return `${String(h).padStart(2, '0')}:${mins}`;
-        };
-        if ($('eb-time-from')) $('eb-time-from').value = to24h(timeMatch[1]) || '';
-        if ($('eb-time-to')) $('eb-time-to').value = to24h(timeMatch[2]) || '';
+        setTimeDisplay('eb-from', timeMatch[1]);
+        setTimeDisplay('eb-to', timeMatch[2]);
       } else {
-        if ($('eb-time-from')) $('eb-time-from').value = '';
-        if ($('eb-time-to')) $('eb-time-to').value = '';
+        ['eb-from', 'eb-to'].forEach(prefix => {
+          const display = document.getElementById(prefix + '-display');
+          if (display) display.textContent = '';
+          const hInput = document.getElementById(prefix + '-hour');
+          if (hInput) hInput.value = '';
+          const mInput = document.getElementById(prefix + '-minute');
+          if (mInput) mInput.value = '';
+          const aInput = document.getElementById(prefix + '-ampm');
+          if (aInput) aInput.value = '';
+        });
       }
       $('eb-notes').value = editingBatch.notes || '';
       if ($('eb-chessable')) $('eb-chessable').value = editingBatch.meet_link || '';
@@ -1709,8 +1735,18 @@ if (typeof window.setPage === 'function') {
           cb.checked = false;
         });
       }
-      if ($('eb-time-from')) $('eb-time-from').value = '17:00';
-      if ($('eb-time-to')) $('eb-time-to').value = '18:00';
+      const setDefault = (prefix, h, m, ap) => {
+        const display = document.getElementById(prefix + '-display');
+        if (display) display.textContent = h + ':' + m + ' ' + ap;
+        const hInput = document.getElementById(prefix + '-hour');
+        if (hInput) hInput.value = h;
+        const mInput = document.getElementById(prefix + '-minute');
+        if (mInput) mInput.value = m;
+        const aInput = document.getElementById(prefix + '-ampm');
+        if (aInput) aInput.value = ap;
+      };
+      setDefault('eb-from', '5', '00', 'PM');
+      setDefault('eb-to', '6', '00', 'PM');
       $('eb-notes').value = '';
       if ($('eb-chessable')) $('eb-chessable').value = '';
       $('eb-modal-title').textContent = 'Create New Batch';

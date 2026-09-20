@@ -1785,7 +1785,7 @@ let homeworkSubmissionCache = [];
     renderHomeworkCalendar();
   }
 
-  function renderHomeworkCalendarGrid(items, gridId = 'homework-calendar-grid', monthValue = '') {
+  function renderHomeworkCalendarGrid(items, gridId = 'homework-calendar-grid', monthValue = '', dateField = 'due_date') {
     const grid = $(gridId);
     if (!grid) return;
     const month = monthValue || ($('homework-month-filter') ? $('homework-month-filter').value : monthKey(homeworkCalendarMonth));
@@ -1796,9 +1796,11 @@ let homeworkSubmissionCache = [];
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const byDate = new Map();
     items.forEach((assignment) => {
-      if (!assignment.due_date) return;
-      if (!byDate.has(assignment.due_date)) byDate.set(assignment.due_date, []);
-      byDate.get(assignment.due_date).push(assignment);
+      const rawDate = assignment[dateField];
+      if (!rawDate) return;
+      const dateKey = /^\d{4}-\d{2}-\d{2}/.test(String(rawDate)) ? String(rawDate).slice(0, 10) : String(rawDate);
+      if (!byDate.has(dateKey)) byDate.set(dateKey, []);
+      byDate.get(dateKey).push(assignment);
     });
 
     let html = dayNames.map((name) => `<div style="text-align:center;font-size:11px;color:var(--gold);font-weight:700;padding:6px;">${name}</div>`).join('');
@@ -1831,7 +1833,7 @@ let homeworkSubmissionCache = [];
     grid.innerHTML = html;
   }
 
-  function renderHomeworkCalendarList(items, listId = 'homework-calendar-list') {
+  function renderHomeworkCalendarList(items, listId = 'homework-calendar-list', dateField = 'due_date') {
     const list = $(listId);
     if (!list) return;
     if (!items.length) {
@@ -1841,12 +1843,13 @@ let homeworkSubmissionCache = [];
 
     const grouped = new Map();
     items.forEach((assignment) => {
-      const key = assignment.due_date || 'no-date';
+      const rawDate = assignment[dateField];
+      const key = rawDate ? String(rawDate).slice(0, 10) : 'no-date';
       if (!grouped.has(key)) grouped.set(key, []);
       grouped.get(key).push(assignment);
     });
 
-    const title = (key) => key === 'no-date' ? 'No due date' : formatDate(key);
+    const title = (key) => key === 'no-date' ? 'No date' : formatDate(key);
     list.innerHTML = Array.from(grouped.entries()).map(([key, group]) => `<div>
       <div style="display:flex;align-items:center;gap:8px;margin:12px 0 6px;color:var(--gold);font-weight:700;font-size:13px;">
         <span>${title(key)}</span>
@@ -1882,8 +1885,8 @@ let homeworkSubmissionCache = [];
     const month = $(config.monthId);
     if (month && !month.value) month.value = monthKey(new Date());
     const monthValue = month ? month.value : monthKey(new Date());
-    renderHomeworkCalendarGrid(items, config.gridId, monthValue);
-    renderHomeworkCalendarList(items, config.listId);
+    renderHomeworkCalendarGrid(items, config.gridId, monthValue, config.dateField || 'due_date');
+    renderHomeworkCalendarList(items, config.listId, config.dateField || 'due_date');
     const grid = $(config.gridId);
     const list = $(config.listId);
     const viewMode = config.viewMode || 'calendar';
@@ -1913,6 +1916,10 @@ let homeworkSubmissionCache = [];
       if (window.ckSameCoach && window.ckSameCoach(student.coach_id, coachId)) studentIds.add(String(student.id));
     });
 
+    const batchSelect = document.getElementById('coach-att-batch-filter');
+    const selectedBatchId = batchSelect ? batchSelect.value : '';
+    const effectiveBatchIds = selectedBatchId ? new Set([selectedBatchId]) : batchIds;
+
     const monthInput = $('coach-attendance-homework-month');
     const monthValue = monthInput && monthInput.value ? monthInput.value : monthKey(new Date());
     if (monthInput && !monthInput.value) monthInput.value = monthValue;
@@ -1920,11 +1927,11 @@ let homeworkSubmissionCache = [];
     const items = sortHomework((window.allHomework || []).filter(assignment => {
       const targetType = String(assignment.target_type || '').toLowerCase();
       const appliesToStudent = targetType === 'student' && studentIds.has(String(assignment.student_id));
-      const appliesToBatch = targetType === 'batch' && batchIds.has(String(assignment.batch_id));
+      const appliesToBatch = targetType === 'batch' && effectiveBatchIds.has(String(assignment.batch_id));
       if (!appliesToStudent && !appliesToBatch) return false;
-      if (!assignment.due_date) return true;
-      const due = parseDateKey(assignment.due_date);
-      return !!due && due.getFullYear() === year && due.getMonth() === monthNumber - 1;
+      if (!assignment.created_at) return true;
+      const assigned = parseDateKey(assignment.created_at.split('T')[0]);
+      return !!assigned && assigned.getFullYear() === year && assigned.getMonth() === monthNumber - 1;
     }));
     renderHomeworkCalendarForTarget(items, {
       monthId: 'coach-attendance-homework-month',
@@ -1932,7 +1939,8 @@ let homeworkSubmissionCache = [];
       listId: 'coach-attendance-homework-list',
       calendarButtonId: 'coach-attendance-homework-calendar',
       listButtonId: 'coach-attendance-homework-list-view',
-      viewMode: window.coachAttendanceHomeworkView || 'calendar'
+      viewMode: window.coachAttendanceHomeworkView || 'calendar',
+      dateField: 'created_at'
     });
   };
 

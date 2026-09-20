@@ -429,55 +429,68 @@
      </div>`;
    }
 
-   window.renderChildMonthlySchedule = function (student) {
-     const container = document.getElementById("child-monthly-schedule-container");
-     if (!container) return;
-     if (!student) {
-       student = window.currentStudent;
-     }
-     if (!student) {
-       container.innerHTML = `<div class="empty-state" style="padding:24px;"><span class="empty-icon">📅</span><p>No student selected.</p></div>`;
-       return;
-     }
+    window.renderChildMonthlySchedule = function (student) {
+      const container = document.getElementById("child-monthly-schedule-container");
+      if (!container) return;
+      if (!student) {
+        student = window.currentStudent;
+      }
+      if (!student) {
+        container.innerHTML = `<div class="empty-state" style="padding:24px;"><span class="empty-icon">📅</span><p>No student selected.</p></div>`;
+        return;
+      }
 
-     const monthInput = document.getElementById("child-schedule-month");
-     if (monthInput && !monthInput.value) {
-       const now = new Date();
-       monthInput.value = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
-     }
+      const monthInput = document.getElementById("child-schedule-month");
+      if (monthInput && !monthInput.value) {
+        const now = new Date();
+        monthInput.value = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+      }
 
-     const schedData = window.extractScheduleJSON(student.notes, student);
-     if (!schedData) {
-       container.innerHTML = `<div class="empty-state" style="padding:24px;"><span class="empty-icon">📅</span><p>No schedule found for this month.</p></div>`;
-       return;
-     }
+      const schedData = window.extractScheduleJSON(student.notes, student);
+      if (!schedData) {
+        container.innerHTML = `<div class="empty-state" style="padding:24px;"><span class="empty-icon">📅</span><p>No schedule found for this month.</p></div>`;
+        return;
+      }
 
-     let year, month;
-     if (monthInput && monthInput.value) {
-       const [y, m] = monthInput.value.split("-").map(Number);
-       year = y;
-       month = m - 1;
-     } else {
-       const now = new Date();
-       year = now.getFullYear();
-       month = now.getMonth();
-     }
+      let year, month;
+      if (monthInput && monthInput.value) {
+        const [y, m] = monthInput.value.split("-").map(Number);
+        year = y;
+        month = m - 1;
+      } else {
+        const now = new Date();
+        year = now.getFullYear();
+        month = now.getMonth();
+      }
 
-     const sessionDates = getSessionDatesForMonth(schedData.regDays || "", year, month);
-     const sessions = sessionDates.map((sd) => ({
-       ...sd,
-       timeStr: schedData.regTime || "TBD",
-       coachName: schedData.regCoachName || "",
-       meetLink: schedData.meetLink || "",
-       title: (student.name || "Student") + " - Chess Class",
-       studentNames: student.name || "",
-     }));
+      const sessionDates = getSessionDatesForMonth(schedData.regDays || "", year, month);
+      const sessions = sessionDates.map((sd) => ({
+        ...sd,
+        timeStr: schedData.regTime || "TBD",
+        coachName: schedData.regCoachName || "",
+        meetLink: schedData.meetLink || "",
+        title: (student.name || "Student") + " - Chess Class",
+        studentNames: student.name || "",
+      }));
 
-     container.innerHTML = buildMonthlyScheduleTable(sessions, {
-       showStudentNames: false,
-       title: "Monthly Schedule - " + (student.name || "Student"),
-     });
-   };
+      container.innerHTML = buildMonthlyScheduleTable(sessions, {
+        showStudentNames: false,
+        title: "Monthly Schedule - " + (student.name || "Student"),
+      });
+    };
+
+    window.onChildScheduleMonthChange = function () {
+      try {
+        if (window.renderChildMonthlySchedule) {
+          window.renderChildMonthlySchedule(window.currentStudent);
+        }
+      } catch (e) {
+        console.error("[Schedule] Month change render failed:", e);
+      }
+      if (window.setChildScheduleView) {
+        window.setChildScheduleView("monthly");
+      }
+    };
 
    window.setChildScheduleView = function (view) {
      view = view || "weekly";
@@ -1193,10 +1206,6 @@
           window.generateContextualInsight("child_schedule", student.id);
         }
 
-        if (window.setChildScheduleView) {
-          window.setChildScheduleView("weekly");
-        }
-
         return;
       }
 
@@ -1263,10 +1272,6 @@
 
     if (window.generateContextualInsight) {
       window.generateContextualInsight("child_schedule", student.id);
-    }
-
-    if (window.setChildScheduleView) {
-      window.setChildScheduleView("weekly");
     }
   };
 

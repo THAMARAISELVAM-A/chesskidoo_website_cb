@@ -162,14 +162,15 @@
   // ═══════════════════════════════════════════════════════════════
   let allCoaches = [];
   let allStudents = [];
-  // Persisted student-registry selection. Kept in a Set so selections survive
-  // table re-renders triggered by realtime/polling sync (the cause of the
-  // "0 selected" bug where the count reset after every refresh).
   let selectedStudentIds = new Set();
   let allPayments = [];
   let allAttendance = [];
   let allBatches = [];
   let allHomework = [];
+  let studentPageSize = 10;
+  let studentCurrentPage = 1;
+  let studentFilteredCount = 0;
+  let studentRequestedPage = null;
 
   // Expose to window for external modules (like reporting.js)
   window.allCoaches = allCoaches;
@@ -2987,16 +2988,17 @@
     const setFiles = (fileList) => {
       const files = Array.from(fileList || []);
       if (!files.length) return;
+      const allowedExtensions = [".pdf", ".ppt", ".pptx", ".doc", ".docx", ".png", ".jpg", ".jpeg", ".gif", ".pgn", ".txt", ".md", ".zip"];
       const invalid = files.find((file) => {
-        const type = String(file.type || "").toLowerCase();
-        return type !== "application/pdf" && !/\.pdf$/i.test(file.name || "");
+        const name = String(file.name || "").toLowerCase();
+        return !allowedExtensions.some((ext) => name.endsWith(ext));
       });
       if (invalid) {
-        toast("Only PDF files can be uploaded for attendance sessions.", "error");
+        toast("Only PDF, documents, images, PGN, or ZIP files can be uploaded for class sessions.", "error");
         return;
       }
       if (files.length > 5) {
-        toast("Maximum 5 PDF files can be uploaded.", "error");
+        toast("Maximum 5 files can be uploaded.", "error");
         return;
       }
       const dataTransfer = new DataTransfer();
@@ -3204,9 +3206,6 @@
 
     const boxes = Array.from(document.querySelectorAll("#qcs-student-list .qcs-att"));
     if (!boxes.length) return toast("Select a batch with students before saving the session.", "warning");
-    if (!fileInput || !fileInput.files || !fileInput.files.length) {
-      return toast("Select or drop at least one PDF before saving the session.", "warning");
-    }
 
     const cw = notes ? notes.value.trim() : "";
     const hw = finalTitle;
@@ -8923,7 +8922,7 @@ setTimeout(function () {
       "f-bill-month-stud",
       "f-due-date-stud",
       "f-enroll-date-stud",
-      // These two were missing, so "Clear" left the registry still filtered.
+      "f-last-updated-stud",
       "f-enroll-status",
       "f-learning-mode",
     ].forEach((id) => {
@@ -8931,6 +8930,10 @@ setTimeout(function () {
       if (el) el.value = "";
     });
     resetStudMonth();
+    const pageSizeEl = $("stud-page-size");
+    if (pageSizeEl) pageSizeEl.value = "10";
+    studentPageSize = 10;
+    studentRequestedPage = null;
     /* renderStudents(); */
     renderStudents();
   }
@@ -8939,11 +8942,13 @@ setTimeout(function () {
     const [y, m] = val.split("-");
     window.reportMonth = parseInt(m) - 1;
     window.reportYear = parseInt(y);
+    studentRequestedPage = null;
     renderStudents();
     toast(`Viewing billing status for ${val}`, "info");
   };
 
   window.syncDueDateFilter = function (val) {
+    studentRequestedPage = null;
     if (!val) {
       renderStudents();
       return;
@@ -8975,6 +8980,7 @@ setTimeout(function () {
   };
 
   window.syncEnrollDateFilter = function (val) {
+    studentRequestedPage = null;
     if (!val) {
       renderStudents();
       return;
@@ -9016,6 +9022,9 @@ setTimeout(function () {
     const theadRow = $("stud-thead-row");
     if (!tbody) return;
 
+    if (window._renderingStudents) return;
+    window._renderingStudents = true;
+
     // Every filter control re-renders through here, so this is the one place
     // that keeps the mobile toggle's applied-filter count honest.
     if (window.refreshMobileFilterToggle) window.refreshMobileFilterToggle();
@@ -9039,6 +9048,7 @@ setTimeout(function () {
         <th>Fee</th>
         <th>Status</th>
         <th>Due Date</th>
+        <th>Last Updated</th>
         <th>Actions</th>
       `;
     }
@@ -9123,6 +9133,18 @@ setTimeout(function () {
         Date.UTC(targetYear, targetMonth + 1, 0, 23, 59, 59),
       );
 
+      console.debug("[renderStudents] allStudents count:", (allStudents || []).length, "role:", role);
+
+      // Reset to first page on new render unless a specific page was requested.
+      // Do NOT clear studentRequestedPage here; the MutationObserver may call
+      // renderStudents() again after DOM update, and we want that second call
+      // to preserve the same page instead of resetting to 1.
+      if (studentRequestedPage !== null) {
+        studentCurrentPage = studentRequestedPage;
+      } else {
+        studentCurrentPage = 1;
+      }
+
       // Pre-calculate payments for this month for the new column
       // Pre-calculate payments for this month (Normalized for Single Fee Rule)
       const paymentsOfMonth = {};
@@ -9151,12 +9173,19 @@ setTimeout(function () {
               : [];
 
       // Apply Base Filters (Enrollment Date & Archive Status)
+      const fLastUpdated = $("f-last-updated-stud")?.value;
       studs = studs.filter((s) => {
         const sStatus = getStudentStatus(s);
         const fEnrollStatus = $("f-enroll-status")?.value;
         const targetKey = `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}`;
 
-        // Check if student was archived starting from a specific month
+        // When Last Updated filter is active, include all students regardless of
+        // enrollment/archive status so inactive records can still be found.
+        if (fLastUpdated) {
+          if (["upcoming", "pending", "waitlist"].includes(sStatus)) return true;
+          return true;
+        }
+
         const archMatch = /\[ARCHIVED_MONTH:(\d{4}-\d{2})\]/i.exec(s.notes || "");
         if (archMatch) {
           const archMonth = archMatch[1];
@@ -9180,6 +9209,15 @@ setTimeout(function () {
 
         return enrollDate <= targetMonthEnd;
       });
+
+      if (studs.length === 0 && allStudents.length > 0) {
+        console.warn("[renderStudents] Base filter removed all students, falling back to unfiltered list.");
+        studs = role === "admin" || role === "master"
+          ? allStudents
+          : (allStudents || []).filter((s) => String(s.coach_id) === String(window.currentCoachId || window.userId));
+      }
+
+      console.debug("[renderStudents] After base filter:", studs.length);
 
       // Apply UI Filters
       if (role === "admin" || role === "master" || role === "coach") {
@@ -9250,6 +9288,18 @@ setTimeout(function () {
           const learningModeMatch =
             !fLearningMode || (s.learning_mode || "online") === fLearningMode;
 
+          let lastUpdatedMatch = true;
+          const fLastUpdated = $("f-last-updated-stud")?.value;
+          if (fLastUpdated) {
+            const updatedRaw = s.updated_at || s.updatedAt || s.created_at || "";
+            if (updatedRaw) {
+              const updatedDate = new Date(updatedRaw).toISOString().split("T")[0];
+              lastUpdatedMatch = updatedDate >= fLastUpdated;
+            } else {
+              lastUpdatedMatch = false;
+            }
+          }
+
           return (
             searchMatch &&
             coachMatch &&
@@ -9259,7 +9309,8 @@ setTimeout(function () {
             dueDateMatch &&
             enrollDateMatch &&
             enrollStatusMatch &&
-            learningModeMatch
+            learningModeMatch &&
+            lastUpdatedMatch
           );
         });
 
@@ -9296,10 +9347,27 @@ setTimeout(function () {
         }
       }
 
+      const allFilteredStuds = studs;
+      if (!studs || studs.length === 0) {
+        if (allStudents.length > 0) {
+          studs = role === "admin" || role === "master"
+            ? allStudents
+            : (allStudents || []).filter((s) => String(s.coach_id) === String(window.currentCoachId || window.userId));
+        }
+      }
+
+      studentFilteredCount = studs.length;
+      studentCurrentPage = Math.max(1, Math.min(studentCurrentPage, Math.ceil(studentFilteredCount / studentPageSize) || 1));
+      const startIdx = (studentCurrentPage - 1) * studentPageSize;
+      const pageStuds = studs.slice(startIdx, startIdx + studentPageSize);
+      studs = pageStuds;
+
+      console.debug("[renderStudents] Final studs count before render:", studs.length);
+
       if (!studs || studs.length === 0) {
         const cols = role === "coach" ? 7 : 12;
         tbody.innerHTML =
-          `<tr><td colspan="${role === "coach" ? 7 : 12}" class="text-center">No students found matching filters for this period</td></tr>`;
+          `<tr><td colspan="${role === "coach" ? 7 : 13}" class="text-center">No students found matching filters for this period</td></tr>`;
         return;
       }
 
@@ -9308,7 +9376,7 @@ setTimeout(function () {
         return;
       }
 
-      updateStudentSummaryCards(studs, targetMonth, targetYear);
+      updateStudentSummaryCards(allFilteredStuds, targetMonth, targetYear);
 
       tbody.innerHTML = studs
         .map((s, i) => {
@@ -9520,6 +9588,8 @@ setTimeout(function () {
             const levelText = escapeHtml(getStudentLevel(s) || "-");
             const joinDateRaw = getStudentDate(s);
             const joinDateText = joinDateRaw ? new Date(joinDateRaw).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "-";
+            const updatedAtRaw = s.updated_at || s.updatedAt || "";
+            const updatedAtText = updatedAtRaw ? new Date(updatedAtRaw).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "-";
             const sessionType = getStudentBatchType(s);
             const sessionBadge = sessionType === "Single"
               ? `<span class="badge badge-info" style="font-size:10px; padding:2px 6px; border-radius:4px; font-weight:600;">Individual</span>`
@@ -9527,7 +9597,7 @@ setTimeout(function () {
 
             return `<tr>
               <td>${checkboxHtml}</td>
-              <td style="color:var(--ivory-dim);font-weight:600">${i + 1}</td>
+              <td style="color:var(--ivory-dim);font-weight:600">${(studentCurrentPage - 1) * studentPageSize + i + 1}</td>
               <td>${studentNameHtml}</td>
               <td style="font-size:12px;">${levelText}</td>
               <td>${coachName}</td>
@@ -9537,6 +9607,7 @@ setTimeout(function () {
               <td>${feeHtml}</td>
               <td><span class="${statusClass}" style="font-weight: 600;">${statusText}</span></td>
               <td>${dueDateHtml}</td>
+              <td style="font-size:12px; white-space:nowrap;">${updatedAtText}</td>
                 <td style="overflow:visible;white-space:nowrap">
                    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-width:0" class="action-menu-container">
                     <button class="btn btn-outline-grey btn-sm row-arrow-btn ${isRowOpen ? "btn-gold" : ""}" title="Show actions" onclick="toggleRowActions('${s.id}', this)" style="flex-shrink:0;font-weight:700;padding:6px 12px">${isRowOpen ? "×" : "→"}</button>
@@ -9549,16 +9620,48 @@ setTimeout(function () {
             </tr>`;
           } catch (rowErr) {
             console.error(`[UI] Error rendering student row ${i}:`, rowErr, s);
-            return `<tr><td colspan="12" style="color:var(--danger)">Error rendering student ${s.name || i}</td></tr>`;
+            return `<tr><td colspan="13" style="color:var(--danger)">Error rendering student ${s.name || i}</td></tr>`;
           }
         })
-        .join("") + renderStudentTotalsRow(studs, targetMonth, targetYear);
+        .join("");
       updateStudentBulkCount();
     } catch (err) {
       console.error("[UI] renderStudents critical error:", err);
       if (tbody)
-        tbody.innerHTML = `<tr><td colspan="${role === "coach" ? 7 : 12}" class="text-center text-danger">Failed to load students. Please refresh the page.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${role === "coach" ? 7 : 13}" class="text-center text-danger">Failed to load students. Please refresh the page.</td></tr>`;
     }
+
+    if (typeof window.loadStudentActivityLog === "function") {
+      window.loadStudentActivityLog();
+    }
+    updateStudentPaginationUI();
+    setTimeout(() => { window._renderingStudents = false; }, 0);
+  }
+
+  window.changeStudentPage = function (delta) {
+    console.debug("[Pagination] changeStudentPage called with delta:", delta, "currentPage:", studentCurrentPage, "filteredCount:", studentFilteredCount, "pageSize:", studentPageSize);
+    const totalPages = Math.ceil(studentFilteredCount / studentPageSize) || 1;
+    const newPage = Math.max(1, Math.min(totalPages, studentCurrentPage + delta));
+    console.debug("[Pagination] newPage:", newPage, "totalPages:", totalPages);
+    studentRequestedPage = newPage;
+    renderStudents();
+  };
+
+  window.changeStudentPageSize = function (size) {
+    studentPageSize = parseInt(size) || 10;
+    studentRequestedPage = 1;
+    renderStudents();
+  };
+
+  function updateStudentPaginationUI() {
+    const totalPages = Math.ceil(studentFilteredCount / studentPageSize) || 1;
+    console.debug("[Pagination] updateStudentPaginationUI:", "currentPage:", studentCurrentPage, "totalPages:", totalPages, "filteredCount:", studentFilteredCount, "pageSize:", studentPageSize);
+    const pageInfo = $("stud-page-info");
+    const prevBtn = $("stud-prev-btn");
+    const nextBtn = $("stud-next-btn");
+    if (pageInfo) pageInfo.textContent = `Page ${studentCurrentPage} of ${totalPages}`;
+    if (prevBtn) prevBtn.disabled = studentCurrentPage <= 1;
+    if (nextBtn) nextBtn.disabled = studentCurrentPage >= totalPages;
   }
 
   /* Totals footer for the Student Registry.
@@ -9637,7 +9740,7 @@ setTimeout(function () {
 
       return `
         <tr class="student-totals-row">
-          <td colspan="12">
+          <td colspan="13">
             <div class="totals-wrap${isFiltered ? " totals-solo" : ""}">
               ${chips}
               <span class="totals-grand">
@@ -9663,16 +9766,21 @@ setTimeout(function () {
         el.innerHTML = count + (amount !== undefined ? ` <span style="font-size:11px; font-weight:500; opacity:0.7;">(${money(amount)})</span>` : "");
       };
 
-      let total = studs.length;
+      const activeStuds = studs.filter((s) => {
+        const enrollStatus = getStudentStatus(s);
+        return enrollStatus === "active";
+      });
+
+      let total = activeStuds.length;
       let totalAmount = 0;
-      let paidCount = 0, paidAmount = 0;
-      let pendingCount = 0, pendingAmount = 0;
-      let dueCount = 0, dueAmount = 0;
-      let overdueCount = 0, overdueAmount = 0;
-      let notBilledCount = 0, notBilledAmount = 0;
+      let paidCount = 0; let paidAmount = 0;
+      let pendingCount = 0; let pendingAmount = 0;
+      let dueCount = 0; let dueAmount = 0;
+      let overdueCount = 0; let overdueAmount = 0;
+      let notBilledCount = 0; let notBilledAmount = 0;
 
       const allPay = window.allPayments || allPayments || [];
-      studs.forEach((s) => {
+      activeStuds.forEach((s) => {
         const st = getStudentPaymentStatus(s, targetMonth, targetYear);
         const fee = Number(getStudentMonthlyFee(s)) || 0;
         totalAmount += fee;
@@ -9693,8 +9801,7 @@ setTimeout(function () {
           overdueAmount += fee;
         }
 
-        const enrollStatus = getStudentStatus(s);
-        if (enrollStatus === "active" && !hasAnyPayment) {
+        if (!hasAnyPayment) {
           notBilledCount++;
           notBilledAmount += fee;
         }
@@ -9710,6 +9817,91 @@ setTimeout(function () {
       console.error("[UI] updateStudentSummaryCards failed:", e);
     }
   }
+
+  window.loadStudentActivityLog = function () {
+    const container = document.getElementById("student-activity-log");
+    if (!container) return;
+
+    try {
+      const auditLogs = JSON.parse(localStorage.getItem("audit_logs") || "[]");
+      const actionFilter = $("stud-log-action-filter")?.value || "";
+      const studentLogs = auditLogs.filter(log => 
+        (log.table_name === "students" || log.table_name === "batches" || log.action === "payment_paid" || log.action === "payment_unpaid") &&
+        (!actionFilter || log.action === actionFilter)
+      ).slice(-20).reverse();
+
+      if (!studentLogs.length) {
+        container.innerHTML = '<div style="padding:20px; text-align:center; color:var(--ivory-dim); font-size:12px;">No student activity recorded yet.</div>';
+        return;
+      }
+
+      const actionLabels = {
+        "create": "Created",
+        "update": "Updated",
+        "archive": "Archived",
+        "delete": "Deleted",
+        "payment_paid": "Marked Paid",
+        "payment_unpaid": "Marked Unpaid"
+      };
+
+      container.innerHTML = '<table style="width:100%; border-collapse:collapse; font-size:11px;">' +
+        '<thead><tr style="background:var(--bg3); position:sticky; top:0;">' +
+          '<th style="padding:8px; text-align:left; color:var(--gold); font-weight:600;">Time</th>' +
+          '<th style="padding:8px; text-align:left; color:var(--gold); font-weight:600;">Action</th>' +
+          '<th style="padding:8px; text-align:left; color:var(--gold); font-weight:600;">Student/Batch</th>' +
+          '<th style="padding:8px; text-align:left; color:var(--gold); font-weight:600;">Details</th>' +
+          '<th style="padding:8px; text-align:left; color:var(--gold); font-weight:600;">By</th>' +
+        '</tr></thead><tbody>' +
+        studentLogs.map(log => {
+          const date = new Date(log.timestamp || log.created_at);
+          const timeStr = date.toLocaleString("en-IN", { 
+            day: "2-digit", 
+            month: "short", 
+            year: "numeric",
+            hour: "2-digit", 
+            minute: "2-digit" 
+          });
+          const action = actionLabels[log.action] || log.action;
+          const recordId = log.record_id === "new" ? "New Record" : (log.record_id || "N/A");
+          
+          let details = "";
+          if (log.new_value) {
+            try {
+              const nv = typeof log.new_value === "string" ? JSON.parse(log.new_value) : log.new_value;
+              if (nv.name) details = `Name: ${nv.name}`;
+              else if (nv.status) details = `Status: ${nv.status}`;
+              else if (log.action === "payment_paid" || log.action === "payment_unpaid") {
+                details = `Month: ${nv.month || "N/A"}` + (nv.amount ? ` | ₹${nv.amount}` : "");
+              }
+              else details = JSON.stringify(nv).slice(0, 50);
+            } catch {
+              details = String(log.new_value).slice(0, 50);
+            }
+          }
+          if (log.old_value && log.action === "update") {
+            try {
+              const ov = typeof log.old_value === "string" ? JSON.parse(log.old_value) : log.old_value;
+              const changed = Object.keys(ov).map(k => `${k}: ${ov[k]} → ${(typeof log.new_value === "string" ? JSON.parse(log.new_value) : log.new_value)[k] || "N/A"}`).join(", ");
+              details = changed.slice(0, 80);
+            } catch {
+              details = "Record updated";
+            }
+          }
+
+          return `<tr style="border-bottom:1px solid var(--border);">` +
+            `<td style="padding:6px 8px; color:var(--ivory-dim); white-space:nowrap;">${timeStr}</td>` +
+            `<td style="padding:6px 8px;"><span style="background:rgba(59,130,246,0.15); color:#60a5fa; padding:2px 6px; border-radius:4px; font-weight:600; font-size:10px;">${action}</span></td>` +
+            `<td style="padding:6px 8px; color:var(--ivory); font-weight:500;">${recordId}</td>` +
+            `<td style="padding:6px 8px; color:var(--ivory-dim); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(details)}">${escapeHtml(details)}</td>` +
+            `<td style="padding:6px 8px; color:var(--ivory-dim);">${escapeHtml(log.user_name || "system")}</td>` +
+          `</tr>`;
+        }).join("") +
+        '</tbody></table>';
+    } catch (e) {
+      console.error("[UI] loadStudentActivityLog failed:", e);
+      container.innerHTML = '<div style="padding:20px; text-align:center; color:var(--danger);">Failed to load activity log.</div>';
+    }
+  };
 
   function renderCoachStudentTable(tbody, studs) {
     if (!tbody) return;
@@ -9957,8 +10149,9 @@ setTimeout(function () {
        batch_type: $("e-batch-type").value?.trim() || null,
        session_time: $("e-batch-time").value?.trim() || null,
        batch_time: $("e-batch-time").value?.trim() || null,
-       days: getSelectedDays(".e-day-cb, .e-day-btn") || null,
-      // Send fee under ALL possible column names
+        days: getSelectedDays(".e-day-cb, .e-day-btn") || null,
+        updated_at: new Date().toISOString(),
+       // Send fee under ALL possible column names
       monthly_fee: newFee,
       fee: newFee,
       fees: newFee,
@@ -10153,12 +10346,37 @@ setTimeout(function () {
             fees: newFee,
             tuition_fee: newFee,
             notes: data.notes,
+            updated_at: data.updated_at || new Date().toISOString(),
           };
         }
 
         // FIX C2: If this student is the currently logged-in parent's child, refresh currentStudent
         if (currentStudent && String(currentStudent.id) === String(id)) {
           setCurrentStudent(allStudents[idx]);
+        }
+
+        // Log student update
+        try {
+          const changedFields = {};
+          const fieldsToTrack = ['name', 'status', 'payment_status', 'coach_id', 'monthly_fee', 'level', 'batch_type', 'session_mode', 'enrollment_date', 'due_date'];
+          fieldsToTrack.forEach(field => {
+            const oldVal = s[field] !== undefined ? String(s[field]) : '';
+            const newVal = data[field] !== undefined ? String(data[field]) : '';
+            if (oldVal !== newVal) {
+              changedFields[field] = { old: oldVal || null, new: newVal || null };
+            }
+          });
+          if (Object.keys(changedFields).length > 0) {
+            logAudit("students", id, "update", changedFields, { 
+              name: data.name || data.full_name,
+              status: data.status,
+              payment_status: $("e-payment-status")?.value || oldDynamicPayStatus,
+              coach_id: data.coach_id,
+              monthly_fee: newFee
+            });
+          }
+        } catch (auditErr) {
+          console.warn("Failed to log student update:", auditErr);
         }
 
         toast("Student updated!", "success");
@@ -10215,6 +10433,11 @@ setTimeout(function () {
           allPayments = (allPayments || []).filter((p) => p.id !== monthPay.id);
           if (window.allPayments) window.allPayments = window.allPayments.filter((p) => p.id !== monthPay.id);
           toast(`Marked ${name} as Unpaid`, "info");
+          try {
+            logAudit("students", id, "payment_unpaid", { month: targetKey, amount: monthPay.amount }, { status: "unpaid" });
+          } catch (auditErr) {
+            console.warn("Failed to log payment status change:", auditErr);
+          }
         } catch (de) {
           console.warn("Failed to delete payment record:", de);
           toast("Failed to update status", "error");
@@ -10247,6 +10470,11 @@ setTimeout(function () {
           if (typeof sendPaymentReceiptNotification === "function") {
             sendPaymentReceiptNotification(id, amount);
           }
+          try {
+            logAudit("students", id, "payment_paid", { month: targetKey, amount: existingPay.amount }, { status: "paid", amount });
+          } catch (auditErr) {
+            console.warn("Failed to log payment status change:", auditErr);
+          }
         } catch (err) {
           console.error("Error updating existing payment:", err);
           toast("Error updating payment", "error");
@@ -10278,6 +10506,11 @@ setTimeout(function () {
           toast(`Marked ${name} as Paid!`, "success");
           if (typeof sendPaymentReceiptNotification === "function") {
             sendPaymentReceiptNotification(id, amount);
+          }
+          try {
+            logAudit("students", id, "payment_paid", { month: targetKey }, { status: "paid", amount, payment_id: newPay.id });
+          } catch (auditErr) {
+            console.warn("Failed to log payment status change:", auditErr);
           }
         } catch (err) {
           console.error("Error toggling payment status:", err);
@@ -12353,24 +12586,36 @@ due_date: (function () {
       }
       const timeSlot = editingBatch.time_slot || "";
       const timeMatch = timeSlot.match(/(.+?)\s*-\s*(.+)/);
+      const setTimeDisplay = (prefix, str) => {
+        const m = str.trim().match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+        if (!m) return;
+        const h = parseInt(m[1], 10);
+        const mins = m[2];
+        const ap = m[3].toUpperCase();
+        const h12 = h % 12 || 12;
+        const display = document.getElementById(prefix + "-display");
+        if (display) display.textContent = h12 + ":" + mins + " " + ap;
+        const hInput = document.getElementById(prefix + "-hour");
+        if (hInput) hInput.value = String(h12);
+        const mInput = document.getElementById(prefix + "-minute");
+        if (mInput) mInput.value = mins;
+        const aInput = document.getElementById(prefix + "-ampm");
+        if (aInput) aInput.value = ap;
+      };
       if (timeMatch) {
-        const to24h = (str) => {
-          const m = str.trim().match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-          if (!m) return "";
-          let h = parseInt(m[1], 10);
-          const mins = m[2];
-          const ap = m[3].toUpperCase();
-          if (ap === "PM" && h < 12) h += 12;
-          if (ap === "AM" && h === 12) h = 0;
-          return `${String(h).padStart(2, "0")}:${mins}`;
-        };
-        const fromVal = to24h(timeMatch[1]);
-        const toVal = to24h(timeMatch[2]);
-        if ($("eb-time-from")) $("eb-time-from").value = fromVal;
-        if ($("eb-time-to")) $("eb-time-to").value = toVal;
+        setTimeDisplay("eb-from", timeMatch[1]);
+        setTimeDisplay("eb-to", timeMatch[2]);
       } else {
-        if ($("eb-time-from")) $("eb-time-from").value = "";
-        if ($("eb-time-to")) $("eb-time-to").value = "";
+        ["eb-from", "eb-to"].forEach((prefix) => {
+          const display = document.getElementById(prefix + "-display");
+          if (display) display.textContent = "";
+          const hInput = document.getElementById(prefix + "-hour");
+          if (hInput) hInput.value = "";
+          const mInput = document.getElementById(prefix + "-minute");
+          if (mInput) mInput.value = "";
+          const aInput = document.getElementById(prefix + "-ampm");
+          if (aInput) aInput.value = "";
+        });
       }
       $("eb-notes").value = editingBatch.notes || "";
       if ($("eb-chessable")) $("eb-chessable").value = editingBatch.meet_link || "";
@@ -12389,8 +12634,18 @@ due_date: (function () {
           cb.checked = false;
         });
       }
-      if ($("eb-time-from")) $("eb-time-from").value = "17:00";
-      if ($("eb-time-to")) $("eb-time-to").value = "18:00";
+      const setDefault = (prefix, h, m, ap) => {
+        const display = document.getElementById(prefix + "-display");
+        if (display) display.textContent = h + ":" + m + " " + ap;
+        const hInput = document.getElementById(prefix + "-hour");
+        if (hInput) hInput.value = h;
+        const mInput = document.getElementById(prefix + "-minute");
+        if (mInput) mInput.value = m;
+        const aInput = document.getElementById(prefix + "-ampm");
+        if (aInput) aInput.value = ap;
+      };
+      setDefault("eb-from", "5", "00", "PM");
+      setDefault("eb-to", "6", "00", "PM");
       $("eb-notes").value = "";
       if ($("eb-chessable")) $("eb-chessable").value = "";
       $("eb-modal-title").textContent = "Create New Batch";
@@ -12435,24 +12690,25 @@ due_date: (function () {
     ).map((cb) => cb.value);
     const daysValue = selectedDays.join(" & ");
 
-    const fromTime = $("eb-time-from") ? $("eb-time-from").value : "";
-    const toTime = $("eb-time-to") ? $("eb-time-to").value : "";
+    const fromHour = $("eb-from-hour") ? $("eb-from-hour").value : "";
+    const fromMinute = $("eb-from-minute") ? $("eb-from-minute").value : "";
+    const fromAmpm = $("eb-from-ampm") ? $("eb-from-ampm").value : "";
+    const toHour = $("eb-to-hour") ? $("eb-to-hour").value : "";
+    const toMinute = $("eb-to-minute") ? $("eb-to-minute").value : "";
+    const toAmpm = $("eb-to-ampm") ? $("eb-to-ampm").value : "";
     let timeSlotValue = "";
-    if (fromTime || toTime) {
-      const fmt = (val) => {
-        const [h, m] = val.split(":").map(Number);
-        if (isNaN(h) || isNaN(m)) return val;
-        const ampm = h >= 12 ? "PM" : "AM";
-        const h12 = h % 12 || 12;
-        return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
+    if (fromHour || fromMinute || fromAmpm || toHour || toMinute || toAmpm) {
+      const fmt = (h, m, ap) => {
+        if (!h || !m || !ap) return "";
+        return `${h}:${m} ${ap}`;
       };
-      const fromFormatted = fromTime ? fmt(fromTime) : "";
-      const toFormatted = toTime ? fmt(toTime) : "";
+      const fromFormatted = fmt(fromHour, fromMinute, fromAmpm);
+      const toFormatted = fmt(toHour, toMinute, toAmpm);
       if (fromFormatted && toFormatted) {
         timeSlotValue = `${fromFormatted} - ${toFormatted}`;
       } else if (fromFormatted) {
         timeSlotValue = fromFormatted;
-      } else {
+      } else if (toFormatted) {
         timeSlotValue = toFormatted;
       }
     }
@@ -12505,6 +12761,17 @@ due_date: (function () {
       }
 
       if (saved) {
+        try {
+          logAudit("batches", id || "new", id ? "update" : "create", null, {
+            name: payload.name,
+            coach_id: payload.coach_id,
+            days: payload.days,
+            time_slot: payload.time_slot,
+            student_count: selectedStudents.length
+          });
+        } catch (auditErr) {
+          console.warn("Failed to log batch save:", auditErr);
+        }
         toast("Batch saved successfully", "success");
         closeModal("edit-batch-modal");
         await loadAllData(true);

@@ -24,6 +24,7 @@
   <meta charset="UTF-8"/>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="robots" content="noindex, nofollow" />
   <title>ChessKidoo Chess Academy — Admin Portal</title>
   <meta name="description" content="ChessKidoo Chess Academy — Premium chess coaching management system for students, coaches, and parents."/>
   <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
@@ -151,7 +152,6 @@
     <div class="nav-item admin-only" id="nav-dash" onclick="setPage('dash')"><span class="ico">📊</span> Dashboard</div>
     <div class="nav-item admin-only" id="nav-stud" onclick="setPage('stud')"><span class="ico">👨‍🎓</span> Students</div>
     <div class="nav-item admin-only" id="nav-coach-mgmt" onclick="setPage('coach-mgmt')"><span class="ico">👨‍🏫</span> Coaches</div>
-    <div class="nav-item admin-only" id="nav-studypgn" onclick="setPage('studypgn')"><span class="ico">♟️</span> Study Lab &amp; Analytics</div>
 
     <div class="nav-item admin-only" id="nav-batches" onclick="setPage('batches')"><span class="ico">👥</span> Batch Manager</div>
     <div class="nav-item admin-only" id="nav-schedules" onclick="setPage('schedules')"><span class="ico">📅</span> Schedule Manager</div>
@@ -365,7 +365,7 @@
                       <button type="button" class="tab-link active" id="coach-schedule-tab-weekly" onclick="window.setCoachScheduleView && window.setCoachScheduleView('weekly')" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:700;">📆 Weekly</button>
                       <button type="button" class="tab-link" id="coach-schedule-tab-monthly" onclick="window.setCoachScheduleView && window.setCoachScheduleView('monthly')" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:700;">📅 Monthly</button>
                     </div>
-                      <input type="month" id="coach-schedule-month" onchange="window.renderCoachSchedule && window.renderCoachSchedule()" min="2026-01" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; width:140px; display:none;">
+                       <input type="month" id="coach-schedule-month" onchange="window.renderCoachSchedule && window.renderCoachSchedule(window.coachScheduleView || 'monthly')" min="2026-01" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; width:140px; display:none;">
                       <button class="btn btn-outline btn-sm" onclick="window.openCoachBatchSchedulePopup && window.openCoachBatchSchedulePopup()" style="padding:6px 12px; font-size:12px; height:32px;">📋 Batch Schedule</button>
                   </div>
                </div>
@@ -430,9 +430,9 @@
              <div class="coach-section-row">
                <h2 class="coach-section-title">Attendance &amp; Homework</h2>
               <div class="coach-header-actions" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-                 <button class="btn btn-gold" onclick="openQuickClassSessionModal()">📄 Upload PDF / Class Session</button>
+                 <button class="btn btn-gold" onclick="openQuickClassSessionModal()">📄 Upload Files / Class Session</button>
                  <input type="date" id="coach-att-date" aria-label="Attendance date" style="padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px">
-                 <select id="coach-att-batch-filter" aria-label="Attendance batch" style="padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px">
+                  <select id="coach-att-batch-filter" aria-label="Attendance batch" onchange="renderCoachAttendanceMarking(); renderCoachAttendanceHomeworkCalendar();" style="padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px">
                    <option value="">All Batches</option>
                  </select>
                </div>
@@ -666,11 +666,16 @@
                      <input type="date" id="f-due-date-stud" onchange="syncDueDateFilter(this.value)" title="Due Date" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; width:130px;">
                    </div>
 
-                   <div style="display:inline-flex; align-items:center; gap:4px;">
-                     <span style="color:var(--ivory-dim); font-size:11px; margin-left:4px;">Enroll:</span>
-                     <input type="date" id="f-enroll-date-stud" onchange="syncEnrollDateFilter(this.value)" title="Enroll Date" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; width:130px;">
-                   </div>
-                 </div>
+                    <div style="display:inline-flex; align-items:center; gap:4px;">
+                      <span style="color:var(--ivory-dim); font-size:11px; margin-left:4px;">Enroll:</span>
+                      <input type="date" id="f-enroll-date-stud" onchange="syncEnrollDateFilter(this.value)" title="Enroll Date" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; width:130px;">
+                    </div>
+
+                    <div style="display:inline-flex; align-items:center; gap:4px;">
+                      <span style="color:var(--ivory-dim); font-size:11px; margin-left:4px;">Last Updated:</span>
+                      <input type="date" id="f-last-updated-stud" onchange="renderStudents()" title="Last Updated" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; width:130px;">
+                    </div>
+                  </div>
 
                  <!-- Action Buttons -->
                  <div style="display:flex; gap:6px;">
@@ -709,35 +714,76 @@
            </div>
            <div class="coach-section-block">
              <!-- Bulk action bar: operates on the checkboxes in the registry -->
-             <div id="student-bulk-bar" style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center;">
-               <span id="student-bulk-count" style="font-size:12px; color:var(--ivory-dim); min-width:80px;">0 selected</span>
-               <button id="clear-selection-btn" class="btn btn-outline btn-sm" onclick="window.clearStudentSelection()" style="padding:6px 12px; font-size:12px; height:32px; display:none;">Clear</button>
-                <button class="btn btn-gold btn-sm" onclick="window.bulkMarkPaid()" style="padding:6px 14px; font-size:12px;">✅ Mark Paid</button>
-                <button class="btn btn-outline-warning btn-sm" onclick="window.bulkMarkUnpaid()" style="padding:6px 14px; font-size:12px;">🔄 Mark Unpaid</button>
-               <button class="btn btn-danger btn-sm" onclick="window.bulkDeleteStudents()" style="padding:6px 14px; font-size:12px;">🗑️ Delete Selected</button>
-             </div>
-            <div class="table-wrap">
-             <table id="stud-table">
-               <thead>
-                 <tr id="stud-thead-row">
-                    <th style="width:40px"><input type="checkbox" id="stud-check-all" onclick="window.toggleAllStudents()"></th>
-                   <th style="width:50px">#</th>
-                   <th>Student</th>
-                   <th>Coach</th>
-                   <th>Fee</th>
-                   <th>Status</th>
-                   <th>Due Date</th>
-                   <th>Actions</th>
-                 </tr>
-               </thead>
-               <tbody id="stud-body"><tr><td colspan="3"><div class="loading-state"><span class="spinner"></span> Loading…</div></td></tr></tbody>
-             </table>
-           </div>
-         </div>
-       </div>
-     </div>
+              <div id="student-bulk-bar" style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center;">
+                <span id="student-bulk-count" style="font-size:12px; color:var(--ivory-dim); min-width:80px;">0 selected</span>
+                <button id="clear-selection-btn" class="btn btn-outline btn-sm" onclick="window.clearStudentSelection()" style="padding:6px 12px; font-size:12px; height:32px; display:none;">Clear</button>
+                 <button class="btn btn-gold btn-sm" onclick="window.bulkMarkPaid()" style="padding:6px 14px; font-size:12px;">✅ Mark Paid</button>
+                 <button class="btn btn-outline-warning btn-sm" onclick="window.bulkMarkUnpaid()" style="padding:6px 14px; font-size:12px;">🔄 Mark Unpaid</button>
+                <button class="btn btn-danger btn-sm" onclick="window.bulkDeleteStudents()" style="padding:6px 14px; font-size:12px;">🗑️ Delete Selected</button>
 
-    <!-- Chessable Profiles Full Page -->
+                <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+                  <span style="color:var(--ivory-dim); font-size:12px;">Show</span>
+                  <select id="stud-page-size" onchange="window.changeStudentPageSize(this.value)" style="padding:4px 8px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:4px; font-size:12px;">
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                    <option value="25">25</option>
+                    <option value="30">30</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                  </select>
+                  <span style="color:var(--ivory-dim); font-size:12px;">per page</span>
+                </div>
+              </div>
+             <div class="table-wrap">
+              <table id="stud-table">
+                <thead>
+                  <tr id="stud-thead-row">
+                     <th style="width:40px"><input type="checkbox" id="stud-check-all" onclick="window.toggleAllStudents()"></th>
+                    <th style="width:50px">#</th>
+                    <th>Student</th>
+                    <th>Coach</th>
+                    <th>Fee</th>
+                    <th>Status</th>
+                    <th>Due Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="stud-body"><tr><td colspan="3"><div class="loading-state"><span class="spinner"></span> Loading…</div></td></tr></tbody>
+              </table>
+              </div>
+
+              <div style="display:flex; justify-content:center; align-items:center; margin-top:12px; flex-wrap:wrap; gap:8px;">
+                <button id="stud-prev-btn" class="btn btn-outline btn-sm" onclick="window.changeStudentPage(-1)" style="padding:4px 10px; font-size:12px;">Previous</button>
+                <span id="stud-page-info" style="color:var(--ivory-dim); font-size:12px;">Page 1 of 1</span>
+                <button id="stud-next-btn" class="btn btn-outline btn-sm" onclick="window.changeStudentPage(1)" style="padding:4px 10px; font-size:12px;">Next</button>
+              </div>
+             
+             <!-- Student Activity Log -->
+             <div class="card" style="margin-top:20px; border:1px solid var(--border); background:var(--bg2);">
+               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                 <h3 style="color:var(--gold); margin:0; font-size:15px; font-family:var(--font-head);">📋 Student Activity Log</h3>
+                 <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                   <select id="stud-log-action-filter" onchange="window.loadStudentActivityLog && window.loadStudentActivityLog()" style="padding:4px 8px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:4px; font-size:12px;">
+                     <option value="">All Actions</option>
+                     <option value="create">Created</option>
+                     <option value="update">Updated</option>
+                     <option value="archive">Archived</option>
+                     <option value="delete">Deleted</option>
+                     <option value="payment_paid">Marked Paid</option>
+                     <option value="payment_unpaid">Marked Unpaid</option>
+                   </select>
+                   <button class="btn btn-outline btn-sm" onclick="window.loadStudentActivityLog && window.loadStudentActivityLog()" style="font-size:11px; padding:4px 10px;">Refresh</button>
+                 </div>
+               </div>
+               <div id="student-activity-log" style="max-height:300px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; background:var(--surface);">
+                 <div style="padding:20px; text-align:center; color:var(--ivory-dim); font-size:12px;">Loading activity log...</div>
+               </div>
+             </div>
+          </div>
+        </div>
+      </div>
+
+     <!-- Chessable Profiles Full Page -->
     <div id="page-chessable" class="page admin-only">
       <!-- Stats Cards Row -->
       <div id="chessable-stats-row" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:24px;"></div>
@@ -780,7 +826,7 @@
             <div class="coach-section-row">
               <h2 class="coach-section-title">Attendance</h2>
               <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                <button class="btn btn-gold btn-sm" onclick="openQuickClassSessionModal()">📄 Upload PDF / Class Session</button>
+                <button class="btn btn-gold btn-sm" onclick="openQuickClassSessionModal()">📄 Upload Files / Class Session</button>
                 <button class="btn btn-outline-info btn-sm" onclick="openAttendanceHomeworkTracker()">📊 Track Sheet</button>
                 <span class="coach-section-badge">Select date / coach / batch to begin</span>
               </div>
@@ -841,7 +887,7 @@
                 <button class="btn btn-gold btn-sm" onclick="openHomeworkAssignmentModal()">
                   <span class="ico">➕</span> Assign Homework
                 </button>
-                <button class="btn btn-outline-grey btn-sm" onclick="openQuickClassSessionModal()">📄 Upload PDF / Class Session</button>
+                <button class="btn btn-outline-grey btn-sm" onclick="openQuickClassSessionModal()">📄 Upload Files / Class Session</button>
               </div>
             </div>
            <p style="color:var(--ivory-dim); font-size: 14px; max-width: 720px; line-height: 1.6; margin-bottom: 6px;">
@@ -2131,7 +2177,7 @@
             <div id="child-schedule-monthly-panel" style="display:none;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
                 <span style="font-size:12px; color:var(--ivory-dim);">Month-wise session list</span>
-                <input type="month" id="child-schedule-month" onchange="window.renderChildMonthlySchedule && window.renderChildMonthlySchedule(window.currentStudent)" style="padding:8px 12px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px; font-size:13px; font-family:inherit;">
+                <input type="month" id="child-schedule-month" onchange="window.onChildScheduleMonthChange && window.onChildScheduleMonthChange()" style="padding:8px 12px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px; font-size:13px; font-family:inherit;">
               </div>
               <div id="child-monthly-schedule-container">
                 <div class="card" style="padding:24px; text-align:center; color:var(--ivory-dim);">
@@ -2141,7 +2187,7 @@
               </div>
             </div>
             <!-- Contextual AI Insight for Parent Schedule -->
-            <div id="child-schedule-ai-insight" class="ai-insight-box" style="display:none;">
+            <div id="child-schedule-ai-insight" class="ai-insight-box admin-only" style="display:none;">
               <div class="ai-insight-title">🤖 Ask TOM AI: Schedule & Progress Insights</div>
               <div class="ai-insight-text" id="child-schedule-ai-insight-text"></div>
             </div>
@@ -3935,9 +3981,15 @@
           <div class="form-group">
             <label>Time Slot</label>
             <div style="display:flex; align-items:center; gap:8px;">
-              <input type="time" id="eb-time-from" value="17:00" style="flex:1;">
-              <span style="color:var(--ivory-dim);">to</span>
-              <input type="time" id="eb-time-to" value="18:00" style="flex:1;">
+              <button type="button" id="eb-from-display" onclick="window.openClockPicker && window.openClockPicker('from')" style="padding:8px 12px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:13px; min-width:100px; cursor:pointer; font-family:inherit;">5:00 PM</button>
+              <input type="hidden" id="eb-from-hour" value="5">
+              <input type="hidden" id="eb-from-minute" value="00">
+              <input type="hidden" id="eb-from-ampm" value="PM">
+              <span style="color:var(--ivory-dim); font-weight:700;">to</span>
+              <button type="button" id="eb-to-display" onclick="window.openClockPicker && window.openClockPicker('to')" style="padding:8px 12px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:13px; min-width:100px; cursor:pointer; font-family:inherit;">6:00 PM</button>
+              <input type="hidden" id="eb-to-hour" value="6">
+              <input type="hidden" id="eb-to-minute" value="00">
+              <input type="hidden" id="eb-to-ampm" value="PM">
             </div>
           </div>
         </div>
@@ -4717,16 +4769,16 @@
 <!-- Combined Class Session (Homework + Attendance) Modal -->
        <div class="modal" id="quick-class-session-modal">
          <div class="modal-box" style="max-width:740px; width:95%">
-           <div class="modal-title">📄 Upload PDF Files / Class Session</div>
+            <div class="modal-title">📄 Upload Files / Class Session</div>
            <div class="modal-sub">Upload class material &amp; homework, then mark batch attendance in one step.</div>
            <div class="modal-grid" style="margin-top:14px;">
              <div class="form-group">
-               <label class="label" for="qcs-file">Select PDF / Class Material</label>
-               <label class="upload-zone qcs-upload-zone" id="qcs-file-drop" for="qcs-file">
-                 <span style="font-size:24px;display:block;margin-bottom:6px;">📄</span>
-                 <span>Drop PDF files here or click to browse</span>
-                 <small style="display:block;margin-top:6px;color:var(--ivory-dim);">PDF, maximum 5 files</small>
-                 <input type="file" id="qcs-file" multiple accept=".pdf,application/pdf">
+                <label class="label" for="qcs-file">Class Material / Files (optional)</label>
+                <label class="upload-zone qcs-upload-zone" id="qcs-file-drop" for="qcs-file">
+                  <span style="font-size:24px;display:block;margin-bottom:6px;">📄</span>
+                  <span>Drop files here or click to browse</span>
+                  <small style="display:block;margin-top:6px;color:var(--ivory-dim);">PDF, documents, images, PGN, or ZIP files (optional, max 5)</small>
+                  <input type="file" id="qcs-file" multiple accept=".pdf,.ppt,.pptx,.doc,.docx,.png,.jpg,.jpeg,.gif,.pgn,.txt,.md,.zip">
                </label>
                <div id="qcs-file-preview" style="font-size:12px;color:var(--ivory-dim);"></div>
              </div>
@@ -5271,6 +5323,246 @@
           </div>
         </div>
 
-  </body>
+  <div class="modal" id="clock-picker-modal" style="display:none;">
+    <div class="modal-box" style="max-width:360px; width:92%; margin:0 auto;">
+      <div class="modal-title">Select Time</div>
+      <div id="clock-picker-display" style="font-size:28px; font-weight:800; color:var(--gold); text-align:center; margin:16px 0;">--:--</div>
+      <div id="clock-picker-clock" style="position:relative; width:260px; height:260px; margin:0 auto 16px; background:var(--bg2); border-radius:50%; border:2px solid var(--border); touch-action:none;"></div>
+      <div style="display:flex; justify-content:center; gap:10px; margin-bottom:16px;">
+        <button class="btn btn-outline btn-sm" id="clock-am-btn" onclick="window.setClockAmPm('AM')">AM</button>
+        <button class="btn btn-outline btn-sm" id="clock-pm-btn" onclick="window.setClockAmPm('PM')">PM</button>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn btn-outline-grey" onclick="window.closeClockPicker()">Cancel</button>
+        <button class="btn btn-gold" onclick="window.confirmClockPicker()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const clockModal = document.getElementById('clock-picker-modal');
+      const clockDisplay = document.getElementById('clock-picker-display');
+      const clockFace = document.getElementById('clock-picker-clock');
+      const amBtn = document.getElementById('clock-am-btn');
+      const pmBtn = document.getElementById('clock-pm-btn');
+
+      let currentPicker = null;
+      let selectedHour = null;
+      let selectedMinute = '00';
+      let selectedAmPm = 'PM';
+      let mode = 'hour';
+
+      const renderClock = () => {
+        const minuteGrid = document.getElementById('clock-picker-minute-grid');
+        clockFace.innerHTML = '';
+        if (minuteGrid) minuteGrid.innerHTML = '';
+        const radius = 110;
+        const centerX = 130;
+        const centerY = 130;
+
+        if (mode === 'hour') {
+          for (let h = 1; h <= 12; h++) {
+            const angle = ((h % 12) * 30 - 90) * (Math.PI / 180);
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            const btn = document.createElement('button');
+            btn.textContent = h;
+            btn.style.cssText = 'position:absolute; left:' + (x - 18) + 'px; top:' + (y - 18) + 'px; width:36px; height:36px; border-radius:50%; border:2px solid var(--border); background:var(--surface); color:var(--ivory); font-weight:700; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center;';
+            if (selectedHour === h) {
+              btn.style.background = 'var(--gold)';
+              btn.style.color = '#000';
+              btn.style.borderColor = 'var(--gold)';
+            }
+            btn.onclick = () => {
+              selectedHour = h;
+              mode = 'minute';
+              renderClock();
+              updateDisplay();
+            };
+            clockFace.appendChild(btn);
+          }
+          if (minuteGrid) minuteGrid.style.display = 'none';
+          clockFace.style.display = 'block';
+        } else if (mode === 'minute') {
+          if (minuteGrid) minuteGrid.style.display = 'none';
+          clockFace.style.display = 'block';
+          const outerRadius = 118;
+          const innerRadius = 92;
+          const fiveMinMarks = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+          fiveMinMarks.forEach((m) => {
+            const angle = (m * 6 - 90) * (Math.PI / 180);
+            const x = centerX + outerRadius * Math.cos(angle);
+            const y = centerY + outerRadius * Math.sin(angle);
+            const btn = document.createElement('button');
+            btn.textContent = String(m).padStart(2, '0');
+            btn.style.cssText = 'position:absolute; left:' + (x - 20) + 'px; top:' + (y - 14) + 'px; height:28px; min-width:28px; padding:0 4px; border-radius:14px; border:2px solid var(--border); background:var(--surface); color:var(--ivory); font-weight:700; cursor:pointer; font-size:11px; font-family:var(--font-mono); display:flex; align-items:center; justify-content:center;';
+            if (selectedMinute === String(m).padStart(2, '0')) {
+              btn.style.background = 'var(--gold)';
+              btn.style.color = '#000';
+              btn.style.borderColor = 'var(--gold)';
+            }
+            btn.onclick = () => {
+              selectedMinute = String(m).padStart(2, '0');
+              mode = 'ampm';
+              updateDisplay();
+              renderClock();
+            };
+            clockFace.appendChild(btn);
+          });
+          const pointer = document.createElement('div');
+          pointer.id = 'clock-minute-pointer';
+          const mAngle = (parseInt(selectedMinute, 10) * 6 - 90) * (Math.PI / 180);
+          const px = centerX + (innerRadius - 10) * Math.cos(mAngle);
+          const py = centerY + (innerRadius - 10) * Math.sin(mAngle);
+          pointer.style.cssText = 'position:absolute; left:' + (px - 10) + 'px; top:' + (py - 10) + 'px; width:20px; height:20px; border-radius:50%; background:var(--gold); border:2px solid #000; box-shadow:0 2px 6px rgba(0,0,0,0.35); pointer-events:none;';
+          clockFace.appendChild(pointer);
+        } else {
+          if (minuteGrid) minuteGrid.style.display = 'none';
+          clockFace.style.display = 'block';
+          for (let h = 1; h <= 12; h++) {
+            const angle = ((h % 12) * 30 - 90) * (Math.PI / 180);
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            const btn = document.createElement('button');
+            btn.textContent = h;
+            btn.style.cssText = 'position:absolute; left:' + (x - 18) + 'px; top:' + (y - 18) + 'px; width:36px; height:36px; border-radius:50%; border:2px solid var(--border); background:var(--surface); color:var(--ivory); font-weight:700; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center;';
+            if (selectedHour === h) {
+              btn.style.background = 'var(--gold)';
+              btn.style.color = '#000';
+              btn.style.borderColor = 'var(--gold)';
+            }
+            btn.onclick = () => {
+              selectedHour = h;
+              mode = 'minute';
+              renderClock();
+              updateDisplay();
+            };
+            clockFace.appendChild(btn);
+          }
+        }
+      };
+
+      const updateDisplay = () => {
+        if (selectedHour && selectedMinute) {
+          clockDisplay.textContent = selectedHour + ':' + selectedMinute + ' ' + selectedAmPm;
+        } else if (selectedHour) {
+          clockDisplay.textContent = selectedHour + ':-- ' + selectedAmPm;
+        } else {
+          clockDisplay.textContent = '--:--';
+        }
+      };
+
+      const updateAmPmButtons = () => {
+        if (selectedAmPm === 'AM') {
+          amBtn.style.background = 'var(--gold)';
+          amBtn.style.color = '#000';
+          pmBtn.style.background = 'var(--bg3)';
+          pmBtn.style.color = 'var(--ivory)';
+        } else {
+          pmBtn.style.background = 'var(--gold)';
+          pmBtn.style.color = '#000';
+          amBtn.style.background = 'var(--bg3)';
+          amBtn.style.color = 'var(--ivory)';
+        }
+      };
+
+      const getMinuteFromPoint = (clientX, clientY) => {
+        const rect = clockFace.getBoundingClientRect();
+        const x = clientX - (rect.left + rect.width / 2);
+        const y = clientY - (rect.top + rect.height / 2);
+        let angle = Math.atan2(y, x) * (180 / Math.PI) + 90;
+        if (angle < 0) angle += 360;
+        const minute = Math.round(angle / 6) % 60;
+        return String(minute).padStart(2, '0');
+      };
+
+      const handleMinutePointerMove = (clientX, clientY) => {
+        if (mode !== 'minute') return;
+        selectedMinute = getMinuteFromPoint(clientX, clientY);
+        updateDisplay();
+        renderClock();
+      };
+
+      clockFace.addEventListener('pointerdown', (ev) => {
+        if (mode !== 'minute') return;
+        clockFace.setPointerCapture(ev.pointerId);
+        handleMinutePointerMove(ev.clientX, ev.clientY);
+      });
+      clockFace.addEventListener('pointermove', (ev) => {
+        if (mode !== 'minute') return;
+        handleMinutePointerMove(ev.clientX, ev.clientY);
+      });
+      clockFace.addEventListener('pointerup', (ev) => {
+        if (mode !== 'minute') return;
+        clockFace.releasePointerCapture(ev.pointerId);
+        selectedMinute = getMinuteFromPoint(ev.clientX, ev.clientY);
+        mode = 'ampm';
+        updateDisplay();
+        renderClock();
+      });
+
+      window.openClockPicker = function(pickerType) {
+        currentPicker = pickerType;
+        selectedHour = null;
+        selectedMinute = '00';
+        selectedAmPm = 'PM';
+        mode = 'hour';
+        updateDisplay();
+        updateAmPmButtons();
+        renderClock();
+        clockModal.style.display = 'flex';
+      };
+
+      window.setClockAmPm = function(val) {
+        selectedAmPm = val;
+        updateDisplay();
+        updateAmPmButtons();
+      };
+
+      window.closeClockPicker = function() {
+        clockModal.style.display = 'none';
+        currentPicker = null;
+      };
+
+      window.confirmClockPicker = function() {
+        if (!selectedHour || !selectedMinute) {
+          alert('Please select hour and minute');
+          return;
+        }
+        const timeStr = selectedHour + ':' + selectedMinute + ' ' + selectedAmPm;
+        if (currentPicker === 'from') {
+          const fromDisplay = document.getElementById('eb-from-display');
+          if (fromDisplay) fromDisplay.textContent = timeStr;
+          const hidden = document.getElementById('eb-from-hour');
+          if (hidden) hidden.value = selectedHour;
+          const hiddenMin = document.getElementById('eb-from-minute');
+          if (hiddenMin) hiddenMin.value = selectedMinute;
+          const hiddenAp = document.getElementById('eb-from-ampm');
+          if (hiddenAp) hiddenAp.value = selectedAmPm;
+        } else if (currentPicker === 'to') {
+          const toDisplay = document.getElementById('eb-to-display');
+          if (toDisplay) toDisplay.textContent = timeStr;
+          const hidden = document.getElementById('eb-to-hour');
+          if (hidden) hidden.value = selectedHour;
+          const hiddenMin = document.getElementById('eb-to-minute');
+          if (hiddenMin) hiddenMin.value = selectedMinute;
+          const hiddenAp = document.getElementById('eb-to-ampm');
+          if (hiddenAp) hiddenAp.value = selectedAmPm;
+        }
+        window.closeClockPicker();
+      };
+
+      if (amBtn) {
+        amBtn.style.background = 'var(--bg3)';
+        amBtn.style.color = 'var(--ivory)';
+      }
+      if (pmBtn) {
+        pmBtn.style.background = 'var(--gold)';
+        pmBtn.style.color = '#000';
+      }
+    })();
+  </script>
+</body>
 </html>
 

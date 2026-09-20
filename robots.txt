@@ -3,5 +3,8 @@ Allow: /
 Disallow: /assets/js/
 Disallow: /.env
 Disallow: /supabase/
+Disallow: /lms/
+Disallow: /arena
+Disallow: /app.html
 
 Sitemap: https://chesskidoo.com/sitemap.xml
