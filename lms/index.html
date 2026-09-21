@@ -156,6 +156,7 @@
     <div class="nav-item admin-only" id="nav-batches" onclick="setPage('batches')"><span class="ico">👥</span> Batch Manager</div>
     <div class="nav-item admin-only" id="nav-schedules" onclick="setPage('schedules')"><span class="ico">📅</span> Schedule Manager</div>
     <div class="nav-item admin-only" id="nav-events" onclick="setPage('events')"><span class="ico">🏆</span> Event Manager</div>
+    <div class="nav-item admin-only" id="nav-fame" onclick="setPage('fame')"><span class="ico">🏅</span> Achievements</div>
     <div class="nav-item admin-only" id="nav-attendance" onclick="setPage('attendance')"><span class="ico">📋</span> Attendance Manager</div>
     <div class="nav-item admin-only" id="nav-homework" onclick="setPage('homework')"><span class="ico">📚</span> Homework Manager</div>
 
@@ -200,9 +201,8 @@
       <div class="nav-item parent-only" id="nav-parent-billing" onclick="goChildTab('billing')"><span class="ico">💰</span> Billing</div>
       <div class="nav-item parent-only" id="nav-parent-productivity" onclick="goChildTab('productivity')"><span class="ico">📝</span> Daily Tasks</div>
 
-     <!-- Shared -->
-      <div class="nav-item admin-only" id="nav-fame" onclick="setPage('fame')"><span class="ico">🏆</span> Wall of Fame</div>
-   </div>
+      <!-- Shared -->
+    </div>
   <div style="padding:16px;border-top:1px solid var(--border)">
     <div class="nav-item" onclick="toggleTheme()"><span class="ico">🌗</span> Switch Theme</div>
     <div style="font-size:10px;color:var(--ivory3);text-align:center;margin-top:12px;opacity:0.6;letter-spacing:1px;" id="ui-version">Portal v5.5 (Cached)</div>
@@ -366,8 +366,9 @@
                       <button type="button" class="tab-link" id="coach-schedule-tab-monthly" onclick="window.setCoachScheduleView && window.setCoachScheduleView('monthly')" style="display:inline-flex; align-items:center; gap:6px; padding:7px 14px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:700;">📅 Monthly</button>
                     </div>
                        <input type="month" id="coach-schedule-month" onchange="window.renderCoachSchedule && window.renderCoachSchedule(window.coachScheduleView || 'monthly')" min="2026-01" style="padding:6px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:12px; width:140px; display:none;">
-                      <button class="btn btn-outline btn-sm" onclick="window.openCoachBatchSchedulePopup && window.openCoachBatchSchedulePopup()" style="padding:6px 12px; font-size:12px; height:32px;">📋 Batch Schedule</button>
-                  </div>
+                       <button class="btn btn-outline btn-sm" onclick="window.openCoachBatchSchedulePopup && window.openCoachBatchSchedulePopup()" style="padding:6px 12px; font-size:12px; height:32px;">📋 Batch Schedule</button>
+                       <button class="btn btn-outline btn-sm" onclick="window.coachApplyLinkToAllBatches && window.coachApplyLinkToAllBatches()" style="padding:6px 12px; font-size:12px; height:32px;">🔗 Set Link for All</button>
+                   </div>
                </div>
              <div id="coach-schedule-content">
                <div class="coach-loading-cell">Loading schedule...</div>
@@ -3301,6 +3302,22 @@
   </div>
 </div>
 
+<!-- Coach Apply Meet Link to All Modal -->
+<div class="modal" id="coach-apply-all-links-modal">
+  <div class="modal-box" style="max-width:480px; width:92%">
+    <div class="modal-title">Apply Google Meet Link to All Classes</div>
+    <div class="modal-sub">This will set the same Google Meet link for every batch under you.</div>
+    <div style="margin-top:16px">
+      <label style="display:block; font-size:12px; font-weight:700; color:var(--gold); text-transform:uppercase; margin-bottom:6px;">Google Meet Link</label>
+      <input type="url" id="coach-all-meet-link-input" placeholder="https://meet.google.com/abc-defg-hij" style="width:100%; padding:12px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px; font-size:14px; box-sizing:border-box; outline:none;">
+    </div>
+    <div style="display:flex; gap:10px; margin-top:20px; border-top:1px solid var(--border); padding-top:18px">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModals()">Cancel</button>
+      <button class="btn btn-gold" style="flex:1; font-weight:700;" onclick="window._submitCoachApplyAllLinks()">Apply to All</button>
+    </div>
+  </div>
+</div>
+
 <!-- Student View Modal -->
 <div class="modal" id="student-view-modal">
   <div class="modal-box">
@@ -4082,7 +4099,8 @@
 <div class="modal" id="award-modal">
   <div class="modal-box">
     <div class="modal-title">Grant Achievement</div>
-    <select id="award-student"><option value="">Select Student</option></select>
+    <input type="text" id="award-student-name" placeholder="Student Name (optional - if not in list)">
+    <select id="award-student"><option value="">Or select from list</option></select>
     <input type="hidden" id="award-sid">
     <input type="text" id="award-title" placeholder="Title (e.g. District Champion 2026)">
     <label class="upload-zone" for="award-img-file">🖼️ Upload Photo<input type="file" id="award-img-file" accept="image/*" onchange="previewFile(this,'award-img-preview')"></label>
@@ -4740,7 +4758,7 @@
       <script src="/lms/js/tournaments.js?v=1.3&t=20260611a" charset="utf-8"></script>
       <script src="/lms/js/access.js?v=1.9&t=20260730b"></script>
       <script src="/lms/js/tom-brain.js?v=1.0&t=20260601" charset="utf-8"></script>
-      <script src="/lms/scripts.js?v=20260826" charset="utf-8"></script>
+      <script src="/lms/scripts.js?v=20260921a" charset="utf-8"></script>
       <script src="/lms/js/chess-api.js?v=2.2&t=20260711_chesscom_edge"></script>
       <script src="/lms/js/homework.js?v=2.0&t=20260817" charset="utf-8"></script>
       <script src="/lms/js/expenditures.js?v=1.1&t=20260601d" charset="utf-8"></script>

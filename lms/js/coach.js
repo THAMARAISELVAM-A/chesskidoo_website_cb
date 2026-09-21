@@ -313,6 +313,70 @@ function initStudentPageObserver() {
     }
   };
 
+  window.coachApplyLinkToAllBatches = function () {
+    if (window.role !== 'coach' && !window.__adminImpersonatingCoach) return;
+    const coachId = window.currentCoachId || window.userId || getCurrentCoachIdFromStorage();
+    if (!coachId) {
+      toast('Coach ID not found', 'error');
+      return;
+    }
+    const input = document.getElementById('coach-all-meet-link-input');
+    if (input) input.value = '';
+    if (typeof openModal === 'function') openModal('coach-apply-all-links-modal');
+  };
+
+  window._submitCoachApplyAllLinks = async function () {
+    const input = document.getElementById('coach-all-meet-link-input');
+    const link = input ? input.value.trim() : '';
+
+    if (link && !/^https:\/\/[^\s]+$/i.test(link)) {
+      toast('That does not look like a valid https:// link.', 'error');
+      return;
+    }
+
+    const coachId = window.currentCoachId || window.userId || getCurrentCoachIdFromStorage();
+    if (!coachId) {
+      toast('Coach ID not found', 'error');
+      return;
+    }
+
+    const myBatches = (window.allBatches || []).filter(b => (window.ckSameCoach ? window.ckSameCoach(b.coach_id, coachId) : String(b.coach_id) === String(coachId)) && b.status !== 'archived');
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const batch of myBatches) {
+      try {
+        const otherNotes = String(batch.notes || '').replace(/https?:\/\/[^\s"'<>]+/g, '').replace(/\s{2,}/g, ' ').trim();
+        const newNotes = link ? (otherNotes ? otherNotes + ' ' + link : link) : otherNotes;
+        const res = await window.apiCall(`/api/batches?id=${batch.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ notes: newNotes, meet_link: link }),
+        });
+        if (res && res.ok) {
+          batch.notes = newNotes;
+          batch.meet_link = link;
+          successCount++;
+        } else {
+          failCount++;
+        }
+      } catch (e) {
+        failCount++;
+      }
+    }
+
+    if (typeof closeModals === 'function') closeModals();
+
+    if (failCount === 0) {
+      toast(link ? 'Class link applied to ' + successCount + ' batch(es)!' : 'Class links removed from all batches.', 'success');
+    } else {
+      toast('Updated ' + successCount + ' batch(es). ' + failCount + ' failed.', 'warning');
+    }
+
+    if (typeof window.renderCoachSchedule === 'function') window.renderCoachSchedule();
+    if (typeof window.renderCoachBatches === 'function') window.renderCoachBatches();
+  };
+
   /* Resolve a student's WhatsApp number. Prefers the shared international
      formatter when scripts.js has loaded it, else falls back to digits with a
      91 default for local 10-digit numbers. */

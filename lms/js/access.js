@@ -114,7 +114,7 @@ function explainAccessFailure(status, serverMsg) {
         if (!hasToken) {
             return 'Access denied (403): your session has no active authentication token. Please sign in again with your admin account.';
         }
-        return 'Access denied (403). Your sign-in account role is not admin or master — if this account was created or promoted recently, sign out and sign in again to reflect the updated role, or verify user_metadata.role is set to "admin" or "master" in Supabase Auth.';
+         return 'Access denied (403). Your sign-in account role is not admin or master — if this account was created or promoted recently, sign out and sign in again to reflect the updated role, or verify user_metadata.role is set to "admin" or "master" in Supabase Auth.';
     }
     if (status >= 500) {
         return `The access-control service errored (${status}). ${serverMsg || 'Check the Edge Function logs.'}`;
@@ -230,7 +230,7 @@ window.renderParentAccounts = async function() {
 
 window.editStudentPassword = async function(studentId, studentName) {
     // auth.js maps the retired coach-admin role to 'admin' at sign-in, so only
-    // the two live admin-level roles need checking here.
+    // the live admin-level roles need checking here.
     if (window.role !== 'master' && window.role !== 'admin') {
         if (window.toast) window.toast('Unauthorized action', 'error');
         return;

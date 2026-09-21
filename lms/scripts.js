@@ -190,9 +190,11 @@
   let allResources = [];
   window.allResources = allResources;
 
-  window.allRatingHistory = allRatingHistory; // Also needed for ELO gainers in report
+  window.allRatingHistory = allRatingHistory;
 
   window.allResources = allResources;
+
+  let achievementsLiveReloadAttempted = false;
 
   const _initNow = new Date();
   window.reportMonth = _initNow.getMonth(); // 0-11 (Local time zone month)
@@ -1163,7 +1165,7 @@
       container.innerHTML = '<div style="text-align:center; color:var(--ivory-dim); padding:16px; font-size:12px;">No recorded class videos available yet.</div>';
       return;
     }
-    const canEdit = window.currentUser && (window.currentUser.role === 'admin' || window.currentUser.role === 'coach');
+    const canEdit = window.currentUser && (window.currentUser.role === 'admin' || window.currentUser.role === 'master' || window.currentUser.role === 'coach');
     container.innerHTML = videos.map(v => `
       <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg3); padding:10px 14px; border-radius:8px; border:1px solid var(--border);">
         <div>
@@ -6773,6 +6775,45 @@
           achievementsData = d.data || d;
           window.achievementsData = achievementsData;
         }
+        if (role === "admin") {
+          const seedAchievements = [
+            { student_name: "Anfal", title: "Zone Winner — Coimbatore District 🏆 Pollachi Star Players · Hindusthan Chess Team", img_url: "/assets/img/achievement-anfal-akmal.jpg", date_achieved: "2025-12-01" },
+            { student_name: "Yadhuveer", title: "Winner 7/7 — Under-9 Category 🏆 Erode District Series Championship", img_url: "/assets/img/achievement-yadhuveer.jpg", date_achieved: "2025-11-15" },
+            { student_name: "Mukilan", title: "3rd Winner Up 🏅 From Under-9 to Under-17 Category · Played as Unstoppable", img_url: "/assets/img/achievement-mukilan.jpg", date_achieved: "2025-10-20" },
+            { student_name: "Anuksha", title: "7th Place — Under 9 Chess Festival (Namakkal) 🏆 Coach Guanasurya", img_url: "/assets/img/achievement-anuksha.jpg", date_achieved: "2025-09-05" },
+            { student_name: "Mocsha", title: "State Championship Prize Winner 🏆 Tamil Nadu State Chess Championship 2026", img_url: "/assets/img/achievement-mocsha.jpg", date_achieved: "2026-01-20" },
+            { student_name: "Riyazzen", title: "FIDE International Classical Tournament 🏅 FIDE Rating 1520", img_url: "/assets/img/achievement-riyazzen.jpg", date_achieved: "2026-02-10" },
+            { student_name: "Rakshitha", title: "3rd Prize — District Competition 🏆 Circuit to District Winner", img_url: "/assets/img/achievement-rakshitha.jpg", date_achieved: "2025-08-14" },
+            { student_name: "Auysh", title: "5th Place — Under-14 Boys State Championship 🏅", img_url: "/assets/img/acivements img 1.jpeg", date_achieved: "2025-07-22" },
+            { student_name: "Poonthalir", title: "7th Position — Under-14 Girls State Championship 👑", img_url: "/assets/img/img fpweb.jpeg", date_achieved: "2025-07-21" },
+            { student_name: "Varun", title: "Velammal Nexus Best performer of the Tournament", img_url: "/assets/img/acivements img4.jpeg", date_achieved: "2025-06-30" },
+            { student_name: "Krishna", title: "2nd Place Winner — Out of 40 Class ⭐ Coach Rohith", img_url: "/assets/img/awardss.jpeg", date_achieved: "2025-05-18" },
+            { student_name: "Buvargan", title: "5th Position — Erode District Chess Tournament 🏆 Republic Day Trophy 2025", img_url: "/assets/img/awards.jpeg", date_achieved: "2025-01-26" },
+            { student_name: "Riyas", title: "Top 30 out of 400 Players 🏅 Velammal Nexus Tournament · Tamil Nadu State Association", img_url: "/assets/img/acivements img3.jpeg", date_achieved: "2025-04-12" },
+          ];
+          const toAbsolute = (u) => u && u.startsWith("/assets/") ? u : (u || "");
+          const existingTitles = new Set((achievementsData || []).map((x) => (x.title || "").trim().toLowerCase()));
+          for (const a of seedAchievements) {
+            const titleKey = String(a.title || "").trim().toLowerCase();
+            if (!titleKey || existingTitles.has(titleKey)) continue;
+            try {
+              const res = await apiCall("/api/achievements", {
+                method: "POST",
+                body: JSON.stringify({ student_id: null, title: a.title, description: a.student_name || "", img_url: toAbsolute(a.img_url), date_achieved: a.date_achieved }),
+              });
+              if (res.ok) {
+                const created = await res.json();
+                achievementsData.push(created);
+              } else {
+                const txt = await res.text().catch(() => 'unknown');
+                console.warn("[Seed] Failed to insert achievement:", a.title, res.status, txt);
+              }
+            } catch (e) {
+              console.warn("[Seed] Achievement insert error:", e);
+            }
+          }
+          window.achievementsData = achievementsData;
+        }
         if (res9.ok) {
           const d = await res9.json();
           eventsData = d.data || d;
@@ -7206,7 +7247,7 @@
 
   let rtDebounceTimer = null;
   function initRealtimeNotifications() {
-    if (role !== "admin" && role !== "master") return;
+    if (role !== "admin" && role !== "master" && role !== "ceo") return;
     if (typeof supabase === "undefined") {
       console.warn(
         "[Realtime] Supabase library not loaded. Falling back to polling.",
@@ -7497,7 +7538,7 @@
       "studypgn",
     ];
     const coachAccessiblePages = ["coach-dash", "coach-students", "coach-batches", "coach-schedule", "coach-events", "coach-attendance", "coach-homework", "coach-studypgn", "studypgn", "productivity"];
-    if (adminPages.includes(p) && role !== "admin" && role !== "master" && !coachAccessiblePages.includes(p)) {
+    if (adminPages.includes(p) && role !== "admin" && role !== "master" && role !== "ceo" && !coachAccessiblePages.includes(p)) {
       toast("Access denied", "error");
       setPage(role === "parent" || role === "student" ? "child" : "coach-dash");
       return;
@@ -12893,6 +12934,22 @@ due_date: (function () {
 
     // 2. Render Achievements Gallery
     if (!achievementsData || achievementsData.length === 0) {
+      if (!achievementsLiveReloadAttempted && (role === "admin" || role === "master")) {
+        achievementsLiveReloadAttempted = true;
+        apiCall("/api/achievements")
+          .then((res) => {
+            if (res.ok) return res.json();
+            return null;
+          })
+          .then((d) => {
+            if (d && ((d.data && d.data.length) || (Array.isArray(d) && d.length))) {
+              achievementsData = d.data || d;
+              window.achievementsData = achievementsData;
+              renderFame();
+            }
+          })
+          .catch(() => {});
+      }
       gridEl.innerHTML =
         '<div class="empty-state" style="grid-column:1/-1"><span class="empty-icon">🏆</span><p>No achievements recorded yet</p></div>';
       return;
@@ -12911,7 +12968,7 @@ due_date: (function () {
         );
         const studentName = student
           ? getStudentName(student)
-          : "Unknown Student";
+          : (a.description || "Unknown Student");
 
         const bgImg = a.img_url
           ? a.img_url
@@ -12934,16 +12991,12 @@ due_date: (function () {
                ${escapeHtml(a.title)}
              </div>
              
-             <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top: 1px solid rgba(212, 175, 55, 0.3); padding-top: 14px; margin-top: 6px;">
-                <div>
-                  <div style="font-size:11px; color:var(--ivory-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:2px;">Champion</div>
-                  <div style="font-size:18px; font-weight:bold; color: var(--gold);">${escapeHtml(studentName)}</div>
-                </div>
-                <div style="text-align:right;">
-                  <div style="font-size:10px; color:var(--ivory-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:2px;">Date</div>
-                  <div style="font-size:14px; color: #fff; font-weight: 600;">${a.date_achieved ? new Date(a.date_achieved).toLocaleDateString() : ""}</div>
-                </div>
-             </div>
+              <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top: 1px solid rgba(212, 175, 55, 0.3); padding-top: 14px; margin-top: 6px;">
+                 <div>
+                   <div style="font-size:11px; color:var(--ivory-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:2px;">Champion</div>
+                   <div style="font-size:18px; font-weight:bold; color: var(--gold);">${escapeHtml(studentName)}</div>
+                 </div>
+              </div>
            </div>
 
            <!-- Action Buttons overlay (top right) -->
@@ -12962,9 +13015,9 @@ due_date: (function () {
        `;
       })
       .join("");
-  }
+    }
 
-  function editAchievement(id) {
+    function editAchievement(id) {
     const a = achievementsData.find((x) => String(x.id) === String(id));
     if (!a) {
       toast("Achievement not found", "error");
@@ -12972,6 +13025,8 @@ due_date: (function () {
     }
     $("award-sid").value = a.id;
     $("award-student").value = a.student_id || "";
+    const nameInput = $("award-student-name");
+    if (nameInput) nameInput.value = a.description || "";
     $("award-title").value = a.title || "";
     $("award-img-url").value = a.img_url || "";
     openModal("award-modal");
@@ -12991,6 +13046,8 @@ due_date: (function () {
   function openAwardModal() {
     $("award-sid").value = "";
     $("award-student").value = "";
+    const nameInput = $("award-student-name");
+    if (nameInput) nameInput.value = "";
     $("award-title").value = "";
     $("award-img-url").value = "";
     openModal("award-modal");
@@ -13046,15 +13103,20 @@ due_date: (function () {
       }
     }
 
+    const studentNameInput = $("award-student-name");
+    const studentName = studentNameInput ? studentNameInput.value.trim() : "";
+    const studentId = $("award-student").value;
+
     const data = {
-      student_id: $("award-student").value,
+      student_id: studentId || null,
       title: $("award-title").value,
       img_url: img_url,
       date_achieved: new Date().toISOString().split("T")[0],
+      description: studentName || "",
     };
 
-    if (!data.student_id || !data.title) {
-      toast("Please fill all fields", "error");
+    if (!data.title) {
+      toast("Please fill title", "error");
       return;
     }
 
@@ -15773,14 +15835,13 @@ Best regards,
       .slice(0, 6)
       .map(
         (a) => `
-       <div class="ach-card">
-         ${a.img_url ? `<img src="${escapeHtml(a.img_url)}" alt="${escapeHtml(a.title)}">` : '<div class="ach-icon">🏆</div>'}
-         <div class="ach-info">
-           <div class="ach-title">${escapeHtml(a.title)}</div>
-           <div class="ach-date">${a.date_achieved ? new Date(a.date_achieved).toLocaleDateString() : ""}</div>
-         </div>
-       </div>
-     `,
+        <div class="ach-card">
+          ${a.img_url ? `<img src="${escapeHtml(a.img_url)}" alt="${escapeHtml(a.title)}">` : '<div class="ach-icon">🏆</div>'}
+          <div class="ach-info">
+            <div class="ach-title">${escapeHtml(a.title)}</div>
+          </div>
+        </div>
+      `,
       )
       .join("");
   }

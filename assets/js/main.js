@@ -2962,7 +2962,6 @@ ${applicant}`;
     }
   });
 
-})();
   /* ─── Curriculum Portal ─── */
   CK.openCurriculum = (targetId) => {
     const modal = document.getElementById('curriculumModal');
@@ -3019,12 +3018,55 @@ ${applicant}`;
 
   CK.closePolicies = () => {
     const modal = document.getElementById('policiesModal');
-    if (modal) {
-      modal.classList.remove('active');
-      document.body.style.overflow = '';
+    if (!modal) return;
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+  };
+
+  CK.loadLandingAchievements = async () => {
+    const grid = document.getElementById('landing-achievements-grid');
+    if (!grid) return;
+    try {
+      const headers = {
+        'Content-Type': 'application/json',
+        apikey: window.APP_CONFIG?.SUPABASE_ANON_KEY || '',
+        Authorization: `Bearer ${window.APP_CONFIG?.SUPABASE_ANON_KEY || ''}`,
+      };
+      const res = await fetch('/api/achievements', { headers });
+      if (!res.ok) {
+        grid.innerHTML = `<div style="text-align:center; padding:30px; color:var(--slate);">Failed to load achievements (${res.status}).</div>`;
+        return;
+      }
+      const json = await res.json();
+      const list = Array.isArray(json.data) ? json.data : Array.isArray(json) ? json : [];
+      if (!list.length) {
+        grid.innerHTML = '<div style="text-align:center; padding:30px; color:var(--slate);">No achievements yet. Check back soon!</div>';
+        return;
+      }
+      const sorted = list.slice().sort((a, b) => new Date(b.date_achieved || b.created_at) - new Date(a.date_achieved || a.created_at));
+      grid.innerHTML = sorted.map(a => {
+        const img = a.img_url || '';
+        const title = CK.esc ? CK.esc(a.title) : (a.title || '');
+        const studentName = a.description || '';
+        return `<div class="showcase-gallery-item">
+          <div class="showcase-img-wrap">
+            <img loading="lazy" src="${img || 'assets/img/placeholder-trophy.jpg'}" alt="${title}">
+          </div>
+          <div class="showcase-info">
+            <h4>${title}</h4>
+            <p>${studentName ? '👤 ' + studentName : ''}</p>
+          </div>
+        </div>`;
+      }).join('');
+    } catch (e) {
+      console.warn('[Landing] achievements load failed:', e);
+      grid.innerHTML = '<div style="text-align:center; padding:30px; color:var(--slate);">Unable to load achievements right now.</div>';
     }
   };
 
   document.addEventListener('DOMContentLoaded', () => {
     if (CK.loadParentReviews) CK.loadParentReviews();
+    CK.loadLandingAchievements && CK.loadLandingAchievements();
   });
+
+})();
