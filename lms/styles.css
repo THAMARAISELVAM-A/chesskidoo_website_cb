@@ -1315,7 +1315,140 @@ textarea:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--gold
   .login-box { padding: 32px 24px !important; }
   .modal-box { width: 95vw !important; max-height: 85vh !important; padding: 24px !important; }
   .profile-hdr { flex-direction: column; align-items: flex-start; gap: 16px; }
-  
+/* ── MONTHLY SCHEDULE CALENDAR ── */
+.monthly-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+.cal-col-header {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--gold);
+  padding: 10px 4px;
+  background: rgba(218, 163, 62, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(218, 163, 62, 0.15);
+}
+.cal-cell {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px;
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.cal-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  border-color: rgba(232, 168, 48, 0.35);
+}
+.cal-cell.other-month {
+  opacity: 0.45;
+  background: rgba(0, 0, 0, 0.15);
+}
+.cal-cell.today {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 1px rgba(232, 168, 48, 0.25);
+}
+.cal-date-num {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ivory);
+  text-align: right;
+  line-height: 1;
+}
+.cal-cell.today .cal-date-num {
+  color: var(--gold);
+}
+.cal-session-card {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(168, 85, 247, 0.18));
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 11px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cal-session-title {
+  font-weight: 700;
+  color: var(--ivory);
+  font-size: 12px;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cal-session-time {
+  font-family: var(--font-mono, monospace);
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 700;
+}
+.cal-session-meta {
+  color: var(--ivory-dim);
+  font-size: 10px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cal-session-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #111827;
+  background: linear-gradient(135deg, #e8a830, #f5c842);
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-decoration: none;
+  text-align: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+.cal-cell-empty {
+  color: var(--ivory-dim);
+  font-size: 10px;
+  text-align: center;
+  opacity: 0.7;
+  margin-top: 6px;
+}
+@media (max-width: 768px) {
+  .monthly-cal-grid {
+    gap: 4px;
+  }
+  .cal-col-header {
+    font-size: 10px;
+    padding: 6px 2px;
+  }
+  .cal-cell {
+    min-height: 70px;
+    padding: 4px;
+    gap: 4px;
+  }
+  .cal-session-card {
+    padding: 4px;
+    font-size: 10px;
+  }
+  .cal-session-title {
+    font-size: 10px;
+  }
+}
+
   /* ── PREMIUM MOBILE TOP-BAR FLEX WRAPPING ── */
   .top-bar {
     flex-wrap: wrap !important;
@@ -4369,5 +4502,138 @@ body[data-theme="light"] .trace-chip.failed {
   }
 }
 
+/* ── MONTHLY SCHEDULE CALENDAR ── */
+.monthly-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+.cal-col-header {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--gold);
+  padding: 10px 4px;
+  background: rgba(218, 163, 62, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(218, 163, 62, 0.15);
+}
+.cal-cell {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px;
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.cal-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  border-color: rgba(232, 168, 48, 0.35);
+}
+.cal-cell.other-month {
+  opacity: 0.45;
+  background: rgba(0, 0, 0, 0.15);
+}
+.cal-cell.today {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 1px rgba(232, 168, 48, 0.25);
+}
+.cal-date-num {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ivory);
+  text-align: right;
+  line-height: 1;
+}
+.cal-cell.today .cal-date-num {
+  color: var(--gold);
+}
+.cal-session-card {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(168, 85, 247, 0.18));
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 11px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cal-session-title {
+  font-weight: 700;
+  color: var(--ivory);
+  font-size: 12px;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cal-session-time {
+  font-family: var(--font-mono, monospace);
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 700;
+}
+.cal-session-meta {
+  color: var(--ivory-dim);
+  font-size: 10px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cal-session-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #111827;
+  background: linear-gradient(135deg, #e8a830, #f5c842);
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-decoration: none;
+  text-align: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+.cal-cell-empty {
+  color: var(--ivory-dim);
+  font-size: 10px;
+  text-align: center;
+  opacity: 0.7;
+  margin-top: 6px;
+}
+@media (max-width: 768px) {
+  .monthly-cal-grid {
+    gap: 4px;
+  }
+  .cal-col-header {
+    font-size: 10px;
+    padding: 6px 2px;
+  }
+  .cal-cell {
+    min-height: 70px;
+    padding: 4px;
+    gap: 4px;
+  }
+  .cal-session-card {
+    padding: 4px;
+    font-size: 10px;
+  }
+  .cal-session-title {
+    font-size: 10px;
+  }
+}
 
 

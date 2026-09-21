@@ -3919,6 +3919,62 @@
     if (hardDeleteCheckbox) hardDeleteCheckbox.checked = false;
   }
 
+  window.openSessionDetailModal = function (encodedSession) {
+    if (!encodedSession) return;
+    let session;
+    try {
+      const json = decodeURIComponent(escape(atob(encodedSession)));
+      session = JSON.parse(json);
+    } catch (e) {
+      console.warn("[SessionDetail] Failed to decode session data:", e);
+      return;
+    }
+    if (!session) return;
+    const titleEl = $("session-detail-title");
+    const bodyEl = $("session-detail-body");
+    const joinBtn = $("session-detail-join-btn");
+    if (!titleEl || !bodyEl) return;
+
+    titleEl.textContent = session.title || "Class Details";
+
+    let bodyHtml = "";
+    if (session.batchName) {
+      bodyHtml += `<div style="display:flex; justify-content:space-between; gap:8px; font-size:13px;"><span style="color:var(--ivory-dim); text-transform:uppercase; letter-spacing:0.5px; font-size:11px;">Batch</span><span style="color:var(--ivory); font-weight:600;">${window.escapeHtml ? window.escapeHtml(session.batchName) : session.batchName}</span></div>`;
+    }
+    if (session.timeStr) {
+      bodyHtml += `<div style="display:flex; justify-content:space-between; gap:8px; font-size:13px;"><span style="color:var(--ivory-dim); text-transform:uppercase; letter-spacing:0.5px; font-size:11px;">Time</span><span style="color:var(--gold); font-weight:700; font-family:var(--font-mono, monospace);">${window.escapeHtml ? window.escapeHtml(session.timeStr) : session.timeStr}</span></div>`;
+    }
+    if (session.studentNames) {
+      bodyHtml += `<div style="display:flex; justify-content:space-between; gap:8px; font-size:13px; align-items:flex-start;"><span style="color:var(--ivory-dim); text-transform:uppercase; letter-spacing:0.5px; font-size:11px; margin-top:2px;">Students</span><span style="color:var(--ivory); font-weight:600; text-align:right;">${window.escapeHtml ? window.escapeHtml(session.studentNames) : session.studentNames}</span></div>`;
+    }
+    if (session.coachName) {
+      bodyHtml += `<div style="display:flex; justify-content:space-between; gap:8px; font-size:13px;"><span style="color:var(--ivory-dim); text-transform:uppercase; letter-spacing:0.5px; font-size:11px;">Coach</span><span style="color:var(--ivory); font-weight:600;">${window.escapeHtml ? window.escapeHtml(session.coachName) : session.coachName}</span></div>`;
+    }
+    if (session.displayDate) {
+      bodyHtml += `<div style="display:flex; justify-content:space-between; gap:8px; font-size:13px;"><span style="color:var(--ivory-dim); text-transform:uppercase; letter-spacing:0.5px; font-size:11px;">Date</span><span style="color:var(--ivory); font-weight:600;">${window.escapeHtml ? window.escapeHtml(session.displayDate) : session.displayDate}</span></div>`;
+    }
+
+    if (!bodyHtml) {
+      bodyHtml = `<div style="color:var(--ivory-dim); font-size:13px;">No additional details available.</div>`;
+    }
+    bodyEl.innerHTML = bodyHtml;
+
+    if (joinBtn) {
+      if (session.meetLink) {
+        joinBtn.style.display = "inline-flex";
+        joinBtn.href = session.meetLink;
+        joinBtn.target = "_blank";
+        joinBtn.rel = "noopener";
+        joinBtn.textContent = "Join Class";
+      } else {
+        joinBtn.style.display = "none";
+        joinBtn.removeAttribute("href");
+      }
+    }
+
+    openModal("session-detail-modal");
+  };
+
   function initUI() {
     // Close modals when clicking outside modal content
     document.querySelectorAll(".modal").forEach((m) => {

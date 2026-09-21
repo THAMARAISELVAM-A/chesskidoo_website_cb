@@ -389,45 +389,113 @@
      return dates;
    }
 
-   function buildMonthlyScheduleTable(sessions, options = {}) {
-     const { showStudentNames = false, title = "Monthly Schedule" } = options;
+    function buildMonthlyScheduleTable(sessions, options = {}) {
+      const { showStudentNames = false, title = "Monthly Schedule" } = options;
+      const container = options.container || document.getElementById("child-monthly-schedule-container");
+      if (!container) return;
 
-     if (!sessions || sessions.length === 0) {
-       return `<div class="empty-state" style="padding:24px;"><span class="empty-icon">📅</span><p>No sessions scheduled for this month.</p></div>`;
-     }
+      const today = new Date();
+      const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
 
-     const headerCells = showStudentNames
-       ? "<th>#</th><th>Day</th><th>Date</th><th>Time</th><th>Student Names</th>"
-       : "<th>#</th><th>Day</th><th>Date</th><th>Time</th>";
+      if (!sessions || sessions.length === 0) {
+        container.innerHTML = `<div class="empty-state" style="padding:24px;"><span class="empty-icon">📅</span><p>No sessions scheduled for this month.</p></div>`;
+        return;
+      }
 
-     const rows = sessions
-       .map((s, i) => {
-         const studentCell = showStudentNames
-           ? `<td style="font-size:12px; color:var(--ivory); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(s.studentNames || "")}</td>`
-           : "";
+      const SHORT_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const monthLabel = sessions.length > 0 && sessions[0].date
+        ? new Date(sessions[0].date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+        : title;
 
-         return `<tr>
-           <td style="text-align:center; font-weight:600; width:40px;">${i + 1}</td>
-           <td style="font-size:12px; color:var(--ivory2);">${escapeHtml(s.dayName || "")}</td>
-           <td style="font-size:12px; color:var(--ivory);">${escapeHtml(s.displayDate || s.dateStr || "")}</td>
-           <td style="font-size:12px; font-family:var(--font-mono, monospace); color:var(--gold);">${escapeHtml(s.timeStr || "TBD")}</td>
-           ${studentCell}
-         </tr>`;
-       })
-       .join("");
+      // Build calendar days grid
+      const year = sessions[0].date.getFullYear();
+      const month = sessions[0].date.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const startOffset = (firstDay.getDay() + 6) % 7;
+      const prevMonthDays = new Date(year, month, 0).getDate();
+      const cells = [];
+      for (let i = startOffset - 1; i >= 0; i--) {
+        cells.push({ date: new Date(year, month - 1, prevMonthDays - i), isCurrentMonth: false });
+      }
+      for (let i = 1; i <= daysInMonth; i++) {
+        cells.push({ date: new Date(year, month, i), isCurrentMonth: true });
+      }
+      const remaining = 42 - cells.length;
+      for (let i = 1; i <= remaining; i++) {
+        cells.push({ date: new Date(year, month + 1, i), isCurrentMonth: false });
+      }
 
-     return `<div style="margin-top:24px;">
-       <h3 style="color:var(--gold); font-size:16px; margin-bottom:12px; font-family:var(--font-head); letter-spacing:0.5px;">📅 ${escapeHtml(title)}</h3>
-       <div class="table-wrap" style="overflow-x:auto; border:1px solid var(--border); border-radius:10px;">
-         <table class="coach-mini-table" style="width:100%; border-collapse:collapse;">
-           <thead>
-             <tr style="background:rgba(0,0,0,0.2);">${headerCells}</tr>
-           </thead>
-           <tbody>${rows}</tbody>
-         </table>
-       </div>
-     </div>`;
-   }
+      const sessionMap = new Map();
+      sessions.forEach(s => {
+        const d = s.date || new Date(s.dateStr);
+        const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        if (!sessionMap.has(key)) sessionMap.set(key, []);
+        sessionMap.get(key).push(s);
+      });
+
+      let html = `
+        <div style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div>
+            <span style="font-size:13px; color:var(--ivory-dim);">${escapeHtml(title)}</span>
+            <strong style="color:var(--gold); margin-left:6px;">${monthLabel}</strong>
+            <span style="font-size:12px; color:var(--ivory-dim); margin-left:8px;">${sessions.length} session${sessions.length !== 1 ? 's' : ''}</span>
+          </div>
+        </div>
+        <div class="monthly-cal-grid">
+      `;
+
+      SHORT_DAYS.forEach(day => {
+        html += `<div class="cal-col-header">${day}</div>`;
+      });
+
+      cells.forEach(cell => {
+        const dateKey = cell.date.getFullYear() + '-' + String(cell.date.getMonth() + 1).padStart(2, '0') + '-' + String(cell.date.getDate()).padStart(2, '0');
+        const daySessions = sessionMap.get(dateKey) || [];
+        const isToday = cell.isCurrentMonth && dateKey === todayStr;
+        const cellClass = 'cal-cell' + (cell.isCurrentMonth ? '' : ' other-month') + (isToday ? ' today' : '');
+
+        html += `<div class="${cellClass}">`;
+        html += `<div class="cal-date-num">${cell.date.getDate()}</div>`;
+
+        if (daySessions.length === 0) {
+          if (cell.isCurrentMonth) {
+            html += `<div class="cal-cell-empty">No class</div>`;
+          }
+        } else {
+          daySessions.forEach(s => {
+            const meetHref = s.meetLink ? `href="${s.meetLink}" target="_blank" rel="noopener"` : '';
+            const meetBtn = s.meetLink ? `<a ${meetHref} class="cal-session-link" onclick="event.stopPropagation();">Join Class</a>` : '';
+            const coachName = s.coachName || s.regCoachName || "";
+            const timeStr = s.timeStr || s.regTime || "TBD";
+            const sessionData = {
+              title: s.title || "Class",
+              batchName: s.batchName || s.title || "",
+              timeStr: timeStr,
+              coachName: coachName,
+              meetLink: s.meetLink || "",
+              studentNames: s.studentNames || "",
+              displayDate: cell.date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
+            };
+            const sessionJson = JSON.stringify(sessionData);
+            const encoded = btoa(unescape(encodeURIComponent(sessionJson)));
+            html += `
+              <div class="cal-session-card" data-session="${encoded}" onclick="window.openSessionDetailModal && window.openSessionDetailModal(this.dataset.session)" style="cursor:pointer;">
+                <div class="cal-session-time">${escapeHtml(timeStr)}</div>
+                ${coachName ? `<div class="cal-session-meta">Coach: ${escapeHtml(coachName)}</div>` : ''}
+                ${meetBtn}
+              </div>
+            `;
+          });
+        }
+
+        html += `</div>`;
+      });
+
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+  
 
     window.renderChildMonthlySchedule = function (student) {
       const container = document.getElementById("child-monthly-schedule-container");
@@ -464,18 +532,22 @@
       }
 
       const sessionDates = getSessionDatesForMonth(schedData.regDays || "", year, month);
-      const sessions = sessionDates.map((sd) => ({
-        ...sd,
-        timeStr: schedData.regTime || "TBD",
-        coachName: schedData.regCoachName || "",
-        meetLink: schedData.meetLink || "",
-        title: (student.name || "Student") + " - Chess Class",
-        studentNames: student.name || "",
-      }));
+      const sessions = sessionDates.map((sd) => {
+        const parts = sd.dateStr.split('-').map(Number);
+        return {
+          date: new Date(parts[0], parts[1] - 1, parts[2]),
+          timeStr: schedData.regTime || "TBD",
+          coachName: schedData.regCoachName || "",
+          meetLink: schedData.meetLink || "",
+          title: (student.name || "Student") + " - Chess Class",
+          studentNames: student.name || "",
+        };
+      });
 
-      container.innerHTML = buildMonthlyScheduleTable(sessions, {
+      buildMonthlyScheduleTable(sessions, {
         showStudentNames: false,
         title: "Monthly Schedule - " + (student.name || "Student"),
+        container: container
       });
     };
 
@@ -1321,3 +1393,4 @@
     }, 100);
   };
 })();
+

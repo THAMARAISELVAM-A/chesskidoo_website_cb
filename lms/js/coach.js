@@ -666,6 +666,7 @@ function initStudentPageObserver() {
 
   function renderCoachMonthlySchedule(container, coachId, myBatches, myStudents) {
     const DAYS_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const SHORT_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const monthInput = document.getElementById('coach-schedule-month');
     let year, month;
     if (monthInput && monthInput.value) {
@@ -699,9 +700,7 @@ function initStudentPageObserver() {
       while (d.getMonth() === month) {
         if (targetDayIndices.includes(d.getDay())) {
           sessions.push({
-            dayName: d.toLocaleDateString('en-US', { weekday: 'long' }),
-            dateStr: d.toISOString().split('T')[0],
-            displayDate: d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
+            date: new Date(d),
             timeStr: timeStr,
             studentNames: studentNames.join(', '),
             batchName: b.name,
@@ -713,21 +712,35 @@ function initStudentPageObserver() {
       }
     });
 
-    sessions.sort((a, b) => a.dateStr.localeCompare(b.dateStr));
-
-    const rows = sessions.map((s, i) => {
-      return `<tr>
-        <td style="text-align:center; font-weight:600; width:40px;">${i + 1}</td>
-        <td style="font-size:12px; color:var(--ivory2);">${window.escapeHtml ? window.escapeHtml(s.dayName) : s.dayName}</td>
-        <td style="font-size:12px; color:var(--ivory);">${window.escapeHtml ? window.escapeHtml(s.displayDate) : s.displayDate}</td>
-        <td style="font-size:12px; font-family:var(--font-mono, monospace); color:var(--gold);">${window.escapeHtml ? window.escapeHtml(s.timeStr) : s.timeStr}</td>
-        <td style="font-size:12px; color:var(--ivory); max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${window.escapeHtml ? window.escapeHtml(s.studentNames) : s.studentNames}">${window.escapeHtml ? window.escapeHtml(s.studentNames) : s.studentNames}</td>
-      </tr>`;
-    }).join('');
-
+    const today = new Date();
+    const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
     const monthLabel = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-    container.innerHTML = `
+    // Build calendar days grid (6 rows x 7 cols)
+    const firstDay = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const startOffset = (firstDay.getDay() + 6) % 7; // Mon=0 ... Sun=6
+    const prevMonthDays = new Date(year, month, 0).getDate();
+    const cells = [];
+    for (let i = startOffset - 1; i >= 0; i--) {
+      cells.push({ date: new Date(year, month - 1, prevMonthDays - i), isCurrentMonth: false });
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      cells.push({ date: new Date(year, month, i), isCurrentMonth: true });
+    }
+    const remaining = 42 - cells.length;
+    for (let i = 1; i <= remaining; i++) {
+      cells.push({ date: new Date(year, month + 1, i), isCurrentMonth: false });
+    }
+
+    const sessionMap = new Map();
+    sessions.forEach(s => {
+      const key = s.date.getFullYear() + '-' + String(s.date.getMonth() + 1).padStart(2, '0') + '-' + String(s.date.getDate()).padStart(2, '0');
+      if (!sessionMap.has(key)) sessionMap.set(key, []);
+      sessionMap.get(key).push(s);
+    });
+
+    let html = `
       <div style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <div>
           <span style="font-size:13px; color:var(--ivory-dim);">Showing schedule for</span>
@@ -735,21 +748,57 @@ function initStudentPageObserver() {
           <span style="font-size:12px; color:var(--ivory-dim); margin-left:8px;">${sessions.length} session${sessions.length !== 1 ? 's' : ''}</span>
         </div>
       </div>
-      <div class="table-wrap" style="overflow-x:auto; border:1px solid var(--border); border-radius:10px;">
-        <table class="coach-mini-table" style="width:100%; border-collapse:collapse;">
-          <thead>
-            <tr style="background:rgba(0,0,0,0.2);">
-              <th style="width:40px;">#</th>
-              <th>Day</th>
-              <th>Date</th>
-              <th>Time</th>
-              <th>Student Names</th>
-            </tr>
-          </thead>
-          <tbody>${rows || '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--ivory-dim);">No sessions scheduled for ' + monthLabel + '.</td></tr>'}</tbody>
-        </table>
-      </div>
+      <div class="monthly-cal-grid">
     `;
+
+    // Day headers
+    SHORT_DAYS.forEach(day => {
+      html += `<div class="cal-col-header">${day}</div>`;
+    });
+
+    cells.forEach(cell => {
+      const dateKey = cell.date.getFullYear() + '-' + String(cell.date.getMonth() + 1).padStart(2, '0') + '-' + String(cell.date.getDate()).padStart(2, '0');
+      const daySessions = sessionMap.get(dateKey) || [];
+      const isToday = cell.isCurrentMonth && dateKey === todayStr;
+      const cellClass = 'cal-cell' + (cell.isCurrentMonth ? '' : ' other-month') + (isToday ? ' today' : '');
+
+      html += `<div class="${cellClass}">`;
+      html += `<div class="cal-date-num">${cell.date.getDate()}</div>`;
+
+      if (daySessions.length === 0) {
+        if (cell.isCurrentMonth) {
+          html += `<div class="cal-cell-empty">No class</div>`;
+        }
+      } else {
+        daySessions.forEach(s => {
+          const meetHref = s.meetLink ? `href="${s.meetLink}" target="_blank" rel="noopener"` : '';
+          const meetBtn = s.meetLink ? `<a ${meetHref} class="cal-session-link" onclick="event.stopPropagation();">Join Class</a>` : '';
+          const safeSession = {
+            title: s.batchName || s.title || "Class",
+            batchName: s.batchName || "",
+            timeStr: s.timeStr || "",
+            studentNames: s.studentNames || "",
+            meetLink: s.meetLink || "",
+            displayDate: cell.date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
+          };
+          const sessionJson = JSON.stringify(safeSession);
+          const encoded = btoa(unescape(encodeURIComponent(sessionJson)));
+          html += `
+            <div class="cal-session-card" data-session="${encoded}" onclick="window.openSessionDetailModal && window.openSessionDetailModal(this.dataset.session)" style="cursor:pointer;">
+              <div class="cal-session-title">${window.escapeHtml ? window.escapeHtml(s.batchName || s.title) : (s.batchName || s.title)}</div>
+              <div class="cal-session-time">${window.escapeHtml ? window.escapeHtml(s.timeStr) : s.timeStr}</div>
+              <div class="cal-session-meta">${window.escapeHtml ? window.escapeHtml(s.studentNames) : s.studentNames}</div>
+              ${meetBtn}
+            </div>
+          `;
+        });
+      }
+
+      html += `</div>`;
+    });
+
+    html += `</div>`;
+    container.innerHTML = html;
   }
 
   window.renderCoachEvents = function () {
