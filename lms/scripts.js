@@ -567,6 +567,9 @@
             s,
             coach ? getCoachName(coach) : "Not Assigned",
           );
+          if (window.renderChildWeeklySchedule) {
+            window.renderChildWeeklySchedule(s);
+          }
         } else if (tabId === "growth") {
           renderChildGrowth();
         } else if (tabId === "learning") {
@@ -10627,7 +10630,7 @@ due_date: (function () {
        })(),
       batch_type: $("m-batch-type").value,
       batch_time: $("m-batch-time").value,
-      days: getSelectedDays(".m-day-cb, .m-day-btn") || null,
+      days: $("m-days") ? $("m-days").value : getSelectedDays(".m-day-cb, .m-day-btn") || null,
             monthly_fee: (function() {
         const rawFee = parseFloat($("m-fee")?.value) || 0;
         const curr = $("m-fee-currency")?.value || 'INR';
@@ -10639,7 +10642,7 @@ due_date: (function () {
       fee_currency: $("m-fee-currency")?.value || 'INR',
       fee_foreign_amount: parseFloat($("m-fee")?.value) || 0,
       admission_fee: parseInt($("m-admission-fee")?.value) || 0,
-      payment_status: defaultPaymentStatus,
+      payment_status: "Pending",
       status: selectedStatus,
       learning_mode: $("m-learning-mode")?.value || "online",
       // Session type (Group/Individual) has no dedicated column, so it is

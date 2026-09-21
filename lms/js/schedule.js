@@ -493,28 +493,28 @@
     };
 
    window.setChildScheduleView = function (view) {
-     view = view || "weekly";
-     const monthlyPanel = document.getElementById("child-schedule-monthly-panel");
-     const weeklyPanel = document.getElementById("child-schedule-weekly-panel");
-     const monthlyTab = document.getElementById("child-schedule-tab-monthly");
-     const weeklyTab = document.getElementById("child-schedule-tab-weekly");
+      view = view || "weekly";
+      const monthlyPanel = document.getElementById("child-schedule-monthly-panel");
+      const weeklyPanel = document.getElementById("child-schedule-weekly-panel");
+      const monthlyTab = document.getElementById("child-schedule-tab-monthly");
+      const weeklyTab = document.getElementById("child-schedule-tab-weekly");
 
-     if (!monthlyPanel || !weeklyPanel) return;
+      if (!monthlyPanel || !weeklyPanel) return;
 
-     if (view === "weekly") {
-       monthlyPanel.style.display = "none";
-       weeklyPanel.style.display = "block";
-       if (monthlyTab) { monthlyTab.classList.remove("active"); monthlyTab.style.background = "transparent"; monthlyTab.style.color = "var(--ivory)"; }
-       if (weeklyTab) { weeklyTab.classList.add("active"); weeklyTab.style.background = "linear-gradient(135deg,var(--gold) 0%,#b8860b 100%)"; weeklyTab.style.color = "#000"; }
-       if (window.renderChildWeeklySchedule) window.renderChildWeeklySchedule(window.currentStudent);
-     } else {
-       monthlyPanel.style.display = "block";
-       weeklyPanel.style.display = "none";
-       if (weeklyTab) { weeklyTab.classList.remove("active"); weeklyTab.style.background = "transparent"; weeklyTab.style.color = "var(--ivory)"; }
-       if (monthlyTab) { monthlyTab.classList.add("active"); monthlyTab.style.background = "linear-gradient(135deg,var(--gold) 0%,#b8860b 100%)"; monthlyTab.style.color = "#000"; }
-       if (window.renderChildMonthlySchedule) window.renderChildMonthlySchedule(window.currentStudent);
-     }
-   };
+      if (view === "weekly") {
+        monthlyPanel.style.display = "none";
+        weeklyPanel.style.display = "block";
+        if (monthlyTab) { monthlyTab.classList.remove("active"); monthlyTab.style.background = "transparent"; monthlyTab.style.color = "var(--ivory)"; }
+        if (weeklyTab) { weeklyTab.classList.add("active"); weeklyTab.style.background = "linear-gradient(135deg,var(--gold) 0%,#b8860b 100%)"; weeklyTab.style.color = "#000"; }
+        if (window.renderChildWeeklySchedule) window.renderChildWeeklySchedule(window.currentStudent);
+      } else {
+        monthlyPanel.style.display = "block";
+        weeklyPanel.style.display = "none";
+        if (weeklyTab) { weeklyTab.classList.remove("active"); weeklyTab.style.background = "transparent"; weeklyTab.style.color = "var(--ivory)"; }
+        if (monthlyTab) { monthlyTab.classList.add("active"); monthlyTab.style.background = "linear-gradient(135deg,var(--gold) 0%,#b8860b 100%)"; monthlyTab.style.color = "#000"; }
+        if (window.renderChildMonthlySchedule) window.renderChildMonthlySchedule(window.currentStudent);
+      }
+    };
 
    window.loadStudentScheduleData = function (studentId) {
     resetScheduleInputs();
