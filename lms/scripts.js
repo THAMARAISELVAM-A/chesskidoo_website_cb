@@ -3069,12 +3069,14 @@
         '<option value="">-- Select Batch --</option>' +
         batches.map((b) => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.name || b.batchName || b.id)}</option>`).join("");
     }
-    ["qcs-classlink", "qcs-title", "qcs-notes", "qcs-due", "qcs-file"].forEach((id) => {
+    ["qcs-classlink", "qcs-title", "qcs-notes", "qcs-due", "qcs-file", "qcs-session-date"].forEach((id) => {
       const el = $(id);
       if (!el) return;
       if (el.type === "file") el.value = "";
       else el.value = "";
     });
+    const sessionDateEl = $("qcs-session-date");
+    if (sessionDateEl) sessionDateEl.value = new Date().toISOString().split("T")[0];
     const container = $("qcs-reflinks-container");
     if (container) {
       container.innerHTML = '<div class="qcs-reflink-row" style="display:flex;gap:8px;margin-bottom:8px;align-items:center;"><input type="url" id="qcs-reflink-0" class="input-field qcs-reflink-input" placeholder="https://lichess.org/study/…" style="flex:1;"><button type="button" class="btn btn-outline btn-sm qcs-reflink-remove" onclick="removeQcsRefLink(this)" style="display:none;">✕</button></div>';
@@ -3180,6 +3182,7 @@
     const level = $("qcs-level");
     const due = $("qcs-due");
     const fileInput = $("qcs-file");
+    const sessionDateEl = $("qcs-session-date");
     const isCoach = String(window.role || "").toLowerCase() === "coach";
     const currentCoachId = String(window.currentCoachId || window.userId || "");
     const today = new Date().toISOString().split("T")[0];
@@ -3204,7 +3207,8 @@
     if (!finalTitle) {
       const selectedBatch = (window.batchesData || []).find(b => String(b.id) === String(batchId));
       const bName = selectedBatch ? selectedBatch.name : 'Batch';
-      finalTitle = `${bName} Session - ${new Date().toLocaleDateString('en-GB')}`;
+      const sessionDateObj = sessionDateEl && sessionDateEl.value ? new Date(sessionDateEl.value) : new Date();
+      finalTitle = `${bName} Session - ${sessionDateObj.toLocaleDateString('en-GB')}`;
     }
 
     if (!batchId) return toast("Please select a batch from the dropdown", "warning");
@@ -3248,7 +3252,7 @@
         (classLink && classLink.value ? "\nClass Link: " + classLink.value : "") +
         refLinksStr;
     const hDue = $("hw-due-date");
-    if (hDue) hDue.value = due && due.value ? due.value : today;
+    if (hDue) hDue.value = due && due.value ? due.value : (sessionDateEl && sessionDateEl.value ? sessionDateEl.value : today);
     const hwFile = $("hw-file-input");
     if (hwFile && fileInput && fileInput.files && fileInput.files.length) {
       try {
@@ -3266,30 +3270,12 @@
     }
     const allPresent = presentBoxes.length === boxes.length;
     const presentStudentIds = allPresent ? [] : presentBoxes.map((b) => b.value);
-    const homeworkResults = [
-      await window.saveHomeworkAssignment({
-        title: finalTitle,
-        description: noteStr,
-        batchId: batchId,
-        studentId: null,
-        coachId: coachId || null,
-        dueDate: due && due.value ? due.value : today,
-        targetType: "batch",
-        files: fileInput && fileInput.files ? Array.from(fileInput.files) : [],
-        requireFiles: true,
-        suppressUi: true,
-        presentStudentIds: presentStudentIds
-      })
-    ];
-    const failedCount = homeworkResults.filter((r) => !r || r.success !== true).length;
-    if (failedCount > 0) {
-      return toast(`Homework could not be saved for ${failedCount} student(s). Attendance was not submitted.`, "error");
-    }
 
     // 2) Mark attendance for the batch (checked = present, unchecked = absent)
     const date = isCoach
-      ? today
-      : ($("att-date") && $("att-date").value ? $("att-date").value : today);
+      ? (sessionDateEl && sessionDateEl.value ? sessionDateEl.value : today)
+      : ($("att-date") && $("att-date").value ? $("att-date").value : (sessionDateEl && sessionDateEl.value ? sessionDateEl.value : today));
+    const isPastSession = isCoach && sessionDateEl && sessionDateEl.value && sessionDateEl.value < today;
     const records = boxes.map((b) => ({
       student_id: b.value,
       studentId: b.value,
@@ -3301,6 +3287,90 @@
       coachId: coachId || null,
       notes: noteStr,
     }));
+
+    if (isPastSession) {
+      const coach = (window.allCoaches || []).find(c => String(c.id) === String(coachId));
+      const coachName = coach ? (coach.name || coach.full_name || coachId) : coachId;
+      const remark = window.addCoachAttendanceRemark({
+        coachId: coachId,
+        coachName: coachName,
+        missedDate: (sessionDateEl && sessionDateEl.value ? sessionDateEl.value : today),
+        addedDate: today,
+        statuses: [...new Set(records.map(r => r.status))].join(', '),
+        studentsCount: records.length,
+        note: 'Backdated attendance via class session upload',
+        status: 'pending',
+        records: records,
+        homeworkPayload: {
+          title: finalTitle,
+          description: noteStr,
+          batchId: batchId,
+          coachId: coachId || null,
+          dueDate: (sessionDateEl && sessionDateEl.value ? sessionDateEl.value : today),
+          targetType: "batch",
+          requireFiles: true,
+          presentStudentIds: presentStudentIds,
+          files: fileInput && fileInput.files ? Array.from(fileInput.files).map(f => f.name) : []
+        }
+      });
+      toast('Past session submitted for admin approval (attendance + homework)', 'success');
+      if (typeof closeModals === "function") closeModals();
+      if (typeof window.renderCoachAttendanceHomeworkCalendar === "function") window.renderCoachAttendanceHomeworkCalendar();
+      return;
+    }
+
+    // 1) Delegate homework creation to the existing assignment flow
+    if (ht) ht.value = "batch";
+    if (typeof updateHomeworkTargetFields === "function") updateHomeworkTargetFields();
+    if (hb) {
+      const selectedBatch = (window.allBatches || []).find((batch) => String(batch.id) === String(batchId));
+      if (selectedBatch && !Array.from(hb.options).some((option) => String(option.value) === String(batchId))) {
+        const option = document.createElement("option");
+        option.value = String(selectedBatch.id);
+        option.textContent = selectedBatch.name || selectedBatch.batchName || selectedBatch.id;
+        hb.appendChild(option);
+      }
+      hb.value = String(batchId);
+    }
+    if (hTitle) hTitle.value = finalTitle;
+    if (hDesc)
+      hDesc.value =
+        (notes && notes.value ? notes.value : "") +
+        (classLink && classLink.value ? "\nClass Link: " + classLink.value : "") +
+        refLinksStr;
+    if (hDue) hDue.value = due && due.value ? due.value : (sessionDateEl && sessionDateEl.value ? sessionDateEl.value : today);
+    if (hwFile && fileInput && fileInput.files && fileInput.files.length) {
+      try {
+        const dt = new DataTransfer();
+        Array.from(fileInput.files).forEach((f) => dt.items.add(f));
+        hwFile.files = dt.files;
+      } catch (e) {}
+    }
+    if (typeof window.saveHomeworkAssignment !== "function") {
+      return toast("Homework service is unavailable. Please refresh and try again.", "error");
+    }
+    if (!presentBoxes.length) {
+      return toast("No students are marked as present. Homework cannot be assigned.", "warning");
+    }
+    const homeworkResults = [
+      await window.saveHomeworkAssignment({
+        title: finalTitle,
+        description: noteStr,
+        batchId: batchId,
+        studentId: null,
+        coachId: coachId || null,
+        dueDate: (sessionDateEl && sessionDateEl.value ? sessionDateEl.value : today),
+        targetType: "batch",
+        files: fileInput && fileInput.files ? Array.from(fileInput.files) : [],
+        requireFiles: true,
+        suppressUi: true,
+        presentStudentIds: presentStudentIds
+      })
+    ];
+    const failedCount = homeworkResults.filter((r) => !r || r.success !== true).length;
+    if (failedCount > 0) {
+      return toast(`Homework could not be saved for ${failedCount} student(s). Attendance was not submitted.`, "error");
+    }
     try {
       let saved = false;
       const res = await apiCall("/api/attendance", { method: "POST", body: JSON.stringify(records), silent: true });
@@ -6751,8 +6821,9 @@
           renderFame();
           renderBills();
           renderMsgs();
-          renderCoachMgmt();
-          renderStudents();
+           renderCoachMgmt();
+           if (window.renderAdminCoachAttendanceRemarks) window.renderAdminCoachAttendanceRemarks();
+           renderStudents();
           const activeCachedPage = document.querySelector(".page.active")?.id;
           if (activeCachedPage === "page-homework" && window.loadHomeworkData) {
             window.loadHomeworkData().then(() => {
@@ -7098,7 +7169,7 @@
               if (window.generateAcademyInsights)
                 window.generateAcademyInsights();
             } else if (active === "page-stud") renderStudents();
-            else if (active === "page-coach-mgmt") renderCoachMgmt();
+             else if (active === "page-coach-mgmt") { renderCoachMgmt(); if (window.renderAdminCoachAttendanceRemarks) window.renderAdminCoachAttendanceRemarks(); }
             else if (active === "page-bills") renderBills();
             else if (active === "page-msgs") renderMsgs();
             else if (active === "page-fame") renderFame();
@@ -7735,7 +7806,7 @@ setTimeout(function () {
             }
           }
           if (p === "stud") renderStudents();
-          if (p === "coach-mgmt") renderCoachMgmt();
+           if (p === "coach-mgmt") { renderCoachMgmt(); if (window.renderAdminCoachAttendanceRemarks) window.renderAdminCoachAttendanceRemarks(); }
        if (p === "batches") {
         if (window.renderBatchesGrid) window.renderBatchesGrid();
       }
@@ -10880,6 +10951,86 @@ due_date: (function () {
       })
       .join("");
   }
+
+  window.renderAdminCoachAttendanceRemarks = function() {
+    const container = document.getElementById('admin-coach-remarks-container');
+    if (!container) return;
+    const remarks = window.getCoachAttendanceRemarks ? window.getCoachAttendanceRemarks() : [];
+    const pending = remarks.filter(r => (r.status || 'pending') === 'pending');
+    const processed = remarks.filter(r => r.status && r.status !== 'pending');
+    if (pending.length === 0 && processed.length === 0) {
+      container.innerHTML = '<div class="empty-state"><span class="empty-icon">📋</span><p>No backdated attendance remarks yet. Remarks will appear here when coaches add attendance for past dates.</p></div>';
+      return;
+    }
+
+    let html = '';
+    if (pending.length > 0) {
+      html += '<div style="font-size:12px; text-transform:uppercase; letter-spacing:0.5px; color:var(--gold); font-weight:700; margin-bottom:10px;">Pending Approval</div>';
+      html += '<div style="display:flex; flex-direction:column; gap:10px;">';
+      const sortedPending = pending.slice().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      sortedPending.forEach(r => {
+        const added = new Date(r.addedDate || r.timestamp).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+        const missed = new Date(r.missedDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+        html += `<div style="background:rgba(245, 158, 11, 0.08); border:1px solid rgba(245, 158, 11, 0.35); border-radius:10px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:200px;">
+            <div style="font-weight:700; color:var(--ivory); font-size:14px;">${window.escapeHtml ? window.escapeHtml(r.coachName || r.coachId || 'Coach') : (r.coachName || r.coachId || 'Coach')}</div>
+            <div style="font-size:12px; color:var(--ivory-dim); margin-top:4px;">
+              Missed date: <strong style="color:var(--gold);">${missed}</strong> &nbsp;•&nbsp; Added on: <strong style="color:var(--ivory);">${added}</strong>
+            </div>
+            <div style="font-size:11px; color:var(--ivory-dim); margin-top:3px;">Statuses: ${window.escapeHtml ? window.escapeHtml(r.statuses || 'N/A') : (r.statuses || 'N/A')} &nbsp;•&nbsp; Students: ${r.studentsCount || 0}</div>
+            ${r.note ? `<div style="font-size:11px; color:var(--ivory-dim); margin-top:3px; font-style:italic;">${window.escapeHtml ? window.escapeHtml(r.note) : r.note}</div>` : ''}
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-gold btn-sm" onclick="window.approveCoachAttendanceRemark && window.approveCoachAttendanceRemark('${r.id}')">Approve</button>
+            <button class="btn btn-outline-grey btn-sm" onclick="window.dismissCoachAttendanceRemark && window.dismissCoachAttendanceRemark('${r.id}')">Dismiss</button>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+
+    if (processed.length > 0) {
+      html += '<div style="font-size:12px; text-transform:uppercase; letter-spacing:0.5px; color:var(--ivory-dim); font-weight:700; margin:18px 0 10px;">Processed</div>';
+      html += '<div style="display:flex; flex-direction:column; gap:8px;">';
+      const sortedProcessed = processed.slice().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      sortedProcessed.forEach(r => {
+        const added = new Date(r.addedDate || r.timestamp).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+        const missed = new Date(r.missedDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+        const statusColor = r.status === 'approved' ? '#22c55e' : '#64748b';
+        const statusLabel = r.status === 'approved' ? 'Approved' : 'Dismissed';
+        html += `<div style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; opacity:0.8;">
+          <div style="flex:1; min-width:200px;">
+            <div style="font-weight:700; color:var(--ivory); font-size:14px;">${window.escapeHtml ? window.escapeHtml(r.coachName || r.coachId || 'Coach') : (r.coachName || r.coachId || 'Coach')}</div>
+            <div style="font-size:12px; color:var(--ivory-dim); margin-top:4px;">
+              Missed: <strong>${missed}</strong> &nbsp;•&nbsp; Added: <strong>${added}</strong>
+            </div>
+            <div style="font-size:11px; color:var(--ivory-dim); margin-top:3px;">Statuses: ${window.escapeHtml ? window.escapeHtml(r.statuses || 'N/A') : (r.statuses || 'N/A')} &nbsp;•&nbsp; Students: ${r.studentsCount || 0}</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:11px; font-weight:700; text-transform:uppercase; color:${statusColor}; background:${statusColor}20; padding:4px 10px; border-radius:99px; border:1px solid ${statusColor}40;">${statusLabel}</span>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+    }
+
+    container.innerHTML = html;
+  };
+
+  window.dismissCoachAttendanceRemark = function(id) {
+    if (!id) return;
+    const remarks = window.getCoachAttendanceRemarks ? window.getCoachAttendanceRemarks() : [];
+    const remark = remarks.find(r => r.id === id);
+    if (remark) {
+      remark.status = 'dismissed';
+      remark.dismissedAt = new Date().toISOString();
+      try {
+        localStorage.setItem('ck_coach_attendance_remarks', JSON.stringify(remarks));
+      } catch (e) {}
+    }
+    if (window.renderAdminCoachAttendanceRemarks) window.renderAdminCoachAttendanceRemarks();
+    toast('Remark dismissed', 'info');
+  };
 
   // Expandable per-coach student roster with view / edit / delete + add.
   window.toggleCoachStudents = function (coachId) {

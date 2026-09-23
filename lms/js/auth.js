@@ -365,7 +365,7 @@ window.doLogin = async function () {
       }
     }
 
-    errEl.textContent = 'Invalid credentials. For Coaches, default password is "coach123".';
+    errEl.textContent = 'Invalid credentials.';
     errEl.style.display = 'block';
 
   } catch (e) {

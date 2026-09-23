@@ -428,16 +428,17 @@
         <div id="page-coach-attendance" class="page coach-only">
          <div class="coach-shell">
            <div class="coach-section-block">
-             <div class="coach-section-row">
-               <h2 class="coach-section-title">Attendance &amp; Homework</h2>
-              <div class="coach-header-actions" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-                 <button class="btn btn-gold" onclick="openQuickClassSessionModal()">📄 Upload Files / Class Session</button>
-                 <input type="date" id="coach-att-date" aria-label="Attendance date" style="padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px">
-                  <select id="coach-att-batch-filter" aria-label="Attendance batch" onchange="renderCoachAttendanceMarking(); renderCoachAttendanceHomeworkCalendar();" style="padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px">
-                   <option value="">All Batches</option>
-                 </select>
-               </div>
-             </div>
+              <div class="coach-section-row">
+                <h2 class="coach-section-title">Attendance &amp; Homework</h2>
+               <div class="coach-header-actions" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+                  <button class="btn btn-gold" onclick="openQuickClassSessionModal()">📄 Upload Files / Class Session</button>
+                  <input type="date" id="coach-att-date" aria-label="Attendance date" style="padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px">
+                   <select id="coach-att-batch-filter" aria-label="Attendance batch" onchange="renderCoachAttendanceMarking(); renderCoachAttendanceHomeworkCalendar();" style="padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px">
+                    <option value="">All Batches</option>
+                  </select>
+                  <button class="btn btn-outline-grey btn-sm" onclick="window.openCoachMyAttendanceModal && window.openCoachMyAttendanceModal()" title="My Attendance">📋 My Attendance</button>
+                </div>
+              </div>
              <div class="coach-attendance-homework" style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border);">
                <div class="coach-section-row" style="margin-bottom:14px;">
                  <div>
@@ -1039,6 +1040,19 @@
       </div>
       <div class="coach-grid" id="coach-mgmt-body">
         <div class="loading-state" style="grid-column: 1/-1;"><span class="spinner"></span> Loading…</div>
+      </div>
+
+      <div style="margin-top:32px; padding-top:24px; border-top:1px solid var(--border);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h2 style="color:var(--gold); margin:0; font-size:20px; font-weight:700;">📋 Coach Attendance Remarks</h2>
+            <p style="color:var(--ivory-dim); font-size:12px; margin:4px 0 0;">Backdated attendance entries made by coaches. Review and take action if needed.</p>
+          </div>
+          <button class="btn btn-outline-grey btn-sm" onclick="window.renderAdminCoachAttendanceRemarks && window.renderAdminCoachAttendanceRemarks()">🔄 Refresh</button>
+        </div>
+        <div id="admin-coach-remarks-container">
+          <div class="loading-state"><span class="spinner"></span> Loading remarks…</div>
+        </div>
       </div>
     </div>
 
@@ -4442,6 +4456,24 @@
   </div>
 </div>
 
+<!-- Coach My Attendance Modal -->
+<div class="modal" id="coach-my-attendance-modal">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-title">My Attendance</div>
+    <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+      <div>
+        <span style="font-size:12px; color:var(--ivory-dim);">Showing attendance for</span>
+        <strong style="color:var(--gold); margin-left:6px;" id="coach-my-attendance-month-label">This Month</strong>
+      </div>
+      <input type="month" id="coach-my-attendance-month" class="input-field" onchange="window.renderCoachMyAttendance && window.renderCoachMyAttendance()">
+    </div>
+    <div id="coach-my-attendance-body" style="margin-top:16px;"></div>
+    <div style="margin-top:18px; display:flex; gap:10px;">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModals()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Notification Modal -->
 <div class="modal" id="notification-modal">
   <div class="modal-box" style="max-width:500px">
@@ -4816,14 +4848,18 @@
                <label class="label" for="qcs-title">Topic / Homework Title</label>
                <input type="text" id="qcs-title" class="input-field" placeholder="e.g. Endgame practice">
              </div>
-             <div class="form-group">
-               <label class="label" for="qcs-coach">Coach</label>
-               <select id="qcs-coach" class="input-field"></select>
-             </div>
-             <div class="form-group">
-               <label class="label" for="qcs-batch">Batch</label>
-               <select id="qcs-batch" class="input-field" onchange="CK_QCS_loadStudents()"></select>
-             </div>
+              <div class="form-group">
+                <label class="label" for="qcs-coach">Coach</label>
+                <select id="qcs-coach" class="input-field"></select>
+              </div>
+              <div class="form-group">
+                <label class="label" for="qcs-batch">Batch</label>
+                <select id="qcs-batch" class="input-field" onchange="CK_QCS_loadStudents()"></select>
+              </div>
+              <div class="form-group">
+                <label class="label" for="qcs-session-date">Session Date</label>
+                <input type="date" id="qcs-session-date" class="input-field">
+              </div>
              <div class="form-group" style="grid-column:1/-1;">
                <label class="label" for="qcs-notes">Notes (Classwork / topic notes)</label>
                <input type="text" id="qcs-notes" class="input-field" placeholder="Classwork notes…">

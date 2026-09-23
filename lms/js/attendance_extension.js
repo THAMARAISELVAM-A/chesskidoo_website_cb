@@ -646,8 +646,40 @@ window.renderAttendanceCalendar = function(studentOrId, containerEl, year, month
       return hDate === dStr;
     });
 
-    const status = record ? (record.status || '').toLowerCase() : '';
+    let status = record ? (record.status || '').toLowerCase() : '';
     const notesParsed = record ? window.parseAttendanceNotes(record.notes || record.note || '') : null;
+
+    if (!record) {
+      const dayOfWeek = new Date(dStr).getDay();
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const dayName = dayNames[dayOfWeek];
+
+      const studentDays = String(s.days || '').toLowerCase();
+      const hasStudentDay = studentDays.includes(dayName.toLowerCase()) || studentDays.includes(dayName.slice(0, 3).toLowerCase());
+
+      const hasBatchClass = (window.allBatches || []).some(b => {
+        const isInBatch = (Array.isArray(b.student_ids) && b.student_ids.some(id => String(id) === String(s.id))) ||
+                          String(s.batch_id) === String(b.id) ||
+                          String(s.batch) === String(b.name) ||
+                          String(s.batch) === String(b.batch_name);
+        if (!isInBatch) return false;
+        const daysStr = String(b.days || b.schedule || '').toLowerCase();
+        return daysStr.includes(dayName.toLowerCase()) || daysStr.includes(dayName.slice(0, 3).toLowerCase());
+      });
+
+      if (hasStudentDay || hasBatchClass) {
+        if (hwOnDate.length > 0) {
+          status = 'present';
+        } else {
+          const todayStr = new Date().toISOString().split('T')[0];
+          if (dStr < todayStr) {
+            status = 'pending';
+          } else {
+            status = '';
+          }
+        }
+      }
+    }
 
     let cellClass = 'cal-day-neutral';
     let iconHtml = '';
@@ -766,7 +798,50 @@ window.openAttendanceDayDetail = function(studentId, dateStr) {
   });
 
   const parsed = att ? window.parseAttendanceNotes(att.notes || att.note || '') : null;
-  const status = att ? att.status : 'No record';
+  let status = att ? att.status : 'No record';
+
+  if (!att) {
+    const dayOfWeek = new Date(dateStr).getDay();
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayName = dayNames[dayOfWeek];
+
+    const studentDays = String(s.days || '').toLowerCase();
+    const hasStudentDay = studentDays.includes(dayName.toLowerCase()) || studentDays.includes(dayName.slice(0, 3).toLowerCase());
+
+    const hasBatchClass = (window.allBatches || []).some(b => {
+      const isInBatch = (Array.isArray(b.student_ids) && b.student_ids.some(id => String(id) === String(s.id))) ||
+                        String(s.batch_id) === String(b.id) ||
+                        String(s.batch) === String(b.name) ||
+                        String(s.batch) === String(b.batch_name);
+      if (!isInBatch) return false;
+      const daysStr = String(b.days || b.schedule || '').toLowerCase();
+      return daysStr.includes(dayName.toLowerCase()) || daysStr.includes(dayName.slice(0, 3).toLowerCase());
+    });
+
+    if (hasStudentDay || hasBatchClass) {
+      const hwOnDay = (window.allHomework || []).filter(h => {
+        const hDate = (h.due_date || h.created_at || '').slice(0, 10);
+        if (hDate !== dateStr) return false;
+        if (typeof window.assignmentAppliesToStudent === 'function') {
+          return window.assignmentAppliesToStudent(h, String(s.id), window.allStudents || []);
+        }
+        if (h.student_id && String(h.student_id) === String(s.id)) return true;
+        if (h.batch_id && s.batch_id && String(h.batch_id) === String(s.batch_id)) return true;
+        if (h.target_type === 'all') return true;
+        return false;
+      });
+      if (hwOnDay.length > 0) {
+        status = 'present';
+      } else {
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (dateStr < todayStr) {
+          status = 'pending';
+        } else {
+          status = '';
+        }
+      }
+    }
+  }
 
   const statusColor = status === 'present' ? '#2ecc71' : status === 'absent' ? '#ff7675' : status === 'no class' ? '#64748b' : 'var(--gold)';
 

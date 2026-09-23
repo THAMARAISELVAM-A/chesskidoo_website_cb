@@ -1011,16 +1011,11 @@ function initStudentPageObserver() {
     const isCoach = (window.role || '').toLowerCase() === 'coach';
     const dateEl = document.getElementById('coach-att-date');
     if (dateEl) {
-      if (isCoach) {
-        dateEl.value = today;
-        dateEl.min = today;
-        dateEl.max = today;
-        dateEl.title = 'Coaches can mark attendance for today only. Past or future dates must be entered by an Admin.';
-      } else if (!dateEl.value) {
+      if (!dateEl.value) {
         dateEl.value = today;
       }
     }
-    const date = isCoach ? today : (dateEl ? (dateEl.value || today) : today);
+    const date = dateEl ? (dateEl.value || today) : today;
 
     const myBatches = (window.allBatches || []).filter(b => window.ckSameCoach(b.coach_id, coachId));
     const myBatchStudentIds = new Set();
@@ -1172,18 +1167,10 @@ function initStudentPageObserver() {
 
   window.saveCoachAttendance = async function () {
     const today = new Date().toISOString().split('T')[0];
-    const isCoach = (window.role || '').toLowerCase() === 'coach';
     const dateEl = document.getElementById('coach-att-date');
     let date = dateEl ? (dateEl.value || today) : today;
-    if (isCoach) {
-      date = today;
-    }
     if (!date) {
       toast('Please select a date', 'error');
-      return;
-    }
-    if (isCoach && date !== today) {
-      toast('Coaches can only mark attendance for today (' + today + '). Past or future attendance must be updated by an Admin.', 'error');
       return;
     }
 
@@ -1250,6 +1237,28 @@ function initStudentPageObserver() {
       console.warn('[Attendance] coach_id mismatch for:', skipped);
     }
 
+    const isPastDate = date < today;
+
+    if (isPastDate) {
+      const coach = window.allCoaches.find(c => window.ckSameCoach(c.id, coachId));
+      const coachName = coach ? (window.getCoachName ? window.getCoachName(coach) : (coach.name || coachId)) : coachId;
+      const remark = window.addCoachAttendanceRemark({
+        coachId: coachId,
+        coachName: coachName,
+        missedDate: date,
+        addedDate: today,
+        statuses: [...new Set(records.map(r => r.status))].join(', '),
+        studentsCount: records.length,
+        note: 'Backdated attendance request',
+        status: 'pending',
+        records: records
+      });
+      toast('Attendance request submitted for admin approval', 'success');
+      if (typeof renderCoachAttendanceMarking === 'function') renderCoachAttendanceMarking();
+      return;
+    }
+
+    // Save directly for today/future
     // Always update local storage cache immediately
     try {
       const storedAtt = JSON.parse(localStorage.getItem('ck_attendance_records') || '[]');
@@ -1283,7 +1292,6 @@ function initStudentPageObserver() {
       if (res && res.ok) {
         saved = true;
       } else if (window.supabaseClient) {
-        // Fallback: Use Supabase client directly with insert (not upsert)
         const { error: sbErr } = await window.supabaseClient
           .from('attendance')
           .insert(records);
@@ -1328,6 +1336,140 @@ function initStudentPageObserver() {
       toast('Attendance saved locally for ' + records.length + ' students.', 'info');
       renderCoachAttendanceMarking();
     }
+  };
+
+  window.addCoachAttendanceRemark = function(remark) {
+    if (!remark) return;
+    const remarks = window.getCoachAttendanceRemarks();
+    const newRemark = {
+      id: Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+      ...remark,
+      timestamp: new Date().toISOString()
+    };
+    remarks.push(newRemark);
+    try {
+      localStorage.setItem('ck_coach_attendance_remarks', JSON.stringify(remarks));
+    } catch (e) {}
+    return newRemark;
+  };
+
+  window.getCoachAttendanceRemarks = function() {
+    try {
+      return JSON.parse(localStorage.getItem('ck_coach_attendance_remarks') || '[]');
+    } catch (e) {
+      return [];
+    }
+  };
+
+  window.clearCoachAttendanceRemarks = function() {
+    try {
+      localStorage.removeItem('ck_coach_attendance_remarks');
+    } catch (e) {}
+  };
+
+  window.approveCoachAttendanceRemark = async function(id) {
+    const remarks = window.getCoachAttendanceRemarks();
+    const remark = remarks.find(r => r.id === id);
+    if (!remark) {
+      toast('Remark not found', 'error');
+      return;
+    }
+    if (remark.status === 'approved') {
+      toast('This attendance has already been approved', 'warning');
+      return;
+    }
+    const records = remark.records || [];
+    if (!records.length) {
+      toast('No attendance records found in this remark', 'error');
+      return;
+    }
+
+    try {
+      let saved = false;
+
+      if (remark.homeworkPayload && typeof window.saveHomeworkAssignment === 'function') {
+        const hwPayload = remark.homeworkPayload;
+        try {
+          await window.saveHomeworkAssignment({
+            title: hwPayload.title,
+            description: hwPayload.description,
+            batchId: hwPayload.batchId,
+            studentId: null,
+            coachId: hwPayload.coachId || null,
+            dueDate: hwPayload.dueDate,
+            targetType: hwPayload.targetType || 'batch',
+            files: [],
+            requireFiles: hwPayload.requireFiles || false,
+            suppressUi: true,
+            presentStudentIds: hwPayload.presentStudentIds || []
+          });
+        } catch (hwErr) {
+          console.warn('[Approval] Homework save failed:', hwErr);
+        }
+      }
+
+      const res = await apiCall('/api/attendance', {
+        method: 'POST',
+        body: JSON.stringify(records),
+      });
+      if (res && res.ok) {
+        saved = true;
+      } else if (window.supabaseClient) {
+        const { error: sbErr } = await window.supabaseClient
+          .from('attendance')
+          .insert(records);
+        if (!sbErr) {
+          saved = true;
+        } else {
+          console.warn('[Attendance] Supabase insert failed:', sbErr.message);
+        }
+      }
+
+      if (saved) {
+        remark.status = 'approved';
+        remark.approvedAt = new Date().toISOString();
+        try {
+          localStorage.setItem('ck_coach_attendance_remarks', JSON.stringify(remarks));
+        } catch (e) {}
+
+        if (!window.allAttendance) window.allAttendance = [];
+        records.forEach((rec) => {
+          const idx = window.allAttendance.findIndex(
+            (a) => String(a.studentId || a.student_id) === String(rec.studentId || rec.student_id) && a.date === rec.date
+          );
+          if (idx !== -1) {
+            window.allAttendance[idx] = { ...window.allAttendance[idx], ...rec };
+          } else {
+            window.allAttendance.unshift(rec);
+          }
+        });
+
+        toast('Attendance approved and saved for ' + records.length + ' students!', 'success');
+        if (typeof window.loadAllData === 'function') window.loadAllData(true);
+        if (typeof window.renderAdminCoachAttendanceRemarks === 'function') window.renderAdminCoachAttendanceRemarks();
+        if (typeof window.renderCoachAttendanceMarking === 'function') window.renderCoachAttendanceMarking();
+      } else {
+        toast('Failed to approve attendance. Please try again.', 'error');
+      }
+    } catch (e) {
+      console.warn('[Attendance] Approval failed:', e);
+      toast('Failed to approve attendance', 'error');
+    }
+  };
+
+  window.dismissCoachAttendanceRemark = function(id) {
+    if (!id) return;
+    const remarks = window.getCoachAttendanceRemarks();
+    const remark = remarks.find(r => r.id === id);
+    if (remark) {
+      remark.status = 'dismissed';
+      remark.dismissedAt = new Date().toISOString();
+      try {
+        localStorage.setItem('ck_coach_attendance_remarks', JSON.stringify(remarks));
+      } catch (e) {}
+    }
+    if (window.renderAdminCoachAttendanceRemarks) window.renderAdminCoachAttendanceRemarks();
+    toast('Remark dismissed', 'info');
   };
 
   window.markAllCoachPresent = function () {
@@ -2231,3 +2373,189 @@ window.exportDataSheetCSV = function(targetStudentId) {
 
   if (window.toast) window.toast('📊 Sheet exported! Ready to import/upload into Google Sheets.', 'success');
 };
+
+  window.openCoachMyAttendanceModal = function () {
+    if (window.role !== 'coach' && !window.__adminImpersonatingCoach) return;
+    const monthInput = document.getElementById('coach-my-attendance-month');
+    if (monthInput && !monthInput.value) {
+      const now = new Date();
+      monthInput.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    }
+    if (typeof openModal === 'function') openModal('coach-my-attendance-modal');
+    if (typeof window.renderCoachMyAttendance === 'function') window.renderCoachMyAttendance();
+  };
+
+  window.renderCoachMyAttendance = function () {
+    const coachId = window.currentCoachId || window.userId || getCurrentCoachIdFromStorage();
+    if (!coachId) return;
+
+    const monthInput = document.getElementById('coach-my-attendance-month');
+    const labelEl = document.getElementById('coach-my-attendance-month-label');
+    const bodyEl = document.getElementById('coach-my-attendance-body');
+    if (!bodyEl) return;
+
+    let year, month;
+    if (monthInput && monthInput.value) {
+      const [y, m] = monthInput.value.split('-').map(Number);
+      year = y;
+      month = m - 1;
+    } else {
+      const now = new Date();
+      year = now.getFullYear();
+      month = now.getMonth();
+    }
+
+    if (labelEl) {
+      labelEl.textContent = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
+
+    const myBatches = (window.allBatches || []).filter(b => window.ckSameCoach(b.coach_id, coachId));
+    const myStudentIds = new Set();
+    myBatches.forEach(b => {
+      const rawIds = Array.isArray(b.student_ids) ? b.student_ids.map(String) : (window.parseStudentIds ? window.parseStudentIds(b.student_ids) : []);
+      rawIds.forEach(id => myStudentIds.add(String(id)));
+    });
+    (window.allStudents || []).forEach(s => {
+      if (window.ckSameCoach(s.coach_id, coachId)) myStudentIds.add(String(s.id));
+    });
+
+    const batchIds = new Set(myBatches.map(b => String(b.id)));
+    const allHomework = window.allHomework || [];
+    const allAttendance = window.allAttendance || [];
+
+    const firstDay = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+
+    const cells = [];
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const dateKey = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+      const dayOfWeek = date.getDay();
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const dayName = dayNames[dayOfWeek];
+
+      const hasClass = myBatches.some(b => {
+        const daysStr = String(b.days || b.schedule || '').toLowerCase();
+        return daysStr.includes(dayName.toLowerCase()) || daysStr.includes(dayName.slice(0, 3).toLowerCase());
+      });
+
+      let status = 'no-class';
+      let details = '';
+
+      if (hasClass) {
+        const homeworkOnDay = allHomework.filter(h => {
+          const assignedDate = (h.created_at || h.due_date || '').slice(0, 10);
+          if (assignedDate !== dateKey) return false;
+          const targetType = String(h.target_type || '').toLowerCase();
+          if (targetType === 'student') return myStudentIds.has(String(h.student_id));
+          if (targetType === 'batch') return batchIds.has(String(h.batch_id));
+          return false;
+        });
+
+        if (homeworkOnDay.length > 0) {
+          status = 'present';
+          details = homeworkOnDay.map(h => h.title || 'Homework').join(', ');
+        } else {
+          const attendanceOnDay = allAttendance.filter(a => {
+            const aDate = (a.date || '').slice(0, 10);
+            if (aDate !== dateKey) return false;
+            const sid = String(a.studentId || a.student_id);
+            return myStudentIds.has(sid);
+          });
+          if (attendanceOnDay.length > 0) {
+            status = 'absent';
+            details = 'Attendance marked, no homework';
+          } else {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (date >= today) {
+              status = 'upcoming';
+              details = 'Class scheduled';
+            } else {
+              status = 'absent';
+              details = 'No homework or attendance';
+            }
+          }
+        }
+      }
+
+      cells.push({ date, dateKey, day, status, details, isCurrentMonth: true, isToday: dateKey === todayStr });
+    }
+
+    const SHORT_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const startDayOfWeek = firstDay.getDay();
+    const startOffset = (startDayOfWeek + 6) % 7;
+
+    let html = '<div class="monthly-cal-grid">';
+    SHORT_DAYS.forEach(day => {
+      html += `<div class="cal-col-header">${day}</div>`;
+    });
+
+    for (let i = 0; i < startOffset; i++) {
+      html += '<div class="cal-cell other-month"></div>';
+    }
+
+    cells.forEach(cell => {
+      const cellClass = 'cal-cell' + (cell.isToday ? ' today' : '');
+      let statusHtml = '';
+      if (cell.status === 'present') {
+        statusHtml = '<div style="font-size:10px; color:#22c55e; font-weight:700;">✅ Present</div>';
+      } else if (cell.status === 'absent') {
+        statusHtml = '<div style="font-size:10px; color:#ef4444; font-weight:700;">❌ Absent</div>';
+      } else if (cell.status === 'pending') {
+        statusHtml = '<div style="font-size:10px; color:#f59e0b; font-weight:700;">⏳ Pending</div>';
+      } else if (cell.status === 'upcoming') {
+        statusHtml = '<div style="font-size:10px; color:#3b82f6; font-weight:700;">📅 Upcoming</div>';
+      } else {
+        statusHtml = '<div class="cal-cell-empty">No class</div>';
+      }
+
+      if (cell.details) {
+        statusHtml += `<div style="font-size:10px; color:var(--ivory-dim); margin-top:2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${window.escapeHtml ? window.escapeHtml(cell.details) : cell.details}</div>`;
+      }
+
+      html += `
+        <div class="${cellClass}">
+          <div class="cal-date-num">${cell.day}</div>
+          ${statusHtml}
+        </div>
+      `;
+    });
+
+    const remainingCells = (7 - ((startOffset + cells.length) % 7)) % 7;
+    for (let i = 0; i < remainingCells; i++) {
+      html += '<div class="cal-cell other-month"></div>';
+    }
+
+    html += '</div>';
+
+    const presentCount = cells.filter(c => c.status === 'present').length;
+    const absentCount = cells.filter(c => c.status === 'absent').length;
+    const pendingCount = cells.filter(c => c.status === 'pending').length;
+    const noClassCount = cells.filter(c => c.status === 'no-class').length;
+
+    html = `
+      <div style="margin-bottom:14px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+        <div style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); border-radius:8px; padding:8px 14px; text-align:center;">
+          <div style="font-size:18px; font-weight:800; color:#22c55e;">${presentCount}</div>
+          <div style="font-size:10px; color:var(--ivory-dim); text-transform:uppercase;">Present</div>
+        </div>
+        <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:8px 14px; text-align:center;">
+          <div style="font-size:18px; font-weight:800; color:#ef4444;">${absentCount}</div>
+          <div style="font-size:10px; color:var(--ivory-dim); text-transform:uppercase;">Absent</div>
+        </div>
+        <div style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); border-radius:8px; padding:8px 14px; text-align:center;">
+          <div style="font-size:18px; font-weight:800; color:#f59e0b;">${pendingCount}</div>
+          <div style="font-size:10px; color:var(--ivory-dim); text-transform:uppercase;">Pending</div>
+        </div>
+        <div style="background:rgba(100,116,139,0.1); border:1px solid rgba(100,116,139,0.3); border-radius:8px; padding:8px 14px; text-align:center;">
+          <div style="font-size:18px; font-weight:800; color:#94a3b8;">${noClassCount}</div>
+          <div style="font-size:10px; color:var(--ivory-dim); text-transform:uppercase;">No Class</div>
+        </div>
+      </div>
+    ` + html;
+
+    bodyEl.innerHTML = html;
+  };
