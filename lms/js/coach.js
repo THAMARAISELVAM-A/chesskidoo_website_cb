@@ -86,7 +86,8 @@ window.renderCoachDashboard = function() {
   });
   if (statSessions) statSessions.textContent = upcomingSessions.length;
 
-  const pendingHw = (window.homeworkSubmissionCache || [])
+  const submissions = Array.isArray(window.homeworkSubmissionCache) ? window.homeworkSubmissionCache : [];
+  const pendingHw = submissions
     .filter(s => s.status === 'submitted' && myStudents.some(st => String(st.id) === String(s.student_id)));
   if (statHw) statHw.textContent = pendingHw.length;
 
@@ -692,7 +693,7 @@ function initStudentPageObserver() {
       DAYS_ORDER.forEach((dayName, idx) => {
         const dLow = dayName.toLowerCase();
         if (daysStr.includes(dLow) || daysStr.includes(dLow.slice(0, 3))) {
-          targetDayIndices.push(idx);
+          targetDayIndices.push((idx + 1) % 7);
         }
       });
 
@@ -725,7 +726,7 @@ function initStudentPageObserver() {
           if (stSchedule.includes(dLow) || stSchedule.includes(dLow.slice(0, 3))) {
             const d = new Date(year, month, 1);
             while (d.getMonth() === month) {
-              if (d.getDay() === idx) {
+              if (d.getDay() === (idx + 1) % 7) {
                 sessions.push({
                   date: new Date(d),
                   timeStr: stTime,
@@ -1776,7 +1777,8 @@ function initStudentPageObserver() {
 
     const myStudents = (window.allStudents || []).filter(s => window.ckSameCoach(s.coach_id, coachId));
     const myStudentIds = myStudents.map(s => String(s.id));
-    let submissions = (window.homeworkSubmissionCache || [])
+    const submissions = Array.isArray(window.homeworkSubmissionCache) ? window.homeworkSubmissionCache : [];
+    let filtered = submissions
       .filter(s => myStudentIds.includes(String(s.student_id)))
       .sort((a, b) => new Date(b.submitted_at || b.created_at) - new Date(a.submitted_at || a.created_at));
 
