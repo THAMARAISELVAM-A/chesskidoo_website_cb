@@ -712,6 +712,36 @@ function initStudentPageObserver() {
       }
     });
 
+    // 2. Process 1-on-1 / custom individual student schedules not tied to batches
+    myStudents.forEach(st => {
+      const hasBatch = st.batch_id || st.batch;
+      const stSchedule = (st.regDays || st.schedule || st.session_day || '').toLowerCase();
+      const stTime = st.regTime || st.session_time || 'TBD';
+
+      if (!hasBatch && stSchedule) {
+        const studentName = window.getStudentName ? window.getStudentName(st) : (st.name || 'Student');
+        DAYS_ORDER.forEach((dayName, idx) => {
+          const dLow = dayName.toLowerCase();
+          if (stSchedule.includes(dLow) || stSchedule.includes(dLow.slice(0, 3))) {
+            const d = new Date(year, month, 1);
+            while (d.getMonth() === month) {
+              if (d.getDay() === idx) {
+                sessions.push({
+                  date: new Date(d),
+                  timeStr: stTime,
+                  studentNames: studentName,
+                  batchName: '',
+                  meetLink: st.meet_link || '',
+                  title: '1-on-1: ' + studentName
+                });
+              }
+              d.setDate(d.getDate() + 1);
+            }
+          }
+        });
+      }
+    });
+
     const today = new Date();
     const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
     const monthLabel = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
