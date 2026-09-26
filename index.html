@@ -225,7 +225,6 @@
           onclick="CK.navigate('achievements')">Achievements</button>
         <button class="nav-link" data-section="tournaments" data-translate="tournaments" onclick="CK.navigate('tournaments')">Tournaments</button>
         <button class="nav-link" data-section="ck-world" data-translate="ck_world" onclick="CK.navigate('ck-world')">Our Reach</button>
-        <button class="nav-link" data-section="careers" data-translate="careers" onclick="CK.navigate('careers')">Careers</button>
         <button class="nav-link" data-section="pricing" data-translate="pricing"
           onclick="CK.navigate('pricing')">Pricing &amp; NRI</button>
         <button class="nav-link" data-section="faq" data-translate="faq" onclick="CK.navigate('faq')">FAQ</button>
@@ -1372,77 +1371,7 @@
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      <!-- Careers / Open Vacancies Section -->
-      <section id="careers" class="section-padding ck-careers-section">
-        <div class="container">
-          <div class="section-head" data-aos="fade-up" style="text-align: center;">
-            <div class="eyebrow">Join Our Team</div>
-            <h2>Careers &amp; Open Vacancies</h2>
-            <p class="lead" style="max-width: 680px; margin: 0 auto;">
-              Passionate about teaching chess and shaping future champions? Explore open roles and build your career with India's premier chess academy.
-            </p>
-          </div>
-
-          <div class="ck-careers-grid">
-            <!-- Job Card 1 -->
-            <div class="ck-job-card" data-aos="fade-up">
-              <div class="ck-job-badge">♟️ Teaching &amp; Coaching</div>
-              <h3 class="ck-job-title">Senior FIDE Certified Chess Coach</h3>
-              <div class="ck-job-meta">
-                <span>📍 Online (Remote) / Offline Centre</span>
-                <span>⏱️ Full-Time &amp; Part-Time</span>
-                <span>⭐ FIDE Rated 1800+</span>
-              </div>
-              <p class="ck-job-desc">
-                Conduct high-impact 1-on-1 and small group coaching for Intermediate and Advanced students. Analyze games, prepare tournament opening rep, and mentor students for rated competitions.
-              </p>
-              <div class="ck-job-footer">
-                <span class="ck-job-salary">Attractive Pay + Incentives</span>
-                <button type="button" class="btn btn-primary ck-job-btn" onclick="CK.openJobModal('Senior FIDE Certified Chess Coach')">💼 Apply Position</button>
-              </div>
-            </div>
-
-            <!-- Job Card 2 -->
-            <div class="ck-job-card" data-aos="fade-up" data-aos-delay="100">
-              <div class="ck-job-badge">🌱 Beginner Instructor</div>
-              <h3 class="ck-job-title">Junior Chess Trainer</h3>
-              <div class="ck-job-meta">
-                <span>📍 Erode &amp; Bhavani / Remote</span>
-                <span>⏱️ Full-Time</span>
-                <span>⭐ State / District Player</span>
-              </div>
-              <p class="ck-job-desc">
-                Engage young kids (ages 6–12) with foundational chess rules, tactics, and piece coordination. Create fun, interactive learning environments and track weekly student puzzle scores.
-              </p>
-              <div class="ck-job-footer">
-                <span class="ck-job-salary">Competitive Stipend / Fixed</span>
-                <button type="button" class="btn btn-primary ck-job-btn" onclick="CK.openJobModal('Junior Chess Trainer')">💼 Apply Position</button>
-              </div>
-            </div>
-
-            <!-- Job Card 3 -->
-            <div class="ck-job-card" data-aos="fade-up" data-aos-delay="200">
-              <div class="ck-job-badge">🏆 Events &amp; Arbiter</div>
-              <h3 class="ck-job-title">Tournament Arbiter &amp; Coordinator</h3>
-              <div class="ck-job-meta">
-                <span>📍 Hybrid (Tamil Nadu &amp; Online)</span>
-                <span>⏱️ Event-Based / Part-Time</span>
-                <span>⭐ SNA / FA License</span>
-              </div>
-              <p class="ck-job-desc">
-                Manage pairing software (Swiss-Manager / Arena), enforce fair-play regulations, assist chief arbiters during weekend championships, and generate official result lists.
-              </p>
-              <div class="ck-job-footer">
-                <span class="ck-job-salary">Per-Event Honorarium</span>
-                <button type="button" class="btn btn-primary ck-job-btn" onclick="CK.openJobModal('Tournament Arbiter & Coordinator')">💼 Apply Position</button>
-              </div>
-            </div>
-
-          </div>
-        </div>
+</div>
       </section>
 
       <!-- Pricing -->
@@ -3887,72 +3816,7 @@
           <button type="submit" class="p-btn p-btn-teal" style="flex:1;">💬 Send Custom NRI Quote Request via WhatsApp</button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- Careers / Job Application Modal -->
-  <div id="jobApplyModal" class="modal-overlay">
-    <div class="modal-card ck-demo-modal-card">
-      <div class="modal-header ck-demo-modal-header">
-        <button type="button" class="ck-modal-close-btn" onclick="CK.closeModal('jobApplyModal')" aria-label="Close">✕</button>
-        <div class="ck-demo-header-badge">💼 Career Application</div>
-        <h3 class="ck-demo-title" id="jobModalTitle">Apply for Job Position</h3>
-        <p class="ck-demo-subtitle">Join Team ChessKidoo. Share your experience and start your coaching journey with us.</p>
-      </div>
-      <form class="modal-body ck-demo-modal-body" id="jobApplyForm" onsubmit="CK.handleJobSubmit(event)">
-        <input type="hidden" name="jobPosition" id="jobModalHiddenPosition" value="">
-        <div class="form-group ck-form-group">
-          <label class="ck-form-label">Your Full Name *</label>
-          <input type="text" name="applicantName" required placeholder="e.g. Coach Saran" class="ck-form-input">
-        </div>
-        <div class="form-group ck-form-group">
-          <label class="ck-form-label">Email Address *</label>
-          <input type="email" name="applicantEmail" required placeholder="coach@example.com" class="ck-form-input">
-        </div>
-        <div class="form-group ck-form-group">
-          <label class="ck-form-label">WhatsApp Number *</label>
-          <div class="ck-phone-row">
-            <select name="dialCode" data-ck-dialcode aria-label="Country code" class="ck-form-select ck-dial-select"></select>
-            <input type="tel" name="phone" required placeholder="98765 43210" class="ck-form-input ck-phone-input">
-          </div>
-        </div>
-        <div class="ck-demo-grid">
-          <div class="form-group ck-form-group">
-            <label class="ck-form-label">FIDE Rating / Title</label>
-            <input type="text" name="fideTitle" placeholder="e.g. 1820 FIDE / FI / Unrated" class="ck-form-input">
-          </div>
-          <div class="form-group ck-form-group">
-            <label class="ck-form-label">Teaching Experience</label>
-            <select name="experience" class="ck-form-select">
-              <option value="1-2 Years">1 - 2 Years</option>
-              <option value="3-5 Years">3 - 5 Years</option>
-              <option value="5+ Years">5+ Years</option>
-              <option value="Fresher / Active Player">Fresher / Active Player</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group ck-form-group">
-          <label class="ck-form-label">Location / Preferred Mode</label>
-          <select name="jobMode" class="ck-form-select">
-            <option value="Online Coach (Remote)">Online Coach (Remote)</option>
-            <option value="Offline Centre (Tamil Nadu)">Offline Centre (Erode / Bhavani)</option>
-            <option value="Both Online &amp; Offline">Both Online &amp; Offline</option>
-          </select>
-        </div>
-        <div class="form-group ck-form-group">
-          <label class="ck-form-label">CV / LinkedIn / Portfolio Link (Optional)</label>
-          <input type="url" name="resumeUrl" placeholder="https://linkedin.com/in/yourprofile" class="ck-form-input">
-        </div>
-        <div class="ck-demo-notice">
-          <span class="ck-notice-icon">💬</span>
-          <span class="ck-notice-text">Direct HR Connect — Your application is saved to our portal &amp; opens WhatsApp HR desk.</span>
-        </div>
-        <div class="ck-demo-actions">
-          <button type="button" class="btn btn-ghost ck-btn-cancel" onclick="CK.closeModal('jobApplyModal')">Cancel</button>
-          <button type="submit" class="btn btn-primary ck-btn-submit">💼 Submit Application</button>
-        </div>
-      </form>
-    </div>
+</div>
   </div>
 
   <!-- Advanced Mark as Paid & Record Fee Modal -->
