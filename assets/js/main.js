@@ -2933,6 +2933,78 @@
     }
   };
 
+  CK.loadLandingEvents = async () => {
+    const grid = document.getElementById('landing-events-grid');
+    if (!grid) return;
+    try {
+      const headers = {
+        'Content-Type': 'application/json',
+        apikey: window.APP_CONFIG?.SUPABASE_ANON_KEY || '',
+        Authorization: `Bearer ${window.APP_CONFIG?.SUPABASE_ANON_KEY || ''}`,
+      };
+      const res = await fetch('/api/events', { headers });
+      if (!res.ok) {
+        grid.innerHTML = `<div style="text-align:center; padding:30px; color:var(--slate);">Failed to load events (${res.status}).</div>`;
+        return;
+      }
+      const json = await res.json();
+      const events = Array.isArray(json.data) ? json.data : Array.isArray(json) ? json : [];
+      
+      if (!events.length) {
+        grid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--slate);">No upcoming events scheduled. Check back soon!</div>';
+        return;
+      }
+
+      const now = new Date();
+      const upcoming = events
+        .filter(e => e.date && new Date(e.date) >= now)
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .slice(0, 6);
+
+      if (!upcoming.length) {
+        grid.innerHTML = '<div style="text-align:center; padding:40px; color:var(--slate);">No upcoming events at the moment.</div>';
+        return;
+      }
+
+      grid.innerHTML = upcoming.map(e => {
+        const title = CK.esc ? CK.esc(e.title) : (e.title || 'Event');
+        const date = e.date ? new Date(e.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'TBD';
+        const time = e.event_time || e.time || 'TBD';
+        const venue = e.venue || e.location || 'Online';
+        const type = e.event_type || e.type || 'Tournament';
+        const fee = e.fee ? `₹${e.fee}` : 'Free';
+        const desc = CK.esc ? CK.esc(e.description) : (e.description || '');
+        const shortDesc = desc.length > 120 ? desc.substring(0, 120) + '...' : desc;
+
+        const typeIcons = { tournament: '🏆', camp: '🏕️', workshop: '🛠️', seminar: '📚', championship: '👑' };
+        const icon = typeIcons[(type || '').toLowerCase()] || '🏆';
+
+        return `
+          <div class="ck-tournament-card" style="background:var(--cream-dark); border:1px solid var(--border); border-radius:16px; padding:24px; box-shadow:var(--shadow-md); transition:transform 0.2s, box-shadow 0.2s;">
+            <div style="display:flex; align-items:flex-start; gap:16px; margin-bottom:16px;">
+              <div style="font-size:32px; flex-shrink:0;">${icon}</div>
+              <div style="flex:1;">
+                <h4 style="color:var(--ink); font-size:18px; font-weight:700; margin:0 0 4px 0;">${title}</h4>
+                <span style="display:inline-block; background:var(--amber-pale); color:var(--amber); font-size:12px; font-weight:600; padding:4px 10px; border-radius:20px;">${type}</span>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:16px; font-size:14px; color:var(--ink); opacity:0.8;">
+              <div><strong>📅</strong> ${date}</div>
+              <div><strong>⏰</strong> ${time}</div>
+              <div><strong>📍</strong> ${venue}</div>
+              <div><strong>💰</strong> ${fee}</div>
+            </div>
+            ${shortDesc ? `<p style="color:var(--ink); opacity:0.7; font-size:14px; line-height:1.5; margin-bottom:16px;">${shortDesc}</p>` : ''}
+            <button type="button" onclick="CK.navigate('tournaments')" style="width:100%; padding:12px; border-radius:10px; border:none; background:linear-gradient(135deg, var(--amber), var(--amber-light)); color:var(--ink); font-weight:700; font-size:15px; cursor:pointer; transition:all 0.3s;">View Details</button>
+          </div>
+        `;
+      }).join('');
+    } catch (e) {
+      console.warn('[Landing] events load failed:', e);
+      grid.innerHTML = '<div style="text-align:center; padding:30px; color:var(--slate);">Unable to load events right now.</div>';
+    }
+  };
+
   CK.sendComplaintFeedbackWhatsApp = () => {
     const name = document.getElementById('cf-name')?.value?.trim() || '';
     const contact = document.getElementById('cf-contact')?.value?.trim() || '';
@@ -3045,6 +3117,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     if (CK.loadParentReviews) CK.loadParentReviews();
     CK.loadLandingAchievements && CK.loadLandingAchievements();
+    CK.loadLandingEvents && CK.loadLandingEvents();
   });
 
 })();

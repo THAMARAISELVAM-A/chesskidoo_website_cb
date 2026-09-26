@@ -1081,20 +1081,20 @@
         </div>
       </section>
 
-      <!-- Upcoming Tournaments & Announcements Section -->
+<!-- Upcoming Tournaments & Announcements Section -->
       <section id="tournaments" class="section-padding ck-tournaments-section">
         <div class="container">
           <div class="section-head" data-aos="fade-up" style="text-align: center;">
-            <div class="eyebrow">Live Competitions &amp; Events</div>
-            <h2>Upcoming Tournaments &amp; Announcements</h2>
+            <div class="eyebrow">Live Competitions & Events</div>
+            <h2>Upcoming Tournaments & Announcements</h2>
             <p class="lead" style="max-width: 680px; margin: 0 auto;">
               Compete in official FIDE-rated championships, weekly internal blitz arenas, and stay updated with academy notices.
             </p>
           </div>
 
-          <!-- Upcoming Events / Camp Showcase in Tournament Grid Format -->
-          <div class="ck-tournament-grid" style="grid-template-columns: 1fr; max-width: 960px; margin: 30px auto 0;">
-            <p style="color:#94a3b8; text-align:center; padding: 20px;">Stay tuned for upcoming tournaments and events. Announcements will appear here.</p>
+          <!-- Dynamic Events Grid - populated from admin events -->
+          <div id="landing-events-grid" class="ck-tournament-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:24px; max-width: 960px; margin: 30px auto 0;">
+            <p style="color:#94a3b8; text-align:center; padding: 20px; grid-column:1/-1;">Loading upcoming events...</p>
           </div>
         </div>
       </section>
