@@ -91,7 +91,6 @@
   <link rel="stylesheet" href="assets/css/theme-contrast-fix.css?v=20260728k">
   <link rel="stylesheet" href="assets/css/mobile-optimize-2026.css?v=20260817b">
   <link rel="stylesheet" href="assets/css/world-map.css?v=20260728k">
-  <link rel="stylesheet" href="assets/css/gm-camp.css?v=20260908">
   <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 
   <!-- Backend: Supabase JS SDK -->
@@ -200,25 +199,6 @@
       <img class="preloader-full" src="assets/img/new-logo-full.png" alt="ChessKidoo">
       <div class="preloader-progress-wrap">
         <div class="preloader-progress-bar"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Top Sticky Camp Announcement Bar -->
-  <div id="campAnnouncementBar" class="camp-announcement-bar">
-    <div class="camp-bar-inner">
-      <div class="camp-bar-left">
-        <span class="camp-pulse-tag"><span class="camp-pulse-dot"></span> LIVE CAMP REGISTRATION</span>
-        <span class="camp-bar-text">
-          <strong>Sept - Oct 2026 Offline Chess Camp in Erode</strong> with Champion Coach <strong>Ramkumar GM</strong>
-        </span>
-      </div>
-      <div class="camp-bar-actions">
-        <a href="https://forms.gle/fxxkEjB3ep99LRKL6" target="_blank" rel="noopener noreferrer" class="camp-bar-btn">
-          Register via Google Form ➔
-        </a>
-        <button class="camp-bar-details-btn" onclick="CK.navigate('gm-camp')">Camp Details</button>
-        <button class="camp-bar-close" onclick="document.getElementById('campAnnouncementBar').style.display='none'" aria-label="Close notice">✕</button>
       </div>
     </div>
   </div>
@@ -467,135 +447,7 @@
         </div>
       </div>
 
-      <!-- ======================== GRANDMASTER OFFLINE CHESS CAMP SECTION ======================== -->
-      <section id="gm-camp" class="gm-camp-section" tabindex="-1">
-        <div class="gm-camp-bg-shapes">
-          <span class="gm-camp-bg-piece piece-1">♔</span>
-          <span class="gm-camp-bg-piece piece-2">♞</span>
-        </div>
-        <div class="gm-camp-container">
-          <div class="gm-camp-header" data-aos="fade-up">
-            <p class="gm-camp-subtitle">
-              Build your chess journey with the best! Learn, play, and grow with <strong>Grandmaster Mentorship</strong> &amp; personalized training in proud association with <strong>Hindusthan Chess Cell</strong>.
-            </p>
-          </div>
-
-          <div class="gm-camp-grid">
-            <!-- Left: Poster Display Card with Zoom trigger -->
-            <div class="gm-camp-poster-card" data-aos="fade-right">
-              <div class="gm-camp-poster-wrap" onclick="CK.openCampPosterModal()" title="Click to view full camp poster">
-                <img src="assets/img/camp-erode-ramkumar-gm.png" alt="Sept - Oct 2026 Offline Chess Camp in Erode with Coach Ramkumar GM" class="gm-camp-poster-img">
-                <div class="gm-camp-poster-overlay">
-                  <div class="gm-camp-poster-hint">
-                    🔍 Click to View Full Official Poster
-                  </div>
-                </div>
-              </div>
-              <div class="gm-camp-poster-badges">
-                <span class="gm-camp-badge-chip">📍 Thindal, Erode</span>
-                <span class="gm-camp-badge-chip">🗓️ Sept – Oct 2026</span>
-                <span class="gm-camp-badge-chip" style="border-color: rgba(239, 68, 68, 0.4); color: #fca5a5;">🔥 Limited Seats</span>
-              </div>
-            </div>
-
-            <!-- Right: Details, Coach Accolades, & Registration -->
-            <div class="gm-camp-info-card" data-aos="fade-left">
-              <!-- Coach Spotlight -->
-              <div class="gm-coach-spotlight">
-                <div class="gm-coach-avatar-box">
-                  <img src="assets/img/coach-ramkumar-gm.png" alt="Coach Ramkumar GM">
-                </div>
-                <div class="gm-coach-meta">
-                  <h4>
-                    Ramkumar GM <span class="gm-coach-tag">👑 Champion Coach</span>
-                  </h4>
-                  <div class="gm-coach-slogan">Inspiring Minds · Building Champions</div>
-                  <div class="gm-coach-accolades">
-                    <span class="gm-accolade-pill">🥈 U14 National Silver Medalist</span>
-                    <span class="gm-accolade-pill">🏆 Anna University South Zone</span>
-                    <span class="gm-accolade-pill">🛡️ KSR College Elite Sponsorship</span>
-                    <span class="gm-accolade-pill">⭐ U-19 Also Achieved</span>
-                    <span class="gm-accolade-pill">♟️ MCA FIDE Runner Up</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Camp Key Details Grid -->
-              <div class="gm-specs-grid">
-                <div class="gm-spec-card">
-                  <div class="gm-spec-icon">🎯</div>
-                  <div class="gm-spec-content">
-                    <h5>1480+ ELO &amp; Open to All Levels</h5>
-                    <p>Designed for all rating levels from enthusiastic beginners to tournament players.</p>
-                  </div>
-                </div>
-
-                <div class="gm-spec-card">
-                  <div class="gm-spec-icon">♟️</div>
-                  <div class="gm-spec-content">
-                    <h5>Multi-Level Training</h5>
-                    <p>Structured curriculum customized for beginner, intermediate, and advanced batches.</p>
-                  </div>
-                </div>
-
-                <div class="gm-spec-card">
-                  <div class="gm-spec-icon">👑</div>
-                  <div class="gm-spec-content">
-                    <h5>99th GM Guidance</h5>
-                    <p>Special mentorship, deep tactical calculation, endgame precision &amp; opening repertoire.</p>
-                  </div>
-                </div>
-
-                <div class="gm-spec-card">
-                  <div class="gm-spec-icon">📍</div>
-                  <div class="gm-spec-content">
-                    <h5>Thindal, Erode (Near CBE)</h5>
-                    <p>Convenient offline venue in Erode in proud association with <strong>Hindusthan Chess Cell</strong>.</p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 5 Core Pillars -->
-              <div class="gm-pillars-card">
-                <div class="gm-pillars-title">Core Learning Pillars of the Camp</div>
-                <div class="gm-pillars-list">
-                  <span class="gm-pillar-item">👨‍🏫 Expert Coaching</span>
-                  <span class="gm-pillar-item">🎯 Personalized Training</span>
-                  <span class="gm-pillar-item">🏆 Tournament Preparation</span>
-                  <span class="gm-pillar-item">🧩 Skill Development</span>
-                  <span class="gm-pillar-item">📚 Lifetime Learning</span>
-                </div>
-              </div>
-
-              <!-- Registration Box with Google Form CTA -->
-              <div class="gm-registration-box">
-                <div class="gm-urgency-header">
-                  <div class="gm-urgency-left">
-                    <span>⚠️ LIMITED SEATS AVAILABLE</span>
-                  </div>
-                  <span class="gm-urgency-chip">Filling Fast</span>
-                </div>
-                <div class="gm-form-link-note">
-                  Registrations are processed directly through the official Google Form on a first-come, first-served basis. Secure your child's seat with <strong>Coach Ramkumar GM</strong> now!
-                </div>
-                <div class="gm-action-btns">
-                  <a href="https://forms.gle/fxxkEjB3ep99LRKL6" target="_blank" rel="noopener noreferrer" class="gm-register-btn-main">
-                    📝 Register for Camp (Google Form) ➔
-                  </a>
-                  <a href="https://wa.me/919514266505?text=Hi%20ChessKidoo%2C%20I%20want%20to%20know%20more%20and%20register%20for%20the%20Sept-Oct%20GM%20Ramkumar%20Offline%20Camp%20in%20Erode" target="_blank" rel="noopener noreferrer" class="gm-wa-btn" aria-label="WhatsApp Inquiry">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#25D366" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12.004 2C6.48 2 2 6.48 2 12.004c0 1.83.496 3.614 1.436 5.197L2 22l4.928-1.292a9.946 9.946 0 005.076 1.3c5.524 0 10.004-4.48 10.004-10.004C22.008 6.48 17.528 2 12.004 2zm0 1.636c4.618 0 8.368 3.75 8.368 8.368 0 4.618-3.75 8.368-8.368 8.368a8.32 8.32 0 01-4.256-1.162l-.305-.181-3.16.828.844-3.08-.2-.317a8.33 8.33 0 01-1.29-4.456c0-4.618 3.75-8.368 8.368-8.368zm-3.61 3.655a.612.612 0 00-.441.206c-.15.163-.572.56-.572 1.365s.585 1.583.667 1.696c.081.112 1.152 1.76 2.793 2.47.39.168.694.27.931.345.393.125.75.107 1.032.065.315-.047.969-.396 1.105-.778.136-.381.136-.708.095-.778-.041-.07-.15-.112-.314-.194-.163-.082-.968-.478-1.118-.533-.15-.054-.259-.082-.368.082-.109.164-.423.533-.518.642-.095.109-.19.123-.354.041a4.464 4.464 0 01-1.31-.81 4.92 4.92 0 01-.908-1.13c-.095-.164-.01-.253.072-.335.075-.075.164-.19.246-.286.082-.095.109-.163.163-.272.055-.109.027-.205-.013-.287-.041-.082-.368-.887-.505-1.217-.133-.32-.27-.276-.368-.281-.095-.005-.204-.005-.314-.005z" />
-                    </svg>
-                    WhatsApp Inquiries
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Features Section -->
+<!-- Features Section -->
       <section id="features" class="section-padding">
         <div class="section-head" data-aos="fade-up">
           <div class="eyebrow">Key Features</div>
@@ -1399,6 +1251,67 @@
             </div>
           </div>
 
+        </div>
+      </section>
+
+<!-- Complaint & Feedback Section -->
+      <section id="complaint-feedback" class="section-padding" style="background:var(--cream);">
+        <div class="container" style="max-width:600px;">
+          <div style="text-align:center; margin-bottom:40px;">
+            <span style="font-size:56px; display:block; margin-bottom:18px; filter:drop-shadow(0 4px 12px rgba(232,160,32,0.25));">📋</span>
+            <h2 style="color:var(--amber); font-size:32px; font-weight:800; margin-bottom:12px; letter-spacing:-0.5px;">Complaint & Feedback</h2>
+            <p style="color:var(--ink); font-size:17px; max-width:520px; margin:0 auto; line-height:1.7; opacity:0.75;">
+              Have a concern, suggestion, or appreciation to share? We take every voice seriously.
+            </p>
+          </div>
+
+          <div style="background:var(--cream-dark); border:1px solid var(--border); border-radius:20px; padding:48px 40px; text-align:center; box-shadow:var(--shadow-lg);">
+            <div style="font-size:20px; color:var(--ink); margin-bottom:12px; font-weight:500;">Register Your Complaint Now</div>
+            <p style="color:var(--ink); opacity:0.6; margin-bottom:28px; font-size:15px; line-height:1.6;">
+              Click below to open our secure Google Form and submit your feedback directly.
+            </p>
+            <a href="https://forms.gle/43cDaTKgYkT9pdEp8" target="_blank" rel="noopener noreferrer"
+               style="display:inline-flex; align-items:center; gap:12px; padding:18px 48px; border-radius:12px; border:none; background:linear-gradient(135deg, var(--amber), var(--amber-light)); color:var(--ink); font-weight:800; font-size:17px; cursor:pointer; text-decoration:none; box-shadow:0 6px 28px rgba(232,160,32,0.4); transition:all 0.3s ease; position:relative; overflow:hidden;">
+              <span style="position:relative; z-index:1;">📝 Register Your Complaint</span>
+              <span style="position:absolute; inset:0; background:linear-gradient(135deg, #FFE082 0%, var(--amber) 100%); opacity:0; transition:opacity 0.3s;"></span>
+            </a>
+            <style>
+              @media (prefers-reduced-motion: no-preference) {
+                #complaint-feedback a:hover { transform:translateY(-3px); box-shadow:0 10px 36px rgba(232,160,32,0.5) !important; }
+                #complaint-feedback a:hover span:last-child { opacity:1 !important; }
+              }
+            </style>
+          </div>
+        </div>
+      </section>
+
+<!-- Register New Student Section -->
+      <section id="register-student" class="section-padding" style="background:var(--cream);">
+        <div class="container" style="max-width:600px;">
+          <div style="text-align:center; margin-bottom:40px;">
+            <span style="font-size:48px; display:block; margin-bottom:16px;">♟️</span>
+            <h2 style="color:var(--amber); font-size:32px; font-weight:800; margin-bottom:12px;">Register a New Student</h2>
+            <p style="color:var(--ink); font-size:16px; max-width:500px; margin:0 auto; line-height:1.6; opacity:0.8;">
+              Begin your child's chess journey today. Complete the quick admission form & our team connects within 24 hours.
+            </p>
+          </div>
+
+          <div style="background:var(--cream-dark); border:1px solid var(--border); border-radius:20px; padding:40px 32px; text-align:center; box-shadow:var(--shadow-lg);">
+            <div style="font-size:52px; margin-bottom:16px; color:var(--amber);">🎓</div>
+            <h3 style="color:var(--ink); font-size:22px; font-weight:700; margin-bottom:16px;">ChessKidoo Academy Admission</h3>
+            <p style="color:var(--ink); font-size:15px; margin-bottom:28px; line-height:1.7; max-width:460px; margin-left:auto; margin-right:auto; opacity:0.75;">
+              Share your child's age, location, preferred schedule & any chess background. Our FIDE-certified coaches will personally match the right batch & fee plan.
+            </p>
+
+            <a href="https://forms.gle/E4XD6DwnV1uLV58z9" target="_blank" rel="noopener noreferrer"
+               style="display:inline-flex; align-items:center; gap:10px; padding:16px 40px; border-radius:10px; border:none; background:linear-gradient(135deg, var(--amber), var(--amber-light)); color:var(--ink); font-weight:800; font-size:16px; cursor:pointer; text-decoration:none; box-shadow:0 4px 20px rgba(232,160,32,0.35); transition:all 0.3s ease;">
+              📝 Click Here to Register
+            </a>
+
+            <p style="margin-top:20px; font-size:14px; color:var(--ink); opacity:0.55;">
+              Or WhatsApp us at <a href="https://wa.me/919514266505" style="color:var(--amber); font-weight:600; text-decoration:none; border-bottom:1px solid var(--amber-pale); transition:all 0.2s;">+91 95142 66505</a>
+            </p>
+          </div>
         </div>
       </section>
 
@@ -4524,7 +4437,7 @@
       CK.showToast('Seeked video to ' + time, 'info');
       CK.renderVaultBoard();
     };
-    CK.renderVaultBoard = () => {
+CK.renderVaultBoard = () => {
       const grid = document.getElementById('vaultSquaresGrid');
       const pieces = ['♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜', '♟', '♟', '♟', '♟', '♟', '♟', '♟', '♟', '♙', '♙', '♙', '♙', '♙', '♙', '♙', '♙', '♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖'];
       let html = '';
@@ -4543,8 +4456,7 @@
         const startPos = [
           ['♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜'],
           ['♟', '♟', '♟', '♟', '♟', '♟', '♟', '♟'],
-          ['', '', '', '', '', '', '', ''], ['', '', '', '', '', '', '', ''],
-          ['', '', '', '', '', '', '', ''], ['', '', '', '', '', '', '', ''],
+          ['', '', '', '', '', '', '', ''], ['', '', '', '', '', '', '', ''], ['', '', '', '', '', '', '', ''], ['', '', '', '', '', '', '', ''],
           ['♙', '♙', '♙', '♙', '♙', '♙', '♙', '♙'],
           ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖']
         ];
@@ -4557,6 +4469,53 @@
         coachContainer.innerHTML = bHtml;
         coachContainer.dataset.init = '1';
       }
+    };
+
+    // ── Complaint & Feedback Form Handler ──
+    CK.submitComplaintFeedback = function() {
+      const name = document.getElementById('cf-name')?.value?.trim() || '';
+      const contact = document.getElementById('cf-contact')?.value?.trim() || '';
+      const category = document.getElementById('cf-category')?.value || '';
+      const rating = document.getElementById('cf-rating')?.value || '';
+      const subject = document.getElementById('cf-subject')?.value?.trim() || '';
+      const message = document.getElementById('cf-message')?.value?.trim() || '';
+
+      if (!name || !contact || !category || !rating || !subject || !message) {
+        CK.showToast('Please fill in all required fields', 'error');
+        return;
+      }
+
+      const formUrl = 'https://forms.gle/43cDaTKgYkT9pdEp8';
+      const params = new URLSearchParams({
+        entry.1739265428: name,
+        entry.2003592961: contact,
+        entry.1065042576: category,
+        entry.1939760145: rating,
+        entry.1150641321: subject,
+        entry.1693994640: message
+      });
+
+      // Open Google Form in new tab with pre-filled data
+      window.open(formUrl + '?' + params.toString(), '_blank', 'noopener');
+      CK.showToast('Redirecting to Google Form...', 'info');
+    };
+
+    CK.sendComplaintFeedbackWhatsApp = function() {
+      const name = document.getElementById('cf-name')?.value?.trim() || '';
+      const contact = document.getElementById('cf-contact')?.value?.trim() || '';
+      const category = document.getElementById('cf-category')?.value || '';
+      const rating = document.getElementById('cf-rating')?.value || '';
+      const subject = document.getElementById('cf-subject')?.value?.trim() || '';
+      const message = document.getElementById('cf-message')?.value?.trim() || '';
+
+      if (!name || !contact || !category || !rating || !subject || !message) {
+        CK.showToast('Please fill in all required fields first', 'error');
+        return;
+      }
+
+      const waMsg = `🌟 *ChessKidoo Academy Feedback*\n\n👤 *Name:* ${name}\n📞 *Contact:* ${contact}\n📌 *Category:* ${category}\n⭐ *Rating:* ${rating} Stars\n📋 *Subject:* ${subject}\n\n💬 *Message:* ${message}`;
+      window.open(`https://wa.me/919514266505?text=${encodeURIComponent(waMsg)}`, '_blank', 'noopener');
+      CK.showToast('WhatsApp opened!', 'success');
     };
   </script>
 
@@ -5032,27 +4991,7 @@
       </div>
     </div>
 
-  <!-- Camp Poster Lightbox Modal -->
-  <div id="campPosterModal" class="camp-modal" onclick="if(event.target === this) CK.closeCampPosterModal()">
-    <div class="camp-modal-dialog">
-      <div class="camp-modal-header">
-        <h4>👑 Coach Ramkumar GM · Sept-Oct Offline Camp in Erode</h4>
-        <button class="camp-modal-close-btn" onclick="CK.closeCampPosterModal()" aria-label="Close modal">✕</button>
-      </div>
-      <div class="camp-modal-body">
-        <img src="assets/img/camp-erode-ramkumar-gm.png" alt="Sept - Oct 2026 Offline Chess Camp in Erode with Coach Ramkumar GM">
-      </div>
-      <div class="camp-modal-footer">
-        <a href="https://forms.gle/fxxkEjB3ep99LRKL6" target="_blank" rel="noopener noreferrer" class="camp-bar-btn" style="width: 100%; justify-content: center; font-size: 0.95rem; padding: 10px 20px;">
-          📝 Register for Camp via Google Form ➔
-        </a>
-      </div>
-    </div>
-  </div>
-
 </body>
-
-
 
 </html>
 

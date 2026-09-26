@@ -244,7 +244,7 @@
       return;
     }
 
-    const landingSections = ['home', 'gm-camp', 'features', 'levels', 'coaches', 'achievements', 'tournaments', 'about', 'ck-world', 'ck-centres', 'centres', 'careers', 'pricing', 'faq', 'reviews', 'why-choose', 'cta'];
+    const landingSections = ['home', 'features', 'levels', 'coaches', 'achievements', 'tournaments', 'about', 'ck-world', 'ck-centres', 'centres', 'careers', 'pricing', 'faq', 'reviews', 'why-choose', 'cta'];
     const isLandingSection = landingSections.includes(section);
     
     if (isLandingSection) {
@@ -255,7 +255,7 @@
       
       // Delay slightly if we just switched pages to ensure DOM is ready for scroll
       setTimeout(() => {
-        const targetId = section === 'gm-camp' ? 'gm-camp' : section;
+        const targetId = section;
         const el = document.getElementById(targetId) || (section === 'ck-world' ? document.getElementById('ck-centres') : null) || (section === 'ck-centres' ? document.getElementById('ck-world') : null);
         if (el) {
           const headerOffset = 80;
@@ -383,22 +383,6 @@
   };
   CK.closeDemoModal = () => CK.closeModal('contactModal');
 
-  CK.openCampPosterModal = () => {
-    const modal = document.getElementById('campPosterModal');
-    if (modal) {
-      modal.classList.add('active');
-      document.body.style.overflow = 'hidden';
-    }
-  };
-  CK.closeCampPosterModal = () => {
-    const modal = document.getElementById('campPosterModal');
-    if (modal) {
-      modal.classList.remove('active');
-      document.body.style.overflow = '';
-    }
-  };
-  window.openCampPosterModal = CK.openCampPosterModal;
-  window.closeCampPosterModal = CK.closeCampPosterModal;
   CK.currentStep = 1;
 
   CK.updateWizardUI = () => {
@@ -3061,6 +3045,115 @@ ${applicant}`;
     } catch (e) {
       console.warn('[Landing] achievements load failed:', e);
       grid.innerHTML = '<div style="text-align:center; padding:30px; color:var(--slate);">Unable to load achievements right now.</div>';
+    }
+  };
+
+  CK.sendComplaintFeedbackWhatsApp = () => {
+    const name = document.getElementById('cf-name')?.value?.trim() || '';
+    const contact = document.getElementById('cf-contact')?.value?.trim() || '';
+    const category = document.getElementById('cf-category')?.value || '';
+    const rating = document.getElementById('cf-rating')?.value || '';
+    const subject = document.getElementById('cf-subject')?.value?.trim() || '';
+    const message = document.getElementById('cf-message')?.value?.trim() || '';
+
+    if (!name || !contact || !category || !rating || !subject || !message) {
+      if (CK.showToast) CK.showToast('Please fill all required fields before sharing on WhatsApp', 'error');
+      return;
+    }
+
+    const ratingStars = '⭐'.repeat(parseInt(rating) || 0);
+    const whatsappMessage = `📝 *ChessKidoo - Complaint & Feedback*\n\n` +
+      `*Name:* ${name}\n` +
+      `*Contact:* ${contact}\n` +
+      `*Category:* ${category}\n` +
+      `*Rating:* ${ratingStars} (${rating}/5)\n` +
+      `*Subject:* ${subject}\n` +
+      `*Message:*\n${message}\n\n` +
+      `— Sent from ChessKidoo Academy Website`;
+
+    const encodedMessage = encodeURIComponent(whatsappMessage);
+    const whatsappUrl = `https://wa.me/919514266505?text=${encodedMessage}`;
+    window.open(whatsappUrl, '_blank');
+
+    if (CK.showToast) CK.showToast('Opening WhatsApp...', 'info');
+  };
+
+  CK.submitComplaintFeedback = async () => {
+    const name = document.getElementById('cf-name')?.value?.trim() || '';
+    const contact = document.getElementById('cf-contact')?.value?.trim() || '';
+    const category = document.getElementById('cf-category')?.value || '';
+    const rating = document.getElementById('cf-rating')?.value || '';
+    const subject = document.getElementById('cf-subject')?.value?.trim() || '';
+    const message = document.getElementById('cf-message')?.value?.trim() || '';
+
+    if (!name || !contact || !category || !rating || !subject || !message) {
+      if (CK.showToast) CK.showToast('Please fill all required fields', 'error');
+      return;
+    }
+
+    const submitBtn = document.querySelector('#complaint-feedback button[onclick="CK.submitComplaintFeedback()"]');
+    const originalText = submitBtn?.textContent;
+    if (submitBtn) {
+      submitBtn.textContent = 'Submitting... 🚀';
+      submitBtn.disabled = true;
+    }
+
+    try {
+      const feedbackData = {
+        id: 'cfb_' + Date.now(),
+        name,
+        contact,
+        category,
+        rating: parseInt(rating),
+        subject,
+        message,
+        created_at: new Date().toISOString(),
+        status: 'pending'
+      };
+
+      const existingFeedback = JSON.parse(localStorage.getItem('ck_complaint_feedback') || '[]');
+      existingFeedback.unshift(feedbackData);
+      localStorage.setItem('ck_complaint_feedback', JSON.stringify(existingFeedback));
+
+      if (window.supabaseClient) {
+        try {
+          await window.supabaseClient.from('complaint_feedback').insert({
+            name,
+            contact,
+            category,
+            rating: parseInt(rating),
+            subject,
+            message,
+            status: 'pending',
+            created_at: new Date().toISOString()
+          });
+        } catch (e) {
+          console.warn('[Complaint Feedback] Supabase insert failed:', e);
+        }
+      }
+
+      if (CK.showToast) CK.showToast('✅ Feedback submitted successfully! We\'ll review and respond soon.', 'success');
+
+      const nameEl = document.getElementById('cf-name');
+      const contactEl = document.getElementById('cf-contact');
+      const categoryEl = document.getElementById('cf-category');
+      const ratingEl = document.getElementById('cf-rating');
+      const subjectEl = document.getElementById('cf-subject');
+      const messageEl = document.getElementById('cf-message');
+      if (nameEl) nameEl.value = '';
+      if (contactEl) contactEl.value = '';
+      if (categoryEl) categoryEl.value = '';
+      if (ratingEl) ratingEl.value = '';
+      if (subjectEl) subjectEl.value = '';
+      if (messageEl) messageEl.value = '';
+    } catch (err) {
+      console.error('[Complaint Feedback] Error:', err);
+      if (CK.showToast) CK.showToast('Failed to submit feedback. Please try again.', 'error');
+    } finally {
+      if (submitBtn) {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+      }
     }
   };
 
