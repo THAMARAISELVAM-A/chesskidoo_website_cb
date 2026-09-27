@@ -1449,7 +1449,6 @@
                 <button class="btn btn-gold btn-sm" onclick="setChildTab('studypgn', this); window.setStudyPgnSubTab && window.setStudyPgnSubTab('tactics')" style="font-weight:700; font-size:12px;">🔥 Daily Tactics</button>
                 <button class="btn btn-outline btn-sm" onclick="setChildTab('studypgn', this); window.setStudyPgnSubTab && window.setStudyPgnSubTab('vision')" style="font-size:12px;">⚡ Vision Sprint</button>
                 <button class="btn btn-outline btn-sm" onclick="setChildTab('studypgn', this); window.setStudyPgnSubTab && window.setStudyPgnSubTab('custom')" style="font-size:12px;">🛠️ Custom Board</button>
-                <button class="btn btn-outline btn-sm" onclick="setChildTab('elibrary', this)" style="font-size:12px;">📖 Video Lessons</button>
               </div>
             </div>
 
@@ -4769,7 +4768,6 @@
       <script src="/lms/js/homework.js?v=2.0&t=20260817" charset="utf-8"></script>
       <script src="/lms/js/expenditures.js?v=1.1&t=20260601d" charset="utf-8"></script>
       <script src="/lms/js/calculator.js?v=1.0" charset="utf-8"></script>
-      <script src="/lms/js/elibrary.js?v=1.0" charset="utf-8"></script>
       <script src="/lms/js/study-pgn.js?v=1.0" charset="utf-8"></script>
       <script src="/lms/js/game-review.js?v=1.0" charset="utf-8"></script>
       <script src="/lms/js/report-card.js?v=1.0" charset="utf-8"></script>
@@ -5034,132 +5032,8 @@
              <button class="btn btn-gold" style="flex:1;" onclick="window.saveRecordedVideo()">Save Class Video</button>
              <button class="btn btn-outline-grey" style="flex:1;" onclick="closeModals()">Cancel</button>
            </div>
-         </div>
-        </div>
-
-        <!-- Add E-Library Material Modal -->
-        <div class="modal" id="add-elibrary-modal">
-          <div class="modal-box" style="max-width:650px; width:95%; max-height:90vh; overflow-y:auto; background:var(--bg2);">
-            <div class="modal-title">📖 Add Study Material / Recorded Session</div>
-            <div style="display:grid; gap:14px; margin-top:16px;">
-              <div>
-                <label class="label">Material / Video Title *</label>
-                <input type="text" id="elib-form-title" class="input-field" placeholder="e.g. Masterclass: Lucena & Philidor Rook Endgames">
-              </div>
-              <div>
-                <label class="label">Short Description / Key Takeaways</label>
-                <textarea id="elib-form-desc" class="input-field" rows="2" placeholder="Brief summary of what the student will learn from this session..."></textarea>
-              </div>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                <div>
-                  <label class="label">Category</label>
-                  <select id="elib-form-cat" class="input-field">
-                    <option value="recordings">🎥 Class Recording</option>
-                    <option value="openings">♟️ Opening Repertoire</option>
-                    <option value="tactics">⚡ Tactics & Calculation</option>
-                    <option value="endgames">👑 Endgame Mastery</option>
-                    <option value="masterclasses">📖 Grandmaster Lecture</option>
-                    <option value="tournaments">🏆 Tournament Prep</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="label">Target Level</label>
-                  <select id="elib-form-level" class="input-field">
-                    <option value="All Levels">All Levels</option>
-                    <option value="Beginner">Beginner (Pawn)</option>
-                    <option value="Intermediate">Intermediate (Knight/Bishop)</option>
-                    <option value="Advanced">Advanced (Rook)</option>
-                    <option value="Master">Master (Queen/King)</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label class="label">Resource URL / Video Link (YouTube, Drive, Loom, PDF) *</label>
-                <input type="url" id="elib-form-url" class="input-field" placeholder="https://drive.google.com/... or https://youtube.com/watch?v=...">
-              </div>
-              <div>
-                <label class="label">Duration / Format (Optional)</label>
-                <input type="text" id="elib-form-duration" class="input-field" placeholder="e.g. 45 mins / PDF Handbook">
-              </div>
-
-              <!-- ── Access & Student Permission Controls ── -->
-              <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(218,163,62,0.25); border-radius:12px; padding:16px; margin-top:4px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                  <label class="label" style="color:var(--gold); font-weight:700; margin:0;">🔒 Student Access &amp; Permissions</label>
-                  <span style="font-size:11px; color:var(--ivory-dim);">Control who can view this material</span>
-                </div>
-                
-                <div style="margin-bottom:12px;">
-                  <select id="elib-form-access-type" class="input-field" onchange="window.toggleElibAccessType(this.value)">
-                    <option value="all">🌐 All Students (Open in Academy)</option>
-                    <option value="batch">👥 Specific Batch Only</option>
-                    <option value="students">🔒 Specific Students Only (Allow to selected students alone)</option>
-                  </select>
-                </div>
-
-                <!-- Batch Selection Dropdown -->
-                <div id="elib-form-batch-container" style="display:none; margin-bottom:10px;">
-                  <label class="label" style="font-size:12px;">Select Target Batch</label>
-                  <select id="elib-form-batch" class="input-field">
-                    <option value="">-- Choose Batch --</option>
-                  </select>
-                </div>
-
-                <!-- Student Multi-select Searchable Checklist -->
-                <div id="elib-form-students-container" style="display:none;">
-                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px;">
-                    <input type="text" id="elib-form-student-search" placeholder="🔍 Search student name..." oninput="window.filterElibStudentList(this.value)" class="input-field" style="margin:0; padding:6px 10px; font-size:12px; flex:1;">
-                    <div style="display:flex; gap:6px;">
-                      <button type="button" class="btn btn-outline btn-sm" onclick="window.selectAllElibStudents()" style="padding:4px 8px; font-size:11px;">Select All</button>
-                      <button type="button" class="btn btn-outline btn-sm" onclick="window.clearAllElibStudents()" style="padding:4px 8px; font-size:11px;">Clear</button>
-                    </div>
-                  </div>
-                  
-                  <div id="elib-form-students-list" style="max-height:180px; overflow-y:auto; background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:8px; padding:8px; display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:6px;">
-                    <!-- Dynamically populated student checkboxes -->
-                  </div>
-                  <div id="elib-form-students-selected-count" style="font-size:11.5px; color:var(--gold); margin-top:6px;">0 students selected</div>
-                </div>
-              </div>
-            </div>
-            <div style="display:flex; gap:12px; margin-top:20px;">
-              <button class="btn btn-gold" style="flex:1;" onclick="window.submitAddElibraryForm()">Publish to E-Library</button>
-              <button class="btn btn-outline-grey" style="flex:1;" onclick="document.getElementById('add-elibrary-modal').classList.remove('active')">Cancel</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick Grant Access Modal -->
-        <div class="modal" id="grant-elibrary-modal">
-          <div class="modal-box" style="max-width:600px; width:95%; max-height:85vh; overflow-y:auto; background:var(--bg2);">
-            <div class="modal-title">👤 Assign E-Library Materials to Specific Student</div>
-            <p style="color:var(--ivory-dim); font-size:13px; margin:4px 0 16px;">Quickly grant exclusive study materials and recorded masterclasses to an individual student.</p>
-            
-            <div style="display:grid; gap:14px;">
-              <div>
-                <label class="label">Select Student *</label>
-                <select id="grant-elib-student-select" class="input-field" onchange="window.onGrantStudentChanged(this.value)">
-                  <option value="">-- Choose Student --</option>
-                </select>
-              </div>
-
-              <div>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                  <label class="label" style="margin:0;">Select Materials to Grant Access</label>
-                  <span id="grant-elib-count" style="font-size:12px; color:var(--gold);">0 selected</span>
-                </div>
-                <div id="grant-elib-materials-list" style="max-height:260px; overflow-y:auto; background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:10px; padding:10px; display:grid; gap:8px;">
-                  <!-- Material checkboxes -->
-                </div>
-              </div>
-            </div>
-
-            <div style="display:flex; gap:12px; margin-top:20px;">
-              <button class="btn btn-gold" style="flex:1;" onclick="window.saveGrantAccessForm()">Save Student Permissions</button>
-              <button class="btn btn-outline-grey" style="flex:1;" onclick="document.getElementById('grant-elibrary-modal').classList.remove('active')">Cancel</button>
-            </div>
-          </div>
-        </div>
+</div>
+       </div>
 
         <!-- Assign Study Topic Modal -->
         <div class="modal" id="assign-study-topic-modal">

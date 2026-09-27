@@ -21,7 +21,19 @@ export default async function chesscomProfileHandler(request) {
       fetch(`https://api.chess.com/pub/player/${encodeURIComponent(username)}`, { headers })
     ]);
 
+    // Handle 401/403/429 gracefully - Chess.com may rate limit or require auth
     if (!statsRes.ok) {
+      if (statsRes.status === 401 || statsRes.status === 403 || statsRes.status === 429) {
+        return new Response(JSON.stringify({ 
+          error: 'Chess.com API rate limited or requires authentication', 
+          status: statsRes.status,
+          stats: {},
+          profile: {}
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
       if (statsRes.status === 404) {
         return new Response(JSON.stringify({ error: 'Chess.com user not found', notFound: true }), {
           status: 404,

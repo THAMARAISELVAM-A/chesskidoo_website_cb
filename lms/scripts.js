@@ -483,7 +483,8 @@
   // ── NEW ADVANCED LOGIC ──
   function setChildTab(tabId, btn) {
     try {
-      if (tabId === "learning" || tabId === "resources") tabId = "elibrary";
+      // Map legacy tab names
+      if (tabId === "learning" || tabId === "resources") tabId = "overview";
       if (!currentStudent) currentStudent = window.currentStudent;
 
       // Remove active from all child tabs
@@ -539,14 +540,6 @@
             });
           } else if (typeof window.renderChildHomework === "function") {
             window.renderChildHomework();
-          }
-        } else if (tabId === "elibrary") {
-          if (window.loadElibraryData) {
-            window.loadElibraryData().then(() => {
-              if (typeof window.renderChildElibrary === "function") window.renderChildElibrary();
-            });
-          } else if (typeof window.renderChildElibrary === "function") {
-            window.renderChildElibrary();
           }
         } else if (tabId === "studypgn") {
           if (window.StudyPGN) {
@@ -9963,12 +9956,10 @@ setTimeout(function () {
         } else if (st === "Pending") {
           pendingCount++;
           pendingAmount += fee;
-        } else if (st === "Due") {
+        } else if (st === "Due" || st === "Overdue") {
+          // Treat overdue as due for current month - all past overdue cleared
           dueCount++;
           dueAmount += fee;
-        } else if (st === "Overdue") {
-          overdueCount++;
-          overdueAmount += fee;
         }
 
         if (!hasAnyPayment) {
@@ -9981,7 +9972,7 @@ setTimeout(function () {
       set("stud-sum-paid", paidCount, paidAmount);
       set("stud-sum-pending", pendingCount, pendingAmount);
       set("stud-sum-due", dueCount, dueAmount);
-      set("stud-sum-overdue", overdueCount, overdueAmount);
+      set("stud-sum-overdue", 0, 0); // Overdue cleared - only pending and due to collect
       set("stud-sum-notbilled", notBilledCount, notBilledAmount);
     } catch (e) {
       console.error("[UI] updateStudentSummaryCards failed:", e);
@@ -15509,6 +15500,25 @@ Best regards,
     }
 
     const s = currentStudent;
+
+    // Load attendance data for this student if not already loaded
+    if (!window.allAttendance || window.allAttendance.length === 0) {
+      apiCall("/api/attendance?limit=1000", { silent: true }).then(res => {
+        if (res.ok) return res.json();
+        return [];
+      }).then(data => {
+        window.allAttendance = data.data || data || [];
+        allAttendance = window.allAttendance;
+        // Refresh attendance display if on attendance tab
+        const attendanceTab = document.getElementById("child-tab-attendance");
+        if (attendanceTab && attendanceTab.classList.contains("active")) {
+          if (window.renderChildAttendanceAndHomework) window.renderChildAttendanceAndHomework();
+          else if (window.renderChildAttendance) window.renderChildAttendance();
+        }
+        // Also update milestone stats
+        if (window.updateChildMilestoneStats) window.updateChildMilestoneStats(s);
+      }).catch(() => {});
+    }
 
     // Show or hide admin preview banner based on current role
     const previewBanner = $("preview-mode-banner");

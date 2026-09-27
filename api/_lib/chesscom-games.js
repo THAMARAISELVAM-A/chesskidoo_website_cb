@@ -21,7 +21,19 @@ export default async function chesscomGamesHandler(request) {
       { headers }
     );
 
+    // Handle 401/403/429 gracefully - Chess.com may rate limit or require auth
     if (!archivesRes.ok) {
+      if (archivesRes.status === 401 || archivesRes.status === 403 || archivesRes.status === 429) {
+        return new Response(JSON.stringify({ 
+          error: 'Chess.com API rate limited or requires authentication', 
+          status: archivesRes.status,
+          games: [],
+          total: 0
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
       return new Response(JSON.stringify({ error: 'Could not fetch game archives' }), {
         status: archivesRes.status,
         headers: { 'Content-Type': 'application/json' }

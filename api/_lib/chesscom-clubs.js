@@ -21,6 +21,19 @@ export default async function chesscomClubsHandler(request) {
       fetch(`https://api.chess.com/pub/player/${encodeURIComponent(username)}/tournaments`, { headers })
     ]);
 
+    // Handle 401/403/429 gracefully
+    if (!clubsRes.ok && (clubsRes.status === 401 || clubsRes.status === 403 || clubsRes.status === 429)) {
+      return new Response(JSON.stringify({ 
+        error: 'Chess.com API rate limited or requires authentication', 
+        status: clubsRes.status,
+        clubs: [],
+        tournaments: []
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const clubsData = clubsRes.ok ? await clubsRes.json() : { clubs: [] };
     const tournamentsData = tournamentsRes.ok ? await tournamentsRes.json() : { finished: [] };
 
