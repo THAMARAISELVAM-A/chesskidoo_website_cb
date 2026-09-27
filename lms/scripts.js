@@ -6780,7 +6780,7 @@
       isLoadingData = true;
       const now = Date.now();
       const hasValidCache =
-        dataCache.timestamp > 0 && dataCache.coaches && dataCache.students;
+        dataCache.timestamp > 0 && dataCache.coaches && dataCache.students && dataCache.students.length > 0;
       let isSilentSync = false;
       if (hasValidCache) {
         allCoaches = dataCache.coaches;
@@ -6952,19 +6952,15 @@ syncCoachDropdowns();
         if (allStudents.length === 0 && window.supabaseClient) {
           try {
             console.log('[Sync] Edge API returned 0 students, querying Supabase directly...');
-            const [usersRes, batchesRes, attRes, hwRes] = await Promise.all([
-              window.supabaseClient.from('users').select('*'),
+            const [studsRes, batchesRes, attRes, hwRes] = await Promise.all([
+              window.supabaseClient.from('students').select('*'),
               window.supabaseClient.from('batches').select('*'),
               window.supabaseClient.from('attendance').select('*'),
               window.supabaseClient.from('homework_assignments').select('*'),
             ]);
-            const { data: sbUsers } = usersRes;
-            if (sbUsers && sbUsers.length > 0) {
-              allStudents = sbUsers.filter(u => !u.role || u.role.toLowerCase() === 'student');
-              if (allCoaches.length === 0) {
-                allCoaches = sbUsers.filter(u => u.role && (u.role.toLowerCase() === 'coach' || u.role.toLowerCase() === 'coach-admin'));
-                window.allCoaches = allCoaches;
-              }
+            const { data: sbStudents } = studsRes;
+            if (sbStudents && sbStudents.length > 0) {
+              allStudents = sbStudents;
               window.allStudents = allStudents;
             }
             const { data: sbBatches } = batchesRes;
@@ -9189,9 +9185,17 @@ setTimeout(function () {
     if (window._renderingStudents) return;
     window._renderingStudents = true;
 
-    // Every filter control re-renders through here, so this is the one place
-    // that keeps the mobile toggle's applied-filter count honest.
-    if (window.refreshMobileFilterToggle) window.refreshMobileFilterToggle();
+    try {
+      // If students list is still empty while sync is in flight, show loading state
+      const currentList = allStudents || window.allStudents || [];
+      if (currentList.length === 0 && (isLoadingData || !dataCache || !dataCache.timestamp)) {
+        tbody.innerHTML = `<tr><td colspan="${role === "coach" ? 7 : 13}" class="text-center"><div class="loading-state"><span class="spinner"></span> Loading students...</div></td></tr>`;
+        return;
+      }
+
+      // Every filter control re-renders through here, so this is the one place
+      // that keeps the mobile toggle's applied-filter count honest.
+      if (window.refreshMobileFilterToggle) window.refreshMobileFilterToggle();
 
     if (role === "coach" && theadRow) {
       theadRow.innerHTML = `
@@ -9277,8 +9281,7 @@ setTimeout(function () {
       return;
     }
 
-    try {
-      // Ensure reportMonth/Year are valid numbers
+    // Ensure reportMonth/Year are valid numbers
       if (
         typeof window.reportMonth !== "number" ||
         isNaN(window.reportMonth) ||
@@ -9512,14 +9515,6 @@ setTimeout(function () {
       }
 
       const allFilteredStuds = studs;
-      if (!studs || studs.length === 0) {
-        if ((allStudents || window.allStudents || []).length > 0) {
-          studs = role === "admin" || role === "master"
-            ? (allStudents || window.allStudents || [])
-            : (allStudents || window.allStudents || []).filter((s) => String(s.coach_id) === String(window.currentCoachId || window.userId));
-        }
-      }
-
       studentFilteredCount = studs.length;
       studentCurrentPage = Math.max(1, Math.min(studentCurrentPage, Math.ceil(studentFilteredCount / studentPageSize) || 1));
       const startIdx = (studentCurrentPage - 1) * studentPageSize;
@@ -9529,9 +9524,12 @@ setTimeout(function () {
       console.debug("[renderStudents] Final studs count before render:", studs.length);
 
       if (!studs || studs.length === 0) {
-        const cols = role === "coach" ? 7 : 12;
+        const cols = role === "coach" ? 7 : 13;
         tbody.innerHTML =
-          `<tr><td colspan="${role === "coach" ? 7 : 13}" class="text-center">No students found matching filters for this period</td></tr>`;
+          `<tr><td colspan="${cols}" class="text-center">No students found matching filters for this period</td></tr>`;
+        if (role !== "coach") {
+          updateStudentSummaryCards(allFilteredStuds, targetMonth, targetYear);
+        }
         return;
       }
 
@@ -9793,13 +9791,13 @@ setTimeout(function () {
       console.error("[UI] renderStudents critical error:", err);
       if (tbody)
         tbody.innerHTML = `<tr><td colspan="${role === "coach" ? 7 : 13}" class="text-center text-danger">Failed to load students. Please refresh the page.</td></tr>`;
+    } finally {
+      if (typeof window.loadStudentActivityLog === "function") {
+        try { window.loadStudentActivityLog(); } catch (_) {}
+      }
+      updateStudentPaginationUI();
+      setTimeout(() => { window._renderingStudents = false; }, 0);
     }
-
-    if (typeof window.loadStudentActivityLog === "function") {
-      window.loadStudentActivityLog();
-    }
-    updateStudentPaginationUI();
-    setTimeout(() => { window._renderingStudents = false; }, 0);
   }
 
   window.changeStudentPage = function (delta) {

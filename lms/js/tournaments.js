@@ -259,12 +259,6 @@
     } catch (err) {
       console.warn('[Tournaments] Lichess API fetch failed, using local data only:', err.message);
     }
-          } catch(e) {}
-        }
-      }
-    } catch(err) {
-      console.warn('[Lichess API] Failed to fetch live tournaments', err);
-    }
 
     // 3. Fallback if everything failed
     if (allTournaments.length === 0) {

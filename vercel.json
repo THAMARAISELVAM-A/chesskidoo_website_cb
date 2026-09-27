@@ -63,8 +63,8 @@
       "destination": "/api/demo-sheet"
     },
     {
-      "source": "/api/:path*",
-      "destination": "https://vseombfkrvpffnpgbsnk.supabase.co/functions/v1/:path*"
+      "source": "/api/((?!lichess|chesscom|chessable|demo-sheet|auth|zoho|geo|homework|razorpay|test-lichess).*)$",
+      "destination": "https://vseombfkrvpffnpgbsnk.supabase.co/functions/v1/$1"
     },
     {
       "source": "/((?!assets/|public/|api/|lms|sw\\.js|manifest\\.json|robots\\.txt|sitemap\\.xml|clear\\.html|.*\\.[a-zA-Z0-9]+$).*)",
