@@ -8,11 +8,13 @@ import gamesHandler from './_lib/lichess-games.js';
 import extrasHandler from './_lib/lichess-extras.js';
 import testHandler from './_lib/lichess-test.js';
 import explorerHandler from './_lib/lichess-explorer.js';
+import tournamentsHandler from './_lib/lichess-tournaments.js';
 
 const PATH_TYPES = {
   'lichess-games-proxy': 'games',
   'lichess-extras-proxy': 'extras',
   'lichess-explorer-proxy': 'explorer',
+  'lichess-tournaments-proxy': 'tournaments',
   'test-lichess': 'test',
   'lichess-proxy': 'profile'
 };
@@ -34,6 +36,8 @@ async function route(request) {
       return extrasHandler(request);
     case 'explorer':
       return explorerHandler(request);
+    case 'tournaments':
+      return tournamentsHandler(request);
     case 'test':
       return testHandler(request);
     case 'profile':

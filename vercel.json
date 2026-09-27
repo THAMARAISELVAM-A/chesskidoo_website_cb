@@ -35,6 +35,10 @@
       "destination": "/api/lichess-proxy?type=explorer"
     },
     {
+      "source": "/api/lichess-tournaments-proxy",
+      "destination": "/api/lichess-proxy?type=tournaments"
+    },
+    {
       "source": "/api/test-lichess",
       "destination": "/api/lichess-proxy?type=test"
     },

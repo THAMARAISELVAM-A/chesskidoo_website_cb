@@ -232,20 +232,14 @@
       }
     }
 
-    // 2. Fetch from Lichess Arena API
+// 2. Fetch from Lichess Arena API (via proxy to avoid CORS/auth issues)
     try {
-      const lichessRes = await fetch('https://lichess.org/api/tournament');
+      const lichessRes = await fetch('/api/lichess-tournaments-proxy');
       if (lichessRes.ok) {
-        const text = await lichessRes.text();
-        const lines = text.split('\n').filter(l => l.trim() !== '');
-        let count = 0;
-        
-        // Parse NDJSON (Newline Delimited JSON)
-        for (const line of lines) {
-          try {
-            const t = JSON.parse(line);
-            // Only add upcoming/created arenas (status 10/20)
-            if (t.status === 10 || t.status === 20) { 
+        const data = await lichessRes.json();
+        if (data && Array.isArray(data.tournaments)) {
+          for (const t of data.tournaments) {
+            if (t.status === 10 || t.status === 20) {
               const startDate = new Date(t.startsAt || t.createdAt);
               allTournaments.push({
                 id: 'lichess_' + t.id,
@@ -254,16 +248,17 @@
                 date: startDate.toISOString().split('T')[0],
                 time: startDate.toTimeString().substring(0,5),
                 location: 'Online — Lichess',
-                coords: CITIES_COORDS['chennai'], // Online defaults
+                coords: CITIES_COORDS['chennai'],
                 fee: 0,
                 category: t.perf ? t.perf.name : 'Open',
-                eloLimit: 9999,
-                regLink: `https://lichess.org/tournament/${t.id}`,
-                sourceBadge: 'Lichess'
               });
-              count++;
-              if (count >= 15) break; // Limit to 15 upcoming arenas
             }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[Tournaments] Lichess API fetch failed, using local data only:', err.message);
+    }
           } catch(e) {}
         }
       }

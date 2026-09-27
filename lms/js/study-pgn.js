@@ -1764,9 +1764,6 @@
       explorerEls.forEach(el => el.innerHTML = `<div style="font-size:11px; color:#94a3b8; padding:8px;"><span class="spinner" style="display:inline-block; width:12px; height:12px; margin-right:4px;"></span> Fetching Lichess Masters statistics...</div>`);
 
       let res = await fetch(`/api/lichess-explorer-proxy?fen=${encodeURIComponent(fen)}&topGames=3&moves=4`).catch(() => null);
-      if (!res || !res.ok) {
-        res = await fetch(`https://explorer.lichess.ovh/masters?fen=${encodeURIComponent(fen)}&topGames=3&moves=4`).catch(() => null);
-      }
       if (!res || !res.ok) throw new Error('API limit or offline');
       const data = await res.json();
 
