@@ -33,6 +33,17 @@ export default async function handler(request) {
     }
 
     if (!response.ok) {
+      // Handle 401/403 gracefully - Lichess may require auth or have rate limits
+      if (response.status === 401 || response.status === 403) {
+        return new Response(JSON.stringify({ 
+          error: 'Lichess games API requires authentication', 
+          status: response.status,
+          games: []
+        }), {
+          status: 200, // Return 200 with empty data to prevent UI errors
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
       return new Response(JSON.stringify({ error: 'Lichess games API error', status: response.status }), {
         status: response.status,
         headers: { 'Content-Type': 'application/json' }

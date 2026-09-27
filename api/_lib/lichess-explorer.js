@@ -36,6 +36,20 @@ export default async function handler(request) {
     const res = await fetchWithTimeout(targetUrl, 6000);
 
     if (!res.ok) {
+      // Handle 401/403 gracefully - Lichess explorer may require auth or have rate limits
+      if (res.status === 401 || res.status === 403) {
+        return new Response(JSON.stringify({ 
+          error: 'Lichess explorer requires authentication', 
+          status: res.status,
+          moves: [],
+          white: 0,
+          draws: 0,
+          black: 0
+        }), {
+          status: 200, // Return 200 with empty data to prevent UI errors
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
       return new Response(JSON.stringify({ error: 'Lichess explorer error', status: res.status }), {
         status: res.status,
         headers: { 'Content-Type': 'application/json' }

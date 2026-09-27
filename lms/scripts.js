@@ -6813,7 +6813,7 @@
 
         window.allResources = allResources;
 
-        syncCoachDropdowns();
+syncCoachDropdowns();
         if (role === "admin" || role === "master") {
           renderDash();
           updateMsgBadge();
@@ -6821,9 +6821,8 @@
           renderFame();
           renderBills();
           renderMsgs();
-           renderCoachMgmt();
+          renderCoachMgmt();
            if (window.renderAdminCoachAttendanceRemarks) window.renderAdminCoachAttendanceRemarks();
-           renderStudents();
           const activeCachedPage = document.querySelector(".page.active")?.id;
           if (activeCachedPage === "page-homework" && window.loadHomeworkData) {
             window.loadHomeworkData().then(() => {
@@ -8786,8 +8785,8 @@ setTimeout(function () {
         }
       }
 
-      // Last Month Due Amount - check if student was unpaid in the previous month
-      if (prevMonthStatus !== "Paid" && prevMonthStatus !== "Not Enrolled") {
+      // Last Month Due Amount - check if student was actually due/overdue in the previous month (not just pending)
+      if (prevMonthStatus === "Due" || prevMonthStatus === "Overdue") {
         lastMonthDueAmount += fee;
       }
     });

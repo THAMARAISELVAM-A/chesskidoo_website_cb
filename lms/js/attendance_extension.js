@@ -634,7 +634,7 @@ window.renderAttendanceCalendar = function(studentOrId, containerEl, year, month
   let daysHtml = '';
   // Empty padding for previous month days
   for (let i = 0; i < firstDay; i++) {
-    daysHtml += `<div class="cal-day-cell cal-day-empty" style="background:transparent;border:none;min-height:90px;"></div>`;
+    daysHtml += `<div class="cal-day-cell cal-day-empty" style="background:transparent;border:none;height:85px;"></div>`;
   }
 
   // Days of current month
@@ -716,7 +716,7 @@ window.renderAttendanceCalendar = function(studentOrId, containerEl, year, month
     const clickAction = `window.openAttendanceDayDetail('${s.id}', '${dStr}')`;
 
     daysHtml += `
-      <div class="cal-day-cell ${cellClass}" onclick="${clickAction}" style="${badgeStyle} border-radius:8px; padding:8px 4px; min-height:85px; display:flex; flex-direction:column; justify-content:space-between; text-align:center; cursor:pointer; transition:transform 0.15s, box-shadow 0.15s; position:relative;">
+      <div class="cal-day-cell ${cellClass}" onclick="${clickAction}" style="${badgeStyle} border-radius:8px; padding:8px 4px; height:85px; display:flex; flex-direction:column; justify-content:space-between; text-align:center; cursor:pointer; transition:transform 0.15s, box-shadow 0.15s; position:relative;">
         <div style="font-weight:700; font-size:14px; color:var(--ivory);">${d}</div>
         <div>${iconHtml}</div>
         <div style="min-height:16px;">${topicBadge}</div>
@@ -748,7 +748,7 @@ window.renderAttendanceCalendar = function(studentOrId, containerEl, year, month
       </div>
 
       <!-- Days Grid -->
-      <div style="display:grid;grid-template-columns:repeat(7, 1fr);gap:8px;">
+      <div style="display:grid;grid-template-columns:repeat(7, 1fr);grid-auto-rows:minmax(85px, auto);gap:8px;align-items:start;">
         ${daysHtml}
       </div>
     </div>

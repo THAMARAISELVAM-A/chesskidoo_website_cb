@@ -135,6 +135,9 @@
 
     <div class="footer-links">
       <a class="footer-link" onclick="toast('Please contact administrator for reset','info')">Forgot Password?</a>
+      <span class="footer-divider">|</span>
+      <a class="footer-link" href="https://chesskidoo.com" target="_blank" rel="noopener" style="color:var(--gold); font-weight:600;">🏠 Return to Home</a>
+    </div>
     </div>
   </div>
 </div>
@@ -206,6 +209,11 @@
   <div style="padding:16px;border-top:1px solid var(--border)">
     <div class="nav-item" onclick="toggleTheme()"><span class="ico">🌗</span> Switch Theme</div>
     <div style="font-size:10px;color:var(--ivory3);text-align:center;margin-top:12px;opacity:0.6;letter-spacing:1px;" id="ui-version">Portal v5.5 (Cached)</div>
+    <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border);">
+      <a href="https://chesskidoo.com" target="_blank" rel="noopener" style="display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:8px; color:var(--gold); font-weight:600; font-size:13px; text-decoration:none; background:rgba(218,163,62,0.08); transition:all 0.2s;">
+        <span>🏠</span> Return to Homepage
+      </a>
+    </div>
   </div>
 </nav>
 
@@ -1422,7 +1430,6 @@
               <button class="btn btn-outline" onclick="openStudentEditPortalModal()" style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 13px;">⚙️</span> Edit Details</button>
               <button class="btn btn-outline" onclick="window.openStudentChangePasswordModal && window.openStudentChangePasswordModal()" style="display: flex; align-items: center; gap: 6px;"><span style="font-size: 13px;">🔑</span> Change Password</button>
               <button class="btn btn-outline" onclick="openContactModal()">✉️ Message Coach</button>
-              <button class="btn btn-outline" onclick="openModal('fb-modal')">📝 Feedback</button>
              </div>
            </div>
 
@@ -3881,14 +3888,16 @@
         <h3 style="color:var(--gold);margin:0;font-size:18px;font-weight:700;">🔑 Update Password</h3>
         <button class="btn btn-outline-grey btn-sm" onclick="closeModals()" style="padding:4px 8px;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;">&times;</button>
       </div>
-      <div class="form-group" style="margin-bottom:16px;">
-        <label style="display:block;font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;margin-bottom:6px;">New Password *</label>
-        <input type="password" id="cpw-input" placeholder="Minimum 6 characters" autocomplete="new-password" style="width:100%;padding:12px 14px;background:#1e293b;border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:8px;box-sizing:border-box;outline:none;">
-      </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;">
-        <button class="btn btn-outline" style="border-color:rgba(255,255,255,0.2);color:#cbd5e1;padding:10px 18px;" onclick="closeModals()">Cancel</button>
-        <button class="btn btn-gold" style="padding:10px 20px;font-weight:700;" onclick="submitChangePassword()">Update Password</button>
-      </div>
+      <form id="change-password-form" onsubmit="event.preventDefault(); submitChangePassword();">
+        <div class="form-group" style="margin-bottom:16px;">
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;margin-bottom:6px;">New Password *</label>
+          <input type="password" id="cpw-input" placeholder="Minimum 6 characters" autocomplete="new-password" style="width:100%;padding:12px 14px;background:#1e293b;border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:8px;box-sizing:border-box;outline:none;">
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button type="button" class="btn btn-outline" style="border-color:rgba(255,255,255,0.2);color:#cbd5e1;padding:10px 18px;" onclick="closeModals()">Cancel</button>
+          <button type="submit" class="btn btn-gold" style="padding:10px 20px;font-weight:700;">Update Password</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -4279,53 +4288,6 @@
       <div style="display:flex; gap:8px;">
         <button class="btn btn-outline-grey" onclick="closeModals()">Cancel</button>
         <button class="btn btn-gold" style="font-weight:700;" onclick="sendMsg()">✉️ Send to Portal</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Feedback Modal -->
-<div class="modal" id="fb-modal">
-  <div class="modal-box" style="max-width:540px; background:#0f172a; border:1.5px solid var(--gold); border-radius:18px; padding:24px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
-      <div>
-        <span style="font-size:11px; font-weight:800; color:var(--gold); text-transform:uppercase;">🌟 Academy Feedback</span>
-        <h3 style="margin:2px 0 0; color:#fff; font-size:18px; font-weight:700;">Rate Your Academy Experience</h3>
-      </div>
-      <button class="btn btn-outline-grey btn-sm" onclick="closeModals()" style="padding:4px 8px;">✕</button>
-    </div>
-
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
-      <div>
-        <label style="font-size:11px; font-weight:700; color:var(--gold); text-transform:uppercase; display:block; margin-bottom:4px;">Rating Score</label>
-        <select id="fb-rating" class="input-field" style="margin:0; width:100%;">
-          <option value="5 Stars">⭐⭐⭐⭐⭐ 5 Stars (Exceptional)</option>
-          <option value="4 Stars">⭐⭐⭐⭐ 4 Stars (Very Good)</option>
-          <option value="3 Stars">⭐⭐⭐ 3 Stars (Satisfactory)</option>
-          <option value="2 Stars">⭐⭐ 2 Stars (Needs Improvement)</option>
-        </select>
-      </div>
-      <div>
-        <label style="font-size:11px; font-weight:700; color:var(--gold); text-transform:uppercase; display:block; margin-bottom:4px;">Feedback Category</label>
-        <select id="fb-category" class="input-field" style="margin:0; width:100%;">
-          <option value="Curriculum & Teaching">🎓 Curriculum &amp; Teaching</option>
-          <option value="Coach Dedication">👨‍🏫 Coach Dedication</option>
-          <option value="Tournaments & Arena">🏆 Tournaments &amp; Practice</option>
-          <option value="Website & Portal">💻 Website &amp; Portal Tech</option>
-          <option value="General Appreciation">🌟 General Appreciation</option>
-        </select>
-      </div>
-    </div>
-
-    <textarea id="fb-msg" rows="4" placeholder="Share your suggestions, review, or appreciation for our chess coaching..." style="width:100%; padding:12px; border-radius:10px; background:var(--bg3); border:1px solid var(--border); color:#fff; font-family:inherit; margin-bottom:16px; resize:vertical;"></textarea>
-
-    <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-      <button class="btn btn-outline" style="border-color:#25d366; color:#25d366; font-weight:700;" onclick="sendFeedbackWhatsApp()">
-        💬 Share on WhatsApp
-      </button>
-      <div style="display:flex; gap:8px;">
-        <button class="btn btn-outline-grey" onclick="closeModals()">Cancel</button>
-        <button class="btn btn-gold" style="font-weight:700;" onclick="sendFeedback()">🚀 Submit Feedback</button>
       </div>
     </div>
   </div>
