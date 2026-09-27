@@ -6989,6 +6989,40 @@ syncCoachDropdowns();
           }
         }
 
+        // Fallback to localStorage cache if API failed
+        if (allStudents.length === 0) {
+          try {
+            const cached = JSON.parse(localStorage.getItem('chesskidoo_data_cache') || '{}');
+            if (cached.students && cached.students.length > 0) {
+              console.log('[Sync] Loading students from localStorage cache:', cached.students.length);
+              allStudents = cached.students;
+              window.allStudents = allStudents;
+            }
+            if (cached.coaches && cached.coaches.length > 0) {
+              allCoaches = cached.coaches;
+              window.allCoaches = allCoaches;
+            }
+            if (cached.payments && cached.payments.length > 0) {
+              allPayments = cached.payments;
+              window.allPayments = allPayments;
+            }
+            if (cached.attendance && cached.attendance.length > 0) {
+              allAttendance = cached.attendance;
+              window.allAttendance = allAttendance;
+            }
+            if (cached.batches && cached.batches.length > 0) {
+              allBatches = cached.batches;
+              window.allBatches = allBatches;
+            }
+            if (cached.homework && cached.homework.length > 0) {
+              allHomework = cached.homework;
+              window.allHomework = allHomework;
+            }
+          } catch (e) {
+            console.warn('[Sync] localStorage cache load failed:', e);
+          }
+        }
+
         // Merge attendance with localStorage cache
         try {
           const localAtt = JSON.parse(localStorage.getItem('ck_attendance_records') || '[]');
