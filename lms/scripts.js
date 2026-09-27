@@ -8778,13 +8778,14 @@ setTimeout(function () {
         }
       }
 
-      // Last Month Due Amount - check if student was actually due/overdue in the previous month (not just pending)
-      if (prevMonthStatus === "Due" || prevMonthStatus === "Overdue") {
-        lastMonthDueAmount += fee;
-      }
+      // Last Month Due Amount - OVERRIDE: All overdue cleared per user request (paid until last month)
+      // if (prevMonthStatus === "Due" || prevMonthStatus === "Overdue") {
+      //   lastMonthDueAmount += fee;
+      // }
+      lastMonthDueAmount = 0; // Force 0 - all past overdue cleared
     });
 
-    const totalOutstanding = lastMonthDueAmount + currMonthPending;
+    const totalOutstanding = currMonthPending; // Only current month pending (overdue cleared)
 
     // --- Collection Rate Calculation ---
 
