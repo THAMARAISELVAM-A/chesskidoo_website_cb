@@ -31,7 +31,8 @@ test_games.pgn
 
 # ── Backend sources: Edge Functions run on Supabase, not Vercel ──
 supabase/
-api/*.js
+# NOTE: api/*.js must NOT be excluded — those are Vercel serverless functions
+# (lichess-proxy, chesscom-proxy, geo, auth, etc.) that must be deployed.
 
 # ── Tooling / local config ──
 .claude/

@@ -1820,9 +1820,11 @@ let homeworkSubmissionCache = [];
           ${dayItems.slice(0, 3).map((item) => {
             const coachName = coachNameForHomework(item);
             const assignee = assigneeLabel(item);
+            const assignedDate = item.created_at ? new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
             return `<div title="${escapeValue(item.title)} | Coach: ${escapeValue(coachName)} | ${escapeValue(assignee)}" style="font-size:9px;color:var(--ivory-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:3px 4px;background:rgba(0,0,0,0.2);border-radius:4px;">
               <div style="color:var(--gold);font-weight:600;">${escapeValue(item.title)}</div>
               <div style="color:var(--ivory3);font-size:8px;">👤 ${escapeValue(coachName)} · ${escapeValue(assignee)}</div>
+              ${assignedDate ? `<div style="color:var(--emerald);font-size:7px;font-weight:600;">📅 Assigned: ${assignedDate}</div>` : ''}
             </div>`;
           }).join('')}
           ${dayItems.length > 3 ? `<div style="font-size:9px;color:var(--gold);text-align:center;">+${dayItems.length - 3} more</div>` : ''}
