@@ -668,15 +668,13 @@ window.renderAttendanceCalendar = function(studentOrId, containerEl, year, month
       });
 
       if (hasStudentDay || hasBatchClass) {
-        if (hwOnDate.length > 0) {
-          status = 'present';
+        // Only auto-assign status if no actual attendance record exists
+        // Don't mark as "present" just because homework exists
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (dStr < todayStr) {
+          status = 'pending';
         } else {
-          const todayStr = new Date().toISOString().split('T')[0];
-          if (dStr < todayStr) {
-            status = 'pending';
-          } else {
-            status = '';
-          }
+          status = '';
         }
       }
     }
