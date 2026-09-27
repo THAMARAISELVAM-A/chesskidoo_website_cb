@@ -66,8 +66,30 @@ async function fetchLichessGames(username, max = 10) {
 }
 
 window.retryRecentGames = function () {
-  const lichessUser = window.currentStudent?.lichess_username || '';
-  const chesscomUser = window.currentStudent?.chesscom_username || '';
+  const lichessUserRaw = window.currentStudent?.lichess_username || '';
+  const chesscomUserRaw = window.currentStudent?.chesscom_username || '';
+  
+  // Use shared extraction logic
+  const lichessUser = lichessUserRaw.startsWith('http')
+    ? lichessUserRaw.split('/').filter(Boolean).pop()?.trim() || ''
+    : lichessUserRaw.replace(/^@/, '').trim();
+  const chesscomUser = chesscomUserRaw.startsWith('http')
+    ? (() => {
+        try {
+          const url = new URL(chesscomUserRaw);
+          const parts = url.pathname.split('/').filter(Boolean);
+          const memberIndex = parts.indexOf('member');
+          if (memberIndex !== -1 && parts[memberIndex + 1]) return parts[memberIndex + 1];
+          const profileIndex = parts.indexOf('profile');
+          if (profileIndex !== -1 && parts[profileIndex + 1]) return parts[profileIndex + 1];
+          return parts.pop()?.trim() || '';
+        } catch {
+          const match = chesscomUserRaw.match(/(?:member|profile)\/([^\/\?]+)/i);
+          return match ? match[1] : chesscomUserRaw.split('/').filter(Boolean).pop()?.trim() || '';
+        }
+      })()
+    : chesscomUserRaw.trim();
+  
   const recentGamesContainer = document.getElementById('chessapi-recent-games') || document.getElementById('lichess-recent-games');
 
   if (recentGamesContainer) {
@@ -375,12 +397,46 @@ async function loadChessDashboard(student) {
 
   const lichessUserRaw = student.lichess_username || '';
   const chesscomUserRaw = student.chesscom_username || '';
-  const lichessUser = lichessUserRaw.startsWith('http')
-    ? lichessUserRaw.split('/').filter(Boolean).pop()
-    : lichessUserRaw;
-  const chesscomUser = chesscomUserRaw.startsWith('http')
-    ? chesscomUserRaw.replace('https://www.chess.com/member/', '').replace('https://chess.com/member/', '').split('/').pop()
-    : chesscomUserRaw;
+  
+  // Use shared extraction functions
+  const extractLichessUsername = (raw) => {
+    if (!raw) return '';
+    const trimmed = raw.trim();
+    if (trimmed.startsWith('http')) {
+      try {
+        const url = new URL(trimmed);
+        const parts = url.pathname.split('/').filter(Boolean);
+        return parts.pop() || '';
+      } catch {
+        return trimmed.split('/').filter(Boolean).pop().trim();
+      }
+    }
+    return trimmed.replace(/^@/, '').trim();
+  };
+  
+  const extractChesscomUsername = (raw) => {
+    if (!raw) return '';
+    const trimmed = raw.trim();
+    if (trimmed.startsWith('http')) {
+      try {
+        const url = new URL(trimmed);
+        const parts = url.pathname.split('/').filter(Boolean);
+        const memberIndex = parts.indexOf('member');
+        if (memberIndex !== -1 && parts[memberIndex + 1]) return parts[memberIndex + 1];
+        const profileIndex = parts.indexOf('profile');
+        if (profileIndex !== -1 && parts[profileIndex + 1]) return parts[profileIndex + 1];
+        return parts.pop() || '';
+      } catch {
+        const match = trimmed.match(/(?:member|profile)\/([^\/\?]+)/i);
+        if (match) return match[1];
+        return trimmed.split('/').filter(Boolean).pop().trim();
+      }
+    }
+    return trimmed;
+  };
+  
+  const lichessUser = extractLichessUsername(lichessUserRaw);
+  const chesscomUser = extractChesscomUsername(chesscomUserRaw);
 
   const lichessCard = document.getElementById('chessapi-lichess-content');
   const chesscomCard = document.getElementById('chessapi-chesscom-content');
@@ -1493,12 +1549,51 @@ async function loadChessDashboardForTab(student) {
 
   const lichessUserRaw = student.lichess_username || '';
   const chesscomUserRaw = student.chesscom_username || '';
-  const lichessUser = lichessUserRaw.startsWith('http')
-    ? lichessUserRaw.split('/').filter(Boolean).pop().trim()
-    : lichessUserRaw.trim();
-  const chesscomUser = chesscomUserRaw.startsWith('http')
-    ? chesscomUserRaw.replace('https://www.chess.com/member/', '').replace('https://chess.com/member/', '').split('/').filter(Boolean).pop().trim()
-    : chesscomUserRaw.trim();
+  
+  // Robust username extraction - handles URLs, @usernames, and plain usernames
+  const extractLichessUsername = (raw) => {
+    if (!raw) return '';
+    const trimmed = raw.trim();
+    // If it's a URL, extract username from path
+    if (trimmed.startsWith('http')) {
+      try {
+        const url = new URL(trimmed);
+        const parts = url.pathname.split('/').filter(Boolean);
+        return parts.pop() || '';
+      } catch {
+        return trimmed.split('/').filter(Boolean).pop().trim();
+      }
+    }
+    // Remove @ prefix if present
+    return trimmed.replace(/^@/, '').trim();
+  };
+  
+  const extractChesscomUsername = (raw) => {
+    if (!raw) return '';
+    const trimmed = raw.trim();
+    // If it's a URL, extract username from path
+    if (trimmed.startsWith('http')) {
+      try {
+        const url = new URL(trimmed);
+        const parts = url.pathname.split('/').filter(Boolean);
+        // chess.com URLs are like /member/username or /profile/username
+        const memberIndex = parts.indexOf('member');
+        if (memberIndex !== -1 && parts[memberIndex + 1]) return parts[memberIndex + 1];
+        const profileIndex = parts.indexOf('profile');
+        if (profileIndex !== -1 && parts[profileIndex + 1]) return parts[profileIndex + 1];
+        return parts.pop() || '';
+      } catch {
+        // Fallback: try to extract after member/ or profile/
+        const match = trimmed.match(/(?:member|profile)\/([^\/\?]+)/i);
+        if (match) return match[1];
+        return trimmed.split('/').filter(Boolean).pop().trim();
+      }
+    }
+    return trimmed;
+  };
+  
+  const lichessUser = extractLichessUsername(lichessUserRaw);
+  const chesscomUser = extractChesscomUsername(chesscomUserRaw);
 
   // Check cache first
   const cacheKey = `${student.id}_${lichessUser}_${chesscomUser}`;
