@@ -3888,6 +3888,7 @@
         <button class="btn btn-outline-grey btn-sm" onclick="closeModals()" style="padding:4px 8px;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;">&times;</button>
       </div>
       <form id="change-password-form" onsubmit="event.preventDefault(); submitChangePassword();">
+        <input type="hidden" name="username" id="cpw-username" autocomplete="username">
         <div class="form-group" style="margin-bottom:16px;">
           <label style="display:block;font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;margin-bottom:6px;">New Password *</label>
           <input type="password" id="cpw-input" placeholder="Minimum 6 characters" autocomplete="new-password" style="width:100%;padding:12px 14px;background:#1e293b;border:1px solid rgba(255,255,255,0.15);color:#fff;border-radius:8px;box-sizing:border-box;outline:none;">

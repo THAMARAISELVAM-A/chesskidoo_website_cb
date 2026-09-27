@@ -9328,9 +9328,9 @@ setTimeout(function () {
 
       let studs =
         role === "admin" || role === "master"
-          ? allStudents
+          ? (allStudents || window.allStudents || [])
           : role === "coach"
-            ? (allStudents || []).filter((s) => String(s.coach_id) === String(window.currentCoachId || window.userId))
+            ? (allStudents || window.allStudents || []).filter((s) => String(s.coach_id) === String(window.currentCoachId || window.userId))
             : currentStudent
               ? [currentStudent]
               : [];
@@ -9373,11 +9373,11 @@ setTimeout(function () {
         return enrollDate <= targetMonthEnd;
       });
 
-      if (studs.length === 0 && allStudents.length > 0) {
+      if (studs.length === 0 && (allStudents || window.allStudents || []).length > 0) {
         console.warn("[renderStudents] Base filter removed all students, falling back to unfiltered list.");
         studs = role === "admin" || role === "master"
-          ? allStudents
-          : (allStudents || []).filter((s) => String(s.coach_id) === String(window.currentCoachId || window.userId));
+          ? (allStudents || window.allStudents || [])
+          : (allStudents || window.allStudents || []).filter((s) => String(s.coach_id) === String(window.currentCoachId || window.userId));
       }
 
       console.debug("[renderStudents] After base filter:", studs.length);
@@ -9512,10 +9512,10 @@ setTimeout(function () {
 
       const allFilteredStuds = studs;
       if (!studs || studs.length === 0) {
-        if (allStudents.length > 0) {
+        if ((allStudents || window.allStudents || []).length > 0) {
           studs = role === "admin" || role === "master"
-            ? allStudents
-            : (allStudents || []).filter((s) => String(s.coach_id) === String(window.currentCoachId || window.userId));
+            ? (allStudents || window.allStudents || [])
+            : (allStudents || window.allStudents || []).filter((s) => String(s.coach_id) === String(window.currentCoachId || window.userId));
         }
       }
 
