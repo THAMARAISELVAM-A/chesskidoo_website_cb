@@ -147,7 +147,9 @@ window.generateReportPDF = async function() {
             const isPaidThisMonth = (getStudentPaymentStatus(s, targetMonth, targetYear) === 'Paid');
             const histMonths = totalMonthsUnpaid - (isPaidThisMonth ? 0 : 1);
             
-            if (histMonths > 0) lastDueAmount += (fee * histMonths);
+            // OVERRIDE: All past overdue cleared per user request (paid until last month)
+            // if (histMonths > 0) lastDueAmount += (fee * histMonths);
+            lastDueAmount = 0; // Force 0 - all past overdue cleared
             if (!isPaidThisMonth) currPendingAmount += fee;
         }
     });
@@ -977,7 +979,9 @@ window.generateReportPPT = async function() {
             if (totalMonthsUnpaid > 0) {
                 const isPaidThisMonth = (getStudentPaymentStatus(s, targetMonth, targetYear) === 'Paid');
                 const histMonths = totalMonthsUnpaid - (isPaidThisMonth ? 0 : 1);
-                if (histMonths > 0) lastDueAmount += (fee * histMonths);
+                // OVERRIDE: All past overdue cleared per user request (paid until last month)
+                // if (histMonths > 0) lastDueAmount += (fee * histMonths);
+                lastDueAmount = 0; // Force 0 - all past overdue cleared
                 if (!isPaidThisMonth) currPendingAmount += fee;
             }
         });
