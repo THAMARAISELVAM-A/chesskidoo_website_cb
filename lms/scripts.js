@@ -7186,7 +7186,9 @@ syncCoachDropdowns();
             if (window.autoDetectBillingMonth) window.autoDetectBillingMonth();
             console.log("[Sync] Rendering active page for role:", role);
             const active = document.querySelector(".page.active")?.id;
+            console.debug('[CEO] sync active page=', active);
             if (active === "page-dash") renderDash();
+            else if (active === "page-ceo-dash" && window.renderCeoDashboard) window.renderCeoDashboard();
             else if (active === "page-insights") {
               if (window.generateAcademyInsights)
                 window.generateAcademyInsights();
@@ -7796,8 +7798,10 @@ if (p === "stud")
     }
 
 setTimeout(function () {
-       if (p === "dash") renderDash();
-       if (p === "coach-dash") {
+       console.warn('[CEO] setPage timeout p=', p, 'stack=', new Error().stack);
+        if (p === "dash") renderDash();
+        if (p === "ceo-dash" && window.renderCeoDashboard) window.renderCeoDashboard();
+        if (p === "coach-dash") {
          if (window.loadHomeworkSubmissions) window.loadHomeworkSubmissions(true);
          if (window.renderCoachDashboard) window.renderCoachDashboard();
        }
@@ -7991,11 +7995,13 @@ setTimeout(function () {
       "coach-mode",
       "parent-mode",
       "master-mode",
+      "ceo-mode",
     );
     document.body.classList.add(
       userRole === "master" ? "admin-mode" : userRole + "-mode",
     );
     if (userRole === "master") document.body.classList.add("master-mode");
+    if (userRole === "ceo") document.body.classList.add("ceo-mode");
 
     if ($("top-profile")) $("top-profile").style.display = "flex";
     if ($("top-profile-name"))
@@ -8008,9 +8014,10 @@ setTimeout(function () {
         "000000",
       );
 
-    const isAdmin = userRole === "admin" || userRole === "master";
+    const isAdmin = userRole === "admin" || userRole === "master" || userRole === "ceo";
     const isParent = userRole === "parent";
     const isCoach = userRole === "coach";
+    const isCeo = userRole === "ceo";
     document
       .querySelectorAll(".admin-only")
       .forEach((el) => (el.style.display = isAdmin ? "" : "none"));
@@ -8020,6 +8027,12 @@ setTimeout(function () {
     document
       .querySelectorAll(".coach-only")
       .forEach((el) => (el.style.display = isCoach ? "" : "none"));
+    document
+      .querySelectorAll(".ceo-only")
+      .forEach((el) => {
+        if (el.classList.contains("page")) return;
+        el.style.display = isCeo ? "" : "none";
+      });
 
     // Explicitly show master-only elements if master
     // LOGOUT LOGIC MOVED TO js/auth.js
@@ -8052,6 +8065,8 @@ setTimeout(function () {
       if (hwPage) hwPage.style.setProperty("display", "none", "important");
     } else if (userRole === "coach") {
       setPage("coach-dash");
+    } else if (userRole === "ceo") {
+      setPage("ceo-dash");
     } else {
       setPage("dash");
     }
@@ -9214,14 +9229,17 @@ setTimeout(function () {
   function renderStudents() {
     const tbody = $("stud-body");
     const theadRow = $("stud-thead-row");
+    console.debug('[Students] renderStudents called', 'tbody=', !!tbody, 'theadRow=', !!theadRow, 'page=', document.querySelector('.page.active')?.id);
     if (!tbody) return;
 
     if (window._renderingStudents) return;
     window._renderingStudents = true;
 
     try {
+      console.debug('[Students] renderStudents start', 'role=', role, 'page=', document.querySelector('.page.active')?.id);
       // If students list is still empty while sync is in flight, show loading state
       const currentList = allStudents || window.allStudents || [];
+      console.debug('[Students] currentList length=', currentList.length, 'isLoadingData=', isLoadingData, 'dataCache=', !!dataCache);
       if (currentList.length === 0 && (isLoadingData || !dataCache || !dataCache.timestamp)) {
         tbody.innerHTML = `<tr><td colspan="${role === "coach" ? 7 : 13}" class="text-center"><div class="loading-state"><span class="spinner"></span> Loading students...</div></td></tr>`;
         return;
@@ -9365,7 +9383,7 @@ setTimeout(function () {
       });
 
       let studs =
-        role === "admin" || role === "master"
+        role === "admin" || role === "master" || role === "ceo"
           ? (allStudents || window.allStudents || [])
           : role === "coach"
             ? (allStudents || window.allStudents || []).filter((s) => String(s.coach_id) === String(window.currentCoachId || window.userId))
@@ -9413,7 +9431,7 @@ setTimeout(function () {
 
       if (studs.length === 0 && (allStudents || window.allStudents || []).length > 0) {
         console.warn("[renderStudents] Base filter removed all students, falling back to unfiltered list.");
-        studs = role === "admin" || role === "master"
+        studs = role === "admin" || role === "master" || role === "ceo"
           ? (allStudents || window.allStudents || [])
           : (allStudents || window.allStudents || []).filter((s) => String(s.coach_id) === String(window.currentCoachId || window.userId));
       }

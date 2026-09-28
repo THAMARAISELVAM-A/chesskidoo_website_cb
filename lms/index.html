@@ -152,6 +152,7 @@
     </div>
   <div class="nav-group">
     <!-- Admin -->
+    <div class="nav-item admin-only ceo-only" id="nav-ceo-dash" onclick="setPage('ceo-dash')"><span class="ico">👑</span> CEO Dashboard</div>
     <div class="nav-item admin-only" id="nav-dash" onclick="setPage('dash')"><span class="ico">📊</span> Dashboard</div>
     <div class="nav-item admin-only" id="nav-stud" onclick="setPage('stud')"><span class="ico">👨‍🎓</span> Students</div>
     <div class="nav-item admin-only" id="nav-coach-mgmt" onclick="setPage('coach-mgmt')"><span class="ico">👨‍🏫</span> Coaches</div>
@@ -505,6 +506,143 @@
            </div>
           </div>
         </div>
+
+      <!-- CEO Dashboard -->
+      <div id="page-ceo-dash" class="page admin-only ceo-only">
+        <div class="ceo-dashboard">
+          <!-- Header Banner -->
+          <div class="ceo-header">
+            <div class="ceo-header-inner">
+              <div class="ceo-logo-area">
+                <span class="ceo-king-icon">♔</span>
+                <div>
+                  <div class="ceo-brand-name">CHESSKIDOO</div>
+                  <div class="ceo-brand-sub">INDIA'S MOST TRUSTED CHESS LEARNING ECOSYSTEM</div>
+                </div>
+              </div>
+              <div class="ceo-header-badges">
+                <span class="ceo-pill-badge">CEO DASHBOARD</span>
+                <span class="ceo-tagline">ONE DASHBOARD. COMPLETE CONTROL. BETTER DECISIONS.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Stat Cards -->
+          <div class="ceo-stats-row">
+            <div class="ceo-stat-card ceo-stat-blue">
+              <div class="ceo-stat-header">
+                <span class="ceo-stat-icon">👨‍🎓</span>
+                <span class="ceo-stat-label">Total Students</span>
+              </div>
+              <div class="ceo-stat-value" id="ceo-total-students">—</div>
+              <div class="ceo-stat-badge ceo-badge-blue" id="ceo-students-badge">+0 this month</div>
+              <div class="ceo-sparkline-wrap"><canvas id="ceo-students-spark" height="40"></canvas></div>
+            </div>
+            <div class="ceo-stat-card ceo-stat-green">
+              <div class="ceo-stat-header">
+                <span class="ceo-stat-icon">🏫</span>
+                <span class="ceo-stat-label">Total Centers</span>
+              </div>
+              <div class="ceo-stat-value" id="ceo-total-centers">—</div>
+              <div class="ceo-stat-badge ceo-badge-green" id="ceo-centers-badge">+0 new center</div>
+            </div>
+            <div class="ceo-stat-card ceo-stat-purple">
+              <div class="ceo-stat-header">
+                <span class="ceo-stat-icon">👨‍🏫</span>
+                <span class="ceo-stat-label">Total Coaches</span>
+              </div>
+              <div class="ceo-stat-value" id="ceo-total-coaches">—</div>
+              <div class="ceo-stat-badge ceo-badge-purple" id="ceo-coaches-badge">0 on leave</div>
+            </div>
+            <div class="ceo-stat-card ceo-stat-gold">
+              <div class="ceo-stat-header">
+                <span class="ceo-stat-icon">💰</span>
+                <span class="ceo-stat-label">Monthly Revenue</span>
+              </div>
+              <div class="ceo-stat-value" id="ceo-monthly-revenue">—</div>
+              <div class="ceo-stat-badge ceo-badge-gold" id="ceo-revenue-badge">+0% vs last month</div>
+            </div>
+          </div>
+
+          <!-- Middle Visualizations -->
+          <div class="ceo-charts-row">
+            <div class="ceo-chart-card">
+              <h3 class="ceo-chart-title">Students by Level</h3>
+              <div class="ceo-chart-container"><canvas id="ceo-chart-levels"></canvas></div>
+            </div>
+            <div class="ceo-chart-card">
+              <h3 class="ceo-chart-title">Revenue Overview</h3>
+              <div class="ceo-chart-container"><canvas id="ceo-chart-revenue"></canvas></div>
+            </div>
+            <div class="ceo-chart-card">
+              <h3 class="ceo-chart-title">Student In / Out</h3>
+              <div class="ceo-chart-container"><canvas id="ceo-chart-inout"></canvas></div>
+            </div>
+          </div>
+
+          <!-- KPI Progress Cards -->
+          <div class="ceo-kpi-row">
+            <div class="ceo-kpi-card">
+              <h4 class="ceo-kpi-title">Class Completion Rate</h4>
+              <div class="ceo-circular-progress">
+                <canvas id="ceo-kpi-completion" width="140" height="140"></canvas>
+                <div class="ceo-circular-text"><span id="ceo-completion-pct">0%</span><span>Excellent</span></div>
+              </div>
+            </div>
+            <div class="ceo-kpi-card">
+              <h4 class="ceo-kpi-title">Homework Completion</h4>
+              <div class="ceo-circular-progress">
+                <canvas id="ceo-kpi-homework" width="140" height="140"></canvas>
+                <div class="ceo-circular-text"><span id="ceo-homework-pct">0%</span><span>Good</span></div>
+              </div>
+            </div>
+            <div class="ceo-kpi-card">
+              <h4 class="ceo-kpi-title">Coach Performance</h4>
+              <div class="ceo-stars-display" id="ceo-coach-stars" aria-label="Coach rating"></div>
+              <div class="ceo-kpi-sub" id="ceo-coach-rating">4.6 / 5</div>
+            </div>
+            <div class="ceo-kpi-card ceo-kpi-alert">
+              <h4 class="ceo-kpi-title">Pending HR Actions</h4>
+              <div class="ceo-alert-number" id="ceo-hr-pending">0</div>
+              <div class="ceo-alert-label">Needs Attention</div>
+              <button class="ceo-alert-btn" onclick="setPage('coach-mgmt')">View Details</button>
+            </div>
+          </div>
+
+          <!-- Bottom Analytics Row -->
+          <div class="ceo-bottom-row">
+            <div class="ceo-bottom-card">
+               <h3 class="ceo-chart-title">Coach-wise Student Count</h3>
+              <div class="ceo-chart-container"><canvas id="ceo-chart-centers"></canvas></div>
+            </div>
+            <div class="ceo-bottom-card">
+              <h3 class="ceo-chart-title">Upcoming Tournaments</h3>
+              <div class="ceo-tournament-list" id="ceo-tournament-list">
+                <p style="color:var(--ivory-dim);text-align:center;padding:20px;">Loading tournaments...</p>
+              </div>
+            </div>
+            <div class="ceo-bottom-card">
+              <h3 class="ceo-chart-title">Fee Collection Summary</h3>
+              <div class="ceo-chart-container ceo-ring-wrap"><canvas id="ceo-chart-fees"></canvas></div>
+            </div>
+          </div>
+
+          <!-- Footer Ribbon -->
+          <div class="ceo-footer-ribbon">
+            <div class="ceo-ribbon-track">
+              <span class="ceo-ribbon-item">⚡ REAL-TIME INSIGHTS</span>
+              <span class="ceo-ribbon-sep">◆</span>
+              <span class="ceo-ribbon-item">🤖 AI POWERED DECISIONS</span>
+              <span class="ceo-ribbon-sep">◆</span>
+              <span class="ceo-ribbon-item">🔧 SMART AUTOMATION</span>
+              <span class="ceo-ribbon-sep">◆</span>
+              <span class="ceo-ribbon-item">🏆 GROW YOUR CHESS EMPIRE</span>
+              <span class="ceo-ribbon-sep">◆</span>
+              <span class="ceo-ribbon-item">📊 BETTER DATA BETTER FUTURE</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- Dashboard -->
     <div id="page-dash" class="page admin-only">
@@ -4788,6 +4926,7 @@
       <script src="/lms/js/schedule.js?v=2.2&t=20260817" charset="utf-8"></script>
  
       <script src="/lms/js/attendance_extension.js?v=2.0&t=20260611a" charset="utf-8"></script>
+      <script src="/lms/js/ceo-dashboard.js?v=1.1" charset="utf-8"></script>
 
 <!-- Combined Class Session (Homework + Attendance) Modal -->
        <div class="modal" id="quick-class-session-modal">

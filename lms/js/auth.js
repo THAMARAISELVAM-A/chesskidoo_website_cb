@@ -239,9 +239,11 @@ window.doLogin = async function () {
       return;
     }
 
-    // 4. Admin / Master Credential Fallback
-    if ((normUser === 'admin' || normUser === 'master' || normUser === 'chesskidoo') && (pass === 'admin123' || pass === 'master123' || pass === 'chess123')) {
-      const displayRole = normUser === 'master' ? 'master' : 'admin';
+    // 4. Admin / Master / CEO Credential Fallback
+    console.warn('[CEO] auth fallback check', normUser, pass);
+    if ((normUser === 'admin' || normUser === 'master' || normUser === 'chesskidoo' || normUser === 'ceo') && (pass === 'admin123' || pass === 'master123' || pass === 'chess123' || pass === 'ceo123')) {
+      const displayRole = normUser === 'master' ? 'master' : normUser === 'ceo' ? 'ceo' : 'admin';
+      console.warn('[CEO] auth success role=', displayRole);
       window.role = displayRole;
       const authObj = {
         role: displayRole,
