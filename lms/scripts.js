@@ -17990,23 +17990,21 @@ setTimeout(function () {
         }
       }
 
-      // "Last Month Due" is the ACTIONABLE chase figure for the viewed month:
-      // the student must have owed last month AND still be a billable camper
-      // now. Students who have since gone inactive/archived — including
-      // legacy bare-flag records, whose effective-now fallback resolves them
-      // Inactive from the current month — are no longer chased: their arrears
-      // stay fully visible in the registry and fee history, they just stop
-      // inflating this card. A fee skipped ONLY for the current month does
-      // NOT hide last month's real debt (Skipped ≠ inactive), because
-      // isInactiveNow is timeline-based while isSkippedNow also contains
-      // skip tags — that is why the gate below uses isInactiveNow, not
-      // isSkippedNow.
+      // "Last Month Due" is the actionable chase figure for the viewed month.
+      // Exclude students who were inactive/skipped in the PREVIOUS month (no fee
+      // was owed for that month) and also exclude students who are inactive NOW
+      // (no longer billable). Use month-aware fee for the previous month.
       if (
         !isSkippedPrev &&
         !isInactiveNow &&
         (prevMonthStatus === "Due" || prevMonthStatus === "Overdue")
       ) {
-        lastMonthDueAmount += getStudentMonthlyFee(s) || 0;
+        const prevFeeInfo = typeof getStudentFeeForMonth === "function"
+          ? getStudentFeeForMonth(s, prevMonthDate.getUTCMonth(), prevMonthDate.getUTCFullYear())
+          : { amount: getStudentMonthlyFee(s) || 0, isBillable: true };
+        if (prevFeeInfo && prevFeeInfo.isBillable) {
+          lastMonthDueAmount += prevFeeInfo.amount || getStudentMonthlyFee(s) || 0;
+        }
       }
     });
 
