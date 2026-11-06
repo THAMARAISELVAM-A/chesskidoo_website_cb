@@ -17958,7 +17958,10 @@ setTimeout(function () {
       const prevMStatus = String(getStudentStatusForMonth(s, prevMonthDate.getUTCMonth(), prevMonthDate.getUTCFullYear()) || "").toLowerCase();
       const isInactivePrev = prevMStatus === "inactive" || prevMonthStatus === "No Fee Required";
 
-      const fee = isInactiveNow ? 0 : (getStudentMonthlyFee(s) || 0);
+      const feeInfo = typeof getStudentFeeForMonth === "function"
+        ? getStudentFeeForMonth(s, targetMonth, targetYear)
+        : { amount: getStudentMonthlyFee(s) || 0, isBillable: !isInactiveNow };
+      const fee = (isInactiveNow || !feeInfo.isBillable) ? 0 : (feeInfo.amount || getStudentMonthlyFee(s) || 0);
 
       const enrollDateStr = getStudentDate(s);
       const baseline = new Date(Date.UTC(2026, 0, 1));
@@ -18397,7 +18400,11 @@ setTimeout(function () {
 
         if (noFee) return;
 
-        const fee = getStudentMonthlyFee(s) || 0;
+        const feeInfo = typeof getStudentFeeForMonth === "function"
+          ? getStudentFeeForMonth(s, targetMonth, targetYear)
+          : { amount: getStudentMonthlyFee(s) || 0, isBillable: !noFee };
+        if (!feeInfo.isBillable) return;
+        const fee = feeInfo.amount || getStudentMonthlyFee(s) || 0;
 
         targetData.students++;
 
@@ -37612,7 +37619,7 @@ const coach = allCoaches.find((c) => String(c.id) === String(s.coach_id));
 
           const activeStudents = allStudents.filter(
 
-            (s) => getStudentStatus(s) === "active",
+            (s) => String(getStudentStatusForMonth(s, targetMonth, targetYear) || "").toLowerCase() === "active",
 
           ).length;
 
@@ -37726,7 +37733,11 @@ const coach = allCoaches.find((c) => String(c.id) === String(s.coach_id));
 
             if (noFee) return;
 
-            const fee = getStudentMonthlyFee(s) || 0;
+            const feeInfo = typeof getStudentFeeForMonth === "function"
+              ? getStudentFeeForMonth(s, targetMonth, targetYear)
+              : { amount: getStudentMonthlyFee(s) || 0, isBillable: !noFee };
+            if (!feeInfo.isBillable) return;
+            const fee = feeInfo.amount || getStudentMonthlyFee(s) || 0;
 
             targetData.students++;
 
