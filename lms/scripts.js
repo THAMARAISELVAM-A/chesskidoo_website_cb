@@ -8532,9 +8532,33 @@
     if (!sid || !monthKey) return [];
     const index = _ensurePaymentIndex();
     const smap = index.get(sid);
-    if (!smap) return [];
-    const arr = smap.get(monthKey);
-    return arr || [];
+    let arr = smap ? (smap.get(monthKey) || []) : [];
+    // Fallback: if the index has no entry for this month, scan all payments
+    // directly. This catches cases where applied_month is null and
+    // payment_date was overridden by the backend to a different month.
+    if (arr.length === 0) {
+      const src = (typeof window !== "undefined" && Array.isArray(window.allPayments))
+        ? window.allPayments
+        : (Array.isArray(allPayments) ? allPayments : []);
+      arr = (src || []).filter((p) => {
+        if (!p) return false;
+        const pst = String(p.status || "").toLowerCase();
+        if (pst !== "paid" && pst !== "completed" && pst !== "pending") return false;
+        if (!isTuitionPayment(p)) return false;
+        if (String(p.student_id || "").trim().toLowerCase() !== sid) return false;
+        // Check applied_month first
+        if (p.applied_month) {
+          const k = normalizeMonth(p.applied_month);
+          if (k === monthKey) return true;
+        }
+        // Fall back to payment_date / created_at
+        const pd = new Date(p.payment_date || p.created_at);
+        if (isNaN(pd.getTime())) return false;
+        const pKey = `${pd.getUTCFullYear()}-${String(pd.getUTCMonth() + 1).padStart(2, "0")}`;
+        return pKey === monthKey;
+      });
+    }
+    return arr;
   }
 
 
@@ -14215,7 +14239,7 @@ syncCoachDropdowns();
 
           apiCall("/api/attendance"),
 
-          apiCall("/api/payments?order=payment_date.desc&limit=1000"),
+          apiCall("/api/payments?order=payment_date.desc&limit=5000"),
 
           apiCall("/api/messages"),
 
@@ -14270,6 +14294,7 @@ syncCoachDropdowns();
           allPayments = d.data || d;
 
           window.allPayments = allPayments;
+          _invalidatePaymentIndex();
 
         }
 
