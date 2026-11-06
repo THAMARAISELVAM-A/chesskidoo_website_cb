@@ -3,6 +3,142 @@
  * Handles boardroom-ready analytics and PDF generation.
  */
 
+// ── Time-based Active/Inactive status helper ──────────────────────────────────
+  // A student's status is evaluated PER BILLING MONTH via the status_history
+  // timeline. When the timeline says "inactive" for the report month, the fee
+  // is ₹0 and the month is NOT counted as active (keeps ARPU honest).
+  const reportMonthInactive = (s, month, year) => {
+    const fn = window.getStudentStatusForMonth;
+    return typeof fn === 'function' ? String(fn(s, month, year) || '').trim().toLowerCase() === 'inactive' : false;
+  };
+
+  // ── Month-skip ("Not Active") helpers ───────────────────────────────────────
+  // A month the academy marked inactive is billed at ₹0, so it must never inflate
+  // potential / pending / arrears totals. The state is owned by scripts.js and
+  // persisted in students.notes as "[SKIP_MONTH:2026-09,2026-12]".
+  const reportSkipActive = (s, month, year) => {
+    const fn = window.isStudentMonthSkipped;
+    return typeof fn === 'function' ? !!fn(s, month, year) : false;
+  };
+
+// How many skipped months fall inside a billing span of `monthsRequired` months
+  // starting at the anchor month — used to keep historical arrears honest.
+  const reportCountSkippedWithin = (s, anchorYear, anchorMonth, monthsRequired) => {
+    const fn = window.getSkippedMonths;
+    if (typeof fn !== 'function' || !(monthsRequired > 0)) return 0;
+    let n = 0;
+    (fn(s) || []).forEach((key) => {
+      const m = /^(\d{4})-(\d{1,2})$/.exec(String(key || '').trim());
+      if (!m) return;
+      const offset = (Number(m[1]) - anchorYear) * 12 + (Number(m[2]) - 1 - anchorMonth);
+      if (offset >= 0 && offset < monthsRequired) n += 1;
+    });
+    return n;
+  };
+
+  // How many TIME-BASED inactive months fall inside a billing span of
+  // `monthsRequired` months starting at the anchor month — used to keep
+  // historical arrears honest (inactive months bill ₹0 and must not be
+  // counted as unpaid).
+  const reportCountInactiveWithin = (s, anchorYear, anchorMonth, monthsRequired) => {
+    const fn = window.getStudentStatusForMonth;
+    if (typeof fn !== 'function' || !(monthsRequired > 0)) return 0;
+    let n = 0;
+    for (let i = 0; i < monthsRequired; i++) {
+      const y = anchorYear + Math.floor((anchorMonth + i) / 12);
+      const m = (anchorMonth + i) % 12;
+      if (String(fn(s, m, y) || '').trim().toLowerCase() === 'inactive') n += 1;
+    }
+    return n;
+  };
+
+/**
+ * Fee aggregation shared by the PDF and PowerPoint reports (single source of
+ * truth so the two never drift apart).
+ *
+ * Splits a month's expectation into three figures:
+ *   potential         – every billed student's monthly fee (skipped months are ₹0)
+ *   currPendingAmount – the target-month fee for students who still owe it
+ *   lastDueAmount     – fee × months still unpaid BEFORE the target month
+ *
+ * Credits are counted one per applied_month (set by the debt-first engine) and
+ * fall back to the payment's calendar month for legacy rows, so a single advance
+ * payment clears exactly one month of arrears.
+ */
+window.computeReportFeeTotals = function (opts) {
+  const students = opts.students || [];
+  const payments = opts.payments || [];
+  const month = opts.month;
+  const year = opts.year;
+  const baseline = opts.baseline || new Date(Date.UTC(year, month, 1));
+
+  const getStudentMonthlyFee = window.getStudentMonthlyFee;
+  const getStudentDate = window.getStudentDate;
+  const getStudentPaymentStatus = window.getStudentPaymentStatus;
+
+  // Credit per student-month (advance-aware).
+  const credits = {};
+  const seen = new Set();
+  payments.forEach(p => {
+    if (!p || p.status !== 'paid') return;
+    const sid = String(p.student_id || '').trim().toLowerCase();
+    if (!sid) return;
+
+    let key;
+    if (p.applied_month && String(p.applied_month).trim()) {
+      key = `${sid}_${p.applied_month}`;
+    } else {
+      const pDate = new Date(p.payment_date || p.created_at);
+      key = `${sid}_${pDate.getUTCFullYear()}-${String(pDate.getUTCMonth() + 1).padStart(2, '0')}`;
+    }
+    if (seen.has(key)) return;
+    seen.add(key);
+    credits[sid] = (credits[sid] || 0) + 1;
+  });
+
+  let potential = 0;
+  let lastDueAmount = 0;
+  let currPendingAmount = 0;
+
+  students.forEach(s => {
+    const fee = getStudentMonthlyFee(s) || 0;
+    const enrollStr = getStudentDate(s);
+    let enrollDate = enrollStr ? new Date(enrollStr) : baseline;
+    if (isNaN(enrollDate.getTime())) enrollDate = baseline;
+
+    // Billing anchor applies the late-join grace rule, so a late-month join's
+    // first billed month is the following one.
+    const anchor = window.getBillingAnchor
+      ? window.getBillingAnchor(s, baseline)
+      : { year: (enrollDate < baseline ? baseline : enrollDate).getUTCFullYear(),
+          month: (enrollDate < baseline ? baseline : enrollDate).getUTCMonth() };
+    const monthsRequired = ((year - anchor.year) * 12) + (month - anchor.month) + 1;
+
+    // A skipped month bills ₹0: no potential, no current-month dues, and it is
+    // also dropped from the historical arrears span.
+    const billedThisMonth = !reportSkipActive(s, month, year)
+      && !reportMonthInactive(s, month, year);
+    const billableMonths = Math.max(0, monthsRequired
+      - reportCountSkippedWithin(s, anchor.year, anchor.month, monthsRequired)
+      - reportCountInactiveWithin(s, anchor.year, anchor.month, monthsRequired));
+
+    if (billedThisMonth) potential += fee;
+
+    const sid = String(s.id || '').trim().toLowerCase();
+    const monthsUnpaid = Math.max(0, billableMonths - (credits[sid] || 0));
+    if (monthsUnpaid <= 0) return;
+
+    const currentMonthUnpaid = billedThisMonth
+      && getStudentPaymentStatus(s, month, year) !== 'Paid';
+    const histMonths = monthsUnpaid - (currentMonthUnpaid ? 1 : 0);
+
+    if (histMonths > 0) lastDueAmount += (fee * histMonths);
+    if (currentMonthUnpaid) currPendingAmount += fee;
+  });
+
+  return { potential: potential, lastDueAmount: lastDueAmount, currPendingAmount: currPendingAmount };
+};
+
 window.generateReportPDF = async function() {
     const allStudents = window.allStudents || [];
     const allCoaches = window.allCoaches || [];
@@ -51,48 +187,30 @@ window.generateReportPDF = async function() {
      const monthEndLimit = new Date(Date.UTC(targetYear, targetMonth + 1, 0)); // last day of month at 00:00 UTC
      const baseline = new Date(Date.UTC(2026, 3, 1, 0, 0, 0)); // April 1st Baseline (UTC)
      
-     const targetStudents = allStudents.filter(s => {
-          const sStatus = getStudentStatus(s);
-          if (sStatus === 'archived' || sStatus === 'pending' || sStatus === 'waitlist' || sStatus === 'inactive') return false;
-          
-          const sName = (getStudentName(s) || '').toUpperCase();
-          if (sName.includes('PARENT') || sName.includes('COACH') || sName.includes('TEST')) return false;
-          
-          const joinStr = getStudentDate(s);
-          let enrollDate = joinStr ? new Date(joinStr) : baseline;
-          if (isNaN(enrollDate.getTime())) enrollDate = baseline;
-          return enrollDate <= monthEndLimit;
-     });
+const targetStudents = allStudents.filter(s => {
+           const sStatus = getStudentStatus(s);
+           // Time-based inactive students are NOT excluded here — they are
+           // enrolled but billed at ₹0 for this month. They must appear in
+           // the report so the admin can see them and restore fees later.
+           if (sStatus === 'archived' || sStatus === 'pending' || sStatus === 'waitlist') return false;
+           
+           const sName = (getStudentName(s) || '').toUpperCase();
+           if (sName.includes('PARENT') || sName.includes('COACH') || sName.includes('TEST')) return false;
+           
+           const joinStr = getStudentDate(s);
+           let enrollDate = joinStr ? new Date(joinStr) : baseline;
+           if (isNaN(enrollDate.getTime())) enrollDate = baseline;
+           return enrollDate <= monthEndLimit;
+      });
 
-    const totalStudents = allStudents.length;
-    const activeStudents = targetStudents.length;
+     const totalStudents = allStudents.length;
+     // Students whose TIME-BASED status is inactive for the report month are
+     // billed ₹0, so they are not "active" for this period (also keeps ARPU
+     // from being understated).
+     const activeStudents = targetStudents.filter(s => !reportMonthInactive(s, targetMonth, targetYear) && !reportSkipActive(s, targetMonth, targetYear)).length;
 
-    // Map total payments per student up to target month end (advance-aware)
-    // Uses applied_month metadata when present; falls back to billing anchor + payment date.
+    // Payment credits are counted inside computeReportFeeTotals.
     const targetMonthEnd = new Date(Date.UTC(targetYear, targetMonth + 1, 0, 23, 59, 59));
-    const totalPaymentsMap = {};
-    const seenApplied = new Set();
-    allPayments.forEach(p => {
-      if (p.status !== 'paid') return;
-      const sid = String(p.student_id || '').trim().toLowerCase();
-      if (!sid) return;
-
-      // Primary: applied_month metadata (set by debt-first engine)
-      if (p.applied_month && String(p.applied_month).trim()) {
-        const key = `${sid}_${p.applied_month}`;
-        if (seenApplied.has(key)) return;
-        seenApplied.add(key);
-        totalPaymentsMap[sid] = (totalPaymentsMap[sid] || 0) + 1;
-        return;
-      }
-
-      // Fallback: legacy calendar-month counting for old payment records
-      const pDate = new Date(p.payment_date || p.created_at);
-      const mKey = `${sid}_${pDate.getUTCFullYear()}-${String(pDate.getUTCMonth() + 1).padStart(2, '0')}`;
-      if (seenApplied.has(mKey)) return;
-      seenApplied.add(mKey);
-      totalPaymentsMap[sid] = (totalPaymentsMap[sid] || 0) + 1;
-    });
 
     // Helper function to match dashboard slot-based revenue calculation
     function calculateSlotRevenue(year, month) {
@@ -122,36 +240,12 @@ window.generateReportPDF = async function() {
     const collected = (window.cycleRevenue ? window.cycleRevenue(targetYear, targetMonth) : calculateSlotRevenue(targetYear, targetMonth));
     const monthlyPayments = allPayments.filter(p => getYM(p.payment_date || p.created_at) === targetYM && p.status === 'paid');
 
-    let lastDueAmount = 0;
-    let currPendingAmount = 0;
-    let potential = 0;
-
-    targetStudents.forEach(s => {
-        const fee = getStudentMonthlyFee(s) || 0;
-        const enrollDateStr = getStudentDate(s);
-        let enrollDate = enrollDateStr ? new Date(enrollDateStr) : baseline;
-        if (isNaN(enrollDate.getTime())) {
-            enrollDate = baseline;
-        }
-        // Billing anchor applies the late-join grace rule for consistency with
-        // the registry status (a late-month join's first billed month is next month).
-        const _anchor = window.getBillingAnchor ? window.getBillingAnchor(s, baseline)
-          : { year: (enrollDate < baseline ? baseline : enrollDate).getUTCFullYear(), month: (enrollDate < baseline ? baseline : enrollDate).getUTCMonth() };
-        const monthsRequired = ((targetYear - _anchor.year) * 12) + (targetMonth - _anchor.month) + 1;
-        const s_id_key = String(s.id || '').trim().toLowerCase();
-        const totalCredits = totalPaymentsMap[s_id_key] || 0;
-
-        potential += fee;
-        const totalMonthsUnpaid = Math.max(0, monthsRequired - totalCredits);
-        if (totalMonthsUnpaid > 0) {
-            const isPaidThisMonth = (getStudentPaymentStatus(s, targetMonth, targetYear) === 'Paid');
-            const histMonths = totalMonthsUnpaid - (isPaidThisMonth ? 0 : 1);
-            
-            // OVERRIDE: All past overdue cleared per user request (paid until last month)
-            // if (histMonths > 0) lastDueAmount += (fee * histMonths);
-            lastDueAmount = 0; // Force 0 - all past overdue cleared
-            if (!isPaidThisMonth) currPendingAmount += fee;
-        }
+    const { potential, lastDueAmount, currPendingAmount } = window.computeReportFeeTotals({
+        students: targetStudents,
+        payments: allPayments,
+        month: targetMonth,
+        year: targetYear,
+        baseline: baseline,
     });
 
     // Removed strict synchronization to show the true sum of unpaid fees for students
@@ -195,16 +289,37 @@ window.generateReportPDF = async function() {
     const presentCount = monthAtt.filter(a => a.status === 'present').length;
     const attendanceHealth = monthAtt.length > 0 ? ((presentCount / monthAtt.length) * 100).toFixed(1) : 'N/A';
 
-    // Payment-status breakdown counts for the executive summary cards.
-    let paidCount = 0, pendingCount = 0, dueCount = 0, overdueCount = 0;
+    // Enrollment & payment-status breakdown (time-based for the reporting month).
+    // Cross-references enrollment dates, the student status timeline (Active/Inactive
+    // effective months), and payment history (applied_month / payment date) used by the
+    // parent portal. Inactive/No-Fee/Skipped months bill ₹0 and are excluded from
+    // enrollment totals and revenue metrics to prevent inflated figures.
+    const getStudentFeeForMonth = window.getStudentFeeForMonth;
+    const monthFee = (stu, st) => {
+      if (st === 'Skipped' || st === 'No Fee Required' || st === 'Not Enrolled') return 0;
+      const fi = typeof getStudentFeeForMonth === 'function' ? getStudentFeeForMonth(stu, targetMonth, targetYear) : null;
+      if (fi && !fi.isBillable) return 0;
+      if (fi && Number.isFinite(Number(fi.amount))) return Number(fi.amount);
+      return Number(getStudentMonthlyFee(stu) || 0);
+    };
+    let totalActiveStudents = 0, inactiveThisMonth = 0, notEnrolledCount = 0;
+    let paidCount = 0, pendingCount = 0, dueCount = 0, overdueCount = 0, skippedCount = 0, noFeeCount = 0;
+    let paidAmount = 0, pendingAmount = 0, dueAmount = 0, overdueAmount = 0;
     targetStudents.forEach(s => {
       const st = getStudentPaymentStatus(s, targetMonth, targetYear);
-      if (st === 'Paid') paidCount++;
-      else if (st === 'Pending') pendingCount++;
-      else if (st === 'Due') dueCount++;
-      else if (st === 'Overdue') overdueCount++;
+      const amt = monthFee(s, st);
+      if (st === 'Not Enrolled') { notEnrolledCount++; return; }
+      if (st === 'Skipped') { skippedCount++; return; }
+      if (st === 'No Fee Required') { noFeeCount++; inactiveThisMonth++; return; }
+      totalActiveStudents++;
+      if (st === 'Paid') { paidCount++; paidAmount += amt; }
+      else if (st === 'Pending') { pendingCount++; pendingAmount += amt; }
+      else if (st === 'Due') { dueCount++; dueAmount += amt; }
+      else if (st === 'Overdue') { overdueCount++; overdueAmount += amt; }
+      else { pendingCount++; pendingAmount += amt; }
     });
-    const outstanding = lastDueAmount + currPendingAmount;
+    const outstanding = dueAmount + overdueAmount + pendingAmount;
+    const totalOutstandingInclArrears = lastDueAmount + currPendingAmount;
 
     // Coach Performance (based on true payments from assigned students this month)
     const coachMetrics = allCoaches.filter(c => c.status !== 'archived').map(c => {
@@ -230,7 +345,7 @@ window.generateReportPDF = async function() {
         name: getCoachName(c), 
         students: coachStuds.filter(s => {
           const sStatus = getStudentStatus(s);
-          if (sStatus === 'archived' || sStatus === 'pending' || sStatus === 'waitlist' || sStatus === 'inactive') return false;
+          if (sStatus === 'archived' || sStatus === 'pending' || sStatus === 'waitlist') return false;
           const enrollDateStr = getStudentDate(s);
           let enrollDate = enrollDateStr ? new Date(enrollDateStr) : baseline;
           if (isNaN(enrollDate.getTime())) enrollDate = baseline;
@@ -246,13 +361,13 @@ window.generateReportPDF = async function() {
     const topPending = allStudents
       .filter(s => {
           const sStatus = getStudentStatus(s);
-          if (sStatus === 'archived' || sStatus === 'pending' || sStatus === 'waitlist' || sStatus === 'inactive') return false;
+          if (sStatus === 'archived' || sStatus === 'pending' || sStatus === 'waitlist') return false;
           const enrollDateStr = getStudentDate(s);
           let enrollDate = enrollDateStr ? new Date(enrollDateStr) : baseline;
           if (isNaN(enrollDate.getTime())) enrollDate = baseline;
           if (enrollDate > monthEndLimit) return false;
           const status = getStudentPaymentStatus(s, targetMonth, targetYear);
-          return status !== 'Paid' && status !== 'Not Enrolled';
+          return status !== 'Paid' && status !== 'Not Enrolled' && status !== 'Skipped' && status !== 'No Fee Required';
       })
       .sort((a, b) => getStudentMonthlyFee(b) - getStudentMonthlyFee(a))
       .slice(0, 5);
@@ -274,16 +389,22 @@ window.generateReportPDF = async function() {
 
         allStudents.forEach(s => {
             const sStatus = getStudentStatus(s);
-            if (sStatus === 'archived' || sStatus === 'pending' || sStatus === 'waitlist' || sStatus === 'inactive') return;
+            if (sStatus === 'archived' || sStatus === 'pending' || sStatus === 'waitlist') return;
             const enrollDateStr = getStudentDate(s);
             let enrollDate = enrollDateStr ? new Date(enrollDateStr) : baseline;
             if (isNaN(enrollDate.getTime())) enrollDate = baseline;
             if (enrollDate <= mEnd) {
+                // A TIME-BASED inactive month bills ₹0 — keep it out of that
+                // month's potential and outstanding figures.
+                const skipped = reportSkipActive(s, m, y);
+                const inactive = reportMonthInactive(s, m, y);
                 const fee = getStudentMonthlyFee(s) || 0;
+                if (skipped || inactive) return;
+
                 mPotential += fee;
-                
+
                 const status = getStudentPaymentStatus(s, m, y);
-                if (status !== 'Paid' && status !== 'Not Enrolled') {
+                if (status !== 'Paid' && status !== 'Not Enrolled' && status !== 'No Fee Required') {
                     mOutstanding += fee;
                 }
             }
@@ -472,27 +593,27 @@ window.generateReportPDF = async function() {
       </div>
     </div>
 
-    <h3>I. Strategic Key Metrics</h3>
+    <h3>I. Enrollment & Key Metrics (Reporting Month)</h3>
     <div class="kpi-grid">
       <div class="kpi-card">
-        <div class="kpi-label">Active Students</div>
-        <div class="kpi-value">${activeStudents}</div>
-        <div class="kpi-sub">Total Students</div>
+        <div class="kpi-label">Total Active Students</div>
+        <div class="kpi-value">${totalActiveStudents}</div>
+        <div class="kpi-sub">Enrolled &amp; active for ${dateStr}; inactive/no-fee excluded</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Past Unpaid Fees</div>
-        <div class="kpi-value" style="color:var(--ruby)">₹${lastDueAmount.toLocaleString()}</div>
-        <div class="kpi-sub">Previous Month Arrears</div>
+        <div class="kpi-label">Inactive / No Fee (Month)</div>
+        <div class="kpi-value" style="color:var(--text-dim)">${inactiveThisMonth + skippedCount}</div>
+        <div class="kpi-sub">${noFeeCount} timeline-inactive &middot; ${skippedCount} skipped (₹0)</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">This Month Unpaid</div>
-        <div class="kpi-value">₹${currPendingAmount.toLocaleString()}</div>
-        <div class="kpi-sub">Current Month Balance</div>
+        <div class="kpi-label">New Enrollments</div>
+        <div class="kpi-value" style="color:var(--sapphire)">${newStudsThisMonth}</div>
+        <div class="kpi-sub">Joined in ${dateStr}</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Avg Student Fee</div>
+        <div class="kpi-label">Avg Paid Fee / Active</div>
         <div class="kpi-value">₹${arpu}</div>
-        <div class="kpi-sub">Avg Paid Fee</div>
+        <div class="kpi-sub">Collected ÷ active students</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Attendance</div>
@@ -501,38 +622,36 @@ window.generateReportPDF = async function() {
       </div>
     </div>
 
-    <h3>I-B. Collections & Payment Status</h3>
-    <div class="kpi-grid" style="grid-template-columns: repeat(6, 1fr);">
+    <h3>I-B. Payment Status &amp; Amounts (Reporting Month)</h3>
+    <div class="kpi-grid" style="grid-template-columns: repeat(5, 1fr); margin-bottom:12px;">
       <div class="kpi-card">
-        <div class="kpi-label">Revenue Collected</div>
-        <div class="kpi-value" style="color:var(--emerald)">₹${collected.toLocaleString()}</div>
-        <div class="kpi-sub">${collectionRate}% of expected</div>
+        <div class="kpi-label">Paid (Amount)</div>
+        <div class="kpi-value" style="color:var(--emerald)">₹${paidAmount.toLocaleString()}</div>
+        <div class="kpi-sub">${paidCount} student(s) settled · collected ₹${collected.toLocaleString()}</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Outstanding</div>
-        <div class="kpi-value" style="color:var(--ruby)">₹${outstanding.toLocaleString()}</div>
-        <div class="kpi-sub">Arrears + current</div>
+        <div class="kpi-label">Pending (Amount)</div>
+        <div class="kpi-value" style="color:var(--gold)">₹${pendingAmount.toLocaleString()}</div>
+        <div class="kpi-sub">${pendingCount} student(s)</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Paid</div>
-        <div class="kpi-value" style="color:var(--emerald)">${paidCount}</div>
-        <div class="kpi-sub">students settled</div>
+        <div class="kpi-label">Due (Amount)</div>
+        <div class="kpi-value" style="color:var(--ruby)">₹${dueAmount.toLocaleString()}</div>
+        <div class="kpi-sub">${dueCount} student(s)</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Pending</div>
-        <div class="kpi-value" style="color:var(--gold)">${pendingCount}</div>
-        <div class="kpi-sub">not yet due</div>
+        <div class="kpi-label">Overdue (Amount)</div>
+        <div class="kpi-value" style="color:var(--ruby)">₹${overdueAmount.toLocaleString()}</div>
+        <div class="kpi-sub">${overdueCount} student(s)</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">Due / Overdue</div>
-        <div class="kpi-value" style="color:var(--ruby)">${dueCount + overdueCount}</div>
-        <div class="kpi-sub">${dueCount} due &middot; ${overdueCount} overdue</div>
+        <div class="kpi-label">Expected / Collection Rate</div>
+        <div class="kpi-value">₹${potential.toLocaleString()}</div>
+        <div class="kpi-sub">${collectionRate}% collected (arrears+current ₹${totalOutstandingInclArrears.toLocaleString()})</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">New Enrollments</div>
-        <div class="kpi-value" style="color:var(--sapphire)">${newStudsThisMonth}</div>
-        <div class="kpi-sub">this month</div>
-      </div>
+    </div>
+    <div class="data-story" style="margin:0 0 18px 0; font-size:13px;">
+      <strong>Calculation basis:</strong> Student enrollment is cross-referenced with enrollment dates and the time-based Active/Inactive status timeline (<code>effective_month</code>) plus payment history (<code>applied_month</code>/payment date) as used by the parent portal. Students inactive for ${dateStr} (or marked No Fee Required/Skipped) are <strong>excluded from Total Active Students</strong> and their month fee is ₹0, so enrollment and revenue are not inflated. Past arrears ₹${lastDueAmount.toLocaleString()} · current-month balance ₹${currPendingAmount.toLocaleString()}.
     </div>
 
     <div class="analytics-row">
@@ -543,7 +662,7 @@ window.generateReportPDF = async function() {
         <p><strong>Fees Reconciliation Summary:</strong> Total expected fees for ${dateStr} is <span class="bold">₹${potential.toLocaleString()}</span>. Verified collections totaled <span class="bold">₹${collected.toLocaleString()}</span> across ${monthlyPayments.length} transactions.</p>
         <p>Operating profit margin for this period is <span class="bold">${opMargin}%</span>. Total Coaches salary overhead is <span class="bold">₹${payroll.toLocaleString()}</span> and Total Academy Expenditures are <span class="bold">₹${totalExp.toLocaleString()}</span>, yielding a net profit of <span class="bold">₹${netProfit.toLocaleString()}</span>.</p>
         <div class="strategic-insight">
-          Audit Note: System confirms ${newStudsThisMonth} new student registrations. Average Academy ELO has reached <span class="bold">${avgElo}</span>. Total outstanding (Last Due + Current) stands at <span class="bold">₹${(lastDueAmount + currPendingAmount).toLocaleString()}</span>.
+          Audit Note: System confirms ${newStudsThisMonth} new student registrations. Average Academy ELO has reached <span class="bold">${avgElo}</span>. Total outstanding (Last Due + Current) stands at <span class="bold">₹${(lastDueAmount + currPendingAmount).toLocaleString()}</span>.${skippedCount > 0 ? ` <span class="bold">${skippedCount}</span> student-month(s) marked Not Active are billed ₹0 and excluded from every total above.` : ''}
         </div>
       </div>
     </div>
@@ -896,7 +1015,7 @@ window.generateReportPPT = async function() {
 
         const targetStudents = allStudents.filter(s => {
             const sStatus = getStudentStatus(s);
-            if (sStatus === 'archived' || sStatus === 'pending' || sStatus === 'waitlist' || sStatus === 'inactive') return false;
+            if (sStatus === 'archived' || sStatus === 'pending' || sStatus === 'waitlist') return false;
             const sName = (getStudentName(s) || '').toUpperCase();
             if (sName.includes('PARENT') || sName.includes('COACH') || sName.includes('TEST')) return false;
             const joinStr = getStudentDate(s);
@@ -905,7 +1024,8 @@ window.generateReportPPT = async function() {
             return enrollDate <= monthEndLimit;
         });
 
-        const activeStudents = targetStudents.length;
+        // Inactive ("Not Active") months are billed ₹0 and are not active for the period.
+        const activeStudents = targetStudents.filter(s => !reportSkipActive(s, targetMonth, targetYear) && !reportMonthInactive(s, targetMonth, targetYear)).length;
 
         // 1. Dynamic slot-based collected calculations (matches s-rev dashboard value exactly)
         function calculateSlotRevenue(year, month) {
@@ -933,57 +1053,15 @@ window.generateReportPPT = async function() {
 
         const collected = (window.cycleRevenue ? window.cycleRevenue(targetYear, targetMonth) : calculateSlotRevenue(targetYear, targetMonth));
 
-        // Deduplication structure for arrears (advance-aware)
-        const totalPaymentsMap = {};
-        const seenApplied = new Set();
+        // Payment credits are counted inside computeReportFeeTotals.
         const targetMonthEnd = new Date(Date.UTC(targetYear, targetMonth + 1, 0, 23, 59, 59));
-        
-        allPayments.forEach(p => {
-            if (p.status !== 'paid') return;
-            const sid = String(p.student_id || '').trim().toLowerCase();
-            if (!sid) return;
 
-            if (p.applied_month && String(p.applied_month).trim()) {
-                const key = `${sid}_${p.applied_month}`;
-                if (seenApplied.has(key)) return;
-                seenApplied.add(key);
-                if (!totalPaymentsMap[sid]) totalPaymentsMap[sid] = 0;
-                totalPaymentsMap[sid]++;
-                return;
-            }
-
-            const pDate = new Date(p.payment_date || p.created_at);
-            const mKey = `${sid}_${pDate.getUTCFullYear()}-${String(pDate.getUTCMonth() + 1).padStart(2, '0')}`;
-            if (seenApplied.has(mKey)) return;
-            seenApplied.add(mKey);
-            if (!totalPaymentsMap[sid]) totalPaymentsMap[sid] = 0;
-            totalPaymentsMap[sid]++;
-        });
-
-        let lastDueAmount = 0;
-        let currPendingAmount = 0;
-        let potential = 0;
-
-        targetStudents.forEach(s => {
-            const fee = getStudentMonthlyFee(s) || 0;
-            potential += fee;
-            const enrollDateStr = getStudentDate(s);
-            let enrollDate = enrollDateStr ? new Date(enrollDateStr) : baseline;
-            if (isNaN(enrollDate.getTime())) enrollDate = baseline;
-            const _anchor = window.getBillingAnchor ? window.getBillingAnchor(s, baseline)
-              : { year: (enrollDate < baseline ? baseline : enrollDate).getUTCFullYear(), month: (enrollDate < baseline ? baseline : enrollDate).getUTCMonth() };
-            const monthsRequired = ((targetYear - _anchor.year) * 12) + (targetMonth - _anchor.month) + 1;
-            const s_id_key = String(s.id || '').trim().toLowerCase();
-            const totalCredits = totalPaymentsMap[s_id_key] || 0;
-            const totalMonthsUnpaid = Math.max(0, monthsRequired - totalCredits);
-            if (totalMonthsUnpaid > 0) {
-                const isPaidThisMonth = (getStudentPaymentStatus(s, targetMonth, targetYear) === 'Paid');
-                const histMonths = totalMonthsUnpaid - (isPaidThisMonth ? 0 : 1);
-                // OVERRIDE: All past overdue cleared per user request (paid until last month)
-                // if (histMonths > 0) lastDueAmount += (fee * histMonths);
-                lastDueAmount = 0; // Force 0 - all past overdue cleared
-                if (!isPaidThisMonth) currPendingAmount += fee;
-            }
+        const { potential, lastDueAmount, currPendingAmount } = window.computeReportFeeTotals({
+            students: targetStudents,
+            payments: allPayments,
+            month: targetMonth,
+            year: targetYear,
+            baseline: baseline,
         });
 
         const payroll = allCoaches.filter(c => c.status !== 'archived').reduce((a, c) => a + (getCoachSalary(c) || 0), 0);
@@ -1083,15 +1161,19 @@ window.generateReportPPT = async function() {
             
             allStudents.forEach(s => {
                 const sStatus = getStudentStatus(s);
-                if (sStatus === 'archived' || sStatus === 'pending' || sStatus === 'waitlist' || sStatus === 'inactive') return;
+                if (sStatus === 'archived' || sStatus === 'pending' || sStatus === 'waitlist') return;
                 const enrollDateStr = getStudentDate(s);
                 let enrollDate = enrollDateStr ? new Date(enrollDateStr) : baseline;
                 if (isNaN(enrollDate.getTime())) enrollDate = baseline;
                 if (enrollDate <= mEnd) {
+                    // A TIME-BASED inactive month bills ₹0 — keep it out of
+                    // that month's potential and outstanding figures.
+                    if (reportSkipActive(s, m, y) || reportMonthInactive(s, m, y)) return;
+
                     const fee = getStudentMonthlyFee(s) || 0;
                     mPotential += fee;
                     const status = getStudentPaymentStatus(s, m, y);
-                    if (status !== 'Paid' && status !== 'Not Enrolled') {
+                    if (status !== 'Paid' && status !== 'Not Enrolled' && status !== 'No Fee Required') {
                         mOutstanding += fee;
                     }
                 }
@@ -1147,7 +1229,7 @@ window.generateReportPPT = async function() {
                 name: getCoachName(c),
                 students: coachStuds.filter(s => {
                     const sStatus = getStudentStatus(s);
-                    if (sStatus === 'archived' || sStatus === 'pending' || sStatus === 'waitlist' || sStatus === 'inactive') return false;
+                    if (sStatus === 'archived' || sStatus === 'pending' || sStatus === 'waitlist') return false;
                     const enrollDateStr = getStudentDate(s);
                     let enrollDate = enrollDateStr ? new Date(enrollDateStr) : baseline;
                     if (isNaN(enrollDate.getTime())) enrollDate = baseline;

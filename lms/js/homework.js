@@ -7,7 +7,9 @@
   let editingHomeworkNewFiles = [];
 
   function studentName(student) {
-    return window.getStudentName ? window.getStudentName(student) : (student && (student.name || student.full_name || student.id)) || 'Student';
+    if (!student) return 'Student';
+    const name = window.getStudentName ? window.getStudentName(student) : null;
+    return name || (student && (student.name || student.full_name || student.id)) || 'Student';
   }
 
   function batchName(batch) {
@@ -228,7 +230,11 @@
   function submissionStatusBadge(status) {
     const normalized = (status || 'not_submitted').toLowerCase();
     const style = normalized === 'approved' ? 'badge-success' : normalized === 'needs_revision' ? 'badge-danger' : normalized === 'closed' ? 'badge-outline' : 'badge-level';
-    const label = normalized === 'not_submitted' ? 'Not submitted' : normalized;
+    const label = normalized === 'not_submitted'
+      ? 'Not submitted'
+      : normalized === 'pending_sync'
+        ? 'Not submitted (saved on device)'
+        : normalized;
     return `<span class="badge ${style}">${escapeValue(label)}</span>`;
   }
 
@@ -349,10 +355,17 @@
   }
 
 let homeworkSubmissionCache = [];
+  let homeworkSubmissionLoadTimestamp = 0;
+  const HOMEWORK_SUBMISSION_CACHE_TTL = 30000; // 30 seconds
   window.homeworkSubmissionCache = homeworkSubmissionCache;  // Expose globally for coach dashboard
 
   async function loadHomeworkSubmissions(forceRefresh = false) {
-    if (!forceRefresh && homeworkSubmissionCache.length) return homeworkSubmissionCache;
+    const now = Date.now();
+    // Use cached data if loaded recently and not forcing refresh
+    if (!forceRefresh && homeworkSubmissionCache.length && (now - homeworkSubmissionLoadTimestamp < HOMEWORK_SUBMISSION_CACHE_TTL)) {
+      return homeworkSubmissionCache;
+    }
+    homeworkSubmissionLoadTimestamp = now;
     let fetched = [];
 
     // 1. Try Edge API
@@ -367,26 +380,70 @@ let homeworkSubmissionCache = [];
     // 2. Try Supabase direct
     if (!fetched.length && window.supabaseClient) {
       try {
-        const { data: sbSubs } = await window.supabaseClient
+        const { data: sbSubs, error } = await window.supabaseClient
           .from('homework_submissions')
           .select('*')
           .order('submitted_at', { ascending: false });
-        if (sbSubs && sbSubs.length) fetched = sbSubs;
+        if (!error && sbSubs && sbSubs.length) {
+          fetched = sbSubs;
+        } else {
+          const { data: altSubs } = await window.supabaseClient
+            .from('hw_submissions')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (altSubs && altSubs.length) {
+            fetched = altSubs.map(s => ({
+              id: s.id,
+              assignment_id: s.assignment_id,
+              student_id: s.student_id,
+              submission_text: typeof s.files === 'string' ? s.files : '',
+              file_urls: Array.isArray(s.files) ? s.files : [],
+              status: s.grade ? 'approved' : 'submitted',
+              score: s.grade,
+              feedback: s.feedback || '',
+              submitted_at: s.created_at,
+              updated_at: s.created_at
+            }));
+          }
+        }
       } catch (_) {}
     }
 
-    // 3. Merge with localStorage cache
+    // 3. Merge with localStorage cache.
+    // Server rows always win over local drafts. Deduplicate by
+    // assignment+student as well as id, otherwise a locally generated
+    // `sub_...` record appears as a second submission for the same homework.
     try {
       const localSubs = JSON.parse(localStorage.getItem('ck_homework_submissions') || '[]');
-      const map = new Map();
-      fetched.forEach(s => { if (s && s.id) map.set(String(s.id), s); });
-      localSubs.forEach(s => {
-        if (s && s.id) {
-          if (!map.has(String(s.id))) map.set(String(s.id), s);
-          else map.set(String(s.id), { ...s, ...map.get(String(s.id)) });
-        }
+      const merged = new Map();
+      const keyOf = (s) => {
+        const key = `${s.assignment_id ?? ''}::${s.student_id ?? ''}`;
+        return key === '::' && s.id ? `id:${s.id}` : key;
+      };
+
+      (fetched || []).forEach((s) => {
+        if (s) merged.set(keyOf(s), s);
       });
-      homeworkSubmissionCache = Array.from(map.values());
+      localSubs.forEach((s) => {
+        if (!s || !s.id) return;
+        const key = keyOf(s);
+        const server = merged.get(key);
+        if (server) {
+          // Server is authoritative. Never let a stale local draft (especially
+          // pending_sync) override a confirmed server submission.
+          if (s.pending_sync) {
+            const mergedServer = { ...server };
+            delete mergedServer.pending_sync;
+            mergedServer.status = mergedServer.status || 'submitted';
+            merged.set(key, mergedServer);
+          }
+          return;
+        }
+        // No server record: keep local only if it represents an unsynced draft
+        // (pending_sync). Do not resurrect old local rows as submissions.
+        if (s.pending_sync) merged.set(key, s);
+      });
+      homeworkSubmissionCache = Array.from(merged.values());
     } catch (e) {
       homeworkSubmissionCache = fetched;
     }
@@ -884,42 +941,63 @@ let homeworkSubmissionCache = [];
 
     let saved = false;
 
-    // Route 1: Try direct Supabase client insertion first
-    try {
-      if (window.supabaseClient) {
+    // Route 1: direct Supabase client insertion.
+    // The base schema (migration 006) guarantees {id, target_type, title,
+    // description, due_date, student_id, batch_id, questions_files,
+    // attachment_urls, status, created_at, updated_at}. coach_id / created_by /
+    // present_student_ids only exist after migration 010, so insert the
+    // guaranteed columns first and layer the rest on top — a save can never
+    // fail with "column not found" just because the migration hasn't run yet.
+    if (window.supabaseClient) {
+      const baseRow = {
+        id: payload.id,
+        target_type: payload.target_type,
+        title: payload.title,
+        description: payload.description,
+        due_date: payload.due_date,
+        student_id: payload.student_id,
+        batch_id: payload.batch_id,
+        questions_files: payload.questions_files,
+        attachment_urls: payload.attachment_urls,
+        status: payload.status,
+        created_at: payload.created_at,
+        updated_at: payload.updated_at
+      };
+      try {
         const { data, error } = await window.supabaseClient
           .from('homework_assignments')
-          .insert({
-            id: payload.id,
-            target_type: payload.target_type,
-            title: payload.title,
-            description: payload.description,
-            due_date: payload.due_date,
-            student_id: payload.student_id,
-            batch_id: payload.batch_id,
-            coach_id: payload.coach_id,
-            created_by: payload.created_by,
-            questions_files: payload.questions_files,
-            status: payload.status,
-            created_at: payload.created_at,
-            updated_at: payload.updated_at,
-            present_student_ids: payload.present_student_ids
-          })
+          .insert(baseRow)
           .select()
           .single();
 
         if (!error && data) {
           saved = true;
+          // Best-effort authoring columns (used for coach filtering and the
+          // "Assigned to" lists; harmless no-op if migration 010 is pending).
+          window.supabaseClient
+            .from('homework_assignments')
+            .update({
+              coach_id: payload.coach_id,
+              created_by: payload.created_by,
+              present_student_ids: payload.present_student_ids
+            })
+            .eq('id', payload.id)
+            .then(
+              (r) => {
+                if (r && r.error) console.warn('[Homework] authoring-column update skipped:', r.error.message);
+              },
+              () => {}
+            );
         } else if (error) {
-          // Try fallback table 'homework'
+          // Try legacy fallback table 'homework'
           const { error: altErr } = await window.supabaseClient
             .from('homework')
             .insert(payload);
           if (!altErr) saved = true;
         }
+      } catch (sbErr) {
+        console.warn('[Homework] Direct Supabase insert failed, attempting apiCall fallback:', sbErr);
       }
-    } catch (sbErr) {
-      console.warn('[Homework] Direct Supabase insert failed, attempting apiCall fallback:', sbErr);
     }
 
     // Route 2: Try apiCall fallback if direct Supabase insert did not complete
@@ -1380,32 +1458,52 @@ let homeworkSubmissionCache = [];
     let studentObj = curStudent || (window.allStudents || []).find(s => String(s.id) === String(studentId));
     let sName = studentObj ? (window.getStudentName ? window.getStudentName(studentObj) : (studentObj.name || studentObj.full_name)) : null;
 
+    if (!studentId) {
+      return window.toast ? window.toast('Could not identify your student profile. Please sign in again.', 'error') : null;
+    }
+
     const subPayload = {
       assignment_id: assignment.id,
-      student_id: studentId || null,
+      student_id: String(studentId),
       student_name: sName,
       submission_text: text,
       submission_url: url,
       file_urls: uploadedUrls.length > 0 ? uploadedUrls : null
     };
 
+    // Server confirmation is required. localStorage is only a draft cache so a
+    // student never sees "submitted" when the coach cannot actually see it.
     let submitted = false;
+    let serverRecord = null;
+    let failureReason = '';
     try {
       const res = await window.apiCall('/api/homework?action=submit', {
         method: 'POST',
-        headers: studentId ? { 'x-portal-student-id': String(studentId) } : {},
+        headers: { 'x-portal-student-id': String(studentId) },
         body: JSON.stringify(subPayload)
       });
       if (res && res.ok) {
         submitted = true;
+        try {
+          const body = await res.json();
+          serverRecord = body?.data || null;
+        } catch (_) {}
+      } else if (res) {
+        try {
+          const body = await res.json();
+          failureReason = body?.error || body?.message || `Server returned ${res.status}`;
+        } catch (_) {
+          failureReason = `Server returned ${res.status || 'error'}`;
+        }
       }
     } catch (apiErr) {
+      failureReason = apiErr?.message || 'Network error';
       console.warn('[Homework] apiCall submit failed, trying direct Supabase fallback:', apiErr);
     }
 
     if (!submitted && window.supabaseClient) {
       try {
-        const { error: sbErr } = await window.supabaseClient
+        const { data: sbData, error: sbErr } = await window.supabaseClient
           .from('homework_submissions')
           .upsert(
             {
@@ -1419,31 +1517,42 @@ let homeworkSubmissionCache = [];
               updated_at: new Date().toISOString()
             },
             { onConflict: 'assignment_id,student_id' }
-          );
-        if (!sbErr) submitted = true;
-      } catch (e) {}
+          )
+          .select()
+          .single();
+        if (!sbErr && sbData) {
+          submitted = true;
+          serverRecord = sbData;
+        } else if (sbErr) {
+          failureReason = failureReason || sbErr.message;
+        }
+      } catch (e) {
+        failureReason = failureReason || e.message;
+      }
     }
 
-    // Always persist submission locally
+    // Cache the draft locally. Mark it pending when the server did not confirm,
+    // so it is never presented as a real submission until sync succeeds.
     try {
       const storedSubs = JSON.parse(localStorage.getItem('ck_homework_submissions') || '[]');
       const existingIdx = storedSubs.findIndex(s => String(s.assignment_id) === String(subPayload.assignment_id) && String(s.student_id) === String(subPayload.student_id));
+      const existingId = existingIdx !== -1 ? storedSubs[existingIdx].id : null;
       const subRecord = {
-        id: subPayload.id || `sub_${Date.now()}`,
+        id: serverRecord?.id || existingId || `sub_${Date.now()}`,
         assignment_id: subPayload.assignment_id,
         student_id: subPayload.student_id,
         student_name: subPayload.student_name,
         submission_text: subPayload.submission_text || '',
         submission_url: subPayload.submission_url || '',
         file_urls: subPayload.file_urls,
-        status: 'submitted',
-        submitted_at: new Date().toISOString(),
+        status: submitted ? 'submitted' : 'pending_sync',
+        pending_sync: !submitted,
+        submitted_at: submitted ? (serverRecord?.submitted_at || new Date().toISOString()) : null,
         updated_at: new Date().toISOString()
       };
       if (existingIdx !== -1) storedSubs[existingIdx] = { ...storedSubs[existingIdx], ...subRecord };
       else storedSubs.unshift(subRecord);
       localStorage.setItem('ck_homework_submissions', JSON.stringify(storedSubs));
-      submitted = true;
     } catch (e) {}
 
     if (submitted) {
@@ -1456,7 +1565,13 @@ let homeworkSubmissionCache = [];
       else if (window.loadAllData) await window.loadAllData(true);
       refreshHomeworkViews();
     } else {
-      if (window.toast) window.toast('Failed to submit homework. Please check your connection and try again.', 'error');
+      if (window.toast) {
+        window.toast(
+          `Homework was NOT submitted${failureReason ? ` (${failureReason})` : ''}. Your work is saved on this device — please retry when online.`,
+          'error',
+        );
+      }
+      refreshHomeworkViews();
     }
   }
 
@@ -1507,7 +1622,9 @@ let homeworkSubmissionCache = [];
       } catch (e) {}
     }
 
-    // Always update local storage
+    // Mirror into the local cache, but only the server/Supabase result decides
+    // "reviewed" — the coach must not see "review saved" when the change never
+    // reached the student's view on another device.
     try {
       const storedSubs = JSON.parse(localStorage.getItem('ck_homework_submissions') || '[]');
       const subIdx = storedSubs.findIndex(s => String(s.id) === String(submissionId));
@@ -1518,7 +1635,6 @@ let homeworkSubmissionCache = [];
         storedSubs[subIdx].reviewed_at = new Date().toISOString();
         localStorage.setItem('ck_homework_submissions', JSON.stringify(storedSubs));
       }
-      reviewed = true;
     } catch (e) {}
 
     if (reviewed) {
@@ -1636,6 +1752,27 @@ let homeworkSubmissionCache = [];
     const dueClass = assignment.due_date && new Date(`${assignment.due_date}T23:59:59`) < new Date() && assignment.status !== 'completed' ? 'var(--danger)' : 'var(--ivory-dim)';
     const checkbox = selectable ? `<input type="checkbox" data-homework-id="${assignment.id}" ${selected ? 'checked' : ''} onchange="toggleHomeworkSelection('${assignment.id}', this.checked)" style="accent-color:var(--gold);">` : '';
     const coachName = coachNameForHomework(assignment);
+
+    // Attach student's submission to assignment for renderChildSubmissionPanel
+    // This is needed for the student/parent view to show current submission status
+    if (!assignment.student_submission) {
+      const student = resolveCurrentStudent();
+      if (student) {
+        let subs = homeworkSubmissionCache;
+        if (!subs || !subs.length) {
+          try {
+            subs = JSON.parse(localStorage.getItem('ck_homework_submissions') || '[]');
+          } catch (_) {}
+        }
+        if (subs && subs.length) {
+          const submission = subs.find(sub => 
+            String(sub.assignment_id) === String(assignment.id) && 
+            String(sub.student_id) === String(student.id)
+          );
+          if (submission) assignment.student_submission = submission;
+        }
+      }
+    }
 
     let presentStudentsHtml = '';
     {
@@ -2035,7 +2172,13 @@ let homeworkSubmissionCache = [];
       batchStudentIds = new Set(getBatchStudentIds(bObj, window.allStudents || []));
     }
 
-    return (homeworkSubmissionCache || []).filter((submission) => {
+    let subs = homeworkSubmissionCache;
+    if (!subs || !subs.length) {
+      try {
+        subs = JSON.parse(localStorage.getItem('ck_homework_submissions') || '[]');
+      } catch (_) {}
+    }
+    return (subs || []).filter((submission) => {
       if (coachStudentIds && !coachStudentIds.has(String(submission.student_id))) return false;
       if (assignmentId && String(submission.assignment_id) !== assignmentId) return false;
       if (batchId && (!batchStudentIds || !batchStudentIds.has(String(submission.student_id)))) return false;
@@ -2162,27 +2305,38 @@ let homeworkSubmissionCache = [];
       return;
     }
 
-    const homeworkList = window.allHomework || [];
-    if (homeworkList.length === 0 && window.loadHomeworkData && !window._hwLoading) {
+    // Always ensure we have fresh homework data for this student
+    // Use a timestamp to avoid excessive reloads (cache for 30 seconds)
+    const now = Date.now();
+    const lastLoad = window._lastHomeworkLoad || 0;
+    const shouldReload = (now - lastLoad > 30000) || (window.allHomework || []).length === 0;
+    
+    const loadAndRender = () => {
+      const homeworkList = window.allHomework || [];
+      const items = sortHomework(homeworkList.filter((assignment) => {
+        if (!assignmentAppliesToStudent(assignment, student.id, window.allStudents || [])) return false;
+        return isStudentEligibleForHomework(assignment, student.id);
+      }));
+      if (!items.length) {
+        list.innerHTML = '<div class="empty-state"><span class="empty-icon">📝</span><p>No homework assigned right now.</p></div>';
+        return;
+      }
+      list.innerHTML = items.map((item) => renderHomeworkCard(item, { showActions: false })).join('');
+    };
+
+    if (shouldReload && window.loadHomeworkData && !window._hwLoading) {
       window._hwLoading = true;
+      window._lastHomeworkLoad = now;
       window.loadHomeworkData(true).then(() => {
         window._hwLoading = false;
-        renderChildHomework();
+        loadAndRender();
       }).catch(() => {
         window._hwLoading = false;
+        loadAndRender(); // Still render with whatever we have
       });
+    } else {
+      loadAndRender();
     }
-
-    const items = sortHomework(homeworkList.filter((assignment) => {
-      if (!assignmentAppliesToStudent(assignment, student.id, window.allStudents || [])) return false;
-      return isStudentEligibleForHomework(assignment, student.id);
-    }));
-    if (!items.length) {
-      list.innerHTML = '<div class="empty-state"><span class="empty-icon">📝</span><p>No homework assigned right now.</p></div>';
-      return;
-    }
-
-    list.innerHTML = items.map((item) => renderHomeworkCard(item, { showActions: false })).join('');
   }
 
   function renderStudentHomeworkProgress() {
