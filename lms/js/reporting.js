@@ -306,6 +306,14 @@ const targetStudents = allStudents.filter(s => {
     let paidCount = 0, pendingCount = 0, dueCount = 0, overdueCount = 0, skippedCount = 0, noFeeCount = 0;
     let paidAmount = 0, pendingAmount = 0, dueAmount = 0, overdueAmount = 0;
     targetStudents.forEach(s => {
+      const raw = String(s.status || s.account_status || 'active').toLowerCase();
+      // Bare-inactive / archived students must never be counted as active for
+      // this period, even when the timeline defaults them to Active for past
+      // months (which preserves their historical fees).
+      if (raw === 'inactive' || raw === 'archived') {
+        if (raw === 'inactive') { noFeeCount++; inactiveThisMonth++; }
+        return;
+      }
       const st = getStudentPaymentStatus(s, targetMonth, targetYear);
       const amt = monthFee(s, st);
       if (st === 'Not Enrolled') { notEnrolledCount++; return; }
@@ -1621,7 +1629,10 @@ window.getAcademySnapshot = function() {
     // ── Active/archive counts ──────────────────────────────────────────
     const activeCount = students.filter(s => {
         const st = (typeof getStudentStatus === 'function' ? getStudentStatus(s) : (s.status || 'active'));
-        return st !== 'archived' && st !== 'inactive' && st !== 'pending';
+        if (st === 'archived' || st === 'inactive' || st === 'pending' || st === 'waitlist' || st === 'upcoming') return false;
+        const now = new Date();
+        const mStatus = (typeof getStudentStatusForMonth === 'function' ? getStudentStatusForMonth(s, now.getUTCMonth(), now.getUTCFullYear()) : 'Active');
+        return String(mStatus).toLowerCase() !== 'inactive';
     }).length;
 
     // ── Real attendance for current month (UTC) ────────────────────────

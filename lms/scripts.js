@@ -17929,6 +17929,8 @@ setTimeout(function () {
 
     // Active Cadets for the target month (time-based)
     const activeThisMonthCadets = targetStudents.filter((s) => {
+      const raw = String(s.status || s.account_status || "active").toLowerCase();
+      if (raw === "inactive" || raw === "archived") return false;
       return String(getStudentStatusForMonth(s, targetMonth, targetYear) || "").toLowerCase() !== "inactive";
     });
 
