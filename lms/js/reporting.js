@@ -101,6 +101,8 @@ window.computeReportFeeTotals = function (opts) {
   let currPendingAmount = 0;
 
   students.forEach(s => {
+    const raw = String(s.status || s.account_status || 'active').toLowerCase();
+    if (raw === 'inactive' || raw === 'archived') return;
     const fee = getStudentMonthlyFee(s) || 0;
     const enrollStr = getStudentDate(s);
     let enrollDate = enrollStr ? new Date(enrollStr) : baseline;

@@ -17955,7 +17955,9 @@ setTimeout(function () {
       const prevMonthStatus = getStudentPaymentStatus(s, prevMonthDate.getUTCMonth(), prevMonthDate.getUTCFullYear());
 
       const mStatus = String(getStudentStatusForMonth(s, targetMonth, targetYear) || "").toLowerCase();
-      const isInactiveNow = mStatus === "inactive" || status === "No Fee Required";
+      const rawStatus = String(s.status || s.account_status || "active").toLowerCase();
+      const isBareInactive = rawStatus === "inactive" || rawStatus === "archived";
+      const isInactiveNow = mStatus === "inactive" || status === "No Fee Required" || isBareInactive;
 
       const prevMStatus = String(getStudentStatusForMonth(s, prevMonthDate.getUTCMonth(), prevMonthDate.getUTCFullYear()) || "").toLowerCase();
       const isInactivePrev = prevMStatus === "inactive" || prevMonthStatus === "No Fee Required";
@@ -18395,7 +18397,10 @@ setTimeout(function () {
         // the student simply is not billed for it.
         const status = getStudentPaymentStatus(s, targetMonth, targetYear);
 
+        const rawStatus = String(s.status || s.account_status || "active").toLowerCase();
+        const isBareInactive = rawStatus === "inactive" || rawStatus === "archived";
         const noFee =
+          isBareInactive ||
           status === "No Fee Required" ||
           status === "Skipped" ||
           status === "Not Enrolled";
@@ -37613,9 +37618,11 @@ const coach = allCoaches.find((c) => String(c.id) === String(s.coach_id));
           // figure is what the academy can actually invoice, not a naive sum
           // of every student's fee schedule.
           const totalRevenue = allStudents.reduce(
-            (acc, s) =>
-              acc +
-              (getStudentFeeForMonth(s, targetMonth, targetYear).amount || 0),
+            (acc, s) => {
+              const raw = String(s.status || s.account_status || 'active').toLowerCase();
+              if (raw === 'inactive' || raw === 'archived') return acc;
+              return acc + (getStudentFeeForMonth(s, targetMonth, targetYear).amount || 0);
+            },
             0,
           );
 
@@ -37728,7 +37735,10 @@ const coach = allCoaches.find((c) => String(c.id) === String(s.coach_id));
             // bill ₹0 and must never inflate projected or pending totals.
             const status = getStudentPaymentStatus(s, targetMonth, targetYear);
 
+            const rawStatus = String(s.status || s.account_status || "active").toLowerCase();
+            const isBareInactive = rawStatus === "inactive" || rawStatus === "archived";
             const noFee =
+              isBareInactive ||
               status === "No Fee Required" ||
               status === "Skipped" ||
               status === "Not Enrolled";
