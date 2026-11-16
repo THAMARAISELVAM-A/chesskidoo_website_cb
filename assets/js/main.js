@@ -655,6 +655,9 @@
     btn.textContent = 'Booking... ♟';
     btn.disabled = true;
 
+    // Open a blank window synchronously (before async ops) to bypass popup blockers
+    const _waWindow = window.open("", "_blank");
+
     try {
       const summaryMsg = `Parent Name: ${name}\nPhone: ${phone}\nChild Age: ${age}\nLocation: ${city}\nSkill Level: ${level}\nMode: ${mode}\nTime Slot: ${slot}\nPreferred Language: ${language}\nRequested Date: ${new Date().toLocaleDateString()}`;
 
@@ -788,7 +791,7 @@
 
       setTimeout(() => {
         try {
-          window.open(waUrl, '_blank');
+          if (_waWindow) { _waWindow.location.href = waUrl; } else { window.open(waUrl, '_blank'); };
         } catch (e) {
           console.warn('[Demo Booking] Window open warning:', e);
         }
@@ -804,7 +807,7 @@
       const waLinkEl = document.getElementById('demoSuccessWhatsAppBtn');
       if (waLinkEl) waLinkEl.setAttribute('href', CK.lastDemoWhatsAppUrl);
       try {
-        window.open(CK.lastDemoWhatsAppUrl, '_blank');
+        if (_waWindow) { _waWindow.location.href = CK.lastDemoWhatsAppUrl; } else { window.open(CK.lastDemoWhatsAppUrl, '_blank'); };
       } catch (e) {}
       CK.currentStep = 4;
       CK.updateWizardUI();
