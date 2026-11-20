@@ -10961,6 +10961,18 @@
 
   }
 
+  // Coach employee ID — stable ID based on coach name order
+  const COACH_EMPLOYEE_ORDER = ['ranjith', 'vishnu', 'gyan suriya', 'gyanasurya', 'sudhin', 'yogesh', 'arivuselvam', 'haris', 'kirubhakaran', 'rohith', 'gyan', 'sudhakar', 'sivaram', 'ranjithkumar'];
+  function getCoachEmployeeId(c) {
+    if (!c) return 'EMP-000';
+    if (c.employee_id) return c.employee_id;
+    const name = String(getCoachName(c) || c.name || '').toLowerCase().trim();
+    const idx = COACH_EMPLOYEE_ORDER.findIndex(n => name.includes(n));
+    const num = idx >= 0 ? idx + 1 : (allCoaches || []).indexOf(c) + 1;
+    return 'EMP-' + String(num).padStart(3, '0');
+  }
+
+
   function getCoachSpecialty(c) {
 
     return c.specialization || "";
@@ -22549,6 +22561,7 @@ due_date: (function () {
                <div class="coach-card-title">${escapeHtml(getCoachName(c))}</div>
 
                <div class="coach-card-subtitle">${escapeHtml(getCoachSpecialty(c) || "Chess Coach")}</div>
+               <div style="font-size:10px;color:var(--gold);font-weight:700;margin-top:2px;">${getCoachEmployeeId(c)}</div>
 
              </div>
 
@@ -22910,6 +22923,8 @@ due_date: (function () {
     );
 
     $("cv-name").innerText = getCoachName(c);
+    const empEl = $("cv-emp-id");
+    if (empEl) empEl.innerText = getCoachEmployeeId(c);
 
     $("cv-spec").innerText = getCoachSpecialty(c) || "General Coach";
 
