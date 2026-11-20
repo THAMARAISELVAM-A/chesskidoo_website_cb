@@ -401,9 +401,17 @@ CK.engine = (() => {
     };
   }
 
-  // Initialize local engine on module load
+  // Lazy-load local engine on demand or during idle time to prevent page load lag
   if (typeof window !== 'undefined') {
-    _initLocalEngine();
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(() => {
+        // Only preload if user visits arena, play, or classroom sections
+        const hash = window.location.hash || '';
+        if (hash.includes('arena') || hash.includes('classroom') || hash.includes('play')) {
+          _initLocalEngine();
+        }
+      }, { timeout: 4000 });
+    }
   }
 
   return {

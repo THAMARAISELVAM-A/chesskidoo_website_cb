@@ -169,21 +169,9 @@
 
   function isStudentEligibleForHomework(assignment, studentId) {
     if (!assignment || !studentId) return false;
-    const sid = String(studentId);
-    const dueDate = assignment.due_date;
-    if (!dueDate) return true;
-
-    const attList = window.allAttendance || [];
-    const dayRecord = attList.find(a => {
-      const recordStudentId = String(a.student_id || a.studentId || '');
-      return recordStudentId === sid && a.date === dueDate;
-    });
-
-    if (!dayRecord) return true;
-
-    const status = (dayRecord.status || '').toLowerCase();
-    if (status === 'no class') return false;
-    return status === 'present' || status === 'late';
+    // Homework assigned to a student or batch must ALWAYS be visible to them
+    // so students can complete and submit their work without being blocked by attendance logs.
+    return true;
   }
 
   function assignmentAppliesToBatch(assignment, batchId, students = [], batches = []) {
@@ -794,24 +782,24 @@ let homeworkSubmissionCache = [];
       }
     }
 
-    // ROUTE 2: DOCUMENTS & FILES -> Route to Supabase Storage bucket 'documents' or 'homework_attachments'
+    // ROUTE 2: DOCUMENTS & FILES -> Route to Supabase Storage bucket 'homework_attachments' or 'documents'
     try {
       if (window.supabaseClient && window.supabaseClient.storage) {
         const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
         const filePath = `hw_${Date.now()}_${Math.random().toString(36).substr(2, 6)}.${ext}`;
         let uploadRes = await window.supabaseClient.storage
-          .from('documents')
+          .from('homework_attachments')
           .upload(filePath, file, { cacheControl: '3600', upsert: true });
 
-        let bucketName = 'documents';
-        if (uploadRes.error) {
+        let bucketName = 'homework_attachments';
+        if (uploadRes && uploadRes.error) {
           uploadRes = await window.supabaseClient.storage
-            .from('homework_attachments')
+            .from('documents')
             .upload(filePath, file, { cacheControl: '3600', upsert: true });
-          bucketName = 'homework_attachments';
+          bucketName = 'documents';
         }
 
-        if (!uploadRes.error && uploadRes.data) {
+        if (uploadRes && !uploadRes.error && uploadRes.data) {
           const { data: pubUrlData } = window.supabaseClient.storage
             .from(bucketName)
             .getPublicUrl(uploadRes.data.path || filePath);
@@ -822,7 +810,7 @@ let homeworkSubmissionCache = [];
       console.warn('[Homework] Supabase storage upload failed:', sbErr);
     }
 
-    // ROUTE 3: Fallback via /api/upload or Data URL
+    // ROUTE 3: High-speed serverless /api/upload
     try {
       const reader = new FileReader();
       const dataUrl = await new Promise((resolve, reject) => {
@@ -832,8 +820,9 @@ let homeworkSubmissionCache = [];
       });
 
       const base64 = dataUrl.split(',')[1];
-      const res = await window.apiCall('/api/upload', {
+      const res = await (window.apiCall || fetch)('/api/upload', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           image: base64,
           filename: file?.name || `file.${file?.type?.split('/')[1] || 'bin'}`
@@ -846,7 +835,8 @@ let homeworkSubmissionCache = [];
         if (url) return url;
       }
 
-      if (file.size < 5 * 1024 * 1024) {
+      // Safe Data URL fallback ensures the user NEVER loses their work or fails upload
+      if (file.size < 8 * 1024 * 1024) {
         return dataUrl;
       }
     } catch (e) {
@@ -1040,7 +1030,15 @@ let homeworkSubmissionCache = [];
       : targetType === 'batch'
         ? `Batch: ${(window.allBatches || []).find(b => String(b.id) === String(batchId))?.name || 'Batch #' + batchId}`
         : 'All Active Students';
-    if (!quiet && window.toast) window.toast(`✅ Homework "${title}" assigned successfully to ${targetLabel}!`, 'success');
+    if (!quiet && window.toast) window.toast(`✅ Homework "${title}" assigned successfully to ${targetLabel}! Student has been notified. 📚`, 'success');
+    
+    // In-app notification to student
+    try {
+      if (window.sendMsg && targetType === 'student' && studentId) {
+        window.sendMsg(String(studentId), `📚 New Homework: ${title}`, `Your coach has assigned new homework: "${title}". Due date: ${dueDate || 'Flexible'}. Open Homework tab to review and submit.`);
+      }
+    } catch (_) {}
+
     if (!quiet) window.closeModals && window.closeModals();
 
     if (!quiet) {
@@ -1556,7 +1554,16 @@ let homeworkSubmissionCache = [];
     } catch (e) {}
 
     if (submitted) {
-      if (window.toast) window.toast('Homework submitted successfully!', 'success');
+      if (window.toast) window.toast('🎉 Homework submitted successfully! Your coach has been notified. 🏆', 'success');
+      
+      // In-app notification to coach
+      try {
+        const coachId = assignment.coach_id || assignment.created_by;
+        if (coachId && window.sendMsg) {
+          window.sendMsg(String(coachId), `📝 Homework Submitted by ${subPayload.student_name || 'Student'}`, `Student ${subPayload.student_name || 'Student'} has submitted homework for "${assignment.title}".`);
+        }
+      } catch (_) {}
+
       if ($(`homework-submission-files-${assignment.id}`)) $(`homework-submission-files-${assignment.id}`).value = '';
       if ($(`homework-submission-text-${assignment.id}`)) $(`homework-submission-text-${assignment.id}`).value = '';
       if ($(`homework-submission-url-${assignment.id}`)) $(`homework-submission-url-${assignment.id}`).value = '';

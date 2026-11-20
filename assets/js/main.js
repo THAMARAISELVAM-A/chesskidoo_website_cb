@@ -2895,34 +2895,35 @@
     document.body.style.overflow = '';
   };
 
+  const FALLBACK_LANDING_ACHIEVEMENTS = [
+    { student_name: "Anfal", title: "Zone Winner — Coimbatore District 🏆 Pollachi Star Players · Hindusthan Chess Team", img_url: "/assets/img/achievement-anfal-akmal.jpg", date_achieved: "2025-12-01" },
+    { student_name: "Yadhuveer", title: "Winner 7/7 — Under-9 Category 🏆 Erode District Series Championship", img_url: "/assets/img/achievement-yadhuveer.jpg", date_achieved: "2025-11-15" },
+    { student_name: "Mukilan", title: "3rd Winner Up 🏅 From Under-9 to Under-17 Category · Played as Unstoppable", img_url: "/assets/img/achievement-mukilan.jpg", date_achieved: "2025-10-20" },
+    { student_name: "Anuksha", title: "7th Place — Under 9 Chess Festival (Namakkal) 🏆 Coach Guanasurya", img_url: "/assets/img/achievement-anuksha.jpg", date_achieved: "2025-09-05" },
+    { student_name: "Mocsha", title: "State Championship Prize Winner 🏆 Tamil Nadu State Chess Championship 2026", img_url: "/assets/img/achievement-mocsha.jpg", date_achieved: "2026-01-20" },
+    { student_name: "Riyazzen", title: "FIDE International Classical Tournament 🏅 FIDE Rating 1520", img_url: "/assets/img/achievement-riyazzen.jpg", date_achieved: "2026-02-10" },
+    { student_name: "Rakshitha", title: "3rd Prize — District Competition 🏆 Circuit to District Winner", img_url: "/assets/img/achievement-rakshitha.jpg", date_achieved: "2025-08-14" },
+    { student_name: "Auysh", title: "5th Place — Under-14 Boys State Championship 🏅", img_url: "/assets/img/acivements img 1.jpeg", date_achieved: "2025-07-22" },
+    { student_name: "Poonthalir", title: "7th Position — Under-14 Girls State Championship 👑", img_url: "/assets/img/img fpweb.jpeg", date_achieved: "2025-07-21" },
+    { student_name: "Varun", title: "Velammal Nexus Best Performer of the Tournament 🌟", img_url: "/assets/img/acivements img4.jpeg", date_achieved: "2025-06-30" },
+    { student_name: "Krishna", title: "2nd Place Winner — Out of 40 Class ⭐ Coach Rohith", img_url: "/assets/img/awardss.jpeg", date_achieved: "2025-05-18" },
+    { student_name: "Buvargan", title: "5th Position — Erode District Chess Tournament 🏆 Republic Day Trophy 2025", img_url: "/assets/img/awards.jpeg", date_achieved: "2025-01-26" },
+    { student_name: "Riyas", title: "Top 30 out of 400 Players 🏅 Velammal Nexus Tournament · Tamil Nadu State Association", img_url: "/assets/img/acivements img3.jpeg", date_achieved: "2025-04-12" }
+  ];
+
   CK.loadLandingAchievements = async () => {
     const grid = document.getElementById('landing-achievements-grid');
     if (!grid) return;
-    try {
-      const headers = {
-        'Content-Type': 'application/json',
-        apikey: window.APP_CONFIG?.SUPABASE_ANON_KEY || '',
-        Authorization: `Bearer ${window.APP_CONFIG?.SUPABASE_ANON_KEY || ''}`,
-      };
-      const res = await fetch('/api/achievements', { headers });
-      if (!res.ok) {
-        grid.innerHTML = `<div style="text-align:center; padding:30px; color:var(--slate);">Failed to load achievements (${res.status}).</div>`;
-        return;
-      }
-      const json = await res.json();
-      const list = Array.isArray(json.data) ? json.data : Array.isArray(json) ? json : [];
-      if (!list.length) {
-        grid.innerHTML = '<div style="text-align:center; padding:30px; color:var(--slate);">No achievements yet. Check back soon!</div>';
-        return;
-      }
-      const sorted = list.slice().sort((a, b) => new Date(b.date_achieved || b.created_at) - new Date(a.date_achieved || a.created_at));
+
+    const renderList = (items) => {
+      const sorted = (items || []).slice().sort((a, b) => new Date(b.date_achieved || b.created_at || 0) - new Date(a.date_achieved || a.created_at || 0));
       grid.innerHTML = sorted.map(a => {
-        const img = a.img_url || '';
+        const img = a.img_url || 'assets/img/placeholder-trophy.jpg';
         const title = CK.esc ? CK.esc(a.title) : (a.title || '');
-        const studentName = a.description || '';
+        const studentName = a.description || a.student_name || '';
         return `<div class="showcase-gallery-item">
           <div class="showcase-img-wrap">
-            <img loading="lazy" src="${img || 'assets/img/placeholder-trophy.jpg'}" alt="${title}">
+            <img loading="lazy" src="${img}" alt="${title}" onerror="this.src='/assets/img/awardss.jpeg'">
           </div>
           <div class="showcase-info">
             <h4>${title}</h4>
@@ -2930,9 +2931,27 @@
           </div>
         </div>`;
       }).join('');
+    };
+
+    // Render immediately with verified list so there is ZERO delay / blank state
+    renderList(FALLBACK_LANDING_ACHIEVEMENTS);
+
+    try {
+      const headers = {
+        'Content-Type': 'application/json',
+        apikey: window.APP_CONFIG?.SUPABASE_ANON_KEY || '',
+        Authorization: `Bearer ${window.APP_CONFIG?.SUPABASE_ANON_KEY || ''}`,
+      };
+      const res = await fetch('/api/achievements', { headers });
+      if (res.ok) {
+        const json = await res.json();
+        const list = Array.isArray(json.data) ? json.data : Array.isArray(json) ? json : [];
+        if (list.length > 0) {
+          renderList(list);
+        }
+      }
     } catch (e) {
-      console.warn('[Landing] achievements load failed:', e);
-      grid.innerHTML = '<div style="text-align:center; padding:30px; color:var(--slate);">Unable to load achievements right now.</div>';
+      console.warn('[Landing] live achievements background sync note:', e);
     }
   };
 

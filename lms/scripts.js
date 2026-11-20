@@ -494,16 +494,11 @@
 
   }
 
-  window.apiCall = async function (endpoint, options = {}) {
-
+  const apiCall = async function (endpoint, options = {}) {
     if (typeof navigator !== "undefined" && !navigator.onLine) {
-
       const err = new TypeError("Failed to fetch (offline)");
-
       err.isOffline = true;
-
       throw err;
-
     }
 
 
@@ -8773,8 +8768,8 @@
 
 
   function getStudentDate(s) {
-
-    const d = s.enrollment_date || s.join_date || s.created_at;
+    if (!s) return "";
+    const d = s.enrollment_date || s.join_date || s.joined_date || s.created_at;
 
     if (!d) return "";
 
@@ -9816,9 +9811,26 @@
     if (!s) return "Due";
 
     // Time-Machine Context (Use override if provided, otherwise default to global)
-    const targetMonth =
-      monthOverride !== null ? monthOverride : window.reportMonth;
-    const targetYear = yearOverride !== null ? yearOverride : window.reportYear;
+    let targetMonth =
+      monthOverride !== null ? monthOverride : (typeof window !== "undefined" && typeof window.reportMonth === "number" ? window.reportMonth : new Date().getMonth());
+    let targetYear = yearOverride !== null ? yearOverride : (typeof window !== "undefined" && typeof window.reportYear === "number" ? window.reportYear : new Date().getFullYear());
+
+    if (typeof targetMonth === "string") {
+      const match = targetMonth.trim().match(/^(\d{4})-(\d{1,2})/);
+      if (match) {
+        targetYear = parseInt(match[1], 10);
+        targetMonth = parseInt(match[2], 10) - 1;
+      } else if (!isNaN(parseInt(targetMonth, 10))) {
+        const p = parseInt(targetMonth, 10);
+        targetMonth = (p >= 1 && p <= 12) ? p - 1 : p;
+      }
+    }
+    if (typeof targetYear !== "number" || isNaN(targetYear)) {
+      targetYear = (typeof window !== "undefined" && window.reportYear) ? window.reportYear : new Date().getFullYear();
+    }
+    if (typeof targetMonth !== "number" || isNaN(targetMonth)) {
+      targetMonth = (typeof window !== "undefined" && typeof window.reportMonth === "number") ? window.reportMonth : new Date().getMonth();
+    }
 
     const BILLING_START_YEAR = 2026;
     const BILLING_START_MONTH = 6; // July (0-indexed)
@@ -9868,7 +9880,7 @@
     // phantom arrears used to leak into Last Month Due / outstanding sums).
     // getBillingAnchor is declared later in this file; function hoisting
     // makes the call safe at runtime.
-    const anchorForGate = getBillingAnchor(s, new Date(Date.UTC(2026, 0, 1)));
+    const anchorForGate = getBillingAnchor(s, new Date(0));
     if (
       anchorForGate &&
       typeof anchorForGate.year === "number" &&
@@ -14429,46 +14441,30 @@ syncCoachDropdowns();
 
           const existingTitles = new Set((achievementsData || []).map((x) => (x.title || "").trim().toLowerCase()));
 
-          for (const a of seedAchievements) {
-
+          // Populate memory state with seed achievements immediately for zero latency
+          seedAchievements.forEach(a => {
             const titleKey = String(a.title || "").trim().toLowerCase();
-
-            if (!titleKey || existingTitles.has(titleKey)) continue;
-
-            try {
-
-              const res = await apiCall("/api/achievements", {
-
-                method: "POST",
-
-                body: JSON.stringify({ student_id: null, title: a.title, description: a.student_name || "", img_url: toAbsolute(a.img_url), date_achieved: a.date_achieved }),
-
-              });
-
-              if (res.ok) {
-
-                const created = await res.json();
-
-                achievementsData.push(created);
-
-              } else {
-
-                const txt = await res.text().catch(() => 'unknown');
-
-                console.warn("[Seed] Failed to insert achievement:", a.title, res.status, txt);
-
-              }
-
-            } catch (e) {
-
-              console.warn("[Seed] Achievement insert error:", e);
-
+            if (!existingTitles.has(titleKey)) {
+              achievementsData.push({ ...a, id: 'seed_' + Math.random().toString(36).substr(2, 6) });
             }
-
-          }
-
+          });
           window.achievementsData = achievementsData;
 
+          // Non-blocking background sync so loadAllData finishes in milliseconds
+          setTimeout(() => {
+            (async () => {
+              for (const a of seedAchievements) {
+                const titleKey = String(a.title || "").trim().toLowerCase();
+                if (!titleKey || existingTitles.has(titleKey)) continue;
+                try {
+                  await apiCall("/api/achievements", {
+                    method: "POST",
+                    body: JSON.stringify({ student_id: null, title: a.title, description: a.student_name || "", img_url: toAbsolute(a.img_url), date_achieved: a.date_achieved }),
+                  }).catch(() => null);
+                } catch (_) {}
+              }
+            })();
+          }, 2000);
         }
 
         if (res9.ok) {
@@ -40402,7 +40398,7 @@ window.deleteStudent = deleteStudent;
 
   window.sendFeedback = sendFeedback;
 
-  window.informAllDueStudents = informAllDueStudents;
+  if (typeof informAllDueStudents !== 'undefined') window.informAllDueStudents = informAllDueStudents;
 
   window.viewPaymentHistory = viewPaymentHistory;
 
