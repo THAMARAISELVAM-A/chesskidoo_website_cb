@@ -27064,7 +27064,7 @@ due_date: (function () {
     const seenAchTitles = new Set();
     const uniqueAchievementsData = [];
     (achievementsData || []).forEach(a => {
-      const key = (a.title || '').toLowerCase().replace(/[\u{1F300}-\u{1F9FF}]/gu, '').replace(/[^a-z0-9]/g, '').trim();
+      const key = ((a.student_name || a.student_id || '') + '::' + (a.title || '')).toLowerCase().replace(/[\u{1F300}-\u{1F9FF}]/gu, '').replace(/[^a-z0-9:]/g, '').trim();
       if (!seenAchTitles.has(key)) {
         seenAchTitles.add(key);
         uniqueAchievementsData.push(a);

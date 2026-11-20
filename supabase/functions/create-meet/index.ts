@@ -19,7 +19,7 @@ const PRIVATE_KEY = (Deno.env.get("GOOGLE_SA_PRIVATE_KEY") ?? "").replace(/\\n/g
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-portal-role, x-portal-token, x-portal-student-id",
 };
 
 function b64url(buf: ArrayBuffer | Uint8Array): string {

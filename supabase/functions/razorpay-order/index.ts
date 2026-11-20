@@ -27,7 +27,7 @@ const SUPABASE_ANON_KEY   = Deno.env.get('SUPABASE_ANON_KEY')   ?? '';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-portal-role, x-portal-token, x-portal-student-id',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 

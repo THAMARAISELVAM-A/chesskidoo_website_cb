@@ -16,7 +16,7 @@ const ACADEMY_NAME   = Deno.env.get('ACADEMY_NAME')   ?? 'ChessKidoo Academy';
 
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-portal-role, x-portal-token, x-portal-student-id',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
