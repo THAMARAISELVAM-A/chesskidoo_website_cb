@@ -39657,6 +39657,83 @@ window.deleteStudent = deleteStudent;
 
    window.renderCoachMgmt = renderCoachMgmt;
 
+
+  // ── Coach password protection ─────────────────────────────────────────────
+  // Guards coach details, salary, and incentive actions behind a password.
+  // Password is stored in localStorage under 'ck_coach_access_password'.
+  // Default password: "coach@123" (change via admin settings).
+  function _getCoachAccessPassword() {
+    try {
+      const stored = localStorage.getItem('ck_coach_access_password');
+      if (stored) return stored;
+    } catch (_) {}
+    return 'coach@123';
+  }
+
+  function requireCoachPassword(actionLabel) {
+    const label = actionLabel || 'this action';
+    const entered = window.prompt('Enter coach access password to ' + label + ':');
+    if (entered === null) return false; // cancelled
+    if (entered === _getCoachAccessPassword()) return true;
+    if (typeof toast === 'function') toast('Incorrect password. Access denied.', 'error');
+    return false;
+  }
+
+  // Wrap viewCoach
+  const _origViewCoach = (typeof viewCoach === 'function') ? viewCoach : window.viewCoach;
+  window.viewCoach = function (id) {
+    if (!requireCoachPassword('view coach details')) return;
+    if (typeof _origViewCoach === 'function') _origViewCoach(id);
+  };
+
+  // Wrap openCoachModal
+  const _origOpenCoachModal = (typeof openCoachModal === 'function') ? openCoachModal : window.openCoachModal;
+  window.openCoachModal = function (id) {
+    if (!requireCoachPassword('edit coach details')) return;
+    if (typeof _origOpenCoachModal === 'function') _origOpenCoachModal(id);
+  };
+
+  // Wrap openCoachSalaryModal
+  const _origOpenCoachSalaryModal = window.openCoachSalaryModal;
+  window.openCoachSalaryModal = function (coachId) {
+    if (!requireCoachPassword('add/edit salary')) return;
+    if (typeof _origOpenCoachSalaryModal === 'function') _origOpenCoachSalaryModal(coachId);
+  };
+
+  // Wrap openCoachBonusModal
+  const _origOpenCoachBonusModal = window.openCoachBonusModal;
+  window.openCoachBonusModal = function (coachId) {
+    if (!requireCoachPassword('add/edit incentives')) return;
+    if (typeof _origOpenCoachBonusModal === 'function') _origOpenCoachBonusModal(coachId);
+  };
+
+
+  // Change coach access password (admin only)
+  window.changeCoachAccessPassword = function () {
+    const current = window.prompt('Enter current coach access password:');
+    if (current === null) return;
+    if (current !== _getCoachAccessPassword()) {
+      if (typeof toast === 'function') toast('Incorrect current password.', 'error');
+      return;
+    }
+    const newPwd = window.prompt('Enter new coach access password (min 4 chars):');
+    if (!newPwd || newPwd.length < 4) {
+      if (typeof toast === 'function') toast('Password must be at least 4 characters.', 'error');
+      return;
+    }
+    const confirm = window.prompt('Confirm new password:');
+    if (confirm !== newPwd) {
+      if (typeof toast === 'function') toast('Passwords do not match.', 'error');
+      return;
+    }
+    try {
+      localStorage.setItem('ck_coach_access_password', newPwd);
+      if (typeof toast === 'function') toast('Coach access password updated successfully.', 'success');
+    } catch (_) {
+      if (typeof toast === 'function') toast('Failed to save password.', 'error');
+    }
+  };
+
    window.viewCoachSchedule = viewCoachSchedule;
 
    window.openCoachModal = openCoachModal;

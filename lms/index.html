@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <script>
@@ -32,7 +32,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
   <link rel="icon" type="image/svg+xml" href="/icon.svg"/>
   <link href="/lms/fonts/fonts.css" rel="stylesheet"/>
-  <link rel="stylesheet" href="/lms/styles.css?v=20260730c_v15"/>
+  <link rel="stylesheet" href="/lms/styles.css?v=20261011a"/>
 
    <!-- Local Libraries (self-hosted) -->
    <script src="/lms/lib/chess.min.js"></script>
@@ -644,8 +644,9 @@
                    <option value="Paid">Paid</option>
                    <option value="Pending">Pending</option>
                    <option value="Due">Due</option>
-                   <option value="Overdue">Overdue</option>
-                 </select>
+<option value="Overdue">Overdue</option>
+                    <option value="Skipped">Not Active (fee ₹0)</option>
+                  </select>
 
                  <select id="f-learning-mode" onchange="renderStudents()" style="flex:1; min-width:110px; padding:8px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:13px;">
                    <option value="">All Modes</option>
@@ -729,6 +730,7 @@
                 <button id="clear-selection-btn" class="btn btn-outline btn-sm" onclick="window.clearStudentSelection()" style="padding:6px 12px; font-size:12px; height:32px; display:none;">Clear</button>
                  <button class="btn btn-gold btn-sm" onclick="window.bulkMarkPaid()" style="padding:6px 14px; font-size:12px;">✅ Mark Paid</button>
                  <button class="btn btn-outline-warning btn-sm" onclick="window.bulkMarkUnpaid()" style="padding:6px 14px; font-size:12px;">🔄 Mark Unpaid</button>
+                 <button class="btn btn-outline-grey btn-sm" onclick="window.bulkSkipMonth()" style="padding:6px 14px; font-size:12px;" title="Record the selected students as not active for the month shown, with fee ₹0">⏭ Skip Month</button>
                 <button class="btn btn-danger btn-sm" onclick="window.bulkDeleteStudents()" style="padding:6px 14px; font-size:12px;">🗑️ Delete Selected</button>
 
                 <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
@@ -1042,7 +1044,7 @@
     <div id="page-coach-mgmt" class="page admin-only">
       <div style="display:flex;justify-content:flex-end;gap:12px;margin-bottom:24px">
         <button class="btn btn-outline-amber" onclick="informAllCoaches()">📢 Inform All Coaches</button>
-        <button class="btn btn-gold" onclick="openCoachModal()">
+        <button class="btn btn-outline" onclick="changeCoachAccessPassword()" style="border-color:rgba(218,163,62,0.4);color:var(--gold);" title="Change Coach Access Password">🔑 Password</button>\n        <button class="btn btn-gold" onclick="openCoachModal()">
           <svg style="width:18px;height:18px;vertical-align:middle;margin-right:6px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg> Add Coach
         </button>
       </div>
@@ -1625,6 +1627,33 @@
               <div class="stat-label" style="text-transform: uppercase; font-size: 10px; letter-spacing: 1px; color: var(--ivory-dim);">Tuition Fee Plan</div>
               <div class="stat-value" id="cb-plan-fee" style="font-size: 24px; font-weight: 800; color: var(--gold); margin: 6px 0 2px;">₹0 / mo</div>
               <div class="stat-desc" id="cb-plan-type" style="font-size: 11px; color: var(--ivory-dim); opacity: 0.75;">Class: Group Coaching</div>
+            </div>
+          </div>
+
+          <!-- Overdue & Due Months — pay each month individually -->
+          <div class="card" style="padding: 20px; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 24px; margin-top: 10px;">
+            <h3 style="margin: 0 0 16px; color: var(--gold); font-size: 15px; font-family: var(--font-head); letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 18px;">⚠️</span> Overdue & Due Months
+            </h3>
+            <p style="font-size: 12px; color: var(--ivory-dim); line-height: 1.5; margin: 0 0 16px;">
+              Each row represents a billing month. <strong class="text-danger">Overdue</strong> months are past due — pay now to avoid service interruption.
+              <strong class="text-warning">Due</strong> months are the current cycle. <strong class="text-success">Paid</strong> months are settled.
+            </p>
+            <div class="table-wrap" style="box-shadow: var(--shadow); border-radius: 10px; overflow-x: auto; border: 1px solid var(--border);">
+              <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                  <tr style="background: rgba(0,0,0,0.2);">
+                    <th style="padding:12px 16px; text-align:left; font-size:12px; font-weight:700; color:var(--gold); border-bottom:1px solid var(--border);">Month</th>
+                    <th style="padding:12px 16px; text-align:left; font-size:12px; font-weight:700; color:var(--gold); border-bottom:1px solid var(--border);">Status</th>
+                    <th style="padding:12px 16px; text-align:right; font-size:12px; font-weight:700; color:var(--gold); border-bottom:1px solid var(--border);">Amount</th>
+                    <th style="padding:12px 16px; text-align:center; font-size:12px; font-weight:700; color:var(--gold); border-bottom:1px solid var(--border);">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="child-overdue-body"></tbody>
+              </table>
+            </div>
+            <div id="child-overdue-empty" style="display:none; text-align:center; padding:24px; color:var(--ivory-dim); font-size:13px;">
+              No overdue or due months — everything is up to date! ✅
             </div>
           </div>
 
@@ -2524,6 +2553,7 @@
             <option value="Pending">Pending</option>
             <option value="Due">Due</option>
             <option value="Overdue">Overdue</option>
+            <option value="Skipped">Not Active (fee ₹0)</option>
           </select>
         </div>
 
@@ -2549,11 +2579,111 @@
       </div>
 
       <div id="bills-tab-coaches" class="bill-tab-content" style="display:none;">
-        <div class="table-wrap">
+        <!-- Coach Compensation Stats Ribbon -->
+        <div class="coach-payroll-stats" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:18px;">
+          <div class="card" style="padding:16px; background:linear-gradient(135deg, rgba(218,163,62,0.1) 0%, rgba(218,163,62,0.02) 100%); border:1px solid rgba(218,163,62,0.25); border-radius:12px;">
+            <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ivory-dim); margin-bottom:4px;">💼 Monthly Base Payroll</div>
+            <div id="cp-stat-base" style="font-size:22px; font-weight:800; color:var(--gold); font-family:var(--font-head);">₹0</div>
+            <div style="font-size:11px; color:var(--ivory-dim); margin-top:2px;">Scheduled base salaries</div>
+          </div>
+          <div class="card" style="padding:16px; background:linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(16,185,129,0.02) 100%); border:1px solid rgba(16,185,129,0.25); border-radius:12px;">
+            <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ivory-dim); margin-bottom:4px;">🎁 Total Bonuses Awarded</div>
+            <div id="cp-stat-bonuses" style="font-size:22px; font-weight:800; color:var(--emerald); font-family:var(--font-head);">₹0</div>
+            <div id="cp-stat-bonus-count" style="font-size:11px; color:var(--ivory-dim); margin-top:2px;">0 bonuses logged this period</div>
+          </div>
+          <div class="card" style="padding:16px; background:linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(59,130,246,0.02) 100%); border:1px solid rgba(59,130,246,0.25); border-radius:12px;">
+            <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ivory-dim); margin-bottom:4px;">💰 Net Total Compensation</div>
+            <div id="cp-stat-net" style="font-size:22px; font-weight:800; color:#60a5fa; font-family:var(--font-head);">₹0</div>
+            <div style="font-size:11px; color:var(--ivory-dim); margin-top:2px;">Base salary + active bonuses</div>
+          </div>
+          <div class="card" style="padding:16px; background:linear-gradient(135deg, rgba(168,85,247,0.1) 0%, rgba(168,85,247,0.02) 100%); border:1px solid rgba(168,85,247,0.25); border-radius:12px;">
+            <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ivory-dim); margin-bottom:4px;">👥 Settlement Status</div>
+            <div id="cp-stat-status" style="font-size:22px; font-weight:800; color:#c084fc; font-family:var(--font-head);">0 / 0 Paid</div>
+            <div id="cp-stat-pending" style="font-size:11px; color:var(--warning); margin-top:2px;">0 pending payout</div>
+          </div>
+        </div>
+
+        <!-- Coach Filter & Quick Actions Bar -->
+        <div style="margin-bottom:16px; background:var(--glass); padding:12px 16px; border-radius:12px; border:1px solid var(--border); display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:8px">
+            <span style="font-size:12px; color:var(--ivory-dim); font-weight:600;">Payroll Month:</span>
+            <input type="month" min="2026-01" id="f-coach-bill-month" onchange="syncCoachBillMonth(this.value)" style="width:150px; padding:6px 10px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:13px;">
+          </div>
+          <input type="text" id="f-coach-search" placeholder="Search Coach..." oninput="renderCoachBills()" style="padding:6px 12px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:13px; width:160px">
+          
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:12px; color:var(--ivory-dim); font-weight:600;">Status:</span>
+            <select id="f-coach-status" onchange="renderCoachBills()" style="padding:6px 12px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:6px; font-size:13px;">
+              <option value="">All Statuses</option>
+              <option value="Paid">Paid Only</option>
+              <option value="Pending">Pending Only</option>
+            </select>
+          </div>
+
+          <div style="display:flex; gap:8px; margin-left:auto; flex-wrap:wrap;">
+            <button class="btn btn-gold btn-sm" onclick="openCoachSalaryModal()" style="display:inline-flex; align-items:center; gap:6px; font-weight:700;">
+              <span>➕</span> Add Salary
+            </button>
+            <button class="btn btn-sm" onclick="openCoachBonusModal()" style="background:#10b981; color:#fff; border:none; display:inline-flex; align-items:center; gap:6px; font-weight:700; box-shadow:0 2px 8px rgba(16,185,129,0.3); cursor:pointer;">
+              <span>🎁</span> Add Incentive
+            </button>
+            <button class="btn btn-outline btn-sm" id="btn-toggle-bonus-history" onclick="toggleCoachBonusHistory()" style="display:inline-flex; align-items:center; gap:6px;">
+              <span>📜</span> Incentive History
+            </button>
+          </div>
+        </div>
+
+        <!-- Coach Payroll Main Table -->
+        <div class="table-wrap" id="coach-payroll-table-wrap">
           <table>
-            <thead><tr><th>Emp ID</th><th>Coach</th><th>Role</th><th>Salary</th><th>Status</th><th>Action</th></tr></thead>
-            <tbody id="coach-bill-body"><tr><td colspan="6"><div class="loading-state"><span class="spinner"></span> Loading…</div></td></tr></tbody>
+            <thead>
+              <tr>
+                <th>Emp ID</th>
+                <th>Coach Details</th>
+                <th>Specialization</th>
+                <th>Base Salary</th>
+                <th>Bonus Added</th>
+                <th>Total Payout</th>
+                <th>Status</th>
+                <th>Disbursement</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="coach-bill-body">
+              <tr><td colspan="9"><div class="loading-state"><span class="spinner"></span> Loading coach payroll…</div></td></tr>
+            </tbody>
           </table>
+        </div>
+
+        <!-- Bonus History Log Section (collapsible) -->
+        <div id="coach-bonus-history-section" style="display:none; margin-top:20px; background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+            <div>
+              <h4 style="color:var(--gold); font-size:16px; margin:0; font-family:var(--font-head); display:flex; align-items:center; gap:8px;">
+                <span>🎁</span> Coach Incentive & Bonus Log
+              </h4>
+              <p style="font-size:12px; color:var(--ivory-dim); margin:2px 0 0 0;">All performance rewards, tournament podium bonuses, and extra batch incentives.</p>
+            </div>
+            <button class="btn btn-outline-grey btn-sm" onclick="toggleCoachBonusHistory()">Close Log ✕</button>
+          </div>
+          <div class="table-wrap" style="max-height:300px; overflow-y:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Coach</th>
+                  <th>Bonus Category</th>
+                  <th>Reason / Details</th>
+                  <th>Amount</th>
+                  <th>Payment Type</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="coach-bonus-history-body">
+                <tr><td colspan="7" style="text-align:center; color:var(--ivory-dim); padding:20px;">No bonuses logged yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -3236,33 +3366,70 @@
   </div>
 </div>
 
-<!-- Payment History Modal -->
+<!-- Payment & Fee History Modal -->
 <div id="payment-history-modal" class="modal">
-  <div class="modal-box" style="max-width:800px">
-    <div class="modal-title">Payment History</div>
-    <div id="p-history-student-info" style="margin-bottom:20px;padding:15px;background:var(--bg3);border-radius:10px">
-      <h3 id="p-history-name" style="color:var(--gold);margin-bottom:5px">Student Name</h3>
-      <p id="p-history-meta" style="font-size:13px;color:var(--ivory-dim)">Current Level: -</p>
+  <div class="modal-box" style="max-width:850px; width:95%">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div class="modal-title" style="margin-bottom:0;">Student Fee & Payment History</div>
+      <button class="btn btn-sm btn-outline-grey" onclick="closeModals()">✕</button>
     </div>
-    <div class="table-wrap" style="max-height:400px;overflow-y:auto">
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>For Month</th>
-            <th>Amount</th>
-            <th>Method</th>
-            <th>ID</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="p-history-body">
-          <tr><td colspan="6"><div class="loading-state">Loading...</div></td></tr>
-        </tbody>
-      </table>
+    <div id="p-history-student-info" style="margin-bottom:16px;padding:14px;background:var(--bg3);border-radius:10px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+      <div>
+        <h3 id="p-history-name" style="color:var(--gold);margin:0 0 4px;font-size:16px;">Student Name</h3>
+        <p id="p-history-meta" style="font-size:12px;color:var(--ivory-dim);margin:0;">ID: - • Monthly Fee: ₹0</p>
+      </div>
+      <div id="p-history-quick-actions" style="display:flex;gap:6px;"></div>
     </div>
-    <div style="margin-top:20px">
-      <button class="btn btn-outline-grey" style="width:100%" onclick="closeModals()">Close</button>
+    <!-- Tabs -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:10px;">
+      <button id="btn-tab-fee-history" class="btn btn-sm btn-gold" onclick="switchPaymentHistoryTab('fees')">📅 Monthly Fee History</button>
+      <button id="btn-tab-pay-transactions" class="btn btn-sm btn-outline-grey" onclick="switchPaymentHistoryTab('transactions')">🧾 Payment Transactions</button>
+    </div>
+    <!-- Tab 1: Monthly Fee History (Requirement 7) -->
+    <div id="p-history-fees-panel">
+      <div class="table-wrap" style="max-height:420px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:var(--bg3);position:sticky;top:0;z-index:2;">
+              <th style="padding:10px 14px;text-align:left;font-size:12px;color:var(--gold);">Month</th>
+              <th style="padding:10px 14px;text-align:left;font-size:12px;color:var(--gold);">Status</th>
+              <th style="padding:10px 14px;text-align:right;font-size:12px;color:var(--gold);">Fee Amount</th>
+              <th style="padding:10px 14px;text-align:left;font-size:12px;color:var(--gold);">Fee State</th>
+              <th style="padding:10px 14px;text-align:center;font-size:12px;color:var(--gold);">Action</th>
+            </tr>
+          </thead>
+          <tbody id="p-fee-history-body">
+            <tr><td colspan="5"><div class="loading-state">Loading fee history...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="p-fee-history-totals" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;"></div>
+      <p style="font-size:11px;color:var(--ivory-dim);margin-top:8px;line-height:1.4;">
+        💡 <b>Active periods</b> have fees applied. <b>Inactive periods</b> have fee ₹0 and status "No Fee Required". Previous paid/unpaid records are preserved. Totals below count ACTIVE (billable) months only.
+      </p>
+    </div>
+    <!-- Tab 2: Payment Transactions -->
+    <div id="p-history-transactions-panel" style="display:none;">
+      <div class="table-wrap" style="max-height:420px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:var(--bg3);position:sticky;top:0;z-index:2;">
+              <th style="padding:10px 14px;text-align:left;font-size:12px;color:var(--gold);">Date</th>
+              <th style="padding:10px 14px;text-align:left;font-size:12px;color:var(--gold);">For Month</th>
+              <th style="padding:10px 14px;text-align:right;font-size:12px;color:var(--gold);">Amount</th>
+              <th style="padding:10px 14px;text-align:left;font-size:12px;color:var(--gold);">Method</th>
+              <th style="padding:10px 14px;text-align:left;font-size:12px;color:var(--gold);">ID</th>
+              <th style="padding:10px 14px;text-align:center;font-size:12px;color:var(--gold);">Action</th>
+            </tr>
+          </thead>
+          <tbody id="p-history-body">
+            <tr><td colspan="6"><div class="loading-state">Loading...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div style="margin-top:16px;display:flex;justify-content:flex-end;">
+      <button class="btn btn-outline-grey" onclick="closeModals()">Close</button>
     </div>
   </div>
 </div>
@@ -3843,7 +4010,7 @@
       <textarea id="cm-address" rows="2" placeholder="Street, City, State"></textarea>
     </div>
 
-    <div class="grid-2-col" style="gap:14px; margin-bottom:14px;">
+<div class="grid-2-col" style="gap:14px; margin-bottom:14px;">
       <div class="form-group">
         <label style="display:block; font-size:11px; text-transform:uppercase; color:var(--ivory-dim); margin-bottom:4px; letter-spacing:0.5px;">Photo URL</label>
         <input type="url" id="cm-photo" placeholder="https://...">
@@ -3851,6 +4018,21 @@
       <div class="form-group">
         <label style="display:block; font-size:11px; text-transform:uppercase; color:var(--ivory-dim); margin-bottom:4px; letter-spacing:0.5px;">Monthly Salary (₹)</label>
         <input type="number" id="cm-salary" placeholder="e.g. 15000" value="0">
+      </div>
+    </div>
+
+    <div class="grid-2-col" style="gap:14px; margin-bottom:14px;">
+      <div class="form-group">
+        <label style="display:block; font-size:11px; text-transform:uppercase; color:var(--ivory-dim); margin-bottom:4px; letter-spacing:0.5px;">Bonus / Incentive (₹)</label>
+        <input type="number" id="cm-bonus" placeholder="e.g. 5000" value="0">
+      </div>
+      <div class="form-group">
+        <label style="display:block; font-size:11px; text-transform:uppercase; color:var(--ivory-dim); margin-bottom:4px; letter-spacing:0.5px;">Salary Type</label>
+        <select id="cm-salary-type">
+          <option value="fixed">Fixed Salary</option>
+          <option value="revenue-share">Revenue Share</option>
+          <option value="hybrid">Fixed + Performance</option>
+        </select>
       </div>
     </div>
 
@@ -3932,6 +4114,7 @@
     </div>
     <div style="margin-top:28px;display:flex;gap:12px">
       <button class="btn btn-outline" style="flex:1" onclick="closeModals()">Close</button>
+      <button class="btn btn-outline-danger" id="cv-del-btn" style="flex:1; border-color:var(--danger); color:var(--danger);" onclick="deleteCoachFromViewModal()">🗑️ Delete Coach</button>
       <button class="btn btn-gold" id="cv-edit-btn" style="flex:1">Edit Profile</button>
     </div>
   </div>
@@ -4395,7 +4578,7 @@
         <input type="checkbox" id="hard-delete" style="width:auto">
         <span style="font-size:13px;font-weight:600;color:var(--danger)">Permanently delete from database (cannot be recovered)</span>
       </label>
-      <p style="font-size:11px;color:var(--ivory-dim);margin:6px 0 0 24px;line-height:1.4;">Default (unchecked): Removes student from <strong>this month's data only</strong>. All historical attendance, fees, and report cards from previous months remain completely safe.</p>
+      <p id="delete-modal-note" style="font-size:11px;color:var(--ivory-dim);margin:6px 0 0 24px;line-height:1.4;">Default (unchecked): Removes student from <strong>this month's data only</strong>. All historical attendance, fees, and report cards from previous months remain completely safe.</p>
     </div>
     <input type="hidden" id="delete-item-id">
     <input type="hidden" id="delete-type">
@@ -4543,14 +4726,30 @@
 
 <!-- Record Payment Modal (Mark as Paid) -->
 <div class="modal" id="mark-paid-modal">
-  <div class="modal-box" style="max-width:460px">
+  <div class="modal-box" style="max-width:540px">
     <div class="modal-title" style="color:var(--success);display:flex;align-items:center;gap:10px"><span style="font-size:22px">💵</span> Record Payment</div>
     <div class="modal-sub">Student: <strong id="mp-student-name"></strong></div>
+    <div class="mp-arrears" id="mp-arrears"></div>
     <input type="hidden" id="mp-student-id">
+    <!-- Mirror of the primary (newest ticked) month. Kept because the billing
+         month picker bootstrap (autoDetectBillingMonth) writes into it and older
+         callers read it as "which month did we just settle". -->
+    <input type="hidden" id="mp-month">
+    <div class="form-group">
+      <label>Months Covered <span class="mp-label-hint">tick every month this payment settles — overdue months are flagged</span></label>
+      <div class="mp-month-list" id="mp-month-list"></div>
+      <div class="mp-month-tools">
+        <button type="button" class="btn btn-outline-grey btn-sm" onclick="selectMarkPaidMonths('overdue')">Select overdue</button>
+        <button type="button" class="btn btn-outline-grey btn-sm" onclick="selectMarkPaidMonths('unpaid')">Select all unpaid</button>
+        <button type="button" class="btn btn-outline-grey btn-sm" onclick="selectMarkPaidMonths('none')">Clear</button>
+      </div>
+      <div class="mp-month-summary" id="mp-month-summary"></div>
+    </div>
     <div class="modal-grid" style="margin-top:12px">
       <div class="form-group">
-        <label>Amount (₹)</label>
-        <input type="number" id="mp-amount" placeholder="0">
+        <label>Total Amount (₹)</label>
+        <input type="number" id="mp-amount" placeholder="0" oninput="window.mpAmountEdited = true">
+        <div class="mp-hint" id="mp-amount-hint"></div>
       </div>
       <div class="form-group">
         <label>Payment Mode</label>
@@ -4572,13 +4771,9 @@
         <input type="time" id="mp-time">
       </div>
     </div>
-    <div class="form-group">
-      <label>For Month</label>
-      <input type="month" id="mp-month" min="2026-01">
-    </div>
     <div style="display:flex;gap:10px;margin-top:18px">
       <button class="btn btn-outline" style="flex:1" onclick="closeModal('mark-paid-modal')">Cancel</button>
-      <button class="btn btn-gold" style="flex:1" onclick="confirmMarkPaid()">✅ Record &amp; Generate Receipt</button>
+      <button class="btn btn-gold" id="mp-confirm-btn" style="flex:1" onclick="confirmMarkPaid()">✅ Record &amp; Generate Receipt</button>
     </div>
   </div>
 </div>
@@ -4764,9 +4959,9 @@
       <script src="/lms/js/tournaments.js?v=1.3&t=20260611a" charset="utf-8"></script>
       <script src="/lms/js/access.js?v=1.9&t=20260730b"></script>
       <script src="/lms/js/tom-brain.js?v=1.0&t=20260601" charset="utf-8"></script>
-      <script src="/lms/scripts.js?v=20260921a" charset="utf-8"></script>
+      <script src="/lms/scripts.js?v=20261011a" charset="utf-8"></script>
       <script src="/lms/js/chess-api.js?v=2.2&t=20260711_chesscom_edge"></script>
-      <script src="/lms/js/homework.js?v=2.0&t=20260817" charset="utf-8"></script>
+      <script src="/lms/js/homework.js?v=2.0&t=20261011" charset="utf-8"></script>
       <script src="/lms/js/expenditures.js?v=1.1&t=20260601d" charset="utf-8"></script>
       <script src="/lms/js/calculator.js?v=1.0" charset="utf-8"></script>
       <script src="/lms/js/study-pgn.js?v=1.0" charset="utf-8"></script>
@@ -4787,7 +4982,7 @@
       <script src="/lms/js/automation.js?v=3.9&t=20260529" charset="utf-8"></script>
       <script src="/lms/js/schedule.js?v=2.2&t=20260817" charset="utf-8"></script>
  
-      <script src="/lms/js/attendance_extension.js?v=2.0&t=20260611a" charset="utf-8"></script>
+      <script src="/lms/js/attendance_extension.js?v=2.0&t=20261011" charset="utf-8"></script>
 
 <!-- Combined Class Session (Homework + Attendance) Modal -->
        <div class="modal" id="quick-class-session-modal">
@@ -5466,6 +5661,218 @@
       }
     })();
   </script>
+
+<!-- Coach Add / Update Salary Modal -->
+<div class="modal" id="coach-salary-modal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-title" style="display:flex; align-items:center; gap:8px;">
+      <span>💼</span> <span id="csm-title">Add / Record Coach Salary</span>
+    </div>
+    <form onsubmit="event.preventDefault(); saveCoachSalaryRecord();">
+      <div class="form-group" style="margin-top:16px;">
+        <label class="label">Select Coach <span style="color:var(--danger)">*</span></label>
+        <select id="csm-coach-id" class="input-field" required onchange="onCoachSalarySelectChange(this.value)">
+          <option value="">Choose a Coach...</option>
+        </select>
+      </div>
+
+      <div class="grid-2-col" style="gap:12px;">
+        <div class="form-group">
+          <label class="label">Payroll Month <span style="color:var(--danger)">*</span></label>
+          <input type="month" min="2026-01" id="csm-month" class="input-field" required>
+        </div>
+        <div class="form-group">
+          <label class="label">Base Monthly Salary (₹) <span style="color:var(--danger)">*</span></label>
+          <input type="number" id="csm-amount" class="input-field" placeholder="e.g. 5000" min="0" required>
+        </div>
+      </div>
+
+      <div class="grid-2-col" style="gap:12px;">
+        <div class="form-group">
+          <label class="label">Payment Status</label>
+          <select id="csm-status" class="input-field">
+            <option value="Paid">Paid</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="label">Disbursement Mode</label>
+          <select id="csm-mode" class="input-field">
+            <option value="UPI / GPay / PhonePe">UPI (GPay / PhonePe / Paytm)</option>
+            <option value="Bank Transfer (NEFT/IMPS)">Bank Transfer (NEFT / IMPS)</option>
+            <option value="Cash">Cash</option>
+            <option value="Cheque">Cheque</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-2-col" style="gap:12px;">
+        <div class="form-group">
+          <label class="label">Transaction Ref / UTR</label>
+          <input type="text" id="csm-ref" class="input-field" placeholder="e.g. UTR128394829">
+        </div>
+        <div class="form-group">
+          <label class="label">Payment Date</label>
+          <input type="date" id="csm-date" class="input-field">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="label">Notes / Remarks</label>
+        <input type="text" id="csm-notes" class="input-field" placeholder="e.g. Regular monthly stipend + batch allowance">
+      </div>
+
+      <div class="form-group" style="margin-top:12px;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="csm-update-profile" checked style="width:auto">
+          <span style="font-size:12px; color:var(--ivory-dim)">Also update base salary in Coach Profile</span>
+        </label>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button type="button" class="btn btn-outline" style="flex:1" onclick="closeModals()">Cancel</button>
+        <button type="submit" class="btn btn-gold" id="csm-submit-btn" style="flex:1; font-weight:700;">💾 Save Salary Record</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Coach Add Bonus Modal -->
+<div class="modal" id="coach-bonus-modal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-title" style="display:flex; align-items:center; gap:8px; color:var(--emerald);">
+      <span>🎁</span> <span>Add / Record Coach Incentive</span>
+    </div>
+    <form onsubmit="event.preventDefault(); saveCoachBonus();">
+      <div class="form-group" style="margin-top:16px;">
+        <label class="label">Select Coach <span style="color:var(--danger)">*</span></label>
+        <select id="cbm-coach-id" class="input-field" required>
+          <option value="">Choose a Coach...</option>
+        </select>
+      </div>
+
+      <div class="grid-2-col" style="gap:12px;">
+        <div class="form-group">
+          <label class="label">Bonus Month <span style="color:var(--danger)">*</span></label>
+          <input type="month" min="2026-01" id="cbm-month" class="input-field" required>
+        </div>
+        <div class="form-group">
+          <label class="label">Bonus Amount (₹) <span style="color:var(--danger)">*</span></label>
+          <input type="number" id="cbm-amount" class="input-field" placeholder="e.g. 1500" min="1" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="label">Bonus Category <span style="color:var(--danger)">*</span></label>
+        <select id="cbm-category" class="input-field" required onchange="onBonusCategoryChange(this.value)">
+          <option value="Tournament Podium / Championship">🏆 Tournament Podium / Championship Win</option>
+          <option value="Extra Batches & Overtime">🏫 Extra Batches & Overtime Classes</option>
+          <option value="Student Retention & Growth">⭐ Student Retention & Rating Surge</option>
+          <option value="Festive / Holiday Bonus">🎉 Festive / Holiday Bonus</option>
+          <option value="Special Academy Excellence">👑 Special Academy Excellence Award</option>
+          <option value="Other Incentive">📝 Other Incentive / Recognition</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="label">Reason / Award Title <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="cbm-title" class="input-field" placeholder="e.g. Tamil Nadu State Championship Podiums" required>
+      </div>
+
+      <div class="grid-2-col" style="gap:12px;">
+        <div class="form-group">
+          <label class="label">Payment Status</label>
+          <select id="cbm-status" class="input-field">
+            <option value="Included in Salary">Included in Monthly Salary</option>
+            <option value="Paid Separately">Paid Separately</option>
+            <option value="Pending">Pending Disbursement</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="label">Award Date</label>
+          <input type="date" id="cbm-date" class="input-field">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="label">Notes / Remarks (Optional)</label>
+        <input type="text" id="cbm-notes" class="input-field" placeholder="e.g. Mentored 3 students to top 5 finishes">
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button type="button" class="btn btn-outline" style="flex:1" onclick="closeModals()">Cancel</button>
+        <button type="submit" class="btn btn-sm" id="cbm-submit-btn" style="flex:1; background:var(--emerald); color:#fff; border:none; font-weight:700; padding:10px 16px; border-radius:8px; cursor:pointer;">🎁 Add Incentive</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Coach Settlement Modal -->
+<div class="modal" id="coach-payment-modal">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-title" style="display:flex; align-items:center; gap:8px;">
+      <span>💳</span> <span>Disburse Coach Salary & Bonuses</span>
+    </div>
+    <form onsubmit="event.preventDefault(); submitCoachPayment();">
+      <input type="hidden" id="cpm-coach-id">
+      <div style="background:var(--surface2); padding:14px; border-radius:10px; margin:14px 0; border:1px solid var(--border);">
+        <div style="font-size:15px; font-weight:700; color:var(--ivory)" id="cpm-coach-name">Coach</div>
+        <div style="font-size:12px; color:var(--ivory-dim)" id="cpm-period-label">Period: October 2026</div>
+        <div style="display:flex; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);">
+          <span style="font-size:13px; color:var(--ivory-dim)">Base Salary:</span>
+          <span style="font-size:13px; font-weight:600; color:var(--ivory)" id="cpm-base-disp">₹0</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:4px;">
+          <span style="font-size:13px; color:var(--ivory-dim)">Bonus Added:</span>
+          <span style="font-size:13px; font-weight:600; color:var(--emerald)" id="cpm-bonus-disp">+₹0</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px solid var(--border);">
+          <span style="font-size:14px; font-weight:700; color:var(--gold)">Total Net Payout:</span>
+          <span style="font-size:18px; font-weight:800; color:var(--gold)" id="cpm-total-disp">₹0</span>
+        </div>
+      </div>
+
+      <div class="grid-2-col" style="gap:12px;">
+        <div class="form-group">
+          <label class="label">Disbursement Mode</label>
+          <select id="cpm-mode" class="input-field">
+            <option value="Online Transfer (UPI)">UPI (GPay / PhonePe)</option>
+            <option value="Bank Transfer (NEFT/IMPS)">Bank Transfer (NEFT / IMPS)</option>
+            <option value="Cash">Cash</option>
+            <option value="Cheque">Cheque</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="label">Payment Date</label>
+          <input type="date" id="cpm-date" class="input-field" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="label">Transaction Reference / UTR</label>
+        <input type="text" id="cpm-ref" class="input-field" placeholder="e.g. UTR202610130091">
+      </div>
+
+      <div class="form-group">
+        <label class="label">Payment Remarks / Message</label>
+        <input type="text" id="cpm-remarks" class="input-field" placeholder="e.g. Salary credited successfully">
+      </div>
+
+      <div class="form-group" style="margin-top:10px;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="cpm-notify-whatsapp" checked style="width:auto">
+          <span style="font-size:12px; color:var(--emerald); font-weight:600;">Open WhatsApp to send Payslip & Credit Notification</span>
+        </label>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:18px;">
+        <button type="button" class="btn btn-outline" style="flex:1" onclick="closeModals()">Cancel</button>
+        <button type="submit" class="btn btn-gold" id="cpm-submit-btn" style="flex:1; font-weight:700;">✅ Confirm Credit</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 </body>
 </html>
 
