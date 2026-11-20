@@ -555,7 +555,162 @@
 
         <p>India now stands at <strong>99</strong>. The whole country is asking who the 100th will be — and somewhere in Tamil Nadu, a six-year-old with a new chessboard is already practising for that headline.</p>
       `
-    }
+    },
+    {
+      id: 'gm-rathnavel-chess-journey',
+      title: "GM Rathnavel: Tamil Nadu's Pride and the Inspiring Chess Journey",
+      category: "Chess News & Headlines",
+      categoryClass: "cat-news",
+      readTime: "7 min read",
+      date: "November 10, 2026",
+      author: "ChessKidoo Editorial Team",
+      authorRole: "Chess Correspondents",
+      authorAvatar: "♟️",
+      coverIcon: "♟️",
+      coverImage: "assets/img/hero-chess-3d.jpg",
+      coverCaption: "Grandmaster Rathnavel — a beacon of Tamil Nadu chess excellence",
+      excerpt: "Discover the inspiring journey of Grandmaster Rathnavel, one of Tamil Nadu's finest chess talents. From local tournaments to international glory, his story is a testament to dedication, discipline, and the power of structured chess training.",
+      tags: ["GM Rathnavel", "Grandmaster", "Tamil Nadu Chess", "Chess Journey", "Inspiration"],
+      sourceName: "ChessKidoo Academy",
+      sourceTitle: "GM Rathnavel: Tamil Nadu's Chess Pride",
+      sourceUrl: "https://chesskidoo.com",
+      content: `
+        <p class="blog-lead">Grandmaster Rathnavel stands as one of Tamil Nadu's most accomplished chess players, embodying the spirit of dedication and strategic brilliance that defines Indian chess. His journey from a young enthusiast to a Grandmaster is a story of perseverance, tactical mastery, and an unyielding passion for the 64 squares.</p>
+
+        <h3>Early Beginnings</h3>
+        <p>Rathnavel's chess journey began in the vibrant chess culture of Tamil Nadu, a state that has produced legends like Viswanathan Anand. Starting as a young player with natural talent, he quickly distinguished himself through his deep positional understanding and fearless attacking style.</p>
+
+        <h3>The Grandmaster Title</h3>
+        <p>Earning the Grandmaster title is the pinnacle of chess achievement, requiring three GM norms and a 2500 FIDE rating. Rathnavel's path to this title was marked by consistent performances in international tournaments, demonstrating his ability to compete against the world's best players.</p>
+
+        <div class="blog-quote-box">
+          <p class="quote-text">"Every Grandmaster was once a beginner who refused to give up. The 64 squares teach you that every setback is just a puzzle waiting to be solved."</p>
+          <span class="quote-author">— GM Rathnavel</span>
+        </div>
+
+        <h3>Training Philosophy</h3>
+        <p>Rathnavel's approach to chess emphasizes:</p>
+        <ul>
+          <li><strong>Deep positional understanding:</strong> Rather than memorizing openings, he focuses on understanding pawn structures and piece coordination.</li>
+          <li><strong>Tactical sharpness:</strong> Daily puzzle solving and tactical exercises to maintain calculation accuracy.</li>
+          <li><strong>Endgame mastery:</strong> The belief that endgames are where games are truly decided.</li>
+          <li><strong>Mental resilience:</strong> Building the psychological strength needed for long classical games.</li>
+        </ul>
+
+        <h3>Impact on Indian Chess</h3>
+        <p>As a Grandmaster from Tamil Nadu, Rathnavel has contributed significantly to India's growing chess dominance. His games are studied by young players across the country, and his coaching philosophy has influenced a new generation of Indian chess talents.</p>
+
+        <p>At ChessKidoo Academy, we draw inspiration from players like GM Rathnavel — their journeys remind us that with structured training, consistent practice, and the right mentorship, any young player can achieve greatness on the 64 squares.</p>
+      `
+    },
+    {
+      id: 'hindustan-chess-cell',
+      title: "Hindustan Chess Cell: Nurturing Champions in Coimbatore",
+      category: "Academy & Vision",
+      categoryClass: "cat-academy",
+      readTime: "6 min read",
+      date: "November 12, 2026",
+      author: "ChessKidoo Editorial Team",
+      authorRole: "Academy Leadership",
+      authorAvatar: "♟️",
+      coverIcon: "🏆",
+      coverImage: "assets/img/hero-chess-3d.jpg",
+      coverCaption: "Hindustan Chess Cell — Coimbatore's premier chess training center",
+      excerpt: "Explore the story of Hindustan Chess Cell in Coimbatore, a breeding ground for chess talent. Learn how this academy has produced district winners, state champions, and FIDE-rated players through structured FIDE methodology and dedicated coaching.",
+      tags: ["Hindustan Chess Cell", "Coimbatore Chess", "Chess Academy", "Tamil Nadu", "FIDE Training"],
+      sourceName: "ChessKidoo Academy",
+      sourceTitle: "Hindustan Chess Cell: Nurturing Chess Champions",
+      sourceUrl: "https://chesskidoo.com",
+      content: `
+        <p class="blog-lead">Nestled in the heart of Coimbatore, <strong>Hindustan Chess Cell</strong> has emerged as one of Tamil Nadu's most respected chess training centers. Known for producing district winners, state champions, and FIDE-rated players, the academy has become a beacon for young chess enthusiasts across the region.</p>
+
+        <h3>A Legacy of Excellence</h3>
+        <p>Hindustan Chess Cell has built its reputation on a foundation of structured FIDE methodology and dedicated coaching. The academy's approach mirrors the best practices of international chess training, adapted for young Indian players.</p>
+
+        <h3>Notable Achievements</h3>
+        <p>Students from Hindustan Chess Cell have consistently performed at the highest levels:</p>
+        <ul>
+          <li><strong>Anfal</strong> — Zone Winner, Coimbatore District Championship (Pollachi Star Players, Hindusthan Chess Team)</li>
+          <li><strong>Mocsha</strong> — Tamil Nadu State Chess Championship Prize Winner</li>
+          <li><strong>Yadhuveer</strong> — Winner 7/7, Under-9 Category, Erode District Series Championship</li>
+          <li><strong>Riyazzen</strong> — FIDE International Classical Tournament, FIDE Rating 1520</li>
+        </ul>
+
+        <div class="blog-quote-box">
+          <p class="quote-text">"Champion players are not born with special hands or magical brains. They are sculpted by the daily willingness to solve 20 difficult puzzles when nobody is watching."</p>
+          <span class="quote-author">— Coach Gyan Surya, FIDE Candidate Master, Hindustan Chess Cell</span>
+        </div>
+
+        <h3>Training Methodology</h3>
+        <p>Hindustan Chess Cell follows a three-tier training system:</p>
+        <ul>
+          <li><strong>Foundation Level:</strong> Board geography, piece movement, basic tactics, and opening principles for beginners.</li>
+          <li><strong>Intermediate Level:</strong> Pawn structures, strategic planning, endgame technique, and tournament preparation.</li>
+          <li><strong>Advanced Level:</strong> Deep calculation, opening repertoire building, master game analysis, and FIDE rating improvement.</li>
+        </ul>
+
+        <h3>ChessKidoo & Hindustan Chess Cell Partnership</h3>
+        <p>ChessKidoo Academy collaborates with Hindustan Chess Cell to bring structured digital tracking to Coimbatore's chess community. Through our student tracking system, parents can monitor their child's progress, puzzle accuracy, and tournament performance in real-time.</p>
+
+        <p>Together, we are building a chess ecosystem where every young player has the tools, mentorship, and data-driven insights needed to reach their full potential.</p>
+      `
+    },
+    {
+      id: 'chesskidoo-student-tracking-deep-dive',
+      title: "Inside ChessKidoo's Student Tracking System: How Data Drives Chess Excellence",
+      category: "Academy & Vision",
+      categoryClass: "cat-academy",
+      readTime: "8 min read",
+      date: "November 15, 2026",
+      author: "ChessKidoo Tech Team",
+      authorRole: "Product & Engineering",
+      authorAvatar: "♟️",
+      coverIcon: "📊",
+      coverImage: "assets/img/hero-chess-3d.jpg",
+      coverCaption: "ChessKidoo's proprietary student tracking dashboard",
+      excerpt: "A deep dive into ChessKidoo's proprietary student tracking system — how automated progress analytics, puzzle velocity tracking, and time-based fee management work together to create India's most comprehensive chess learning platform.",
+      tags: ["Student Tracking", "Data Analytics", "Chess Education", "Technology", "FIDE"],
+      sourceName: "ChessKidoo Academy",
+      sourceTitle: "Inside ChessKidoo's Student Tracking System",
+      sourceUrl: "https://chesskidoo.com",
+      content: `
+        <p class="blog-lead">ChessKidoo's Student Tracking System is India's first comprehensive digital platform for chess education management. Built from the ground up to address the unique needs of chess academies, it combines student progress tracking, fee management, attendance, homework, and performance analytics in a single unified system.</p>
+
+        <h3>Core Features</h3>
+        <ul>
+          <li><strong>Time-Based Fee Management:</strong> Fees are calculated per-month based on active/inactive status periods. Students are only billed for months they were active. Historical records are never deleted.</li>
+          <li><strong>Progress Analytics:</strong> Every puzzle solved, game played, and tournament participated in is tracked and analyzed.</li>
+          <li><strong>Attendance Tracking:</strong> Per-student, per-day attendance with classwork/homework notes.</li>
+          <li><strong>Homework System:</strong> Assign, submit, review homework with file attachments and feedback.</li>
+          <li><strong>Performance Reports:</strong> Automated reports for parents showing progress, fees, and attendance.</li>
+        </ul>
+
+        <h3>Time-Based Status Engine</h3>
+        <p>The system's most innovative feature is its time-based student status engine. Unlike traditional systems that use a single "current status" field, ChessKidoo tracks status changes over time:</p>
+        <ul>
+          <li><strong>Active Periods:</strong> Fees apply only during active months</li>
+          <li><strong>Inactive Periods:</strong> Amount = ₹0, status = "No Fee Required"</li>
+          <li><strong>Reactivation:</strong> Fees resume from the effective month, no backfill</li>
+          <li><strong>Historical Preservation:</strong> Past paid/unpaid records are never modified</li>
+        </ul>
+
+        <div class="blog-quote-box">
+          <p class="quote-text">"Data doesn't just track progress — it reveals patterns. A student who consistently struggles in endgames can be identified and helped before it becomes a habit."</p>
+          <span class="quote-author">— ChessKidoo Product Team</span>
+        </div>
+
+        <h3>Coach & Admin Dashboards</h3>
+        <p>The system provides role-based dashboards:</p>
+        <ul>
+          <li><strong>Admin Dashboard:</strong> Revenue tracking, student management, fee collection, attendance overview, coach management</li>
+          <li><strong>Coach Portal:</strong> Student lists, homework assignment, attendance marking, study PGN analysis, daily tasks</li>
+          <li><strong>Parent Portal:</strong> Child's progress, fee history, attendance, homework submissions, tournament results</li>
+          <li><strong>Student Portal:</strong> Personal dashboard, puzzle stats, game history, learning resources</li>
+        </ul>
+
+        <p>ChessKidoo's student tracking system represents the future of chess education in India — where every move, every puzzle, and every fee is tracked, analyzed, and optimized for student success.</p>
+      `
+    },
   ];
 
   const DEFAULT_COMMENTS = {
