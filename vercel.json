@@ -63,7 +63,7 @@
       "destination": "/api/demo-sheet"
     },
     {
-      "source": "/api/((?!lichess|chesscom|chessable|demo-sheet|auth|zoho|geo|homework|achievements|upload|razorpay|test-lichess).*)$",
+      "source": "/api/((?!lichess|chesscom|chessable|demo-sheet|auth|zoho|geo|homework|achievements|upload|chess-news|razorpay|test-lichess).*)$",
       "destination": "https://vseombfkrvpffnpgbsnk.supabase.co/functions/v1/$1"
     },
     {

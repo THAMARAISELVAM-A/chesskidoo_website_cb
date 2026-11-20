@@ -3672,19 +3672,55 @@
     const grid = document.getElementById('auto-news-grid');
     if (!grid) return;
 
-    grid.innerHTML = chessNews.map(n => `
-      <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(59,130,246,0.2); border-radius: 12px; padding: 20px; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(59,130,246,0.15)';" onmouseout="this.style.transform=''; this.style.boxShadow='';">
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-          <span style="font-size: 1.5rem;">${n.img}</span>
-          <span style="background: rgba(59,130,246,0.15); color: #3b82f6; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">${n.source}</span>
-          <span style="color: #64748b; font-size: 0.7rem;">${n.date}</span>
+    // Auto-fetch chess news from API (falls back to curated list)
+    async function loadNews() {
+      try {
+        const res = await fetch('/api/chess-news');
+        if (res.ok) {
+          const json = await res.json();
+          const news = Array.isArray(json.data) ? json.data : [];
+          if (news.length > 0) {
+            renderNews(news);
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn('[News] Fetch note:', e.message);
+      }
+      // Fallback to curated list
+      renderNews([
+        { title: "FIDE Candidates Tournament 2026: Full Schedule & Participants", source: "FIDE", url: "https://www.fide.com/regular/tournaments/", date: "Nov 2026", img: "🏆" },
+        { title: "GM Praggnanandhaa Wins Prague Masters 2026", source: "ChessBase", url: "https://en.chessbase.com", date: "Mar 2026", img: "♟️" },
+        { title: "Bodhana Sivanandan Becomes Youngest Female IM in History", source: "ChessBase India", url: "https://chessbase.in", date: "Oct 2026", img: "👑" },
+        { title: "Lichess New Features: Enhanced Training & Analysis", source: "Lichess", url: "https://lichess.org/blog", date: "Nov 2026", img: "🎮" },
+        { title: "Chess.com Global Championship: Registration Open", source: "Chess.com", url: "https://www.chess.com/news", date: "Nov 2026", img: "🌐" },
+        { title: "Indian Chess: 99 Grandmasters and Counting", source: "ChessBase India", url: "https://chessbase.in", date: "Nov 2026", img: "🇮🇳" },
+        { title: "FIDE World Rapid & Blitz Championship 2026 Announced", source: "FIDE", url: "https://www.fide.com", date: "Nov 2026", img: "🌍" },
+        { title: "ChessKidoo Academy: New Training Programs Launched", source: "ChessKidoo", url: "https://chesskidoo.com", date: "Nov 2026", img: "📚" },
+      ]);
+    }
+
+    function renderNews(news) {
+      grid.innerHTML = news.map(n => `
+        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(59,130,246,0.2); border-radius: 12px; padding: 20px; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 24px rgba(59,130,246,0.15)';" onmouseout="this.style.transform=''; this.style.boxShadow='';">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+            <span style="font-size: 1.5rem;">${n.img}</span>
+            <span style="background: rgba(59,130,246,0.15); color: #3b82f6; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">${n.source}</span>
+            <span style="color: #64748b; font-size: 0.7rem;">${n.date}</span>
+          </div>
+          <h4 style="color: #f8fafc; font-size: 1.0rem; margin: 0 0 12px 0; line-height: 1.4;"><a href="${n.url}" target="_blank" rel="noopener noreferrer" style="color: #f8fafc; text-decoration: none; border-bottom: 1px dotted rgba(59,130,246,0.4);">${n.title}</a></h4>
+          <a href="${n.url}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: #3b82f6; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; text-decoration: none;">Read More →</a>
         </div>
-        <h4 style="color: #f8fafc; font-size: 1.0rem; margin: 0 0 12px 0; line-height: 1.4;"><a href="${n.url}" target="_blank" rel="noopener noreferrer" style="color: #f8fafc; text-decoration: none; border-bottom: 1px dotted rgba(59,130,246,0.4);">${n.title}</a></h4>
-        <a href="${n.url}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background: #3b82f6; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; text-decoration: none;">Read More →</a>
-      </div>
-    `).join('');
+      `).join('');
+    }
+
+    loadNews();
+
+    // Auto-refresh every 5 minutes
+    setInterval(loadNews, 300000);
   })();
   </script>
+
 
 <!-- Official FIDE-rated tournaments (curated from official sources) -->
   <div class="container" style="margin-top: 40px;">
