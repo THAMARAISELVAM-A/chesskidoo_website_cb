@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <script>
@@ -185,11 +185,13 @@
       <div class="nav-item coach-only" id="nav-coach-dash" onclick="setPage('coach-dash')"><span class="ico">🏠</span> My Portal</div>
       <div class="nav-item coach-only" id="nav-coach-schedule" onclick="setPage('coach-schedule')"><span class="ico">📅</span> Schedule</div>
       <div class="nav-item coach-only" id="nav-coach-attendance" onclick="setPage('coach-attendance')"><span class="ico">📋</span> Attendance</div>
+            <div class="nav-section-label coach-only" style="padding:8px 12px; font-size:10px; color:var(--ivory-dim); text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-top:8px;">Coach Navigation</div>
       <div class="nav-item coach-only" id="nav-coach-studypgn" onclick="setPage('coach-studypgn')"><span class="ico">♟️</span> Study Lab &amp; Topics</div>
       <div class="nav-item coach-only" id="nav-coach-lichess-videos" onclick="window.open('https://lichess.org/video', '_blank')"><span class="ico">🎬</span> Lichess Videos</div>
       <div class="nav-item coach-only" id="nav-coach-lichess-puzzles" onclick="window.open('https://lichess.org/training', '_blank')"><span class="ico">🧩</span> Lichess Puzzles</div>
+      <div class="nav-item coach-only" id="nav-coach-online-learning" onclick="window.open('https://lichess.org/video', '_blank')"><span class="ico">🎓</span> Online Learning</div>
       <div class="nav-item coach-only" id="nav-coach-events" onclick="setPage('coach-events')"><span class="ico">🏆</span> Events</div>
-      <div class="nav-item coach-only" id="nav-coach-productivity" onclick="setPage('productivity')"><span class="ico">📝</span> Daily Tasks</div>
+
       <a class="nav-item admin-only coach-accessible" id="nav-report-card"
          href="https://report-card-for-chesskidoo.vercel.app/" target="_blank" rel="noopener noreferrer"
          style="text-decoration:none; color:inherit;">
@@ -479,6 +481,15 @@
                    <option value="needs_revision">Needs Revision</option>
                    <option value="closed">Closed</option>
                  </select>
+                 <select id="coach-hw-topic" style="padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px" onchange="switchCoachHomeworkTab('assignments'); renderCoachAssignments();" title="Filter by topic">
+                   <option value="">All Topics</option>
+                   <option value="Openings">Openings</option>
+                   <option value="Tactics">Tactics</option>
+                   <option value="Endgames">Endgames</option>
+                   <option value="Strategy">Strategy</option>
+                   <option value="General">General</option>
+                 </select>
+                 <input type="date" id="coach-hw-date-filter" style="padding:10px 14px; background:var(--bg3); border:1px solid var(--border); color:var(--ivory); border-radius:8px" onchange="switchCoachHomeworkTab('assignments'); renderCoachAssignments();" title="Filter by due date">
                </div>
                <div class="tabs-nav" style="margin-bottom:18px;">
                  <button class="tab-link active" onclick="switchCoachHomeworkTab('assignments')" id="btn-coach-hw-assign">My Assignments</button>
@@ -487,7 +498,7 @@
                <div id="coach-hw-assign" class="hw-tab-content active" style="display:block;">
                  <div class="coach-table-wrap">
                    <table class="coach-mini-table">
-                     <thead><tr><th>Assignment</th><th>Target</th><th>Due Date</th><th>Status</th><th>Actions</th></tr></thead>
+                     <thead><tr><th>Topic</th><th>Assignment</th><th>Files</th><th>Target</th><th>Due Date</th><th>Status</th><th>Actions</th></tr></thead>
                      <tbody id="coach-assignments-tbody"><tr><td colspan="5" class="coach-loading-cell">Loading assignments...</td></tr></tbody>
                    </table>
                  </div>
