@@ -50,12 +50,14 @@ CK.engine = (() => {
           console.warn('[Stockfish Worker] All script sources failed to load.');
         }
       `;
-      const blob = new Blob([workerCode], { type: 'application/javascript' });
-      const workerUrl = URL.createObjectURL(blob);
+            const blob = new Blob([workerCode], { type: 'application/javascript' });
+      const wasmPath = origin ? (origin + '/assets/vendor/stockfish/stockfish-nnue-16-single.wasm') : 'assets/vendor/stockfish/stockfish-nnue-16-single.wasm';
+      const workerUrl = URL.createObjectURL(blob) + '#' + encodeURIComponent(wasmPath) + ',worker';
       _sfWorker = new Worker(workerUrl);
       _sfWorker.addEventListener('message', _handleSfMessage);
       _sfWorker.addEventListener('error', (err) => {
-        console.warn('[Engine] Stockfish Worker runtime error:', err);
+        if (err && typeof err.preventDefault === 'function') err.preventDefault();
+        console.warn('[Engine] Stockfish Worker runtime error (using cloud evaluation fallback):', err?.message || err);
       });
       _sfWorker.postMessage('uci');
       console.log('[Engine] Stockfish 16 NNUE Professional Engine initializing…');

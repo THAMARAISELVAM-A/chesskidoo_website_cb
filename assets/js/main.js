@@ -529,7 +529,7 @@
         </div>
         <div class="ck-help-list">${list}</div>
         <div class="ck-help-contact">
-          <a href="https://wa.me/9195142 66505" target="_blank" rel="noopener" class="ck-help-btn ck-help-btn-wa">💬 WhatsApp Support</a>
+          <a href="https://wa.me/9183004 91662" target="_blank" rel="noopener" class="ck-help-btn ck-help-btn-wa">💬 WhatsApp Support</a>
           <a href="mailto:Chesskidoo37@gmail.com" class="ck-help-btn ck-help-btn-mail">✉️ Email Us</a>
         </div>
       </div>`;
@@ -602,7 +602,7 @@
       { keys: ['certificate', 'cert'],                     text: "Students earn certificates upon completing each level. Download yours from the Student Portal! 🎓" },
       { keys: ['parent', 'mom', 'dad', 'guardian'],        text: "Parents can track their child's progress, attendance, and reports through the Parent Portal. 👨‍👩‍👧" },
       { keys: ['attendance'],                              text: "Attendance is tracked automatically. View the calendar in your portal to see your record. 📅" },
-      { keys: ['whatsapp', 'contact', 'phone', 'call'],    text: "WhatsApp: +91 95142 66505 | Email: chesskidoo37@gmail.com | We respond within 24 hours! 📩" },
+      { keys: ['whatsapp', 'contact', 'phone', 'call'],    text: "WhatsApp: +91 83004 91662 | Email: chesskidoo37@gmail.com | We respond within 24 hours! 📩" },
       { keys: ['hello', 'hi', 'hey', 'hola'],              text: "Hello! Welcome to ChessKidoo. Ask me about classes, coaches, fees, or anything chess-related! ♟" },
       { keys: ['thank', 'thanks', 'thx'],                  text: "You're welcome! Feel free to ask anything else about chess or our academy. 🙏" },
       { keys: ['bye', 'goodbye', 'see you'],               text: "Goodbye! Keep playing chess and improving. See you at ChessKidoo! ♔" },
@@ -868,7 +868,7 @@
       }
 
       const msg = `Hello ChessKidoo Academy! 🌍\n\nI am requesting a Custom NRI Fee & Timezone Quote for my child.\n\n👤 *Parent Name:* ${name}\n📞 *WhatsApp:* ${phone}\n📧 *Email:* ${email || 'Not provided'}\n👶 *Child's Name:* ${childName || 'Not provided'}\n🎂 *Child's Age:* ${childAge || 'Not provided'}\n♟️ *Current Level:* ${chessLevel || 'Not provided'}\n🌐 *Country & Timezone:* ${countryTz}\n📅 *Preferred Days:* ${days || 'Not specified'}\n🕐 *Preferred Time:* ${timeSlot || 'Not specified'}\n📚 *Format Looking For:* ${category}\n📆 *Classes / Month:* ${classesPerMonth}\n📝 *Notes:* ${notes || 'None'}\n\nPlease send custom fee details and available slots! ♟️`;
-      const waUrl = `https://wa.me/9195142 66505?text=${encodeURIComponent(msg)}`;
+      const waUrl = `https://wa.me/9183004 91662?text=${encodeURIComponent(msg)}`;
 
       if (CK.showToast) CK.showToast('🎉 Custom NRI Quote request ready! Opening WhatsApp...', 'success');
       setTimeout(() => {
@@ -877,7 +877,7 @@
         form.reset();
       }, 400);
     } catch (err) {
-      const fallbackUrl = `https://wa.me/9195142 66505?text=${encodeURIComponent('Hello ChessKidoo! 🌍 NRI Inquiry from ' + name + ' (' + countryTz + '). Format: ' + category + ', Frequency: ' + classesPerMonth)}`;
+      const fallbackUrl = `https://wa.me/9183004 91662?text=${encodeURIComponent('Hello ChessKidoo! 🌍 NRI Inquiry from ' + name + ' (' + countryTz + '). Format: ' + category + ', Frequency: ' + classesPerMonth)}`;
       window.open(fallbackUrl, '_blank');
       CK.closeModal('nriInquiryModal');
       form.reset();
@@ -998,7 +998,7 @@
   };
 
   CK.openDirectDemoWhatsApp = () => {
-    const url = CK.lastDemoWhatsAppUrl || 'https://wa.me/9195142 66505?text=' + encodeURIComponent('Hello ChessKidoo! I would like to confirm my free demo class booking.');
+    const url = CK.lastDemoWhatsAppUrl || 'https://wa.me/9183004 91662?text=' + encodeURIComponent('Hello ChessKidoo! I would like to confirm my free demo class booking.');
     window.open(url, '_blank');
   };
 
@@ -1050,7 +1050,7 @@
       }
 
       const msg = `Hello ChessKidoo! ♟️🏆\n\nI'd like to register for the tournament:\n*Event:* ${tName}\n👤 *Player Name:* ${player}\n📞 *Phone:* ${phone}\n👶 *Age:* ${age}\n⭐ *FIDE Rating:* ${fideRating}\n🎯 *Category:* ${category}\n\nPlease send entry confirmation and pairings link!`;
-      const waUrl = `https://wa.me/9195142 66505?text=${encodeURIComponent(msg)}`;
+      const waUrl = `https://wa.me/9183004 91662?text=${encodeURIComponent(msg)}`;
 
       if (CK.showToast) CK.showToast('🎉 Tournament entry saved! Opening WhatsApp...', 'success');
       setTimeout(() => {
@@ -1060,7 +1060,7 @@
       }, 500);
     } catch (err) {
       const msg = `Hello ChessKidoo! ♟️ I'd like to register for ${tName}. Player: ${player}, Phone: ${phone}, Category: ${category}`;
-      window.open(`https://wa.me/9195142 66505?text=${encodeURIComponent(msg)}`, '_blank');
+      window.open(`https://wa.me/9183004 91662?text=${encodeURIComponent(msg)}`, '_blank');
       CK.closeModal('tournamentModal');
     } finally {
       btn.textContent = origText;
@@ -3032,7 +3032,7 @@
       `— Sent from ChessKidoo Academy Website`;
 
     const encodedMessage = encodeURIComponent(whatsappMessage);
-    const whatsappUrl = `https://wa.me/919514266505?text=${encodedMessage}`;
+    const whatsappUrl = `https://wa.me/918300491662?text=${encodedMessage}`;
     window.open(whatsappUrl, '_blank');
 
     if (CK.showToast) CK.showToast('Opening WhatsApp...', 'info');

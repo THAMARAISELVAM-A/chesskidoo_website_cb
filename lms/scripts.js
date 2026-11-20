@@ -7003,7 +7003,7 @@
 
       ? window.getPaymentPayeeText()
 
-      : "9514266505 (Ranjith)";
+      : "8300491662 (Ranjith)";
 
     if (isDueOrOverdue) {
 
@@ -14336,6 +14336,20 @@ syncCoachDropdowns();
 
           window.achievementsData = achievementsData;
 
+          try { localStorage.setItem('ck_achievements_cache', JSON.stringify(achievementsData || [])); } catch (_) {}
+
+        } else {
+
+          try {
+            const cached = localStorage.getItem('ck_achievements_cache');
+            if (cached) {
+              const parsed = JSON.parse(cached);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                achievementsData = parsed;
+                window.achievementsData = achievementsData;
+              }
+            }
+          } catch (_) {}
         }
 
         if (role === "admin") {
@@ -35788,7 +35802,7 @@ const coach = allCoaches.find((c) => String(c.id) === String(s.coach_id));
 
     const coach = allCoaches.find((c) => String(c.id) === String(student.coach_id)) || allCoaches[0];
 
-    const coachPhone = coach?.phone || '9514266505';
+    const coachPhone = coach?.phone || '8300491662';
 
     const cleanPhone = String(coachPhone).replace(/\D/g, '');
 
@@ -35924,7 +35938,7 @@ const coach = allCoaches.find((c) => String(c.id) === String(s.coach_id));
 
     const fullMsg = `🌟 *ChessKidoo Academy Feedback*\nStudent: *${studentName}*\nRating: ${rating}\nCategory: ${category}\n\nFeedback: "${msg}"`;
 
-    window.open(`https://api.whatsapp.com/send?phone=919514266505&text=${encodeURIComponent(fullMsg)}`, '_blank');
+    window.open(`https://api.whatsapp.com/send?phone=918300491662&text=${encodeURIComponent(fullMsg)}`, '_blank');
 
     toast("WhatsApp feedback opened!", "success");
 

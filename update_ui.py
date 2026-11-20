@@ -80,7 +80,7 @@ old_contact = r'<div>\s*<h5 style="margin-bottom:20px; color:var\(--amber\); fon
 new_contact = """<div>
             <h5 style="margin-bottom:20px; color:var(--amber); font-family:var(--font-display); font-size: 1.2rem;">Contact Us</h5>
             <div class="contact-us-details" style="display:flex; flex-direction:column; gap:16px; opacity:0.8; font-size:1.1rem;">
-              <span style="display:flex; align-items:center; gap:10px;"><span style="font-size: 1.2rem;">📞</span> +91 95142 66505</span>
+              <span style="display:flex; align-items:center; gap:10px;"><span style="font-size: 1.2rem;">📞</span> +91 83004 91662</span>
               <span style="display:flex; align-items:center; gap:10px;"><span style="font-size: 1.2rem;">📧</span> chesskidoo@gmail.com</span>
               <button class="btn demo-btn-gray" style="margin-top:15px;" onclick="CK.openDemoModal()">Get Free Demo</button>
             </div>

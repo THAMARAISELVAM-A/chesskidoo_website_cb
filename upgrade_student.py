@@ -73,7 +73,7 @@ new_student_html = """
               <div style="font-size:0.75rem; opacity:0.6;">Professional FIDE Coach</div>
             </div>
           </div>
-          <button class="dash-btn" style="width:100%;" onclick="window.open('https://wa.me/919514266505')">💬 Chat with Support</button>
+          <button class="dash-btn" style="width:100%;" onclick="window.open('https://wa.me/918300491662')">💬 Chat with Support</button>
         </div>
       </div>
 

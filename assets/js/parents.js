@@ -91,6 +91,9 @@ CK.parents = (() => {
     }
     _parentProfile = currentUser;
     _childProfile  = await _resolveChild(currentUser);
+    // Load the child's per-month Active/Inactive timeline so the Fees tab
+    // never asks for payment in an inactive month.
+    await _loadChildStatusTimeline();
 
     updateParentHeader();
     if (_childProfile) {
@@ -467,6 +470,92 @@ CK.parents = (() => {
   let _parFeeLinks = {};
   let _parFeeTotal = 0;
 
+  /* ─── Time-based child status (Active / Inactive per month) ───
+     The academy's fee engine evaluates status PER MONTH from the
+     student_status_history timeline, so the Fees tab must never ask a parent
+     to pay for a month the child is Inactive. The timeline is fetched once on
+     init; if unavailable we fall back to the child's record status. */
+  let _childTimelineLoaded = false;
+
+  async function _loadChildStatusTimeline() {
+    if (_childTimelineLoaded || !_childProfile) return;
+    _childTimelineLoaded = true;
+    try {
+      if (!(window.supabaseClient && window.supabaseClient.from)) return;
+
+      // The academy-side `students` record and the portal `users` record are
+      // separate rows and do not always share an id — collect BOTH ids (the
+      // portal id plus the LMS student resolved by email) so the timeline is
+      // found either way.
+      const ids = new Set([String(_childProfile.id)]);
+      const childEmail = String(_childProfile.email || '').trim();
+      if (childEmail) {
+        try {
+          const { data: studs } = await window.supabaseClient
+            .from('students')
+            .select('id, email')
+            .ilike('email', childEmail)
+            .limit(1);
+          if (Array.isArray(studs) && studs[0] && studs[0].id) {
+            ids.add(String(studs[0].id));
+          }
+        } catch (_) {
+          /* students table may not be readable from the portal — the portal
+             id lookup below still runs. */
+        }
+      }
+
+      const { data, error } = await window.supabaseClient
+        .from('student_status_history')
+        .select('*')
+        .in('student_id', Array.from(ids))
+        .order('effective_month', { ascending: true });
+      if (!error && Array.isArray(data)) _childProfile.status_history = data;
+    } catch (_) {
+      /* Timeline unavailable → record-status fallback below. */
+    }
+  }
+
+  const _monthKeyNow = (d) => {
+    const n = d || new Date();
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`;
+  };
+
+  function _isChildInactiveThisMonth(c) {
+    if (!c) return false;
+    const targetKey = _monthKeyNow();
+    const rows = Array.isArray(c.status_history) ? c.status_history : [];
+
+    if (rows.length) {
+      const norm = (v) => {
+        const m = String(v || '').trim().match(/^(\d{4})-(\d{1,2})/);
+        return m ? `${m[1]}-${String(m[2]).padStart(2, '0')}` : '';
+      };
+      const timeline = rows
+        .map((r) => {
+          if (!r || typeof r !== 'object') return null;
+          let em = norm(r.effective_month);
+          if (!em) {
+            const dt = new Date(r.changed_at || r.changed_date || '');
+            if (!isNaN(dt.getTime())) em = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
+          }
+          return em ? { ...r, effective_month: em } : null;
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.effective_month.localeCompare(b.effective_month));
+
+      // Latest change on or before this month decides this month's status.
+      let latest = null;
+      timeline.forEach((r) => { if (r.effective_month <= targetKey) latest = r; });
+      if (latest) return String(latest.status || '').toLowerCase() === 'inactive';
+      return false; // every recorded change is in the future → active now
+    }
+
+    // Legacy fallback (no timeline yet): the current record status decides
+    // the CURRENT month only.
+    return String(c.account_status || c.status || '').toLowerCase() === 'inactive';
+  }
+
   function renderFees() {
     const el = document.getElementById('parFeesContent');
     if (!el) return;
@@ -479,11 +568,17 @@ CK.parents = (() => {
     const _e      = CK.esc || (s => s);
     const tuition = parseInt(c.monthly_fee || c.fee || c.fees || c.tuition_fee) || 4000;
     const gst     = Math.round(tuition * 0.18);
-    const total   = tuition + gst;
+    // Time-based rule: an Inactive month bills ₹0 and no payment is requested.
+    const noFee   = _isChildInactiveThisMonth(c);
+    const amtTuition = noFee ? 0 : tuition;
+    const amtGst     = noFee ? 0 : gst;
+    const total      = amtTuition + amtGst;
     const upiId   = cfg.ACADEMY_UPI_ID   || 'saminathanranjith73@okaxis';
     const upiName = cfg.ACADEMY_UPI_NAME || 'Ranjith A S';
-    const status  = c.status || 'Pending';
-    const isPaid  = status === 'Paid';
+    // Payment state lives in payment_status — `status` is the ACCOUNT status
+    // (active/inactive/…), but legacy rows stored 'Paid' there, so it is kept
+    // only as a fallback (it can never read as paid for non-payment values).
+    const isPaid = ['paid', 'completed'].includes(String(c.payment_status || c.status || '').toLowerCase());
     const enc     = s => encodeURIComponent(s);
     const note    = enc('ChessKidoo Fee - ' + (c.full_name || 'Student'));
     const params  = `pa=${enc(upiId)}&pn=${enc(upiName)}&am=${total}&cu=INR&tn=${note}`;
@@ -497,6 +592,10 @@ CK.parents = (() => {
     };
 
     const fmt = n => '₹' + n.toLocaleString('en-IN');
+
+    const statusBadge = noFee
+      ? `<span class="pay-status-badge nofee">🚫 No Fee Required</span>`
+      : `<span class="pay-status-badge ${isPaid ? 'paid' : 'pending'}">${isPaid ? '✅ Paid' : '⚡ Pending'}</span>`;
 
     el.innerHTML = `
       <div class="pay-gateway-wrap">
@@ -528,11 +627,11 @@ CK.parents = (() => {
             </div>
             <div class="pay-line">
               <span>Tuition Fee</span>
-              <span>${fmt(tuition)}</span>
+              <span>${fmt(amtTuition)}</span>
             </div>
             <div class="pay-line">
               <span>GST (18%)</span>
-              <span>${fmt(gst)}</span>
+              <span>${fmt(amtGst)}</span>
             </div>
             <div class="pay-divider" style="margin:10px 0;"></div>
             <div class="pay-line pay-total-line">
@@ -541,7 +640,7 @@ CK.parents = (() => {
             </div>
             <div class="pay-status-row">
               <span>Payment Status</span>
-              <span class="pay-status-badge ${isPaid ? 'paid' : 'pending'}">${isPaid ? '✅ Paid' : '⚡ Pending'}</span>
+              ${statusBadge}
             </div>
           </div>
           <div class="pay-security-note">
@@ -550,7 +649,24 @@ CK.parents = (() => {
         </div>
 
         <!-- Right Column -->
-        ${isPaid ? `
+        ${noFee ? `
+          <!-- No Fee Required (time-based Inactive month) — no payment form -->
+          <div class="pay-form-card">
+            <div class="pay-form-header">
+              <div class="pay-form-title">No Fee Required 🚫</div>
+              <div class="pay-form-sub">Current month fee: ₹0</div>
+            </div>
+            <div style="text-align:center; padding:18px 6px;">
+              <div style="font-size:2.6rem; margin-bottom:8px;">⏸️</div>
+              <p style="font-size:0.85rem; line-height:1.55; color:var(--p-text-muted); margin-bottom:12px;">
+                Your child's account is marked <b>Inactive</b> for this month, so there is
+                nothing to pay. Fees resume automatically from the month the academy
+                reactivates the account — no payment is ever due for inactive months.
+              </p>
+              <span class="pay-status-badge nofee">🚫 No Fee Required</span>
+            </div>
+          </div>
+        ` : isPaid ? `
           <!-- Success Card -->
           <div class="pay-success-card">
             <div class="pay-success-icon" style="font-size:3rem; margin-bottom:12px; text-align:center;">✅</div>
@@ -648,7 +764,7 @@ CK.parents = (() => {
       </div>
     `;
 
-    if (!isPaid) {
+    if (!isPaid && !noFee) {
       setTimeout(() => {
         const qrEl = document.getElementById('parUpiQrCode');
         if (qrEl) {
@@ -697,7 +813,16 @@ CK.parents = (() => {
 
     try {
       const c = _childProfile;
-      c.status      = 'Paid';
+      // Payment state goes in payment_status. `status` holds the ACCOUNT
+      // status (active/inactive/…) — overwriting it with 'Paid' used to erase
+      // the inactive marker that the fee timeline and portals rely on.
+      c.payment_status = 'Paid';
+      // Legacy portals still read the payment result from `status`, so keep
+      // that convention ONLY for rows already using it — never clobber real
+      // account statuses like active/inactive/paused.
+      if (['paid', 'pending', 'due', 'overdue'].includes(String(c.status || '').toLowerCase())) {
+        c.status = 'Paid';
+      }
       c.last_txn_id = utr;
       c.pay_method  = 'UPI (Parent)';
       c.paid_date   = new Date().toLocaleDateString('en-GB');

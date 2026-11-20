@@ -35,15 +35,15 @@ window.APP_CONFIG = {
   // Academy display info
   ACADEMY_NAME:     "ChessKidoo Academy",
   ACADEMY_EMAIL:    "Chesskidoo37@gmail.com",
-  ACADEMY_PHONE:    "+91 95142 66505",
+  ACADEMY_PHONE:    "+91 83004 91662",
   ACADEMY_CITY:     "Bhavani, Erode, Tamil Nadu",
 
   // UPI Payment — direct bank transfer (no gateway needed)
   // IMPORTANT: Replace ACADEMY_UPI_ID with the actual UPI VPA from your bank app
-  // (e.g. ranjithas@okaxis, 9514266505@ybl, etc.)
+  // (e.g. ranjithas@okaxis, 8300491662@ybl, etc.)
   ACADEMY_UPI_ID:     "saminathanranjith73@okaxis",
   ACADEMY_UPI_NAME:   "Ranjith A S",
-  ACADEMY_UPI_MOBILE: "9514266505",
+  ACADEMY_UPI_MOBILE: "8300491662",
 
   // EmailJS (public keys — safe for client-side)
   EMAILJS_SERVICE:  "service_7mn07q9",

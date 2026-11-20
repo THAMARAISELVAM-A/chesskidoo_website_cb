@@ -240,6 +240,9 @@ Deno.serve(async (req) => {
       }
 
       const fileList = body.questions_files || body.attachment_urls || null;
+      const presentIds = Array.isArray(body.present_student_ids) && body.present_student_ids.length
+        ? body.present_student_ids
+        : null;
       const { data, error } = await supabase.from('homework_assignments').insert({
         id: body.id || crypto.randomUUID(),
         title,
@@ -250,7 +253,10 @@ Deno.serve(async (req) => {
         student_id: targetStudentId,
         batch_id: targetBatchId,
         created_by: body.created_by || body.coach_id || null,
+        coach_id: body.coach_id || body.created_by || null,
         questions_files: fileList,
+        attachment_urls: fileList || [],
+        present_student_ids: presentIds,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }).select().single();
@@ -311,6 +317,10 @@ Deno.serve(async (req) => {
         if (body.student_id !== undefined) payload.student_id = body.student_id || null;
         if (body.batch_id !== undefined) payload.batch_id = body.batch_id || null;
         if (body.questions_files !== undefined) payload.questions_files = body.questions_files;
+        if (body.coach_id !== undefined) payload.coach_id = body.coach_id || null;
+        if (body.present_student_ids !== undefined) {
+          payload.present_student_ids = Array.isArray(body.present_student_ids) ? body.present_student_ids : null;
+        }
         if (body.created_by !== undefined) payload.created_by = body.created_by || null;
 
         const { data, error } = await supabase.from('homework_assignments').update(payload).eq('id', id).select().single();

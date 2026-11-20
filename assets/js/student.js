@@ -134,7 +134,7 @@ CK.student = {
               Hello <strong style="color:#fff;">${_e(p.full_name || 'Student')}</strong>! Your learning portal access has been temporarily paused by the academy admin due to pending monthly fees (₹${_e(String(p.monthly_fee || p.fee || p.fees || p.tuition_fee || 1800))}). Access will <strong>automatically resume</strong> once fees are cleared.
             </p>
             <div style="display:flex;flex-direction:column;gap:12px;">
-              <a href="https://wa.me/919514266505?text=${encodeURIComponent('Hello Admin, I have paid the fee for student ' + (p.full_name || '') + '. Please resume my access.')}" target="_blank" style="background:#22c55e;color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;font-size:0.95rem;box-shadow:0 4px 14px rgba(34,197,94,0.3);">
+              <a href="https://wa.me/918300491662?text=${encodeURIComponent('Hello Admin, I have paid the fee for student ' + (p.full_name || '') + '. Please resume my access.')}" target="_blank" style="background:#22c55e;color:#fff;text-decoration:none;padding:12px 20px;border-radius:10px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;font-size:0.95rem;box-shadow:0 4px 14px rgba(34,197,94,0.3);">
                 💬 Send Payment Screenshot via WhatsApp
               </a>
               <button onclick="location.reload()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:10px 20px;border-radius:10px;font-weight:600;cursor:pointer;font-size:0.9rem;">
@@ -2299,11 +2299,19 @@ CK.student = {
 
   renderFeesGateway() {
     const p = this.userProfile || {};
-    const status = p.status || 'Pending';
+    // `p.status` is the ACCOUNT status (active/inactive/…) — it must never be
+    // read as a payment result. Payment state lives in payment_status (legacy
+    // rows that stored 'Paid' in status are still honoured as a fallback).
+    const payState = String(p.payment_status || p.status || '').toLowerCase();
+    const isPaid = payState === 'paid' || payState === 'completed';
+    // Time-based rule: an Inactive account owes nothing for the current month,
+    // so no payment form / amount may be requested.
+    const noFee = String(p.account_status || p.status || '').toLowerCase() === 'inactive';
     const tuition = parseInt(p.monthly_fee || p.fee || p.fees || p.tuition_fee) || 4000;
     const gst = Math.round(tuition * 0.18);
-    const total = tuition + gst;
-    const isPaid = status === 'Paid';
+    const amtTuition = noFee ? 0 : tuition;
+    const amtGst = noFee ? 0 : gst;
+    const total = amtTuition + amtGst;
 
     const fmt = n => '' + n.toLocaleString('en-IN');
 
@@ -2312,8 +2320,8 @@ CK.student = {
     set('payStudentName', 'Student: ' + (p.full_name || 'Chess Student'));
     set('payBatch', p.batch || 'Advanced FIDE Masterclass');
     set('payLevel', p.level || 'Intermediate');
-    set('payTuition', fmt(tuition));
-    set('payGst', fmt(gst));
+    set('payTuition', fmt(amtTuition));
+    set('payGst', fmt(amtGst));
     set('payTotal', fmt(total));
     set('payAmountDisplay', fmt(total));
 
@@ -2327,14 +2335,19 @@ CK.student = {
 
     const badge = document.getElementById('payStatusBadge');
     if (badge) {
-      badge.textContent = isPaid ? ' Paid' : ' Pending';
-      badge.className = 'pay-status-badge ' + (isPaid ? 'paid' : 'pending');
+      badge.textContent = noFee ? '🚫 No Fee Required' : (isPaid ? ' Paid' : ' Pending');
+      badge.className = 'pay-status-badge ' + (noFee ? 'nofee' : (isPaid ? 'paid' : 'pending'));
     }
 
     const formCard = document.getElementById('payFormCard');
     const successCard = document.getElementById('paySuccessCard');
 
-    if (isPaid) {
+    if (noFee) {
+      // Inactive month: hide the payment form and the success card — there is
+      // genuinely nothing to pay, so never present a checkout.
+      if (formCard) formCard.style.display = 'none';
+      if (successCard) successCard.style.display = 'none';
+    } else if (isPaid) {
       if (formCard) formCard.style.display = 'none';
       if (successCard) {
         successCard.style.display = 'block';

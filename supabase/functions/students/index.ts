@@ -155,12 +155,12 @@ Deno.serve(async (req) => {
       return { countryCode: 'IN', localNumber: digits };
     }
 
-   // Transform DB row to API response
-   function transformStudent(s: Record<string, unknown>) {
-     const status = s.status || 'pending';
-     const fee = s.monthly_fee ?? s.fee ?? s.fees ?? s.tuition_fee ?? 0;
-     const originalPhone = String(s.parent_phone || s.phone || '');
-     const parsed = parseStoredPhone(originalPhone);
+// Transform DB row to API response
+    function transformStudent(s: Record<string, unknown>) {
+      const status = s.status || 'pending';
+      const fee = s.monthly_fee ?? s.fee ?? s.fees ?? s.tuition_fee ?? 0;
+      const originalPhone = String(s.parent_phone || s.phone || '');
+      const parsed = parseStoredPhone(originalPhone);
 
       return {
         id: s.id,
@@ -204,7 +204,21 @@ Deno.serve(async (req) => {
         updated_at: s.updated_at,
         password: s.password || null
       }
-   }
+    }
+
+    // Fetch the time-based status history for a single student.
+    async function fetchStatusHistory(studentId: string) {
+      const { data, error } = await supabase
+        .from('student_status_history')
+        .select('*')
+        .eq('student_id', studentId)
+        .order('effective_month', { ascending: true })
+      if (error) {
+        console.warn('Failed to fetch status history:', error.message)
+        return []
+      }
+      return data || []
+    }
 
   try {
     const url = new URL(req.url)
@@ -267,20 +281,31 @@ Deno.serve(async (req) => {
          count = fallbackRes.count
        }
        
-       const transformed = (students || []).map(transformStudent)
-       
-       return new Response(JSON.stringify({
-         data: transformed,
-         pagination: {
-           page,
-           limit,
-           total: count || transformed.length,
-           total_pages: count ? Math.ceil(count / limit) : 1
-         }
-       }), {
-         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-       })
-      }
+const transformed = (students || []).map(transformStudent)
+
+        // Attach time-based status history for each student so the LMS can
+        // evaluate fees per month instead of by a single current-status flag.
+        const withHistory = await Promise.all(transformed.map(async (stu) => {
+          try {
+            const history = await fetchStatusHistory(String(stu.id))
+            return { ...stu, status_history: history }
+          } catch {
+            return stu
+          }
+        }))
+
+        return new Response(JSON.stringify({
+          data: withHistory,
+          pagination: {
+            page,
+            limit,
+            total: count || transformed.length,
+            total_pages: count ? Math.ceil(count / limit) : 1
+          }
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+       }
 
     // POST - Create new student
     if (method === 'POST') {
@@ -367,6 +392,25 @@ Deno.serve(async (req) => {
         })
       }
 
+      // Seed an initial Active status history record for newly created students so
+      // fee calculations always have a baseline. (Safe to skip if the table
+      // does not exist yet — the app falls back to the record status.)
+      try {
+        const createdMonth = newStudent.created_at
+          ? new Date(newStudent.created_at)
+          : new Date()
+        const effectiveMonth = `${createdMonth.getUTCFullYear()}-${String(createdMonth.getUTCMonth() + 1).padStart(2, '0')}`
+        await supabase.from('student_status_history').insert({
+          student_id: insertedStudent.id,
+          status: 'active',
+          effective_month: effectiveMonth,
+          changed_at: new Date().toISOString(),
+          changed_by: 'system'
+        })
+      } catch (histErr) {
+        console.warn('Failed to seed initial status history:', histErr)
+      }
+
       let decryptedStudent = null
       const { data: viewStudent, error: decryptError } = await supabase
         .from('students_decrypted')
@@ -393,7 +437,7 @@ Deno.serve(async (req) => {
         decryptedStudent = viewStudent
       }
       
-      return new Response(JSON.stringify(decryptedStudent ? transformStudent(decryptedStudent) : { success: true }), {
+      return new Response(JSON.stringify(decryptedStudent ? { ...transformStudent(decryptedStudent), status_history: await fetchStatusHistory(insertedStudent.id) } : { success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
@@ -428,8 +472,49 @@ Deno.serve(async (req) => {
         updateData.enrollment_date = sanitizeString(rawBody.enrollment_date || rawBody.join_date, 10);
       }
       if (rawBody.status !== undefined) {
-        updateData.status = validateStatus(rawBody.status);
-        updateData.account_status = validateStatus(rawBody.status);
+        const newStatus = validateStatus(rawBody.status);
+        updateData.status = newStatus;
+        updateData.account_status = newStatus;
+
+        // ── Time-based status history ───────────────────────────────────────
+        // Record the change in student_status_history so fee calculations
+        // can determine the student's status for ANY month, not just today.
+        if (newStatus === 'active' || newStatus === 'inactive') {
+          try {
+            const now = new Date();
+            const effectiveMonth = (rawBody.effective_month && typeof rawBody.effective_month === "string" && /^\d{4}-\d{2}$/.test(rawBody.effective_month))
+              ? rawBody.effective_month
+              : `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+
+            // Record a row unless this exact (status, effective_month) pair is
+            // already on the timeline. Comparing against the EXACT pair — not
+            // just the latest row — means repeated saves stay idempotent even
+            // when the admin applies a status to a month earlier than the most
+            // recent entry (retroactive changes), while a genuine status
+            // change or the same status for a new month is still recorded.
+            const { data: exactRows } = await supabase
+              .from('student_status_history')
+              .select('id')
+              .eq('student_id', id)
+              .eq('status', newStatus)
+              .eq('effective_month', effectiveMonth)
+              .limit(1);
+
+            const alreadyRecorded = !!(exactRows && exactRows.length);
+
+            if (!alreadyRecorded) {
+              await supabase.from('student_status_history').insert({
+                student_id: id,
+                status: newStatus,
+                effective_month: effectiveMonth,
+                changed_at: now.toISOString(),
+                changed_by: (auth as any)?.user?.email || 'admin'
+              });
+            }
+          } catch (histErr) {
+            console.warn('Failed to record status history:', histErr);
+          }
+        }
       }
       if (rawBody.payment_status !== undefined) {
         const pstatus = String(rawBody.payment_status);
@@ -536,7 +621,7 @@ Deno.serve(async (req) => {
         decryptedStudent = viewStudent
       }
       
-      return new Response(JSON.stringify(decryptedStudent ? transformStudent(decryptedStudent) : { success: true }), {
+      return new Response(JSON.stringify(decryptedStudent ? { ...transformStudent(decryptedStudent), status_history: await fetchStatusHistory(id) } : { success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }

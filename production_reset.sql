@@ -35,7 +35,7 @@ ALTER TABLE public.users ADD COLUMN IF NOT EXISTS specialty TEXT;
 
 -- 3. Insert the Academy Admin Account
 INSERT INTO public.users (id, email, full_name, role, userid, phone_number, city)
-VALUES ('a007b0b0-9b30-478f-a147-1af18dff20ce', 'admin@gmail.com', 'Academy Admin', 'admin', 'admin', '+91 95142 66505', 'Chennai');
+VALUES ('a007b0b0-9b30-478f-a147-1af18dff20ce', 'admin@gmail.com', 'Academy Admin', 'admin', 'admin', '+91 83004 91662', 'Chennai');
 
 -- 4. Insert Coach Accounts (using the specialty column instead of overriding puzzle)
 INSERT INTO public.users (id, full_name, email, role, phone_number, level, batches, timetable, revenue, classes, star, specialty) VALUES

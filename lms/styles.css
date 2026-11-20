@@ -417,7 +417,9 @@ tbody tr:hover { background: var(--gold-mist); }
 /* ── BADGES ── */
 .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; }
 .badge-paid { background: rgba(82,196,26,0.15); color: var(--success); }
-.badge-due { background: rgba(255,77,79,0.15); color: var(--danger); }
+.badge-overdue { background: rgba(220,38,38,0.18); color: var(--danger); }
+.badge-due { background: rgba(245,158,11,0.18); color: var(--warning); }
+.badge-pending { background: rgba(232,168,48,0.15); color: var(--gold); }
 .badge-level { background: var(--gold-glow); color: var(--gold); text-transform: uppercase; }
 .badge-danger { background: rgba(255,77,79,0.15); color: var(--danger); }
 .badge-grey { background: rgba(140, 140, 140, 0.15); color: #8c8c8c; }
@@ -934,6 +936,78 @@ body[data-theme="light"] #login-screen .label { color: var(--gold); }
      end of the row would park it off-screen. Keep it beside the breakdown. */
   .totals-grand { padding: 4px 11px; margin-left: 4px; }
 }
+
+/* ── RECORD PAYMENT: MONTH SELECTOR ──
+   One payment can settle any number of billing months, so the dialog lists
+   every month from the student's first billed cycle through the month on
+   screen, each badged with its live status. Months that are already settled or
+   were never billed are inert; the rest carry a checkbox. */
+.mp-label-hint {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 0.6;
+  margin-left: 6px;
+}
+.mp-month-list {
+  max-height: 218px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--glass);
+  padding: 4px;
+}
+.mp-row {
+  display: grid;
+  grid-template-columns: 18px minmax(84px, auto) 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  margin: 0;
+  text-transform: none;
+  transition: background 0.15s ease;
+}
+.mp-month-list .mp-row { display: grid; }
+.mp-row + .mp-row { border-top: 1px solid rgba(255, 255, 255, 0.05); }
+.mp-row:hover { background: rgba(255, 255, 255, 0.04); }
+.mp-row input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--gold); margin: 0; }
+.mp-month { color: var(--ivory); font-weight: 600; }
+.mp-status { font-size: 10px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; }
+.mp-note { font-size: 11px; color: var(--ivory-dim); opacity: 0.75; }
+.mp-fee { font-size: 12px; color: var(--gold); font-weight: 700; white-space: nowrap; }
+.mp-row.is-locked { cursor: default; opacity: 0.55; }
+.mp-row.is-locked .mp-fee { color: var(--ivory-dim); }
+.mp-row.is-overdue { box-shadow: inset 2px 0 0 var(--danger); }
+
+.mp-status.tone-paid { color: var(--success); }
+.mp-status.tone-pending { color: var(--warning); }
+.mp-status.tone-due { color: var(--warning); }
+.mp-status.tone-overdue { color: var(--danger); }
+.mp-status.tone-skipped,
+.mp-status.tone-none { color: var(--ivory-dim); }
+
+.mp-month-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.mp-month-summary,
+.mp-hint { font-size: 11px; color: var(--ivory-dim); margin-top: 6px; }
+.mp-month-summary b { color: var(--gold); }
+.mp-empty { font-size: 12px; color: var(--ivory-dim); padding: 10px; text-align: center; }
+.mp-arrears { margin: -10px 0 14px; }
+.mp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+.mp-chip-danger { background: rgba(239, 68, 68, 0.14); color: var(--danger); border-color: rgba(239, 68, 68, 0.4); }
+.mp-chip-ok { background: rgba(34, 197, 94, 0.12); color: var(--success); border-color: rgba(34, 197, 94, 0.32); }
+#mp-confirm-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ── LEDGER STATUS FILTER PILLS ── */
 .ledger-filter-row { display: flex; gap: 6px; flex-wrap: wrap; }

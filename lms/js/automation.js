@@ -134,8 +134,8 @@
       return;
     }
 
-    const summary = { Paid: 0, Pending: 0, Due: 0 };
-    let revenue = { Paid: 0, Pending: 0, Due: 0 };
+    const summary = { Paid: 0, Pending: 0, Due: 0, Overdue: 0 };
+    const revenue = { Paid: 0, Pending: 0, Due: 0, Overdue: 0 };
 
     students.forEach(s => {
       const status = window.getStudentPaymentStatus ? window.getStudentPaymentStatus(s) : 'Pending';
@@ -146,9 +146,10 @@
       }
     });
 
+    const statusColor = { Paid: '#52c41a', Due: '#ff4d4f', Overdue: '#ff4d4f', Pending: '#e8a830' };
     const rows = Object.entries(summary).map(([status, count]) =>
       `<div style="display:flex;justify-content:space-between;margin-bottom:4px">
-        <span style="color:${status==='Paid'?'#52c41a':status==='Due'?'#ff4d4f':'#e8a830'}">${status}</span>
+        <span style="color:${statusColor[status] || '#7a7870'}">${status}</span>
         <span style="color:#f0ede4;font-weight:700">${count} students (₹${revenue[status].toLocaleString()})</span>
       </div>`
     ).join('');
@@ -177,23 +178,29 @@
       
       if (status === 'Pending') {
         let daysLeft = 99;
-        if (window.getStudentDueConfig) {
+    // A Pending status always implies the due date is still ahead, so the
+        // due-day lookup cannot go negative here.
+        if (window.resolveStudentDueDate) {
+     const due = window.resolveStudentDueDate(s, targetMonth, targetYear);
+        daysLeft = Math.ceil((due.dueAt.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        } else if (window.getStudentDueConfig) {
           const coach = allCoaches.find(c => String(c.id) === String(s.coach_id));
-          const dueCfg = window.getStudentDueConfig(s, coach ? (coach.name || '') : '', targetMonth, targetYear);
-          const dueDateObj = new Date(targetYear, targetMonth, dueCfg.day, 23, 59, 59);
-          const diffTime = dueDateObj.getTime() - today.getTime();
-          daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+const dueCfg = window.getStudentDueConfig(s, coach ? (coach.name || '') : '', targetMonth, targetYear);
+        const dueDateObj = new Date(targetYear, targetMonth, dueCfg.day, 23, 59, 59);
+          daysLeft = Math.ceil((dueDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         }
         if (daysLeft > 4) return;
       }
 
       const cid = s.coach_id;
       if (!cid) return;
-      
+
       if (!coachStudentsWithDates[cid]) coachStudentsWithDates[cid] = [];
-      
+
       let dueDay = 5;
-      if (window.getStudentDueConfig) {
+      if (window.resolveStudentDueDate) {
+        dueDay = window.resolveStudentDueDate(s, targetMonth, targetYear).day;
+      } else if (window.getStudentDueConfig) {
         const coach = allCoaches.find(c => String(c.id) === String(s.coach_id));
         const dueCfg = window.getStudentDueConfig(s, coach ? (coach.name || '') : '', targetMonth, targetYear);
         dueDay = dueCfg.day;
@@ -328,8 +335,8 @@
   };
 
   const _origMarkPaid = window.markPaid;
-  window.markPaid = async function (id, amount, method, desc) {
-    if (_origMarkPaid) await _origMarkPaid(id, amount, method, desc);
+  window.markPaid = async function (id, amount, method, desc, opts) {
+    if (_origMarkPaid) await _origMarkPaid(id, amount, method, desc, opts);
 
     const s = (window.allStudents || []).find(x => String(x.id) === String(id));
     if (!s) return;

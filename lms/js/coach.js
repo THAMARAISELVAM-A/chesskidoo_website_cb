@@ -1333,7 +1333,11 @@ function initStudentPageObserver() {
         }
       }
 
-      toast('Attendance saved for ' + records.length + ' students!', 'success');
+      if (saved) {
+        toast('Attendance saved for ' + records.length + ' students!', 'success');
+      } else {
+        toast('Attendance saved on this device only — server sync failed. Please check your connection and re-save.', 'warning');
+      }
 
       if (typeof window.loadAllData === 'function') {
         window.loadAllData(true);
@@ -1364,7 +1368,7 @@ function initStudentPageObserver() {
           console.warn('[Attendance] Supabase exception:', sbEx);
         }
       }
-      toast('Attendance saved locally for ' + records.length + ' students.', 'info');
+      toast('Attendance saved on this device only — server sync failed. Please check your connection and re-save.', 'warning');
       renderCoachAttendanceMarking();
     }
   };

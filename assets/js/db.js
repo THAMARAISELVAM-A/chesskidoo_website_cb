@@ -18,7 +18,7 @@
         full_name: "Academy Admin",
         role: "admin",
         userid: "admin",
-        phone_number: "+91 95142 66505",
+        phone_number: "+91 83004 91662",
         city: "Chennai"
       },
 

@@ -3573,6 +3573,12 @@ body:has(.page.active:not(#landing-page)) {
   color: #22c55e;
 }
 
+.pay-status-badge.nofee {
+  background: rgba(148,163,184,0.12);
+  border: 1px solid rgba(148,163,184,0.3);
+  color: #94a3b8;
+}
+
 .pay-security-note {
   margin-top: 20px;
   font-size: 0.7rem;
