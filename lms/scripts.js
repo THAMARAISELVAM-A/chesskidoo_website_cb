@@ -414,6 +414,10 @@
 
   let dataCache = { timestamp: 0 };
 
+  // Auto-clear cache on page load/refresh to prevent stale data and lag
+  try { sessionStorage.removeItem('ck_data_cache'); } catch (_) {}
+  dataCache = { timestamp: 0 };
+
   let loadDebounceTimer = null;
 
   let loadingStates = {};
@@ -14365,18 +14369,8 @@ syncCoachDropdowns();
             }
           } catch (_) {}
         }
-
-        // Hardcoded fallback if still empty
+        // If API failed or returned empty, try localStorage cache first
         if (!achievementsData || achievementsData.length === 0) {
-          achievementsData = [
-            { id: 'a1', student_name: 'Anfal', title: 'Zone Winner — Coimbatore District', img_url: '/assets/img/achievement-anfal-akmal.jpg', date_achieved: '2025-12-01' },
-            { id: 'a2', student_name: 'Yadhuveer', title: 'Winner 7/7 — Under-9 Category', img_url: '/assets/img/achievement-yadhuveer.jpg', date_achieved: '2025-11-15' },
-            { id: 'a3', student_name: 'Mukilan', title: '3rd Winner Up — Under-9 to Under-17', img_url: '/assets/img/achievement-mukilan.jpg', date_achieved: '2025-10-20' },
-            { id: 'a4', student_name: 'Anuksha', title: '7th Place — Under 9 Chess Festival (Namakkal)', img_url: '/assets/img/achievement-anuksha.jpg', date_achieved: '2025-09-05' },
-          ];
-          window.achievementsData = achievementsData;
-        } else {
-
           try {
             const cached = localStorage.getItem('ck_achievements_cache');
             if (cached) {
@@ -14387,6 +14381,16 @@ syncCoachDropdowns();
               }
             }
           } catch (_) {}
+        }
+        // Hardcoded fallback if still empty
+        if (!achievementsData || achievementsData.length === 0) {
+          achievementsData = [
+            { id: 'a1', student_name: 'Anfal', title: 'Zone Winner — Coimbatore District', img_url: '/assets/img/achievement-anfal-akmal.jpg', date_achieved: '2025-12-01' },
+            { id: 'a2', student_name: 'Yadhuveer', title: 'Winner 7/7 — Under-9 Category', img_url: '/assets/img/achievement-yadhuveer.jpg', date_achieved: '2025-11-15' },
+            { id: 'a3', student_name: 'Mukilan', title: '3rd Winner Up — Under-9 to Under-17', img_url: '/assets/img/achievement-mukilan.jpg', date_achieved: '2025-10-20' },
+            { id: 'a4', student_name: 'Anuksha', title: '7th Place — Under 9 Chess Festival (Namakkal)', img_url: '/assets/img/achievement-anuksha.jpg', date_achieved: '2025-09-05' },
+          ];
+          window.achievementsData = achievementsData;
         }
 
         if (role === "admin") {
