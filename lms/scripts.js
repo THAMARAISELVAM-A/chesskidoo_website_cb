@@ -39661,13 +39661,13 @@ window.deleteStudent = deleteStudent;
   // ── Coach password protection ─────────────────────────────────────────────
   // Guards coach details, salary, and incentive actions behind a password.
   // Password is stored in localStorage under 'ck_coach_access_password'.
-  // Default password: "coach@123" (change via admin settings).
+  // Default password: "Chesskidoo37" (change via admin settings).
   function _getCoachAccessPassword() {
     try {
       const stored = localStorage.getItem('ck_coach_access_password');
       if (stored) return stored;
     } catch (_) {}
-    return 'coach@123';
+    return 'Chesskidoo37';
   }
 
   function requireCoachPassword(actionLabel) {
