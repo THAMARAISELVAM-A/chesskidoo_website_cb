@@ -767,7 +767,7 @@
       }
 
       const msg = `Hello ChessKidoo! ♟️\n\nI'd like to book a FREE Demo Class for my child.\n\n👤 *Parent Name:* ${name}\n📞 *Phone:* ${phone}\n👶 *Child Details:* ${childDetails || age}\n📍 *City/Country:* ${city}\n🎯 *Skill Level:* ${level}\n💻 *Preferred Mode:* ${mode}\n⏱️ *Preferred Slot:* ${slot}\n🗣️ *Preferred Language:* ${language}\n\nPlease confirm our demo slot!`;
-      const waUrl = `https://wa.me/919514266505?text=${encodeURIComponent(msg)}`;
+      const waUrl = `https://wa.me/918300491662?text=${encodeURIComponent(msg)}`;
       CK.lastDemoWhatsAppUrl = waUrl;
 
       // Update WhatsApp link element in DOM
@@ -803,7 +803,7 @@
     } catch (err) {
       if (CK.showToast) CK.showToast('Booking logged! Opening WhatsApp directly...', 'info');
       const msg = `Hello ChessKidoo! ♟️ I'd like to book a FREE Demo Class.\nParent: ${name}\nPhone: ${phone}\nLevel: ${level}\nMode: ${mode}\nSlot: ${slot}\nLanguage: ${language}.`;
-      CK.lastDemoWhatsAppUrl = `https://wa.me/919514266505?text=${encodeURIComponent(msg)}`;
+      CK.lastDemoWhatsAppUrl = `https://wa.me/918300491662?text=${encodeURIComponent(msg)}`;
       const waLinkEl = document.getElementById('demoSuccessWhatsAppBtn');
       if (waLinkEl) waLinkEl.setAttribute('href', CK.lastDemoWhatsAppUrl);
       try {
